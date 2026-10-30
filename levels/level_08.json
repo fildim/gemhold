@@ -1,7 +1,7 @@
 {
  "id": "level_08",
  "title": "Gloomspire Summit",
- "intro": "Your den now crowns the Gloomspire, and every road on the mountain leads to it. Heroes climb from all four sides at once, two barracks feed them, and every kind of hero joins the climb. Raised tiles between the roads let a tower reach two of them at once.",
+ "intro": "Your den now crowns the Gloomspire, and every road on the mountain leads to it. Heroes climb from all four sides at once, two barracks feed them, and every kind of hero joins the climb. Raised tiles between the roads take any tower and let it reach two roads at once.",
  "hp_mul": 2.6,
  "cols": 16,
  "rows": 10,

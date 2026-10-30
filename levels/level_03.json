@@ -1,7 +1,7 @@
 {
  "id": "level_03",
  "title": "Gloamwood Hollow",
- "intro": "A sunken hollow between two roads. A few raised tiles stand above the rest: a tower built on one reaches further, Huts most of all. Cut free the old gold mine and mana well, and raze the hero barracks in the west before it floods the road with extra heroes.",
+ "intro": "A sunken hollow between two roads. A few raised tiles stand above the rest: any tower can be built on one, and it reaches further from up there. Choose which tower each height is worth. Cut free the old gold mine and mana well, and raze the hero barracks in the west before it floods the road with extra heroes.",
  "hp_mul": 1.4,
  "cols": 16,
  "rows": 10,

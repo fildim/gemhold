@@ -8,6 +8,7 @@ extends RefCounted
 ## arrows, the Crypt hits rarely but slows hard, and the Shrine's beam ignores armour and
 ## heats up the longer it holds one hero. For the beam, dmg is per second.
 ## high_range: extra range when built on a raised tile (a capital letter in the level grid).
+## Raised tiles take any of the three towers, whatever ground they are.
 
 const TOWERS := {
 	"moss": {

@@ -768,8 +768,13 @@ func cell_info(c: Vector2i) -> Dictionary:
 		return {"title": "Darkness", "text": "You can't build where you can't see. Towers, mines and wells light the ground around them.", "actions": []}
 	var td: Dictionary = Defs.TOWERS[t]
 	if level.high.has(c):
-		return {"title": "%s on high %s" % [td["name"], t], "text": "%s A raised tile: a %s built here reaches +%.1f further." % [td["blurb"], td["name"], td["high_range"]],
-			"actions": [_build_action(t, "Build")]}
+		var acts := []
+		var bonus := []
+		for type: String in Defs.TOWERS:
+			acts.append(_build_action(type, Defs.TOWERS[type]["name"]))
+			bonus.append("%s +%.1f" % [Defs.TOWERS[type]["name"], Defs.TOWERS[type]["high_range"]])
+		return {"title": "Raised ground", "text": "Any tower can be built up here, and it reaches further: %s." % ", ".join(bonus),
+			"actions": acts}
 	return {"title": td["name"], "text": "%s Builds only on %s." % [td["blurb"], t],
 		"actions": [_build_action(t, "Build")]}
 
@@ -806,6 +811,11 @@ func preview_range(c: Vector2i) -> float:
 	if level.road.has(c) or level.is_lair(c) or trees.has(c) or sites.has(c) or not is_lit(c):
 		return 0.0
 	var t := level.terrain_at(c)
+	if level.high.has(c):
+		var best := 0.0   # any tower fits: show the longest reach
+		for type: String in Defs.TOWERS:
+			best = maxf(best, float(Defs.TOWERS[type]["range"][0]) + _range_bonus(type, c))
+		return best
 	return float(Defs.TOWERS[t]["range"][0]) + _range_bonus(t, c)
 
 
@@ -826,7 +836,7 @@ func do_action(id: String, c: Vector2i) -> String:
 			return "Can't build here"
 		if not is_lit(c):
 			return "Too dark to build here"
-		if not Defs.TOWERS.has(type) or type != t:
+		if not Defs.TOWERS.has(type) or (type != t and not level.high.has(c)):
 			return "That tower needs %s ground" % type
 		var cost := build_cost(type)
 		if gold < cost:

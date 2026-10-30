@@ -1,7 +1,7 @@
 {
  "id": "level_05",
  "title": "The Hoard Throne",
- "intro": "The heroes' last crusade comes from three sides at once. Two barracks feed the western and eastern roads, and every kind of hero marches together. Claim the raised tiles between the roads: from up there your towers reach further.",
+ "intro": "The heroes' last crusade comes from three sides at once. Two barracks feed the western and eastern roads, and every kind of hero marches together. Claim the raised tiles between the roads: any tower fits there and reaches further.",
  "hp_mul": 1.5,
  "cols": 16,
  "rows": 10,

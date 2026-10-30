@@ -73,11 +73,8 @@ func _process(_delta: float) -> bool:
 		print("light grew from %d to %d tiles" % [lit_before, sim.lit.size()])
 		sim.lit[high] = true                  # woods block the light; lighting itself is checked above
 		main._select(high)
-		main._on_action("build:frost")         # refused: raised tiles keep their own terrain
-		assert(not sim.towers.has(high))
-		main._select(high)
-		main._on_action("build:ash")
-		assert(sim.towers[high].stat("range") > float(Defs.TOWERS["ash"]["range"][0]) + 0.5, "height adds range")
+		main._on_action("build:frost")         # raised ash tile, but any tower fits
+		assert(is_equal_approx(sim.towers[high].stat("range"), float(Defs.TOWERS["frost"]["range"][0]) + float(Defs.TOWERS["frost"]["high_range"])), "height adds the Crypt's range")
 		print("high ground lit=%s tower=%s loot=%d pools=%d" % [sim.is_lit(high), sim.towers.has(high), sim.loot.size(), sim.pools.size()])
 		for l: GameSim.Loot in sim.loot.duplicate():
 			var ev := InputEventMouseButton.new()
