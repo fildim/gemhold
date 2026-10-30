@@ -62,16 +62,32 @@ godot --headless --script res://tests/scene_test.gd   # boots the real scene, ta
 
 ## Putting it on your Android phone
 
-1. Install **Android Studio** (it brings the Android SDK) and **JDK 17**.
-2. In Godot: **Editor > Manage Export Templates > Download and Install**.
-3. **Editor > Editor Settings > Export > Android:** set the Java SDK path and the Android SDK path.
-4. **Project > Export:** an Android preset is already set up (package `com.fildim.gemhold`, arm64, exports to `build/gemhold.apk`).
-5. For a quick test, turn on USB debugging on your phone, plug it in, and press the small Android button that appears in the editor's top-right bar.
+The Android tools live in `tools/` next to this folder (on this PC: `Desktop\tools`):
+Godot 4.6.2, JDK 17 (`jdk-17`) and the Android SDK (`android-sdk`: platform-tools,
+build-tools 35.0.1, Android 36). Godot's export templates are installed, and its editor settings
+point at the JDK and SDK. On a new PC, set **Editor > Editor Settings > Export > Android**
+(Java SDK path and Android SDK path) and install templates from **Editor > Manage Export Templates**.
+
+Build a debug APK (the Android preset exports `com.fildim.gemhold`, 64-bit ARM, landscape):
+
+```
+godot --headless --export-debug "Android" build/gemhold.apk
+```
+
+Install it on your phone:
+
+1. On the phone: **Settings > About phone**, tap **Build number** 7 times, then turn on
+   **Developer options > USB debugging**.
+2. Plug the phone in and allow the computer when it asks.
+3. `../tools/android-sdk/platform-tools/adb install -r build/gemhold.apk`
+
+Or, with the phone plugged in, press the small Android button in the editor's top-right bar.
+Debug builds are signed with Godot's debug keystore and are only for testing.
 
 ## Getting ready for Google Play
 
 - **Use a Gradle build:** in the Android export preset, enable **Gradle Build > Use Gradle Build**, then **Project > Install Android Build Template**.
-- **Target Android 16 (API 36):** since August 31, 2026, Google Play requires new apps and updates to target API 36. Set **Target SDK** to 36 in the export preset's Gradle Build section. If Play Console still warns, check the Godot forum thread on targeting the latest SDK.
+- **Target Android 16 (API 36):** the quick debug build above targets API 35, which is fine for testing on your phone. Since August 31, 2026, Google Play requires new apps and updates to target API 36. Set **Target SDK** to 36 in the export preset's Gradle Build section. If Play Console still warns, check the Godot forum thread on targeting the latest SDK.
 - **Export an `.aab` file** (Google Play only accepts App Bundles for new apps).
 - **Make a release keystore** with `keytool` (comes with the JDK) and enter it under **Keystore > Release**. Back it up with its passwords somewhere safe. Without it you can never update the app.
 - **Developer account:** a one-time $25 fee at play.google.com/console.
