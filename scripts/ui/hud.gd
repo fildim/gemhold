@@ -25,6 +25,7 @@ const MANA := Color("7e6cf0")
 const GEM := Color("e0405e")
 const EMBER := Color("e2683a")
 const POOR := Color("ff6a6a")
+const SELL_CONFIRM_TIME := 2.5
 
 var top_h := 56.0
 var bottom_h := 64.0
@@ -369,6 +370,9 @@ func show_popup(info: Dictionary, anchor: Rect2) -> void:
 	_popup_box.add_child(text)
 	for a in info["actions"]:
 		var b := Button.new()
+		if a["id"] == "sell":
+			_add_sell_button(b, a)
+			continue
 		b.text = "%s    %s" % [a["label"], a["price"]]
 		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		b.focus_mode = Control.FOCUS_NONE
@@ -386,6 +390,36 @@ func show_popup(info: Dictionary, anchor: Rect2) -> void:
 	p.x = clampf(p.x, map_area.position.x, map_area.end.x - ps.x)
 	p.y = clampf(p.y, map_area.position.y, map_area.end.y - ps.y)
 	_popup.position = p
+
+
+## Sell sits apart from the other actions, in red, and needs a second tap within
+## SELL_CONFIRM_TIME seconds so a slip of the finger never loses a tower.
+func _add_sell_button(b: Button, a: Dictionary) -> void:
+	var gap := Control.new()
+	gap.custom_minimum_size = Vector2(0, 10)
+	_popup_box.add_child(gap)
+	var label := "%s    %s" % [a["label"], a["price"]]
+	b.text = label
+	b.alignment = HORIZONTAL_ALIGNMENT_LEFT
+	b.focus_mode = Control.FOCUS_NONE
+	b.custom_minimum_size = Vector2(0, 46)
+	b.add_theme_stylebox_override("normal", _box(Color("3a1712"), Color("8a2e22"), 2))
+	b.add_theme_stylebox_override("hover", _box(Color("4a1d16"), Color("b23a2a"), 2))
+	b.add_theme_stylebox_override("pressed", _box(Color("5a2219"), Color("b23a2a"), 2))
+	for c in ["font_color", "font_hover_color", "font_pressed_color"]:
+		b.add_theme_color_override(c, POOR)
+	var armed := [false]
+	b.pressed.connect(func() -> void:
+		if armed[0]:
+			action_pressed.emit("sell")
+			return
+		armed[0] = true
+		b.text = "Tap again to sell    %s" % a["price"]
+		get_tree().create_timer(SELL_CONFIRM_TIME).timeout.connect(func() -> void:
+			if is_instance_valid(b):
+				armed[0] = false
+				b.text = label))
+	_popup_box.add_child(b)
 
 
 func hide_popup() -> void:
