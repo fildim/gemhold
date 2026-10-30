@@ -1,0 +1,76 @@
+{
+ "id": "level_07",
+ "title": "The Iron Column",
+ "intro": "Now they come in iron. Footmen, knights and shieldbearers march down two roads that join in a short stretch before your den, and armour turns aside small arrows. The ash fields along the joined road are made for Cinder Shrines, whose beams melt through plate.",
+ "hp_mul": 3.5,
+ "cols": 16,
+ "rows": 10,
+ "legend": {
+  "m": "moss",
+  "f": "frost",
+  "a": "ash",
+  "h": "high",
+  "L": "lair"
+ },
+ "terrain": [
+  "ffffffffffffffff",
+  "ffffffffffffffff",
+  "aaaaaaaahhaaaaaa",
+  "aaaaaaaahhaaaaaa",
+  "mmmmaaaaaaaaaaLL",
+  "mmmmaaaaaaffffLL",
+  "mmmmaaaaaaffffff",
+  "mmmmhhaaaaffffff",
+  "aaaaaaaaaammmmmm",
+  "aaaaaaaaaammmmmm"
+ ],
+ "trees": [
+  "T..T.T..TTT.TTT.",
+  "............TT.T",
+  ".....TTT....T.T.",
+  "..TT.T..T....T..",
+  ".TTTT..T........",
+  ".T.T.T......TT..",
+  "..T.........TTTT",
+  ".TT....T....T..T",
+  "...........TT.T.",
+  "..TT.TT...T.T.T."
+ ],
+ "paths": [
+  [[-1, 1], [11, 1], [11, 4], [13, 4]],
+  [[-1, 8], [5, 8], [5, 6], [9, 6], [9, 4], [13, 4]]
+ ],
+ "lair": {
+  "cell": [14, 4],
+  "size": [2, 2],
+  "center": [15, 5]
+ },
+ "sites": [
+  {"kind": "camp", "cell": [1, 3], "path": 0, "spawn": "1b,2f", "every": 30},
+  {"kind": "mine", "cell": [13, 8]},
+  {"kind": "well", "cell": [7, 9]}
+ ],
+ "start": {
+  "gold": 230,
+  "mana": 40,
+  "gems": 5
+ },
+ "first_wave_delay": 25,
+ "wave_gap": 24,
+ "waves": [
+  "6f",
+  "8f",
+  "4f,2b",
+  "1k,6f",
+  "6f,2w,2b",
+  "2k,4f",
+  "3b,8f,2c",
+  "2k,2b,2w",
+  "10f,4b",
+  "3k,4b,2c",
+  "4k,6f,2w",
+  "3k,6b,4w",
+  "5k,8f,4b",
+  "6k,6b,4w,2c"
+ ]
+}

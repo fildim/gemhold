@@ -10,8 +10,8 @@ const Hud := preload("res://scripts/ui/hud.gd")
 
 ## Where each campaign stop sits, as a fraction of the screen. Spots past the last level file
 ## are drawn as unexplored ground, so the map shows how much campaign is planned.
-const SPOTS: Array[Vector2] = [Vector2(0.13, 0.72), Vector2(0.31, 0.42), Vector2(0.50, 0.66),
-	Vector2(0.68, 0.36), Vector2(0.86, 0.60)]
+const SPOTS: Array[Vector2] = [Vector2(0.07, 0.70), Vector2(0.19, 0.36), Vector2(0.31, 0.68), Vector2(0.44, 0.34),
+	Vector2(0.56, 0.66), Vector2(0.68, 0.32), Vector2(0.81, 0.64), Vector2(0.93, 0.30)]
 
 var _hud: Control
 var _levels: Array = []       # [{"id", "title", "waves"}]

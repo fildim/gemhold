@@ -1,0 +1,75 @@
+{
+ "id": "level_06",
+ "title": "Saltmarsh Crossing",
+ "intro": "The crusade is broken, so the kingdoms send their fastest instead. One long causeway winds through the marsh to your den, and scouts and cutpurses race down it in swarms. Line the road with Warband Huts on the moss, and raze the barracks in the south-west before it adds runners of its own.",
+ "hp_mul": 3.4,
+ "cols": 16,
+ "rows": 10,
+ "legend": {
+  "m": "moss",
+  "f": "frost",
+  "a": "ash",
+  "h": "high",
+  "L": "lair"
+ },
+ "terrain": [
+  "mmmmmmmmffffffff",
+  "mmmmmmmmffffaLLf",
+  "mmmmmmmmffffaLLf",
+  "mmmmmmmmhfffaaff",
+  "aaammmmmhmmmaaff",
+  "aaammmmmmmmmaaff",
+  "aaammmmmmmmmmmmm",
+  "ffffmmmmmmmmmmmm",
+  "ffffmmmhhmmmmmmm",
+  "ffffmmmmmmmmmmmm"
+ ],
+ "trees": [
+  "TTTT..T......T.T",
+  "T.T.....T......T",
+  "................",
+  "...T.....T.T...T",
+  "T.T..TT.......TT",
+  "........T.......",
+  ".TT.........TTT.",
+  "TT.T.......TT.T.",
+  "......TT......T.",
+  ".T......TTT....."
+ ],
+ "paths": [
+  [[-1, 8], [4, 8], [4, 5], [1, 5], [1, 2], [7, 2], [7, 7], [10, 7], [10, 4], [12, 4], [12, 2]]
+ ],
+ "lair": {
+  "cell": [13, 1],
+  "size": [2, 2],
+  "center": [14, 2]
+ },
+ "sites": [
+  {"kind": "camp", "cell": [0, 6], "path": 0, "spawn": "2s,1t", "every": 28},
+  {"kind": "mine", "cell": [5, 0]},
+  {"kind": "well", "cell": [15, 8]}
+ ],
+ "start": {
+  "gold": 230,
+  "mana": 40,
+  "gems": 5
+ },
+ "first_wave_delay": 20,
+ "wave_gap": 24,
+ "waves": [
+  "10p",
+  "8s",
+  "6p,6s",
+  "4t,6s",
+  "8f,2c",
+  "12s,4t",
+  "1k,10p",
+  "8t,4c",
+  "2k,8s",
+  "14s,4t",
+  "2k,6f,6t",
+  "3k,10s,2c",
+  "12t,8s",
+  "4k,10t,6s"
+ ]
+}

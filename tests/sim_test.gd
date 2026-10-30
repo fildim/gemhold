@@ -1,26 +1,43 @@
 extends SceneTree
 ## Plays every campaign level headless with a simple build order and prints the result.
 ## Run: godot --headless --script res://tests/sim_test.gd
+## Only some levels, by number:   godot --headless --script res://tests/sim_test.gd -- 6 7 8
 
 const MAIN := preload("res://scripts/main.gd")
 
+# Later levels and night missions assume a player who has banked some skill points.
+const MID := {"moss_dmg": 3, "ash_dmg": 3, "ash_ability": 2, "frost_ability": 1}
+# Levels 4 and 5 expect roughly the 14 stars a player has after levels 1-3 and a night mission or two.
+const LATE := {"moss_dmg": 3, "ash_dmg": 3, "ash_ability": 2, "frost_ability": 1, "den_charge": 2, "ash_rate": 2, "moss_rate": 1}
+# Levels 6 and up: about 21 stars, after levels 1-5 and a few night missions.
+const LATER := {"moss_dmg": 3, "moss_rate": 2, "moss_range": 1, "frost_dmg": 2, "frost_ability": 1, "ash_dmg": 3,
+	"ash_rate": 2, "ash_range": 1, "ash_ability": 2, "den_charge": 2, "hoard_gold": 2}
+
 
 func _init() -> void:
+	var only := OS.get_cmdline_user_args()
+	if not only.is_empty():
+		for n in only:
+			var i := int(n) - 1
+			_play(Level.load_from(MAIN.LEVELS[i]), {})
+			_play(Level.load_from(MAIN.LEVELS[i]), _skills_for(i))
+		quit(0)
+		return
 	var ok := true
 	for path in MAIN.LEVELS:
 		ok = _play(Level.load_from(path), {}) and ok
-	# Later levels and night missions assume a player who has banked some skill points.
-	var mid := {"moss_dmg": 3, "ash_dmg": 3, "ash_ability": 2, "frost_ability": 1}
-	ok = _play(Level.load_from(MAIN.LEVELS[2]), mid) and ok
-	# Levels 4 and 5 expect roughly the 14 stars a player has after levels 1-3 and a night mission or two.
-	var late := {"moss_dmg": 3, "ash_dmg": 3, "ash_ability": 2, "frost_ability": 1, "den_charge": 2, "ash_rate": 2, "moss_rate": 1}
-	for i in [3, 4]:
-		ok = _play(Level.load_from(MAIN.LEVELS[i]), late) and ok
+	ok = _play(Level.load_from(MAIN.LEVELS[2]), MID) and ok
+	for i in range(3, MAIN.LEVELS.size()):
+		ok = _play(Level.load_from(MAIN.LEVELS[i]), _skills_for(i)) and ok
 	for path in MAIN.LEVELS:
 		var lv := Level.load_from(path)
 		lv.night = true
-		ok = _play(lv, mid) and ok
+		ok = _play(lv, MID) and ok
 	quit(0 if ok else 1)
+
+
+func _skills_for(i: int) -> Dictionary:
+	return LATER if i >= 5 else (LATE if i >= 3 else MID)
 
 
 func _play(lv: Level, skills: Dictionary) -> bool:

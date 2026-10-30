@@ -1,0 +1,81 @@
+{
+ "id": "level_08",
+ "title": "Gloomspire Summit",
+ "intro": "Your den now crowns the Gloomspire, and every road on the mountain leads to it. Heroes climb from all four sides at once, two barracks feed them, and every kind of hero joins the climb. A ring of high ground circles the den: any tower can stand there and reach more than one road.",
+ "hp_mul": 2.6,
+ "cols": 16,
+ "rows": 10,
+ "legend": {
+  "m": "moss",
+  "f": "frost",
+  "a": "ash",
+  "h": "high",
+  "L": "lair"
+ },
+ "terrain": [
+  "mmmmmmffffffffff",
+  "mmmmmmffffffffff",
+  "mmmmmmhffffffaaa",
+  "mmmmmhhhhfffaaaa",
+  "aaaaaahLLhffaaaa",
+  "aaaaaahLLhffaaaa",
+  "aaaaaahhhhmmmmmm",
+  "ffffffffhmmmmmmm",
+  "ffffffffmmmmmmmm",
+  "ffffffffmmmmmmmm"
+ ],
+ "trees": [
+  "TT.TT.TT.T.T..TT",
+  "......T........T",
+  ".T....T........T",
+  "......T..T..T...",
+  "....T....T..TT..",
+  ".T.........T....",
+  ".TTT............",
+  "..TT..........T.",
+  "T.TT.....T......",
+  "T..T.T.T.......T"
+ ],
+ "paths": [
+  [[-1, 4], [3, 4], [3, 2], [5, 2], [5, 4], [6, 4]],
+  [[12, -1], [12, 2], [8, 2], [8, 3]],
+  [[16, 8], [11, 8], [11, 6], [9, 6], [9, 5]],
+  [[4, 10], [4, 7], [7, 7], [7, 6]]
+ ],
+ "lair": {
+  "cell": [7, 4],
+  "size": [2, 2],
+  "center": [8, 5]
+ },
+ "sites": [
+  {"kind": "camp", "cell": [1, 1], "path": 0, "spawn": "1t,1s", "every": 30},
+  {"kind": "camp", "cell": [14, 9], "path": 2, "spawn": "1w,1b", "every": 32},
+  {"kind": "mine", "cell": [14, 4]},
+  {"kind": "well", "cell": [1, 8]}
+ ],
+ "start": {
+  "gold": 230,
+  "mana": 50,
+  "gems": 5
+ },
+ "first_wave_delay": 30,
+ "wave_gap": 24,
+ "waves": [
+  "8p",
+  "6p,6s",
+  "6f,2c",
+  "8t,4s",
+  "6f,2b,2w",
+  "1k,8t",
+  "2k,6f,2c",
+  "10s,6t",
+  "2k,3b,3w,4f",
+  "12t,6s",
+  "3k,8f,4c",
+  "4k,4b,4w",
+  "12t,8s,4f",
+  "5k,6b,4c",
+  "6k,6w,8t",
+  "8k,6b,6w,8f"
+ ]
+}

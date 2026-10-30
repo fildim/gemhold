@@ -5,7 +5,7 @@ extends Node2D
 
 const T := 64.0
 ## Campaign order. Add new level files here.
-const LEVELS: Array[String] = ["res://levels/level_01.json", "res://levels/level_02.json", "res://levels/level_03.json", "res://levels/level_04.json", "res://levels/level_05.json"]
+const LEVELS: Array[String] = ["res://levels/level_01.json", "res://levels/level_02.json", "res://levels/level_03.json", "res://levels/level_04.json", "res://levels/level_05.json", "res://levels/level_06.json", "res://levels/level_07.json", "res://levels/level_08.json"]
 
 var level_index := 0
 var night := false            # playing the level's night mission

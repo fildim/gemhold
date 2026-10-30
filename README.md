@@ -10,7 +10,7 @@
 
 A dark-lord tower defense for Windows and Android, built with **Godot 4.6**. You guard a cave of gems; heroes walk the roads to steal them.
 
-The campaign opens on a level map. Level 1 ("Mossfold Pass") is ported from the web prototype with the same rules and balance; levels 2–5 (Rimewater Ford, Gloamwood Hollow, Cinderfall Steps and The Hoard Throne) are new. Clearing a level Brilliant unlocks its night mission. Progress saves automatically: unlocked levels, best rating per mission and skills. Each level guards 5 gems.
+The campaign opens on a level map. Level 1 ("Mossfold Pass") is ported from the web prototype with the same rules and balance; levels 2–8 (Rimewater Ford, Gloamwood Hollow, Cinderfall Steps, The Hoard Throne, Saltmarsh Crossing, The Iron Column and Gloomspire Summit) are new. Saltmarsh Crossing is one long road full of fast swarms, The Iron Column sends armoured heroes down two roads that join before the den, and Gloomspire Summit brings heroes up four roads at once. Clearing a level Brilliant unlocks its night mission. Progress saves automatically: unlocked levels, best rating per mission and skills. Each level guards 5 gems.
 
 ## What's in a battle
 
@@ -65,6 +65,7 @@ From this folder, with Godot on your PATH:
 ```
 godot --headless --import
 godot --headless --script res://tests/sim_test.gd     # plays every level by day, and at night with mid-game skills
+godot --headless --script res://tests/sim_test.gd -- 6 7  # just those levels, without and with skills
 godot --headless --script res://tests/level_check.gd  # level files: grid sizes, woods on roads, roads reaching the lair
 godot --headless --script res://tests/save_test.gd    # unlocking, ratings, stars as skill points, loot, damaged save files
 godot --headless --script res://tests/scene_test.gd   # boots the real scene, taps tiles, casts spells, plays the night level
