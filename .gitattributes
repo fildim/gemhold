@@ -1,0 +1,4 @@
+# Godot files use LF line endings on every platform.
+* text=auto eol=lf
+*.ttf binary
+*.png binary

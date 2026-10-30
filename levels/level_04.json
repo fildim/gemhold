@@ -1,0 +1,77 @@
+{
+ "id": "level_04",
+ "title": "Cinderfall Steps",
+ "intro": "New heroes march here. Cutpurses are quick and carry off two gems at once. Shieldbearers guard the heroes around them, and Wardens' lanterns burn away slow and Dread. A barracks in the west keeps sending Cutpurses until you raze it. The rocky steps below your den take any tower.",
+ "hp_mul": 2.4,
+ "cols": 16,
+ "rows": 10,
+ "legend": {
+  "m": "moss",
+  "f": "frost",
+  "a": "ash",
+  "h": "high",
+  "L": "lair"
+ },
+ "terrain": [
+  "mmmmmffffffaaaaa",
+  "mmmmmffffffaaaaa",
+  "mmmmmffffffaaaaa",
+  "mmmmmmffffaaaaaa",
+  "fffffmfLLfaaaaaa",
+  "fffffmfLLfaaaaaa",
+  "fffffmmaaaaammmm",
+  "fffffmmhhhaammmm",
+  "aaaaammhhhaammmm",
+  "aaaaammmmmaammmm"
+ ],
+ "trees": [
+  "TT.T.TT.T..TT.TT",
+  ".....T.T....T.T.",
+  "TT.T.T.T....T.TT",
+  "T..T..T.T...T.T.",
+  "T.T..T......T..T",
+  "TT.T.....T..T.T.",
+  "T.T..T.T.T..T..T",
+  "TT.T......T.T.T.",
+  "TT.T............",
+  "T.TT.T.TT.T.TT.T"
+ ],
+ "paths": [
+  [[-1, 1], [4, 1], [4, 8], [6, 8], [6, 5]],
+  [[16, 8], [11, 8], [11, 1], [9, 1], [9, 4]]
+ ],
+ "lair": {
+  "cell": [7, 4],
+  "size": [2, 2],
+  "center": [8, 5]
+ },
+ "sites": [
+  {"kind": "camp", "cell": [2, 3], "path": 0, "spawn": "2t", "every": 28},
+  {"kind": "mine", "cell": [14, 4]},
+  {"kind": "well", "cell": [6, 1]}
+ ],
+ "start": {
+  "gold": 190,
+  "mana": 40,
+  "gems": 5
+ },
+ "first_wave_delay": 20,
+ "wave_gap": 24,
+ "waves": [
+  "8p",
+  "6p,4t",
+  "6f,2b",
+  "8s,4t",
+  "6f,2w,2c",
+  "1k,2b,6f",
+  "8t,6s",
+  "10f,2w",
+  "2k,3b,4c",
+  "12t,4s",
+  "10f,4w,2b",
+  "3k,8f,4t",
+  "3k,4b,4w",
+  "4k,10f,6t",
+  "5k,4b,4w,8f"
+ ]
+}

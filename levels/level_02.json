@@ -1,0 +1,81 @@
+{
+ "id": "level_02",
+ "title": "Rimewater Ford",
+ "intro": "Your hoard sits deep in frozen country now. The ice around your lair only takes Bone Crypts, which slow but barely wound. Do your killing further out: Warband Huts on the northern moss, Cinder Shrines in the eastern ash.",
+ "cols": 16,
+ "rows": 10,
+ "legend": {
+  "m": "moss",
+  "f": "frost",
+  "a": "ash",
+  "L": "lair"
+ },
+ "terrain": [
+  "ffffffffffmmmmmm",
+  "ffffffffffmmmmmm",
+  "ffffffffffmmmmmm",
+  "ffffffffffmmmmmm",
+  "fLLfffffffaaaaaa",
+  "fLLfffffffaaaaaa",
+  "ffffffffffaaaaaa",
+  "ffffffmmmmaaaaaa",
+  "ffffffmmmmaaaaaa",
+  "ffffffmmmmaaaaaa"
+ ],
+ "trees": [
+  "TT.TT.T..T..TT.T",
+  "T..T.TT.T.T.T..T",
+  "..T..T......T.T.",
+  "T.T.T..T..T..T..",
+  "........T..TT..T",
+  "T.......T.T...T.",
+  "TT.T.T..T.T.T...",
+  ".T.T..T....T.T.T",
+  "TT..T.T.....TTT.",
+  "T.TT..TTT...TT.T"
+ ],
+ "paths": [
+  [
+   [11, -1],
+   [11, 2],
+   [6, 2],
+   [6, 4],
+   [3, 4]
+  ],
+  [
+   [10, 10],
+   [10, 7],
+   [7, 7],
+   [7, 5],
+   [3, 5]
+  ]
+ ],
+ "lair": {
+  "cell": [1, 4],
+  "size": [2, 2],
+  "center": [2, 5]
+ },
+ "start": {
+  "gold": 200,
+  "mana": 30,
+  "gems": 5
+ },
+ "first_wave_delay": 15,
+ "wave_gap": 24,
+ "waves": [
+  "6p",
+  "5p,4s",
+  "6f,2c",
+  "8s,4p",
+  "8f,2c",
+  "1k,6p,4s",
+  "10f",
+  "8s,3c,4f",
+  "2k,4c",
+  "10s,6p",
+  "10f,4c",
+  "2k,8f,4s",
+  "3k,5c,6s",
+  "4k,8f,4c"
+ ]
+}

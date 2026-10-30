@@ -1,0 +1,78 @@
+{
+ "id": "level_03",
+ "title": "Gloamwood Hollow",
+ "intro": "A sunken hollow with rocky heights between its two roads, and the heights take any tower. Cut free the old gold mine and mana well, and raze the hero barracks in the west before it floods the road with extra heroes.",
+ "hp_mul": 1.4,
+ "cols": 16,
+ "rows": 10,
+ "legend": {
+  "m": "moss",
+  "f": "frost",
+  "a": "ash",
+  "h": "high",
+  "L": "lair"
+ },
+ "terrain": [
+  "mmmmmmffffaaaaaa",
+  "mmmmmmfhhfaaaaaa",
+  "mmmmmmfhhfaaaaaa",
+  "mmmmmmfhhfaaaaaa",
+  "mmmmmmfhhfaaaaaa",
+  "mmmmmmffffaaaaaa",
+  "mmmmaaaffmmmaaaa",
+  "mmmmaaaLLmmmaaaa",
+  "ffffaaaLLmmmffff",
+  "ffffaaaffmmmffff"
+ ],
+ "trees": [
+  "T.TT.T.TT.T.TT.T",
+  ".....T...T.T..T.",
+  "TT....T..T....T.",
+  "TT.T..........T.",
+  "T.....T..T..T.TT",
+  ".T..T....T.T...T",
+  "T..T..T..T.T..T.",
+  "TT.........T..TT",
+  ".T..T.....T.T...",
+  "T.TT.TT.TT.T.TT."
+ ],
+ "paths": [
+  [[-1, 1], [4, 1], [4, 4], [2, 4], [2, 7], [6, 7]],
+  [[16, 8], [13, 8], [13, 3], [10, 3], [10, 7], [9, 7]]
+ ],
+ "lair": {
+  "cell": [7, 7],
+  "size": [2, 2],
+  "center": [8, 8]
+ },
+ "sites": [
+  {"kind": "camp", "cell": [1, 4], "path": 0, "spawn": "2p,1f", "every": 30},
+  {"kind": "camp", "cell": [15, 6], "path": 1, "spawn": "1f,1s", "every": 26},
+  {"kind": "mine", "cell": [14, 5]},
+  {"kind": "well", "cell": [2, 8]}
+ ],
+ "start": {
+  "gold": 210,
+  "mana": 40,
+  "gems": 5
+ },
+ "first_wave_delay": 20,
+ "wave_gap": 24,
+ "waves": [
+  "8p",
+  "6p,6s",
+  "8f,2c",
+  "10s,4p",
+  "1k,8f",
+  "8f,4c",
+  "2k,6s,6p",
+  "12f,2c",
+  "14s,4c",
+  "3k,6f",
+  "10f,5c,6s",
+  "3k,8f,4c",
+  "4k,10s",
+  "5k,8f,6c",
+  "6k,12f,6c"
+ ]
+}

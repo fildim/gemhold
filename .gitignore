@@ -1,0 +1,17 @@
+# Godot cache and imports
+.godot/
+*.import.bak
+
+# Android build template and outputs (reinstall from the editor)
+android/build/
+*.apk
+*.aab
+*.idsig
+
+# Signing keys: never commit these
+*.keystore
+*.jks
+export_credentials.cfg
+
+# Export output
+build/
