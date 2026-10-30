@@ -7,6 +7,9 @@
   "m": "moss",
   "f": "frost",
   "a": "ash",
+  "M": "high moss",
+  "F": "high frost",
+  "A": "high ash",
   "L": "lair"
  },
  "terrain": [

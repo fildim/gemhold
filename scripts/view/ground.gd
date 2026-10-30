@@ -4,10 +4,11 @@ extends Node2D
 
 const T := 64.0
 const GROUND_SHADER := preload("res://scripts/view/ground.gdshader")
-## Which channel of the ground texture each terrain fills (lair: none, see ground.gdshader).
+## Which channel of the ground texture each terrain fills (lair: none). Alpha marks raised tiles;
+## see ground.gdshader.
 const TERRAIN_MASK := {
 	"moss": Color(1, 0, 0, 0), "frost": Color(0, 1, 0, 0), "ash": Color(0, 0, 1, 0),
-	"high": Color(0, 0, 0, 1), "lair": Color(0, 0, 0, 0),
+	"lair": Color(0, 0, 0, 0),
 }
 
 ## The ground shader is costly, so it is rendered once per level into a texture at this many
@@ -37,7 +38,9 @@ func _build_base() -> void:
 		for r in range(-1, level.rows + 1):
 			var cc := clampi(c, 0, level.cols - 1)
 			var rr := clampi(r, 0, level.rows - 1)
-			img.set_pixel(c + 1, r + 1, TERRAIN_MASK[level.terrain_at(Vector2i(cc, rr))])
+			var px: Color = TERRAIN_MASK[level.terrain_at(Vector2i(cc, rr))]
+			px.a = 1.0 if level.high.has(Vector2i(c, r)) else 0.0
+			img.set_pixel(c + 1, r + 1, px)
 	if _bake == null:
 		_bake = SubViewport.new()
 		_bake.disable_3d = true
@@ -74,7 +77,7 @@ func _draw() -> void:
 	cells.sort_custom(func(a: Vector2i, b: Vector2i) -> bool: return a.y < b.y)
 	for c: Vector2i in cells:
 		var tt := level.terrain_at(c)
-		_draw_tree(c, "moss" if tt == "high" else tt)
+		_draw_tree(c, tt)
 	_draw_lair()
 	_draw_vignette(W, H)
 
@@ -87,8 +90,8 @@ func _draw_details() -> void:
 				continue
 			var o := Vector2(c, r) * T
 			# Kept off the tile's rim, where the shader may already show the neighbouring ground,
-			# and on high ground off the cliff face along its bottom.
-			var span := Vector2(0.7, 0.5) if t == "high" else Vector2(0.7, 0.7)
+			# and on raised tiles off the cliff face along their bottom.
+			var span := Vector2(0.7, 0.5) if level.high.has(Vector2i(c, r)) else Vector2(0.7, 0.7)
 			for i in 7:
 				var p := o + (Vector2(0.15, 0.15) + Vector2(Paint.hash01(c, r, i + 50), Paint.hash01(c, r, i + 70)) * span) * T
 				var v := Paint.hash01(c, r, i + 90)
@@ -102,10 +105,6 @@ func _draw_details() -> void:
 					"frost":
 						if v > 0.6:
 							draw_rect(Rect2(p, Vector2(2, 2)), Color.WHITE)
-					"high":
-						if i < 3:
-							Paint.ellipse(self, p, T * (0.06 + v * 0.06), T * (0.04 + v * 0.03), Color("6e6458"))
-							Paint.ellipse(self, p + Vector2(-0.01, -0.012) * T, T * (0.04 + v * 0.04), T * (0.025 + v * 0.02), Color("a09482"))
 					"ash":
 						if v > 0.8:
 							draw_circle(p, T * 0.022, Color("ff8a3a"))

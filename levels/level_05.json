@@ -1,7 +1,7 @@
 {
  "id": "level_05",
  "title": "The Hoard Throne",
- "intro": "The heroes' last crusade comes from three sides at once. Two barracks feed the western and eastern roads, and every kind of hero marches together. Hold the rocky crown above your throne room: any tower can stand there and reach all three roads.",
+ "intro": "The heroes' last crusade comes from three sides at once. Two barracks feed the western and eastern roads, and every kind of hero marches together. Claim the raised tiles between the roads: from up there your towers reach further.",
  "hp_mul": 1.5,
  "cols": 16,
  "rows": 10,
@@ -9,17 +9,19 @@
   "m": "moss",
   "f": "frost",
   "a": "ash",
-  "h": "high",
+  "M": "high moss",
+  "F": "high frost",
+  "A": "high ash",
   "L": "lair"
  },
  "terrain": [
   "mmmmmmmmmmaaaaaa",
   "mmmmmmmmmmaaaaaa",
+  "mmmmffffffaAaaaa",
   "mmmmffffffaaaaaa",
-  "mmmmffffffaaaaaa",
-  "ffffffffhhaaaaaa",
-  "ffffffffhhaaaaaa",
-  "aaaaaaaffffmmmmm",
+  "ffffffffFaaaaaaa",
+  "ffffffffffaaaaaa",
+  "aaaaaAaffffmmmmm",
   "aaaaaaaLLffmmmmm",
   "aaaaaaaLLffmmmmm",
   "aaaaaaaffffmmmmm"

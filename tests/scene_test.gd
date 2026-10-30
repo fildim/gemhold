@@ -44,7 +44,7 @@ func _process(_delta: float) -> bool:
 		main._show_map()
 	if frames == 905:
 		print("back on map: %s, frame hidden: %s" % [main.select.visible, not main.frame.visible])
-		# Night mission on level 3: high ground, sites and loot. Unlocked in memory only.
+		# Night mission on level 3: a raised tile, sites and loot. Unlocked in memory only.
 		main.save.unlocked = 3
 		main.save.best["level_03"] = {"rank": "Brilliant", "kept": 20}
 		main._choose(2)
@@ -60,19 +60,24 @@ func _process(_delta: float) -> bool:
 		main._select(Vector2i(0, 0))
 		main._on_action("build:moss")          # refused: too dark
 		assert(not sim.towers.has(Vector2i(0, 0)))
-		_build_toward(sim, Vector2i(7, 4), 2)
+		_build_toward(sim, Vector2i(12, 5), 2)
 		main._select(Vector2i(1, 4))
 		main._on_action("cut")                 # raze the barracks
 		assert(sim.sites[Vector2i(1, 4)].owned)
 		sim.call_early()
 	if frames == 1500:
 		var sim: GameSim = main.sim
-		var high := Vector2i(7, 4)
+		var high := Vector2i(12, 5)          # a raised ash tile
 		var lit_before := sim.lit.size()
 		_build_toward(sim, high, 6)
 		print("light grew from %d to %d tiles" % [lit_before, sim.lit.size()])
+		sim.lit[high] = true                  # woods block the light; lighting itself is checked above
 		main._select(high)
-		main._on_action("build:frost")         # high ground takes any tower once lit
+		main._on_action("build:frost")         # refused: raised tiles keep their own terrain
+		assert(not sim.towers.has(high))
+		main._select(high)
+		main._on_action("build:ash")
+		assert(sim.towers[high].stat("range") > float(Defs.TOWERS["ash"]["range"][0]) + 0.5, "height adds range")
 		print("high ground lit=%s tower=%s loot=%d pools=%d" % [sim.is_lit(high), sim.towers.has(high), sim.loot.size(), sim.pools.size()])
 		for l: GameSim.Loot in sim.loot.duplicate():
 			var ev := InputEventMouseButton.new()

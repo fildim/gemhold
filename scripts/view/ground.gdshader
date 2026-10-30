@@ -1,7 +1,7 @@
 shader_type canvas_item;
 // The map's ground, drawn in one pass so terrain has no tile edges. The texture holds one pixel
-// per tile (plus a border) with how much of each terrain it is: r moss, g frost, b ash, a high
-// ground; whatever is left is the lair's stone. Linear filtering plus noise turns those pixels
+// per tile (plus a border) with how much of each terrain it is: r moss, g frost, b ash, and a 1
+// for a raised tile; whatever is left of rgb is the lair's stone. Linear filtering plus noise turns them
 // into rounded, ragged zones whose borders still fall on the tile edges.
 
 uniform vec2 grid;   // columns and rows of the level
@@ -76,30 +76,41 @@ vec3 stone(vec2 p) {
 	return c;
 }
 
+// How raised the ground is at p: 1 on a raised tile, 0 elsewhere. Each raised tile is a rounded
+// square a little inside its own tile, its outline roughened so it reads as rock, not a box.
+float raised(sampler2D tex, vec2 p) {
+	vec2 cell = floor(p);
+	float a = texture(tex, (cell + 1.5) / (grid + 2.0)).a;
+	vec2 q = abs(p - cell - 0.5) - vec2(0.34);
+	float d = length(max(q, 0.0)) + min(max(q.x, q.y), 0.0) - 0.11;
+	d += (fbm(p * 5.0) - 0.5) * 0.07;
+	return a * (1.0 - smoothstep(-0.012, 0.012, d));
+}
+
 void fragment() {
 	vec2 p = UV * (grid + 2.0) - 1.0;
-	// High ground stands up: the lowest LIFT of each outcrop is drawn as a cliff face under the
-	// rock top, so rocks look raised without spilling off their tiles.
-	const float LIFT = 0.3;
-	vec4 top = zones(TEXTURE, p + vec2(0.0, LIFT));
 	vec4 here = zones(TEXTURE, p);
-	float rock = min(top.a, here.a);
-	float cliff = clamp(here.a - rock, 0.0, 1.0);
-	vec3 low_w = here.rgb;
-	float lair_w = clamp(1.0 - here.r - here.g - here.b - here.a, 0.0, 1.0);
-	float sum = low_w.r + low_w.g + low_w.b + lair_w + 0.0001;
-	vec3 ground = (moss(p) * low_w.r + frost(p) * low_w.g + ash(p) * low_w.b + stone(p) * 0.7 * lair_w) / sum;
-	// Shadow the rocks cast down and to the right.
-	float shade = zones(TEXTURE, p - vec2(0.18, 0.5)).a * (1.0 - here.a);
-	ground *= 1.0 - shade * 0.45;
-	// Cliff face: dark rock with vertical streaks, lighter at the top.
+	float lair_w = clamp(1.0 - here.r - here.g - here.b, 0.0, 1.0);
+	float sum = here.r + here.g + here.b + lair_w + 0.0001;
+	vec3 ground = (moss(p) * here.r + frost(p) * here.g + ash(p) * here.b + stone(p) * 0.7 * lair_w) / sum;
+	// A raised tile is a small mesa of its own ground: the top sits LIFT higher, the strip below
+	// it is a cliff face, and it casts a shadow down and to the right.
+	const float LIFT = 0.34;
+	float base = raised(TEXTURE, p);
+	float top = min(base, raised(TEXTURE, p + vec2(0.0, LIFT)));
+	float cliff = clamp(base - top, 0.0, 1.0);
+	float shade = raised(TEXTURE, p - vec2(0.2, 0.3)) * (1.0 - base);
+	vec3 col = ground * (1.0 - shade * 0.6);
 	float fy = fract(p.y);
-	vec3 face = vec3(0.17, 0.14, 0.12) * (0.8 + 0.4 * noise(vec2(p.x * 14.0, p.y * 2.0)));
-	face = mix(face, vec3(0.36, 0.31, 0.26), smoothstep(0.55, 0.75, fy) * 0.5);
-	// Rock top with a lit rim along its edge.
-	float rim = rock * (1.0 - zones(TEXTURE, p + vec2(0.0, LIFT + 0.08)).a);
-	vec3 crown = stone(p) + vec3(0.2, 0.18, 0.14) * rim;
-	vec3 col = mix(ground, face, cliff);
-	col = mix(col, crown, rock);
+	vec3 face = mix(vec3(0.14, 0.11, 0.09), ground * 0.4, 0.3) * (0.8 + 0.4 * noise(vec2(p.x * 14.0, p.y * 2.0)));
+	face = mix(face * 1.3, face * 0.7, smoothstep(0.72, 1.0, fy));
+	col = mix(col, face, cliff);
+	// A dark line round the whole outcrop so it stands off the ground around it.
+	float outer = raised(TEXTURE, p + vec2(0.05, 0.0)) + raised(TEXTURE, p - vec2(0.05, 0.0)) + raised(TEXTURE, p - vec2(0.0, 0.05));
+	col = mix(col, vec3(0.08, 0.06, 0.05), clamp(outer, 0.0, 1.0) * (1.0 - base) * 0.85);
+	// Lit rim along the top's front edge, and the top itself a touch brighter than low ground.
+	float rim = top * (1.0 - raised(TEXTURE, p + vec2(0.0, LIFT + 0.07)));
+	vec3 crown = ground * 1.2 + vec3(0.22, 0.2, 0.16) * rim;
+	col = mix(col, crown, top);
 	COLOR = vec4(col, 1.0);
 }

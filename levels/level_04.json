@@ -1,7 +1,7 @@
 {
  "id": "level_04",
  "title": "Cinderfall Steps",
- "intro": "New heroes march here. Cutpurses are quick and carry off two gems at once. Shieldbearers guard the heroes around them, and Wardens' lanterns burn away slow and Dread. A barracks in the west keeps sending Cutpurses until you raze it. The rocky steps below your den take any tower.",
+ "intro": "New heroes march here. Cutpurses are quick and carry off two gems at once. Shieldbearers guard the heroes around them, and Wardens' lanterns burn away slow and Dread. A barracks in the west keeps sending Cutpurses until you raze it. Look for the raised tiles: towers on them see further.",
  "hp_mul": 2.4,
  "cols": 16,
  "rows": 10,
@@ -9,19 +9,21 @@
   "m": "moss",
   "f": "frost",
   "a": "ash",
-  "h": "high",
+  "M": "high moss",
+  "F": "high frost",
+  "A": "high ash",
   "L": "lair"
  },
  "terrain": [
   "mmmmmffffffaaaaa",
   "mmmmmffffffaaaaa",
   "mmmmmffffffaaaaa",
-  "mmmmmmffffaaaaaa",
+  "mmmmmmffffAaaaaa",
   "fffffmfLLfaaaaaa",
   "fffffmfLLfaaaaaa",
   "fffffmmaaaaammmm",
-  "fffffmmhhhaammmm",
-  "aaaaammhhhaammmm",
+  "fffffMmmaaaamMmm",
+  "aaaaammmmaaammmm",
   "aaaaammmmmaammmm"
  ],
  "trees": [

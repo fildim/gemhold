@@ -9,19 +9,21 @@
   "m": "moss",
   "f": "frost",
   "a": "ash",
-  "h": "high",
+  "M": "high moss",
+  "F": "high frost",
+  "A": "high ash",
   "L": "lair"
  },
  "terrain": [
   "mmmmmmmmffffffff",
   "mmmmmmmmffffaLLf",
   "mmmmmmmmffffaLLf",
-  "mmmmmmmmhfffaaff",
-  "aaammmmmhmmmaaff",
-  "aaammmmmmmmmaaff",
+  "mmmmmmmmmfffaaff",
+  "aaaMmmmmmmmmaaff",
+  "aaammmmmmMmmaaff",
   "aaammmmmmmmmmmmm",
+  "ffffmMmmmmmmmmmm",
   "ffffmmmmmmmmmmmm",
-  "ffffmmmhhmmmmmmm",
   "ffffmmmmmmmmmmmm"
  ],
  "trees": [

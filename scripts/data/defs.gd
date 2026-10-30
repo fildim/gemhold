@@ -7,21 +7,22 @@ extends RefCounted
 ## Three ways to attack, none stronger overall: the Hut is quick but armour blunts its small
 ## arrows, the Crypt hits rarely but slows hard, and the Shrine's beam ignores armour and
 ## heats up the longer it holds one hero. For the beam, dmg is per second.
+## high_range: extra range when built on a raised tile (a capital letter in the level grid).
 
 const TOWERS := {
 	"moss": {
 		"name": "Warband Hut", "blurb": "Rapid arrows at one foe. Armour blunts them.",
 		"cost": [50, 75, 100], "dmg": [7, 11, 17], "range": [2.3, 2.6, 2.9],
-		"rate": [0.45, 0.4, 0.35], "kind": "arrow",
+		"rate": [0.45, 0.4, 0.35], "kind": "arrow", "high_range": 0.8,
 	},
 	"frost": {
 		"name": "Bone Crypt", "blurb": "Slow, heavy bolts that chill heroes to a crawl.",
 		"cost": [50, 75, 100], "dmg": [16, 27, 50], "range": [2.2, 2.5, 2.8],
-		"rate": [1.5, 1.4, 1.3], "slow": [0.45, 0.55, 0.65], "kind": "frost",
+		"rate": [1.5, 1.4, 1.3], "slow": [0.45, 0.55, 0.65], "kind": "frost", "high_range": 0.5,
 	},
 	"ash": {
 		"name": "Cinder Shrine", "blurb": "A searing beam that melts armour and grows hotter on one hero.",
-		"cost": [50, 75, 100], "dmg": [6, 9, 14], "range": [2.0, 2.3, 2.6], "kind": "beam",
+		"cost": [50, 75, 100], "dmg": [6, 9, 14], "range": [2.0, 2.3, 2.6], "kind": "beam", "high_range": 0.6,
 	},
 }
 
@@ -81,9 +82,6 @@ const ABILITIES := {
 	"frost": {"name": "Dread", "text": "Hits may terrify a hero: it backs away, or freezes if carrying a gem.", "base": 0.12, "per_rank": 0.06, "dur": 1.6},
 	"ash": {"name": "Lava", "text": "The beam leaves burning ground under its target.", "base": 0.3, "per_rank": 0.15, "dur": 3.0, "r": 0.7, "every": 1.0},
 }
-
-## High ground ("h" in a level's terrain) accepts every tower type.
-const HIGH_TYPES: Array[String] = ["moss", "frost", "ash"]
 
 ## Map buildings. Cutting (a mana action) frees mines and wells for you, or razes a hero barracks.
 const SITES := {

@@ -4,6 +4,7 @@ extends Node2D
 
 const T := 64.0
 const OUTLINE := Color("1a120c")
+const HIGH_LIFT := 0.18   # towers on raised tiles stand this much higher, on the rock top
 
 var level: Level
 var sim: GameSim
@@ -41,11 +42,16 @@ func _draw() -> void:
 	if sim == null:
 		return
 	var tm := sim.time
-	# gem pile in the cave mouth
-	for i in sim.home:
-		var a := i * 2.39
-		var rr := sqrt(float(i) / level.gems) * 0.5
-		Paint.gem(self, (level.lair_center + Vector2(cos(a) * rr * 0.9, 0.2 + sin(a) * rr * 0.45)) * T, T * 0.11)
+	# The hoard: one place per gem on a ring in the cave mouth, so taken gems leave a gap.
+	var slots := maxi(1, level.gems)
+	var ring := []
+	for i in slots:
+		var a := TAU * i / slots - PI / 2.0
+		ring.append(level.lair_center + Vector2(0, 0.38) + Vector2(cos(a) * 0.32, sin(a) * 0.16))
+	ring.sort_custom(func(a: Vector2, b: Vector2) -> bool: return a.y < b.y)
+	for i in slots:
+		if i < sim.home:
+			Paint.gem(self, ring[i] * T, T * 0.1)
 	for pl: GameSim.Pool in sim.pools:
 		_draw_pool(pl, tm)
 	_draw_selection()
@@ -97,7 +103,7 @@ func _draw_selection() -> void:
 
 func _draw_tower(tw: GameSim.Tower, tm: float) -> void:
 	var x := tw.pos.x * T
-	var y := tw.pos.y * T
+	var y := tw.pos.y * T - (HIGH_LIFT * T if level.high.has(tw.cell) else 0.0)
 	var s := T
 	var lv := tw.lvl
 	var flash := tw.flash > 0.0
@@ -400,9 +406,8 @@ func _draw_shot(s: GameSim.Shot) -> void:
 			draw_circle(p, T * 0.055, Color.WHITE)
 		"den":
 			for i in range(4, 0, -1):
-				draw_circle(p - dirv * T * 0.07 * i, T * (0.04 + 0.012 * i), Color(1, 0.3, 0.42, 0.14 * (5 - i)))
-			Paint.glow(self, p, T * 0.32, Color(1, 0.3, 0.45, 0.85))
-			Paint.gem(self, p, T * 0.1)
+				draw_circle(p - dirv * T * 0.07 * i, T * (0.03 + 0.01 * i), Color(0.6, 0.7, 1, 0.12 * (5 - i)))
+			_draw_orb(p, T * 0.1, sim.time, 7)
 		_:
 			for i in range(4, 0, -1):
 				draw_circle(p - dirv * T * 0.1 * i, T * (0.05 + 0.02 * i), Color(0.35, 0.24, 0.2, 0.12 * (5 - i)))
@@ -414,7 +419,8 @@ func _draw_shot(s: GameSim.Shot) -> void:
 ## Cinder Shrine beam: from the brazier to the hero, orange when cool, white-hot at full heat.
 func _draw_beam(tw: GameSim.Tower, tm: float) -> void:
 	var h := tw.heat
-	var a := (tw.pos + Vector2(0, 0.2 - (0.5 + tw.lvl * 0.07) - 0.1)) * T   # the flame atop _draw_shrine
+	var lift := HIGH_LIFT if level.high.has(tw.cell) else 0.0
+	var a := (tw.pos + Vector2(0, 0.2 - (0.5 + tw.lvl * 0.07) - 0.1 - lift)) * T   # the flame atop _draw_shrine
 	var b := tw.beam.pos * T + Vector2(0, -T * 0.15)
 	var flick := 0.85 + 0.15 * sin(tm * 40.0 + tw.pos.x * 7.0)
 	var outer := Color(1, 0.35 + 0.25 * h, 0.08, 0.35 * flick)
@@ -546,10 +552,30 @@ func _draw_den_charges(tm: float) -> void:
 		var i: int = s[1]
 		var p: Vector2 = s[2]
 		if i < sim.den_charges:
-			Paint.glow(self, p, T * 0.16 * depth, Color(1, 0.3, 0.45, (0.45 + 0.2 * sin(tm * 4.0 + i)) * depth))
-			Paint.gem(self, p, T * 0.07 * depth)
+			_draw_orb(p, T * 0.11 * depth, tm, i)
 		else:
 			draw_circle(p, T * 0.05 * depth, Color(0, 0, 0, 0.55))
 			if i == sim.den_charges:
 				var k: float = sim.den_refill / Defs.DEN["refill"]
-				draw_arc(p, T * 0.075 * depth, -PI / 2, -PI / 2 + TAU * k, 16, Color("ff7a90"), 2.0, true)
+				draw_arc(p, T * 0.075 * depth, -PI / 2, -PI / 2 + TAU * k, 16, Color("a0b4ff"), 2.0, true)
+
+
+## A ball of crackling energy that swells and shrinks: a den charge, or a bolt in flight.
+func _draw_orb(p: Vector2, r: float, tm: float, id: int) -> void:
+	var pulse := 0.7 + 0.45 * (0.5 + 0.5 * sin(tm * 7.0 + id * 1.9))
+	var rr := r * pulse
+	Paint.glow(self, p, rr * 3.4, Color(0.35, 0.5, 1, 0.8))
+	draw_circle(p, rr * 1.15, Color(0.15, 0.25, 0.75, 0.55))
+	draw_circle(p, rr, Color(0.45, 0.62, 1))
+	draw_circle(p, rr * 0.55, Color(0.95, 0.97, 1))
+	# Three short forks of lightning, re-rolled about 20 times a second.
+	var tick := int(tm * 20.0)
+	for k in 3:
+		var a := Paint.hash01(tick, id, k) * TAU
+		var pts := PackedVector2Array([p])
+		var q := p
+		for j in 3:
+			a += (Paint.hash01(tick, id, k * 7 + j) - 0.5) * 1.6
+			q += Vector2(cos(a), sin(a)) * rr * (0.6 + Paint.hash01(tick, id, k * 11 + j) * 0.5)
+			pts.append(q)
+		draw_polyline(pts, Color(0.85, 0.9, 1, 0.85), maxf(1.0, rr * 0.18), true)

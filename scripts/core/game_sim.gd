@@ -766,18 +766,16 @@ func cell_info(c: Vector2i) -> Dictionary:
 		return {"title": "%s, level %d" % [d["name"], tw.lvl], "text": txt, "actions": acts}
 	if not is_lit(c):
 		return {"title": "Darkness", "text": "You can't build where you can't see. Towers, mines and wells light the ground around them.", "actions": []}
-	if t == "high":
-		var acts := []
-		for type in Defs.HIGH_TYPES:
-			acts.append(_build_action(type, Defs.TOWERS[type]["name"]))
-		return {"title": "High ground", "text": "Rocky heights. Any tower can be built here.", "actions": acts}
 	var td: Dictionary = Defs.TOWERS[t]
+	if level.high.has(c):
+		return {"title": "%s on high %s" % [td["name"], t], "text": "%s A raised tile: a %s built here reaches +%.1f further." % [td["blurb"], td["name"], td["high_range"]],
+			"actions": [_build_action(t, "Build")]}
 	return {"title": td["name"], "text": "%s Builds only on %s." % [td["blurb"], t],
 		"actions": [_build_action(t, "Build")]}
 
 
 func _ground_name(t: String) -> String:
-	return "high ground" if t == "high" else t
+	return t
 
 
 func _site_info(s: Site) -> Dictionary:
@@ -808,9 +806,15 @@ func preview_range(c: Vector2i) -> float:
 	if level.road.has(c) or level.is_lair(c) or trees.has(c) or sites.has(c) or not is_lit(c):
 		return 0.0
 	var t := level.terrain_at(c)
-	if t == "high":
-		t = "ash"   # the longest reach of the three
-	return float(Defs.TOWERS[t]["range"][0]) + 0.2 * skill(t + "_range")
+	return float(Defs.TOWERS[t]["range"][0]) + _range_bonus(t, c)
+
+
+## Extra range from the skill tree and, on a raised tile, from the height.
+func _range_bonus(type: String, c: Vector2i) -> float:
+	var r := 0.2 * skill(type + "_range")
+	if level.high.has(c):
+		r += float(Defs.TOWERS[type]["high_range"])
+	return r
 
 
 ## Runs a tile action. Returns "" on success, or a message explaining why it failed.
@@ -822,7 +826,7 @@ func do_action(id: String, c: Vector2i) -> String:
 			return "Can't build here"
 		if not is_lit(c):
 			return "Too dark to build here"
-		if not Defs.TOWERS.has(type) or (t != "high" and type != t):
+		if not Defs.TOWERS.has(type) or type != t:
 			return "That tower needs %s ground" % type
 		var cost := build_cost(type)
 		if gold < cost:
@@ -835,7 +839,7 @@ func do_action(id: String, c: Vector2i) -> String:
 		tw.spent = cost
 		tw.dmg_mul = 1.0 + 0.1 * skill(type + "_dmg")
 		tw.rate_mul = 1.0 + 0.08 * skill(type + "_rate")
-		tw.range_add = 0.2 * skill(type + "_range")
+		tw.range_add = _range_bonus(type, c)
 		tw.xp_mul = 1.0 + 0.25 * skill(type + "_vet")
 		tw.ability_rank = skill(type + "_ability")
 		towers[c] = tw

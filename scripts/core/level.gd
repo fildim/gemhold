@@ -8,7 +8,8 @@ var title := ""
 var intro := ""          # optional story text for the start screen
 var cols := 0
 var rows := 0
-var terrain := {}        # Vector2i -> "moss" | "frost" | "ash" | "high" | "lair"
+var terrain := {}        # Vector2i -> "moss" | "frost" | "ash" | "lair"
+var high := {}           # Vector2i -> true for raised tiles (a capital letter in the terrain grid)
 var trees := {}          # Vector2i -> true
 var road := {}           # Vector2i -> true
 var waypoints: Array = []  # Array of Array[Vector2i], one per road
@@ -47,7 +48,11 @@ func _parse(d: Dictionary) -> void:
 		var trow: String = d["terrain"][r]
 		var tree_row: String = d["trees"][r]
 		for c in cols:
-			terrain[Vector2i(c, r)] = legend[trow[c]]
+			var kind: String = legend[trow[c]]
+			if kind.begins_with("high "):
+				kind = kind.trim_prefix("high ")
+				high[Vector2i(c, r)] = true
+			terrain[Vector2i(c, r)] = kind
 			if tree_row[c] == "T":
 				trees[Vector2i(c, r)] = true
 	var lc: Array = d["lair"]["cell"]

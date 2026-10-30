@@ -14,7 +14,7 @@ The campaign opens on a level map. Level 1 ("Mossfold Pass") is ported from the 
 
 ## What's in a battle
 
-- **Towers** need their own ground (moss, frost, ash). **High ground** takes any of the three. The first tower of each type costs 50 gold and each more of that type standing costs 15 more (50, 65, 80…); upgrades cost 75 (level II) and 100 (level III).
+- **Towers** need their own ground (moss, frost, ash). **Raised tiles** are single tiles of moss, frost or ash set higher than the rest: they still take only their own tower, but give it extra range (Hut +0.8, Shrine +0.6, Crypt +0.5). The first tower of each type costs 50 gold and each more of that type standing costs 15 more (50, 65, 80…); upgrades cost 75 (level II) and 100 (level III).
 - **Three ways to attack**, none stronger overall: the **Warband Hut** fires fast, light arrows (best on crowds, blunted by armour); the **Bone Crypt** fires slow, heavy bolts that slow heroes hard; the **Cinder Shrine** holds a continuous beam on one hero that ignores armour and heats up to 5× damage, but starts cold on every new target (best on knights). `tests/tower_test.gd` compares them. Every level starts with 230 gold.
 - **Veterancy:** towers rank up from damage dealt, up to 3 ranks (+8% damage each). Rank 2 unlocks an ability: Volley (Huts fire a second arrow), Dread (Crypt hits can terrify a hero) and Lava (the Shrine beam leaves burning ground).
 - **Cutting** costs mana. It clears woods, frees **Gold Mines** (gold over time) and **Mana Wells** (faster mana), and razes **Hero Barracks**, which otherwise send extra heroes while waves are coming.
@@ -56,7 +56,7 @@ assets/fonts/            Grenze Gotisch and Alegreya Sans (SIL Open Font License
 
 **Tuning balance:** edit `scripts/data/defs.gd`.
 **Adding a level:** copy `levels/level_02.json`, give it a new `id`, edit it, and add its path to `LEVELS` in `scripts/main.gd`. The map has five spots; add more to `SPOTS` in `scripts/ui/level_select.gd`. Optional `intro` text shows on the start card.
-In the level file, `terrain` uses `m` moss, `f` frost, `a` ash, `h` high ground and `L` lair. Add `"hp_mul": 1.4` to make heroes tougher on a later level. `"night": true` makes a level night-only (normally night is the unlockable mission). `sites` lists map buildings: `{"kind": "mine"|"well", "cell": [x, y]}` or `{"kind": "camp", "cell": [x, y], "path": 0, "spawn": "2p,1f", "every": 30}`. In `trees`, `T` marks woods. `paths` lists each road's corner tiles; roads start off the map edge and end next to the lair. Waves use hero codes: `p` peasant, `f` footman, `s` scout, `c` cleric, `k` knight, `b` shieldbearer, `t` cutpurse, `w` warden. For example, `"6p,2f"` is 6 peasants and 2 footmen.
+In the level file, `terrain` uses `m` moss, `f` frost, `a` ash and `L` lair; a capital `M`, `F` or `A` is a raised tile of that ground. Add `"hp_mul": 1.4` to make heroes tougher on a later level. `"night": true` makes a level night-only (normally night is the unlockable mission). `sites` lists map buildings: `{"kind": "mine"|"well", "cell": [x, y]}` or `{"kind": "camp", "cell": [x, y], "path": 0, "spawn": "2p,1f", "every": 30}`. In `trees`, `T` marks woods. `paths` lists each road's corner tiles; roads start off the map edge and end next to the lair. Waves use hero codes: `p` peasant, `f` footman, `s` scout, `c` cleric, `k` knight, `b` shieldbearer, `t` cutpurse, `w` warden. For example, `"6p,2f"` is 6 peasants and 2 footmen.
 
 ## Tests
 
@@ -113,7 +113,7 @@ Debug builds are signed with Godot's debug keystore and are only for testing.
 - [x] Levels 2–5
 - [x] Skill tree: stars (1–3 per mission) are the skill points
 - [x] Towers rank up from damage; abilities (Volley, Dread, Lava)
-- [x] High ground tiles that accept every tower
+- [x] Raised tiles that give towers extra range
 - [x] Mana wells and gold mines freed by cutting; hero barracks that spawn troops
 - [x] Loot drops (coins, potions)
 - [x] Night missions, unlocked by a Brilliant clear: build only where you can see
