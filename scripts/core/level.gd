@@ -25,6 +25,8 @@ var night := false       # only lit tiles can be built on (set for night mission
 var hp_mul := 1.0        # hero health multiplier, so later levels can be tougher
 var sites: Array = []    # [{"kind", "cell": Vector2i, "path", "spawn": Array[String], "every"}]
 
+const CORNER_RADIUS := 0.5   # tiles; roads curve through their corner tiles
+
 
 static func load_from(path: String) -> Level:
 	var json: JSON = load(path)
@@ -78,10 +80,33 @@ func _parse(d: Dictionary) -> void:
 		for v in wp:
 			pts.append(Vector2(v) + Vector2(0.5, 0.5))
 		pts.append(lair_center)
+		pts = _round_corners(pts, CORNER_RADIUS)
 		var lens := PackedFloat32Array([0.0])
 		for i in range(1, pts.size()):
 			lens.append(lens[i - 1] + pts[i].distance_to(pts[i - 1]))
 		paths.append({"pts": pts, "len": lens, "total": lens[lens.size() - 1]})
+
+
+## Swaps each sharp turn for a curve that starts and ends r tiles from the corner, so roads
+## bend instead of snapping at right angles. The curve stays inside the corner tile.
+static func _round_corners(pts: PackedVector2Array, r: float) -> PackedVector2Array:
+	var out := PackedVector2Array([pts[0]])
+	for i in range(1, pts.size() - 1):
+		var c := pts[i]
+		var din := c - pts[i - 1]
+		var dout := pts[i + 1] - c
+		if din.normalized().dot(dout.normalized()) > 0.99:
+			out.append(c)   # straight on, nothing to round
+			continue
+		var a := c - din.normalized() * minf(r, din.length() * 0.5)
+		var b := c + dout.normalized() * minf(r, dout.length() * 0.5)
+		out.append(a)
+		for k in range(1, 8):
+			var t := k / 8.0
+			out.append(a.lerp(c, t).lerp(c.lerp(b, t), t))
+		out.append(b)
+	out.append(pts[pts.size() - 1])
+	return out
 
 
 ## "6p,2f" -> ["p", "p", "p", "p", "p", "p", "f", "f"]

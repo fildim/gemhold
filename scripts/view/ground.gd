@@ -3,36 +3,64 @@ extends Node2D
 ## Redraws only when woods are cleared.
 
 const T := 64.0
-const TERRAIN_COL := {
-	"moss": Color8(78, 108, 50), "frost": Color8(184, 204, 214),
-	"ash": Color8(86, 60, 52), "lair": Color8(72, 60, 52), "high": Color8(118, 106, 92),
+const GROUND_SHADER := preload("res://scripts/view/ground.gdshader")
+## Which channel of the ground texture each terrain fills (lair: none, see ground.gdshader).
+const TERRAIN_MASK := {
+	"moss": Color(1, 0, 0, 0), "frost": Color(0, 1, 0, 0), "ash": Color(0, 0, 1, 0),
+	"high": Color(0, 0, 0, 1), "lair": Color(0, 0, 0, 0),
 }
+
+## The ground shader is costly, so it is rendered once per level into a texture at this many
+## pixels per map unit, and that picture is what gets drawn each frame.
+const BAKE_SCALE := 2.0
 
 var level: Level
 var sim: GameSim
-var _blend: ImageTexture
+var _bake: SubViewport   # renders the ground shader once
+var _shaded: Sprite2D    # inside _bake: the terrain texture run through ground.gdshader
+var _base: Sprite2D      # the baked ground, drawn behind everything else here
 
 
 func setup(lv: Level, s: GameSim) -> void:
 	level = lv
 	sim = s
 	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
-	_build_blend()
+	_build_base()
 	sim.ground_changed.connect(queue_redraw)
 	queue_redraw()
 
 
-## One pixel per tile (plus a border), stretched with smoothing so terrain zones melt into each other.
-func _build_blend() -> void:
+## One pixel per tile (plus a border) saying which terrain it is; the shader turns it into ground.
+func _build_base() -> void:
 	var img := Image.create(level.cols + 2, level.rows + 2, false, Image.FORMAT_RGBA8)
 	for c in range(-1, level.cols + 1):
 		for r in range(-1, level.rows + 1):
 			var cc := clampi(c, 0, level.cols - 1)
 			var rr := clampi(r, 0, level.rows - 1)
-			var base: Color = TERRAIN_COL[level.terrain_at(Vector2i(cc, rr))]
-			var k := 0.9 + Paint.hash01(cc, rr, 1) * 0.18
-			img.set_pixel(c + 1, r + 1, Color(base.r * k, base.g * k, base.b * k))
-	_blend = ImageTexture.create_from_image(img)
+			img.set_pixel(c + 1, r + 1, TERRAIN_MASK[level.terrain_at(Vector2i(cc, rr))])
+	if _bake == null:
+		_bake = SubViewport.new()
+		_bake.disable_3d = true
+		_shaded = Sprite2D.new()
+		_shaded.centered = false
+		_shaded.region_enabled = true
+		_shaded.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+		_shaded.material = ShaderMaterial.new()
+		_shaded.material.shader = GROUND_SHADER
+		_bake.add_child(_shaded)
+		add_child(_bake)
+		_base = Sprite2D.new()
+		_base.centered = false
+		_base.show_behind_parent = true
+		_base.texture = _bake.get_texture()
+		_base.scale = Vector2.ONE / BAKE_SCALE
+		add_child(_base)
+	_bake.size = Vector2i(Vector2(level.cols, level.rows) * T * BAKE_SCALE)
+	_shaded.texture = ImageTexture.create_from_image(img)
+	_shaded.region_rect = Rect2(1, 1, level.cols, level.rows)
+	_shaded.scale = Vector2(T, T) * BAKE_SCALE
+	_shaded.material.set_shader_parameter("grid", Vector2(level.cols, level.rows))
+	_bake.render_target_update_mode = SubViewport.UPDATE_ONCE
 
 
 func _draw() -> void:
@@ -40,9 +68,7 @@ func _draw() -> void:
 		return
 	var W := level.cols * T
 	var H := level.rows * T
-	draw_texture_rect_region(_blend, Rect2(0, 0, W, H), Rect2(1, 1, level.cols, level.rows))
 	_draw_details()
-	_draw_cliffs()
 	_draw_roads()
 	var cells: Array = sim.trees.keys()
 	cells.sort_custom(func(a: Vector2i, b: Vector2i) -> bool: return a.y < b.y)
@@ -60,8 +86,11 @@ func _draw_details() -> void:
 			if t == "lair":
 				continue
 			var o := Vector2(c, r) * T
+			# Kept off the tile's rim, where the shader may already show the neighbouring ground,
+			# and on high ground off the cliff face along its bottom.
+			var span := Vector2(0.7, 0.5) if t == "high" else Vector2(0.7, 0.7)
 			for i in 7:
-				var p := o + Vector2(Paint.hash01(c, r, i + 50), Paint.hash01(c, r, i + 70)) * T
+				var p := o + (Vector2(0.15, 0.15) + Vector2(Paint.hash01(c, r, i + 50), Paint.hash01(c, r, i + 70)) * span) * T
 				var v := Paint.hash01(c, r, i + 90)
 				match t:
 					"moss":
@@ -71,65 +100,70 @@ func _draw_details() -> void:
 						if v > 0.9:
 							draw_circle(p + Vector2(0, -0.05) * T, T * 0.035, Color("f2e27a") if i % 2 else Color("f4f0e6"))
 					"frost":
-						if i < 3:
-							Paint.ellipse(self, p, T * (0.12 + v * 0.12), T * (0.05 + v * 0.04), Color(1, 1, 1, 0.33))
-						elif v > 0.6:
+						if v > 0.6:
 							draw_rect(Rect2(p, Vector2(2, 2)), Color.WHITE)
-						if i == 6 and v > 0.5:
-							draw_polyline(PackedVector2Array([p, p + Vector2(0.15, 0.05) * T, p + Vector2(0.22, 0.14) * T]), Color(0.5, 0.66, 0.74, 0.55), 1.5, true)
 					"high":
 						if i < 3:
-							Paint.ellipse(self, p, T * (0.06 + v * 0.06), T * (0.04 + v * 0.03), Color("8e8272"))
-							Paint.ellipse(self, p + Vector2(-0.01, -0.012) * T, T * (0.04 + v * 0.04), T * (0.025 + v * 0.02), Color("b0a490"))
-						elif v > 0.7:
-							draw_line(p, p + Vector2(0.1, 0.03) * T, Color("4e443a"), 1.5, true)
+							Paint.ellipse(self, p, T * (0.06 + v * 0.06), T * (0.04 + v * 0.03), Color("6e6458"))
+							Paint.ellipse(self, p + Vector2(-0.01, -0.012) * T, T * (0.04 + v * 0.04), T * (0.025 + v * 0.02), Color("a09482"))
 					"ash":
-						if i < 2:
-							var crack := PackedVector2Array([p, p + Vector2(0.12, 0.06) * T, p + Vector2(0.18, 0.16) * T])
-							draw_polyline(crack, Color("2a1a16"), 2.0, true)
-							if v > 0.5:
-								draw_polyline(crack, Color(1, 0.42, 0.16, 0.4), 1.0, true)
-						elif v > 0.75:
+						if v > 0.8:
 							draw_circle(p, T * 0.022, Color("ff8a3a"))
 						elif v < 0.3:
-							Paint.ellipse(self, p, T * 0.05, T * 0.035, Color("6e5a52"))
+							Paint.ellipse(self, p, T * 0.05, T * 0.035, Color("5e4a42"))
 
 
-func _road_pts(wp: Array) -> PackedVector2Array:
-	var pts := PackedVector2Array()
-	for v: Vector2i in wp:
-		pts.append((Vector2(v) + Vector2(0.5, 0.5)) * T)
-	pts.append(level.lair_center * T)
-	return pts
+## Points every `step` tiles along road i, with the road's direction there.
+func _road_samples(i: int, step: float) -> Array:
+	var out := []
+	var total: float = level.paths[i]["total"]
+	var s := 0.0
+	while s <= total:
+		var a := level.path_pos(i, s)
+		var b := level.path_pos(i, minf(total, s + 0.05))
+		var d := (b - a).normalized() if b != a else Vector2.RIGHT
+		out.append([s, a, d])
+		s += step
+	return out
 
 
-## Thick line with round joints and ends.
-func _stroke(pts: PackedVector2Array, col: Color, w: float) -> void:
-	draw_polyline(pts, col, w)
-	for p in pts:
-		draw_circle(p, w * 0.5, col)
-
-
+## Roads are stamped as overlapping discs whose size and position drift a little, so the edges
+## wander like a worn dirt track.
 func _draw_roads() -> void:
-	var layers := [[Color(0, 0, 0, 0.25), 0.98], [Color("5c4128"), 0.86], [Color("a47e4e"), 0.72], [Color("b8925e"), 0.3]]
-	for layer in layers:
-		for wp in level.waypoints:
-			_stroke(_road_pts(wp), layer[0], T * layer[1])
-	for cell: Vector2i in level.road:
-		for i in 6:
-			var p := (Vector2(cell) + Vector2(0.5, 0.5) + Vector2(Paint.hash01(cell.x, cell.y, i + 20) - 0.5, Paint.hash01(cell.x, cell.y, i + 30) - 0.5) * 0.6) * T
-			var col := Color(0.48, 0.35, 0.2, 0.4) if i % 3 else Color(0.85, 0.73, 0.54, 0.53)
-			draw_circle(p, T * (0.025 + Paint.hash01(cell.x, cell.y, i + 40) * 0.03), col)
+	var layers := [[Color("4a3420"), 0.92], [Color("5c4128"), 0.84], [Color("a47e4e"), 0.72], [Color("b8925e"), 0.3]]
+	for li in layers.size():
+		for i in level.paths.size():
+			for smp in _road_samples(i, 0.08):
+				var s: float = smp[0]
+				var wob := (sin(s * 2.1 + i * 1.7) + sin(s * 5.3 + i * 3.1 + li)) * 0.5
+				var side := sin(s * 3.7 + i * 2.3) * 0.025
+				var c: Vector2 = (smp[1] + smp[2].orthogonal() * side) * T
+				draw_circle(c, T * layers[li][1] * 0.5 * (1.0 + 0.07 * wob), layers[li][0])
+	for i in level.paths.size():
+		for smp in _road_samples(i, 0.3):
+			var s: float = smp[0]
+			var k := int(s * 10.0) + i * 1000
+			for j in 2:
+				var off := (Paint.hash01(k, j, 20) - 0.5) * 0.55
+				var along := (Paint.hash01(k, j, 30) - 0.5) * 0.3
+				var p: Vector2 = (smp[1] + smp[2].orthogonal() * off + smp[2] * along) * T
+				var col := Color(0.48, 0.35, 0.2, 0.4) if (k + j) % 3 else Color(0.85, 0.73, 0.54, 0.53)
+				draw_circle(p, T * (0.025 + Paint.hash01(k, j, 40) * 0.03), col)
 
 
+## Two to four trees of varied size, scattered a little past their tile so woods read as forest
+## rather than rows.
 func _draw_tree(cell: Vector2i, t: String) -> void:
-	var n := 3 if Paint.hash01(cell.x, cell.y, 44) > 0.5 else 2
+	var n := 2 + int(Paint.hash01(cell.x, cell.y, 44) * 3.0)
 	var spots: Array[Vector2] = []
 	for i in n:
-		spots.append(Vector2(cell.x * T + T * (0.22 + float(i) / (n - 1) * 0.56) + (Paint.hash01(cell.x, cell.y, 40 + i) - 0.5) * T * 0.14,
-			cell.y * T + T * (0.5 + Paint.hash01(cell.x, cell.y, 60 + i) * 0.3)))
+		var fx := (float(i) + Paint.hash01(cell.x, cell.y, 40 + i)) / n
+		spots.append(Vector2(cell.x * T + T * (0.05 + fx * 0.9), cell.y * T + T * (0.4 + Paint.hash01(cell.x, cell.y, 60 + i) * 0.5)))
 	spots.sort_custom(func(a: Vector2, b: Vector2) -> bool: return a.y < b.y)
-	for o in spots:
+	for ti in spots.size():
+		var o := spots[ti]
+		var sc := 0.78 + Paint.hash01(cell.x, cell.y, 80 + ti) * 0.42
+		draw_set_transform(o * (1.0 - sc), 0.0, Vector2(sc, sc))   # scale this tree about its foot
 		Paint.ellipse(self, o + Vector2(0.04, 0.06) * T, T * 0.2, T * 0.07, Color(0, 0, 0, 0.27))
 		match t:
 			"moss":
@@ -161,6 +195,7 @@ func _draw_tree(cell: Vector2i, t: String) -> void:
 				b2.append_array(Paint.quad(o + Vector2(-0.01, -0.26) * T, o + Vector2(-0.12, -0.3) * T, o + Vector2(-0.16, -0.42) * T))
 				draw_polyline(b2, Color("1c1210"), w * 0.8, true)
 				draw_circle(o + Vector2(0.01, -0.08) * T, T * 0.018, Color("ff7a3a"))
+	draw_set_transform(Vector2.ZERO)
 
 
 func _draw_lair() -> void:
@@ -189,19 +224,3 @@ func _draw_vignette(W: float, H: float) -> void:
 	Paint.hgrad_poly(self, Paint.rect_pts(Rect2(0, 0, e, H)), dark, clear)
 	Paint.hgrad_poly(self, Paint.rect_pts(Rect2(W - e, 0, e, H)), clear, dark)
 
-
-## High ground: a lit top edge and a shadowed cliff face wherever it drops to lower land.
-func _draw_cliffs() -> void:
-	for cell: Vector2i in level.terrain:
-		if level.terrain[cell] != "high":
-			continue
-		var o := Vector2(cell) * T
-		var low := func(d: Vector2i) -> bool: return level.in_bounds(cell + d) and level.terrain_at(cell + d) != "high"
-		if low.call(Vector2i(0, 1)):
-			Paint.vgrad_poly(self, Paint.rect_pts(Rect2(o + Vector2(0, T * 0.82), Vector2(T, T * 0.18))), Color("4a4036"), Color("2a231c"))
-		if low.call(Vector2i(0, -1)):
-			draw_line(o, o + Vector2(T, 0), Color(1, 0.95, 0.85, 0.35), 2.0)
-		if low.call(Vector2i(-1, 0)):
-			draw_line(o, o + Vector2(0, T), Color(0, 0, 0, 0.3), 3.0)
-		if low.call(Vector2i(1, 0)):
-			draw_line(o + Vector2(T, 0), o + Vector2(T, T), Color(0, 0, 0, 0.3), 3.0)
