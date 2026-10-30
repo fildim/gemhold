@@ -15,7 +15,8 @@ The campaign opens on a level map. Level 1 ("Mossfold Pass") is ported from the 
 ## What's in a battle
 
 - **Towers** need their own ground (moss, frost, ash). **High ground** takes any of the three. The first tower of each type costs 50 gold and each more of that type standing costs 15 more (50, 65, 80…); upgrades cost 75 (level II) and 100 (level III).
-- **Veterancy:** towers rank up from damage dealt, up to 3 ranks (+8% damage each). Rank 2 unlocks an ability: Volley (Huts fire a second arrow), Dread (Crypt hits can terrify a hero) and Lava (Shrine fireballs leave burning ground).
+- **Three ways to attack**, none stronger overall: the **Warband Hut** fires fast, light arrows (best on crowds, blunted by armour); the **Bone Crypt** fires slow, heavy bolts that slow heroes hard; the **Cinder Shrine** holds a continuous beam on one hero that ignores armour and heats up to 5× damage, but starts cold on every new target (best on knights). `tests/tower_test.gd` compares them. Every level starts with 230 gold.
+- **Veterancy:** towers rank up from damage dealt, up to 3 ranks (+8% damage each). Rank 2 unlocks an ability: Volley (Huts fire a second arrow), Dread (Crypt hits can terrify a hero) and Lava (the Shrine beam leaves burning ground).
 - **Cutting** costs mana. It clears woods, frees **Gold Mines** (gold over time) and **Mana Wells** (faster mana), and razes **Hero Barracks**, which otherwise send extra heroes while waves are coming.
 - **Heroes:** Peasant, Footman, Scout, Cleric (heals nearby heroes) and Knight (armoured, carries 2 gems), plus three that arrive from level 4: the **Shieldbearer** (other heroes within 1.2 tiles take 35% less damage), the **Cutpurse** (fast, fragile, carries 2 gems) and the **Warden** (his lantern clears slow and Dread from heroes around him).
 - **Targeting:** towers shoot gem carriers first, then the special support heroes (Cleric, Shieldbearer, Warden), then whoever has the least health left.
@@ -67,6 +68,7 @@ godot --headless --script res://tests/sim_test.gd     # plays every level by day
 godot --headless --script res://tests/level_check.gd  # level files: grid sizes, woods on roads, roads reaching the lair
 godot --headless --script res://tests/save_test.gd    # unlocking, ratings, stars as skill points, loot, damaged save files
 godot --headless --script res://tests/scene_test.gd   # boots the real scene, taps tiles, casts spells, plays the night level
+godot --headless --script res://tests/tower_test.gd   # the three tower types side by side against set groups of heroes
 ```
 
 ## Putting it on your Android phone

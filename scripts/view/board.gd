@@ -66,6 +66,9 @@ func _draw() -> void:
 		_draw_enemy(e, tm)
 	for s: GameSim.Shot in sim.shots:
 		_draw_shot(s)
+	for tw: GameSim.Tower in tws:
+		if tw.beam != null:
+			_draw_beam(tw, tm)
 	var full := Rect2(0, 0, level.cols * T, level.rows * T)
 	if _fog != null:
 		draw_rect(full, Color(0.05, 0.07, 0.2, 0.22))
@@ -406,6 +409,20 @@ func _draw_shot(s: GameSim.Shot) -> void:
 			Paint.glow(self, p, T * 0.3, Color(1, 0.48, 0.16, 0.8))
 			draw_circle(p, T * 0.11, Color("ff6a20"))
 			draw_circle(p, T * 0.055, Color("ffe08a"))
+
+
+## Cinder Shrine beam: from the brazier to the hero, orange when cool, white-hot at full heat.
+func _draw_beam(tw: GameSim.Tower, tm: float) -> void:
+	var h := tw.heat
+	var a := (tw.pos + Vector2(0, 0.2 - (0.5 + tw.lvl * 0.07) - 0.1)) * T   # the flame atop _draw_shrine
+	var b := tw.beam.pos * T + Vector2(0, -T * 0.15)
+	var flick := 0.85 + 0.15 * sin(tm * 40.0 + tw.pos.x * 7.0)
+	var outer := Color(1, 0.35 + 0.25 * h, 0.08, 0.35 * flick)
+	var core := Color(1, 0.7 + 0.3 * h, 0.35 + 0.6 * h, 0.95)
+	draw_line(a, b, outer, T * (0.1 + 0.08 * h), true)
+	draw_line(a, b, core, T * (0.03 + 0.03 * h) * flick, true)
+	Paint.glow(self, b, T * (0.22 + 0.15 * h), Color(1, 0.5 + 0.3 * h, 0.15, 0.7))
+	Paint.glow(self, a, T * 0.18, Color(1, 0.6, 0.2, 0.6))
 
 
 func _draw_fx(f: GameSim.Fx) -> void:

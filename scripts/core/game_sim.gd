@@ -37,6 +37,8 @@ class Tower:
 	var flash := 0.0
 	var xp := 0.0
 	var rank := 0         # veterancy, 0..3
+	var beam: Enemy       # Cinder Shrine: the hero it is burning, or null
+	var heat := 0.0       # Cinder Shrine: 0..1, see Defs.HEAT_TIME
 	# Permanent bonuses from the skill tree, filled in when the tower is built.
 	var dmg_mul := 1.0
 	var rate_mul := 1.0
@@ -71,9 +73,7 @@ class Shot:
 	var tpos := Vector2.ZERO
 	var dmg := 0.0
 	var slow := 0.0
-	var splash := 0.0
 	var fear := 0.0       # chance to terrify on hit
-	var lava := 0.0       # burning ground damage per second, 0 for none
 	var pierce := false   # ignores armour (den bolts)
 	var src: Tower        # gets the XP for damage dealt
 	var spd := 8.0
@@ -424,6 +424,9 @@ func _update_towers(dt: float) -> void:
 	for tw: Tower in towers.values():
 		if tw.flash > 0.0:
 			tw.flash -= dt
+		if Defs.TOWERS[tw.type]["kind"] == "beam":
+			_update_beam(tw, dt)
+			continue
 		tw.cd -= dt
 		if tw.cd > 0.0:
 			continue
@@ -442,6 +445,41 @@ func _update_towers(dt: float) -> void:
 				shots.append(v)
 
 
+## The Cinder Shrine burns one hero without pause. It holds that hero until it dies or leaves
+## range (or a gem carrier shows up), and its damage grows with heat. Armour does not stop it.
+func _update_beam(tw: Tower, dt: float) -> void:
+	var b := tw.beam
+	var lost_hold := b == null or b.hp <= 0.0 or b.gone or b.pos.distance_to(tw.pos) > tw.stat("range")
+	if lost_hold or b.carry == 0:
+		var best := _pick_target(tw)
+		if best != b and (lost_hold or (best != null and best.carry > 0)):
+			tw.beam = best
+			tw.heat *= Defs.HEAT_KEEP
+			tw.cd = 0.0
+	var rate := dt * tw.rate_mul / Defs.HEAT_TIME
+	if tw.beam == null:
+		tw.heat = maxf(0.0, tw.heat - rate)
+		return
+	tw.heat = minf(1.0, tw.heat + rate)
+	tw.flash = 0.15
+	var e := tw.beam
+	var dps := tw.stat("dmg") * (1.0 + (Defs.HEAT_MAX - 1.0) * tw.heat)
+	hurt(e, dps * dt, true, tw)
+	if tw.has_ability():
+		tw.cd -= dt
+		if tw.cd <= 0.0:
+			tw.cd = Defs.ABILITIES["ash"]["every"]
+			var pl := Pool.new()
+			pl.pos = e.pos
+			pl.r = Defs.ABILITIES["ash"]["r"]
+			pl.dur = Defs.ABILITIES["ash"]["dur"]
+			pl.dps = tw.stat("dmg") * tw.ability_power()
+			pl.src = tw
+			pools.append(pl)
+	if e.hp <= 0.0:
+		tw.beam = null
+
+
 func _make_shot(tw: Tower, target: Enemy) -> Shot:
 	var def: Dictionary = Defs.TOWERS[tw.type]
 	var s := Shot.new()
@@ -452,13 +490,10 @@ func _make_shot(tw: Tower, target: Enemy) -> Shot:
 	s.tpos = target.pos
 	s.dmg = tw.stat("dmg")
 	s.slow = def["slow"][tw.lvl - 1] if def.has("slow") else 0.0
-	s.splash = def["splash"][tw.lvl - 1] if def.has("splash") else 0.0
 	if tw.has_ability():
 		if tw.type == "frost":
 			s.fear = tw.ability_power()
-		elif tw.type == "ash":
-			s.lava = s.dmg * tw.ability_power()
-	s.spd = 5.0 if s.kind == "fire" else 8.0
+	s.spd = 8.0
 	return s
 
 
@@ -470,24 +505,11 @@ func _update_shots(dt: float) -> void:
 		var step := s.spd * dt
 		if to.length() <= step:
 			s.done = true
-			if s.splash > 0.0:
-				_boom(s.tpos, s.splash, 0.35)
-				for e: Enemy in enemies:
-					if e.pos.distance_to(s.tpos) <= s.splash:
-						hurt(e, s.dmg, false, s.src)
-				if s.lava > 0.0:
-					var pl := Pool.new()
-					pl.pos = s.tpos
-					pl.r = Defs.ABILITIES["ash"]["r"]
-					pl.dur = Defs.ABILITIES["ash"]["dur"]
-					pl.dps = s.lava
-					pl.src = s.src
-					pools.append(pl)
-			elif s.target != null and s.target.hp > 0.0:
+			if s.target != null and s.target.hp > 0.0:
 				hurt(s.target, s.dmg, s.pierce, s.src)
 				if s.slow > 0.0:
 					s.target.slow_amt = maxf(s.slow, s.target.slow_amt) if s.target.slow > 0.0 else s.slow
-					s.target.slow = 2.0
+					s.target.slow = Defs.SLOW_TIME
 				if s.fear > 0.0 and s.target.hp > 0.0 and rng.randf() < s.fear:
 					s.target.fear = Defs.ABILITIES["frost"]["dur"]
 		else:
@@ -730,6 +752,8 @@ func cell_info(c: Vector2i) -> Dictionary:
 		acts.append({"id": "sell", "label": "Sell", "price": "+%dg" % int(tw.spent * Defs.SELL_REFUND)})
 		var ab: Dictionary = Defs.ABILITIES[tw.type]
 		var txt := "Damage %d, range %.1f\n" % [int(tw.stat("dmg")), tw.stat("range")]
+		if d["kind"] == "beam":
+			txt = "Burns %d to %d per second as it heats, range %.1f\n" % [int(tw.stat("dmg")), int(tw.stat("dmg") * Defs.HEAT_MAX), tw.stat("range")]
 		var ranks: Array = Defs.TOWER_XP_RANKS
 		if tw.rank < ranks.size():
 			txt += "Veteran rank %d/3 (next at %d/%d damage)\n" % [tw.rank, int(tw.xp), ranks[tw.rank]]

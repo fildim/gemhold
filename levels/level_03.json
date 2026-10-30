@@ -52,7 +52,7 @@
   {"kind": "well", "cell": [2, 8]}
  ],
  "start": {
-  "gold": 210,
+  "gold": 230,
   "mana": 40,
   "gems": 5
  },

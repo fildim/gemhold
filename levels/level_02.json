@@ -4,6 +4,7 @@
  "intro": "Your hoard sits deep in frozen country now. The ice around your lair only takes Bone Crypts, which slow but barely wound. Do your killing further out: Warband Huts on the northern moss, Cinder Shrines in the eastern ash.",
  "cols": 16,
  "rows": 10,
+ "hp_mul": 1.2,
  "legend": {
   "m": "moss",
   "f": "frost",
@@ -56,7 +57,7 @@
   "center": [2, 5]
  },
  "start": {
-  "gold": 260,
+  "gold": 230,
   "mana": 30,
   "gems": 5
  },

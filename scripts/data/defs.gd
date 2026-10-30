@@ -4,24 +4,34 @@ extends RefCounted
 ## Towers: one per terrain. Each array holds values for levels I, II and III.
 ## Costs are the first build, then the upgrades to level II and III. Each more tower of
 ## the same type standing on the map costs TOWER_COST_STEP more to build.
+## Three ways to attack, none stronger overall: the Hut is quick but armour blunts its small
+## arrows, the Crypt hits rarely but slows hard, and the Shrine's beam ignores armour and
+## heats up the longer it holds one hero. For the beam, dmg is per second.
 
 const TOWERS := {
 	"moss": {
-		"name": "Warband Hut", "blurb": "Fast arrows at one foe.",
-		"cost": [50, 75, 100], "dmg": [11, 19, 32], "range": [2.3, 2.6, 2.9],
-		"rate": [0.75, 0.65, 0.55], "kind": "arrow",
+		"name": "Warband Hut", "blurb": "Rapid arrows at one foe. Armour blunts them.",
+		"cost": [50, 75, 100], "dmg": [7, 11, 17], "range": [2.3, 2.6, 2.9],
+		"rate": [0.45, 0.4, 0.35], "kind": "arrow",
 	},
 	"frost": {
-		"name": "Bone Crypt", "blurb": "Chilling bolts slow heroes down.",
-		"cost": [50, 75, 100], "dmg": [6, 10, 16], "range": [2.1, 2.4, 2.7],
-		"rate": [1.0, 0.9, 0.8], "slow": [0.4, 0.5, 0.6], "kind": "frost",
+		"name": "Bone Crypt", "blurb": "Slow, heavy bolts that chill heroes to a crawl.",
+		"cost": [50, 75, 100], "dmg": [16, 27, 50], "range": [2.2, 2.5, 2.8],
+		"rate": [1.5, 1.4, 1.3], "slow": [0.45, 0.55, 0.65], "kind": "frost",
 	},
 	"ash": {
-		"name": "Cinder Shrine", "blurb": "Fireballs burn whole groups.",
-		"cost": [50, 75, 100], "dmg": [16, 28, 46], "range": [2.5, 2.8, 3.1],
-		"rate": [1.6, 1.45, 1.3], "splash": [0.9, 1.0, 1.15], "kind": "fire",
+		"name": "Cinder Shrine", "blurb": "A searing beam that melts armour and grows hotter on one hero.",
+		"cost": [50, 75, 100], "dmg": [6, 9, 14], "range": [2.0, 2.3, 2.6], "kind": "beam",
 	},
 }
+
+## Cinder Shrine beam: heat rises from 0 to 1 over HEAT_TIME seconds on the same hero, scaling
+## damage up to HEAT_MAX times. Switching to a new hero keeps HEAT_KEEP of the heat; with no
+## target it cools at the same rate it heats.
+const HEAT_TIME := 2.0
+const HEAT_MAX := 5.0
+const HEAT_KEEP := 0.0
+const SLOW_TIME := 2.5
 
 ## Heroes. Letter codes are used in each level's wave list ("6p,2f" = 6 peasants, 2 footmen).
 ## spd is in tiles per second, r is body radius in tiles, cap is how many gems they can carry.
@@ -69,7 +79,7 @@ const ABILITY_RANK := 2
 const ABILITIES := {
 	"moss": {"name": "Volley", "text": "A second arrow hits another hero in range.", "base": 0.5, "per_rank": 0.2},
 	"frost": {"name": "Dread", "text": "Hits may terrify a hero: it backs away, or freezes if carrying a gem.", "base": 0.12, "per_rank": 0.06, "dur": 1.6},
-	"ash": {"name": "Lava", "text": "Fireballs leave burning ground for 3 s.", "base": 0.3, "per_rank": 0.15, "dur": 3.0, "r": 0.7},
+	"ash": {"name": "Lava", "text": "The beam leaves burning ground under its target.", "base": 0.3, "per_rank": 0.15, "dur": 3.0, "r": 0.7, "every": 1.0},
 }
 
 ## High ground ("h" in a level's terrain) accepts every tower type.
@@ -116,7 +126,7 @@ const SKILLS := {
 	],
 	"ash": [
 		{"id": "ash_dmg", "name": "Hotter Coals", "text": "+10% damage", "max": 3},
-		{"id": "ash_rate", "name": "Bellows", "text": "+8% attack speed", "max": 3},
+		{"id": "ash_rate", "name": "Bellows", "text": "Beam heats 8% faster", "max": 3},
 		{"id": "ash_range", "name": "High Flames", "text": "+0.2 range", "max": 2},
 		{"id": "ash_vet", "name": "Tempered", "text": "Towers rank up 25% faster", "max": 2},
 		{"id": "ash_ability", "name": "Lava", "text": "Burning ground +15% damage", "max": 3},
