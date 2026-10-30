@@ -131,6 +131,7 @@ var level: Level
 var skills := {}          # skill id -> rank, from the save file
 var gold := 0
 var mana := 0.0
+var mana_max := 100.0     # base plus Dark Arts points
 var home := 0
 var lost := 0
 var wave := 0
@@ -162,7 +163,8 @@ var rng := RandomNumberGenerator.new()
 func _init(lv: Level, skill_ranks := {}) -> void:
 	level = lv
 	skills = skill_ranks
-	gold = lv.start_gold
+	gold = lv.start_gold + Defs.HOARD_GOLD * skill("hoard_gold")
+	mana_max = Defs.MANA_MAX + Defs.HOARD_MANA * skill("hoard_mana")
 	mana = lv.start_mana
 	home = lv.gems
 	timer = lv.first_delay
@@ -195,7 +197,7 @@ func update(dt: float) -> void:
 	if over:
 		return
 	time += dt
-	mana = minf(Defs.MANA_MAX, mana + dt * mana_regen())
+	mana = minf(mana_max, mana + dt * mana_regen())
 	if wave < level.waves.size():
 		timer -= dt
 		if timer <= 0.0:
@@ -531,7 +533,7 @@ func hurt(e: Enemy, dmg: float, pierce := false, src: Tower = null) -> void:
 		_tower_xp(src, dealt)
 	if e.hp <= 0.0:
 		gold += int(e.d["gold"])
-		mana = minf(Defs.MANA_MAX, mana + Defs.MANA_PER_KILL)
+		mana = minf(mana_max, mana + Defs.MANA_PER_KILL)
 		_text(e.pos + Vector2(0, -0.3), "+%d" % int(e.d["gold"]), Color("e8b84a"))
 		if e.carry > 0:
 			var g := Drop.new()
@@ -575,7 +577,7 @@ func _roll_loot(e: Enemy) -> void:
 		l.kind = "coin"
 		# Worth more for stronger heroes: their bounty, scaled by how much tougher than
 		# base they are this wave and level.
-		l.amount = maxi(3, roundi(float(e.d["gold"]) * Defs.LOOT_COIN_MUL * e.max_hp / float(e.d["hp"])))
+		l.amount = Defs.LOOT_COIN_BONUS + roundi(float(e.d["gold"]) * Defs.LOOT_COIN_MUL * e.max_hp / float(e.d["hp"]))
 	else:
 		l.kind = "potion"
 		l.amount = Defs.LOOT_POTION_MANA
@@ -612,7 +614,7 @@ func _take_loot(l: Loot) -> void:
 		gold += l.amount
 		_text(l.pos + Vector2(0, -0.3), "+%d" % l.amount, Color("e8b84a"))
 	else:
-		mana = minf(Defs.MANA_MAX, mana + l.amount)
+		mana = minf(mana_max, mana + l.amount)
 		_text(l.pos + Vector2(0, -0.3), "+%d mana" % l.amount, Color("c9c0ff"))
 
 
@@ -690,8 +692,17 @@ func is_lit(c: Vector2i) -> bool:
 
 # ---------------------------------------------------------------- tiles
 
+## Building price: the base cost, plus TOWER_COST_STEP for each tower of this type already standing.
+func build_cost(type: String) -> int:
+	var n := 0
+	for tw: Tower in towers.values():
+		if tw.type == type:
+			n += 1
+	return int(Defs.TOWERS[type]["cost"][0]) + Defs.TOWER_COST_STEP * n
+
+
 func _build_action(type: String, label: String) -> Dictionary:
-	var cost: int = Defs.TOWERS[type]["cost"][0]
+	var cost := build_cost(type)
 	return {"id": "build:" + type, "label": label, "price": "%dg" % cost, "gold": cost}
 
 
@@ -789,7 +800,7 @@ func do_action(id: String, c: Vector2i) -> String:
 			return "Too dark to build here"
 		if not Defs.TOWERS.has(type) or (t != "high" and type != t):
 			return "That tower needs %s ground" % type
-		var cost: int = Defs.TOWERS[type]["cost"][0]
+		var cost := build_cost(type)
 		if gold < cost:
 			return "Not enough gold"
 		gold -= cost

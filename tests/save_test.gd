@@ -153,6 +153,34 @@ func _init() -> void:
 	print("coin values: peasant %d, knight %d, peasant at 2x health %d" % [peasant, knight, late_peasant])
 	_check(knight > peasant * 3 and late_peasant > peasant, "coins scale with hero strength")
 
+	# Tower prices: 50 for the first of a type, +15 for each more of that type; upgrades 75 and 100.
+	var pr := GameSim.new(lv)
+	pr.gold = 10000
+	_check(pr.build_cost("moss") == 50, "first hut costs 50")
+	var spots := []
+	for c in lv.cols:
+		for r in lv.rows:
+			var v := Vector2i(c, r)
+			if lv.terrain_at(v) == "moss" and not lv.road.has(v) and not pr.trees.has(v):
+				spots.append(v)
+	var g0 := pr.gold
+	pr.do_action("build:moss", spots[0])
+	_check(g0 - pr.gold == 50 and pr.build_cost("moss") == 65, "second hut costs 65")
+	pr.do_action("build:moss", spots[1])
+	_check(pr.build_cost("moss") == 80 and pr.build_cost("ash") == 50, "price rises per type only")
+	g0 = pr.gold
+	pr.do_action("upgrade", spots[0])
+	_check(g0 - pr.gold == 75, "upgrade to level II costs 75")
+	g0 = pr.gold
+	pr.do_action("upgrade", spots[0])
+	_check(g0 - pr.gold == 100, "upgrade to level III costs 100")
+	pr.do_action("sell", spots[1])
+	_check(pr.build_cost("moss") == 65, "selling a hut lowers the next price")
+
+	# The Hoard skills: starting gold and maximum mana.
+	var hd := GameSim.new(lv, {"hoard_gold": 2, "hoard_mana": 3})
+	_check(hd.gold == lv.start_gold + 100 and hd.mana_max == 145.0, "Hoard skills add gold and max mana")
+
 	# Calling a wave early gathers every coin and potion on the map.
 	var ga := GameSim.new(lv)
 	for k in ["coin", "potion", "coin"]:

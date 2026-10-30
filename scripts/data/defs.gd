@@ -2,22 +2,23 @@ class_name Defs
 extends RefCounted
 ## Game data shared by every level. Tune balance here.
 ## Towers: one per terrain. Each array holds values for levels I, II and III.
-## Costs are build, then each upgrade (10% below the original 54/63/108, 63/72/117, 81/90/144).
+## Costs are the first build, then the upgrades to level II and III. Each more tower of
+## the same type standing on the map costs TOWER_COST_STEP more to build.
 
 const TOWERS := {
 	"moss": {
 		"name": "Warband Hut", "blurb": "Fast arrows at one foe.",
-		"cost": [49, 57, 97], "dmg": [11, 19, 32], "range": [2.3, 2.6, 2.9],
+		"cost": [50, 75, 100], "dmg": [11, 19, 32], "range": [2.3, 2.6, 2.9],
 		"rate": [0.75, 0.65, 0.55], "kind": "arrow",
 	},
 	"frost": {
 		"name": "Bone Crypt", "blurb": "Chilling bolts slow heroes down.",
-		"cost": [57, 65, 105], "dmg": [6, 10, 16], "range": [2.1, 2.4, 2.7],
+		"cost": [50, 75, 100], "dmg": [6, 10, 16], "range": [2.1, 2.4, 2.7],
 		"rate": [1.0, 0.9, 0.8], "slow": [0.4, 0.5, 0.6], "kind": "frost",
 	},
 	"ash": {
 		"name": "Cinder Shrine", "blurb": "Fireballs burn whole groups.",
-		"cost": [73, 81, 130], "dmg": [16, 28, 46], "range": [2.5, 2.8, 3.1],
+		"cost": [50, 75, 100], "dmg": [16, 28, 46], "range": [2.5, 2.8, 3.1],
 		"rate": [1.6, 1.45, 1.3], "splash": [0.9, 1.0, 1.15], "kind": "fire",
 	},
 }
@@ -39,6 +40,7 @@ const ENEMIES := {
 }
 
 const GUARD_RANGE := 1.2
+const TOWER_COST_STEP := 15
 const SELL_REFUND := 0.6
 const CLEAR_MANA := 15
 const CLEAR_GOLD := 15
@@ -51,6 +53,10 @@ const DROP_SPEED := 0.7      # dropped gems roll home along the road at this man
 
 ## The den (your lair) strikes heroes near it. It holds charges: each is one bolt, and spent
 ## charges refill one at a time. Every point in the Den skill adds one more charge.
+## The Hoard skills: each point adds this much starting gold or maximum mana.
+const HOARD_GOLD := 50
+const HOARD_MANA := 15
+
 const DEN := {"charges": 1, "range": 2.6, "dmg": 70, "refill": 8.0, "rate": 0.5}
 
 const METEOR := {"cost": 60, "radius": 1.3, "dmg": 140, "delay": 0.55}
@@ -83,7 +89,8 @@ const SITES := {
 const LOOT_COIN_CHANCE := 0.35
 const LOOT_POTION_CHANCE := 0.15
 const LOOT_POTION_MANA := 15
-const LOOT_COIN_MUL := 1.5    # a coin is worth this times the hero's bounty, scaled by its toughness
+const LOOT_COIN_MUL := 1.5    # a coin is worth this times the hero's bounty, scaled by its toughness,
+const LOOT_COIN_BONUS := 5    # plus this flat amount, so even small heroes drop a worthwhile coin
 
 ## Night levels: you can only build on lit tiles. Radii in tiles.
 ## Night missions unlock when a level is cleared Brilliant.
@@ -116,5 +123,7 @@ const SKILLS := {
 	],
 	"den": [
 		{"id": "den_charge", "name": "Hoard's Wrath", "text": "+1 den charge", "max": 5},
+		{"id": "hoard_gold", "name": "Buried Gold", "text": "+50 starting gold", "max": 5},
+		{"id": "hoard_mana", "name": "Deep Well", "text": "+15 max mana", "max": 4},
 	],
 }

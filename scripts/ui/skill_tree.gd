@@ -6,7 +6,7 @@ extends Control
 signal closed
 
 const Hud := preload("res://scripts/ui/hud.gd")
-const TREES := [["moss", "Warband Huts"], ["frost", "Bone Crypts"], ["ash", "Cinder Shrines"], ["den", "The Den"]]
+const TREES := [["moss", "Warband Huts"], ["frost", "Bone Crypts"], ["ash", "Cinder Shrines"], ["den", "The Hoard"]]
 const TREE_COLORS := {"moss": Color("8fb35a"), "frost": Color("9fd8f0"), "ash": Color("ff8a3a"), "den": Color("ff7a90")}
 
 var _hud: Control
@@ -72,7 +72,7 @@ func setup(hud: Control, save: SaveData) -> void:
 	head.add_child(back)
 
 	var hint := Label.new()
-	hint.text = "Every star is a skill point. Each lair's best rating gives ★ Survived, ★★ Wicked or ★★★ Brilliant, and night missions earn their own. Tower skills apply to towers you build from now on; each Den point gives your lair one more charge to strike heroes."
+	hint.text = "Every star is a skill point. Each lair's best rating gives ★ Survived, ★★ Wicked or ★★★ Brilliant, and night missions earn their own. Tower skills apply to towers you build from now on; The Hoard column powers your den and gives every battle more starting gold or mana."
 	hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	hint.add_theme_color_override("font_color", Hud.DIM)
 	box.add_child(hint)

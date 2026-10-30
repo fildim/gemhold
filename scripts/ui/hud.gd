@@ -300,6 +300,7 @@ func _safe_margins() -> Vector4:
 func refresh(sim: GameSim, armed: bool, speed: int, paused: bool) -> void:
 	_gold.text = str(sim.gold)
 	_mana.text = str(int(sim.mana))
+	_mana_bar.max_value = sim.mana_max
 	_mana_bar.value = sim.mana
 	_gems.text = "%d/%d" % [sim.gems_left(), sim.level.gems]
 	_wave.text = "Wave %d/%d" % [sim.wave, sim.level.waves.size()]
