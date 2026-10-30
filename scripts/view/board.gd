@@ -511,18 +511,28 @@ func _draw_loot(l: GameSim.Loot, tm: float) -> void:
 		draw_circle(p + Vector2(-0.03, 0.0) * T, T * 0.025, Color(1, 1, 1, 0.7))
 
 
-## Den charges as a row of gem sparks over the cave: lit when ready, dark while refilling,
-## with a ring on the next one showing its progress.
+## Den charges as gem sparks circling above the cave: lit when ready, dark while refilling,
+## with a ring on the next one showing its progress. Sparks on the far side of the ring
+## are drawn first and smaller, so the circle reads as a tilted loop.
 func _draw_den_charges(tm: float) -> void:
 	var n := sim.den_max
-	var step := 0.22
+	var center := (level.lair_center + Vector2(0, -1.25)) * T
+	var rx := T * (0.32 + 0.04 * n)
+	var ry := T * 0.12
+	var sparks := []
 	for i in n:
-		var p := (level.lair_center + Vector2((i - (n - 1) / 2.0) * step, -1.2)) * T
+		var a := tm * 1.4 + TAU * i / float(n)
+		sparks.append([sin(a), i, center + Vector2(cos(a) * rx, sin(a) * ry)])
+	sparks.sort_custom(func(s1: Array, s2: Array) -> bool: return s1[0] < s2[0])
+	for s in sparks:
+		var depth: float = 0.8 + 0.2 * s[0]   # 0.6 at the back of the loop, 1.0 at the front
+		var i: int = s[1]
+		var p: Vector2 = s[2]
 		if i < sim.den_charges:
-			Paint.glow(self, p, T * 0.16, Color(1, 0.3, 0.45, 0.5 + 0.2 * sin(tm * 4.0 + i)))
-			Paint.gem(self, p, T * 0.07)
+			Paint.glow(self, p, T * 0.16 * depth, Color(1, 0.3, 0.45, (0.45 + 0.2 * sin(tm * 4.0 + i)) * depth))
+			Paint.gem(self, p, T * 0.07 * depth)
 		else:
-			draw_circle(p, T * 0.05, Color(0, 0, 0, 0.55))
+			draw_circle(p, T * 0.05 * depth, Color(0, 0, 0, 0.55))
 			if i == sim.den_charges:
 				var k: float = sim.den_refill / Defs.DEN["refill"]
-				draw_arc(p, T * 0.075, -PI / 2, -PI / 2 + TAU * k, 16, Color("ff7a90"), 2.0, true)
+				draw_arc(p, T * 0.075 * depth, -PI / 2, -PI / 2 + TAU * k, 16, Color("ff7a90"), 2.0, true)

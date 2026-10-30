@@ -26,15 +26,16 @@ const TOWERS := {
 ## spd is in tiles per second, r is body radius in tiles, cap is how many gems they can carry.
 ## guard: other heroes within GUARD_RANGE take this much less damage (Shieldbearer).
 ## ward: clears slow and Dread from heroes within this many tiles, itself included (Warden).
+## special: towers shoot these support heroes before ordinary ones (gem carriers still come first).
 const ENEMIES := {
 	"p": {"name": "Peasant", "hp": 32, "spd": 1.05, "gold": 4, "r": 0.2, "armor": 0, "cap": 1},
 	"f": {"name": "Footman", "hp": 75, "spd": 0.85, "gold": 7, "r": 0.24, "armor": 2, "cap": 1},
 	"s": {"name": "Scout", "hp": 40, "spd": 1.7, "gold": 6, "r": 0.19, "armor": 0, "cap": 1},
-	"c": {"name": "Cleric", "hp": 60, "spd": 0.85, "gold": 9, "r": 0.22, "armor": 0, "cap": 1, "heal": 7.0},
+	"c": {"name": "Cleric", "hp": 60, "spd": 0.85, "gold": 9, "r": 0.22, "armor": 0, "cap": 1, "heal": 7.0, "special": true},
 	"k": {"name": "Knight", "hp": 340, "spd": 0.65, "gold": 30, "r": 0.31, "armor": 4, "cap": 2},
-	"b": {"name": "Shieldbearer", "hp": 130, "spd": 0.72, "gold": 12, "r": 0.27, "armor": 3, "cap": 1, "guard": 0.35},
+	"b": {"name": "Shieldbearer", "hp": 130, "spd": 0.72, "gold": 12, "r": 0.27, "armor": 3, "cap": 1, "guard": 0.35, "special": true},
 	"t": {"name": "Cutpurse", "hp": 48, "spd": 1.5, "gold": 10, "r": 0.19, "armor": 0, "cap": 2},
-	"w": {"name": "Warden", "hp": 95, "spd": 0.9, "gold": 12, "r": 0.23, "armor": 1, "cap": 1, "ward": 1.4},
+	"w": {"name": "Warden", "hp": 95, "spd": 0.9, "gold": 12, "r": 0.23, "armor": 1, "cap": 1, "ward": 1.4, "special": true},
 }
 
 const GUARD_RANGE := 1.2
@@ -82,6 +83,7 @@ const SITES := {
 const LOOT_COIN_CHANCE := 0.35
 const LOOT_POTION_CHANCE := 0.15
 const LOOT_POTION_MANA := 15
+const LOOT_COIN_MUL := 1.5    # a coin is worth this times the hero's bounty, scaled by its toughness
 
 ## Night levels: you can only build on lit tiles. Radii in tiles.
 ## Night missions unlock when a level is cleared Brilliant.

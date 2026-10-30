@@ -398,16 +398,20 @@ func _update_drops(dt: float) -> void:
 	drops = drops.filter(func(g: Drop) -> bool: return g.n > 0)
 
 
-## Gem carriers first, then whoever is furthest along. Skips `skip`.
+## Who a tower shoots: gem carriers first, then special heroes (Cleric, Shieldbearer, Warden),
+## then whoever has the least health left. Skips `skip`.
 func _pick_target(tw: Tower, skip: Enemy = null) -> Enemy:
 	var rg := tw.stat("range")
 	var best: Enemy = null
-	var best_score := -1.0
+	var best_score := -INF
 	for e: Enemy in enemies:
 		if e == skip or e.hp <= 0.0 or e.pos.distance_to(tw.pos) > rg:
 			continue
-		var total: float = level.paths[e.path]["total"]
-		var score := (1000.0 if e.carry > 0 else 0.0) + (e.dist if e.dir == 1 else total * 2.0 - e.dist)
+		var score := -e.hp
+		if e.d.get("special", false):
+			score += 100000.0
+		if e.carry > 0:
+			score += 1000000.0
 		if score > best_score:
 			best_score = score
 			best = e
@@ -569,7 +573,9 @@ func _roll_loot(e: Enemy) -> void:
 	l.pos = e.pos + Vector2(rng.randf_range(-0.25, 0.25), rng.randf_range(0.1, 0.3))
 	if r < Defs.LOOT_COIN_CHANCE:
 		l.kind = "coin"
-		l.amount = maxi(3, int(e.d["gold"]))
+		# Worth more for stronger heroes: their bounty, scaled by how much tougher than
+		# base they are this wave and level.
+		l.amount = maxi(3, roundi(float(e.d["gold"]) * Defs.LOOT_COIN_MUL * e.max_hp / float(e.d["hp"])))
 	else:
 		l.kind = "potion"
 		l.amount = Defs.LOOT_POTION_MANA

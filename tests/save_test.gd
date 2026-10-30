@@ -109,6 +109,50 @@ func _init() -> void:
 	sv.record(0, "level_01", "Brilliant", 5, true)
 	_check(sv.buy("den_charge") and sv.skill_rank("den_charge") == 1, "Den skill can be bought with stars")
 
+	# Tower targeting: gem carriers, then special heroes, then the lowest health.
+	var tg2 := GameSim.new(lv)
+	var tw := GameSim.Tower.new()
+	tw.type = "moss"
+	tw.pos = lv.path_pos(0, 6.0)
+	var mk := func(code: String, hp: float, carry: int) -> GameSim.Enemy:
+		var x := GameSim.Enemy.new()
+		x.code = code
+		x.d = Defs.ENEMIES[code]
+		x.hp = hp
+		x.max_hp = hp
+		x.carry = carry
+		x.pos = tw.pos + Vector2(0.5, 0)
+		tg2.enemies.append(x)
+		return x
+	var weak = mk.call("p", 5.0, 0)
+	var strong = mk.call("f", 70.0, 0)
+	_check(tg2._pick_target(tw) == weak, "towers pick the lowest health hero")
+	var cleric = mk.call("c", 60.0, 0)
+	_check(tg2._pick_target(tw) == cleric, "special heroes come before ordinary ones")
+	var thief = mk.call("f", 70.0, 1)
+	_check(tg2._pick_target(tw) == thief, "gem carriers come first of all")
+	_check(strong != null, "setup")
+
+	# Coins are worth more from stronger heroes.
+	var coins_of := func(code: String, hp_mult: float) -> int:
+		var cs := GameSim.new(lv)
+		for i in 400:
+			var x := GameSim.Enemy.new()
+			x.code = code
+			x.d = Defs.ENEMIES[code]
+			x.max_hp = float(Defs.ENEMIES[code]["hp"]) * hp_mult
+			x.hp = 1.0
+			cs.hurt(x, 999.0, true)
+		for l: GameSim.Loot in cs.loot:
+			if l.kind == "coin":
+				return l.amount
+		return 0
+	var peasant: int = coins_of.call("p", 1.0)
+	var knight: int = coins_of.call("k", 1.0)
+	var late_peasant: int = coins_of.call("p", 2.0)
+	print("coin values: peasant %d, knight %d, peasant at 2x health %d" % [peasant, knight, late_peasant])
+	_check(knight > peasant * 3 and late_peasant > peasant, "coins scale with hero strength")
+
 	# Calling a wave early gathers every coin and potion on the map.
 	var ga := GameSim.new(lv)
 	for k in ["coin", "potion", "coin"]:
