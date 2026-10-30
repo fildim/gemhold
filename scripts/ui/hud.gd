@@ -28,6 +28,10 @@ const POOR := Color("ff6a6a")
 
 var top_h := 56.0
 var bottom_h := 64.0
+var side := false        # stats and buttons in a panel on the right (wide screens)
+var map_aspect := 1.6    # map width / height, set by main.gd
+## Where the map may go, in this control's units; the bars or side panel take the rest.
+var map_area := Rect2()
 
 var body_font: Font
 var bold_font: Font
@@ -35,6 +39,8 @@ var display_font: Font
 
 var _top: PanelContainer
 var _bottom: PanelContainer
+var _row: BoxContainer
+var _brow: BoxContainer
 var _gold: Label
 var _mana: Label
 var _mana_bar: ProgressBar
@@ -130,7 +136,8 @@ func _build_bars() -> void:
 	_top.add_theme_stylebox_override("panel", _box(Color(NIGHT, 0.92), Color(0, 0, 0, 0), 0, 0, 14))
 	_top.mouse_filter = Control.MOUSE_FILTER_STOP
 	add_child(_top)
-	var row := HBoxContainer.new()
+	var row := BoxContainer.new()   # a row on top, or a column in the side panel
+	_row = row
 	row.add_theme_constant_override("separation", 18)
 	_top.add_child(row)
 	var brand := Label.new()
@@ -162,7 +169,8 @@ func _build_bars() -> void:
 	_bottom = PanelContainer.new()
 	_bottom.add_theme_stylebox_override("panel", _box(Color(NIGHT, 0.92), Color(0, 0, 0, 0), 0, 0, 10))
 	add_child(_bottom)
-	var brow := HBoxContainer.new()
+	var brow := BoxContainer.new()
+	_brow = brow
 	brow.alignment = BoxContainer.ALIGNMENT_CENTER
 	brow.add_theme_constant_override("separation", 10)
 	_bottom.add_child(brow)
@@ -205,24 +213,67 @@ func _button(parent: Control, text: String, sig: Signal) -> Button:
 	return b
 
 
+## Lays out the HUD in whichever arrangement leaves the map bigger: bars along the top and
+## bottom (tall windows), or one panel down the right side (wide screens such as phones).
 func _layout() -> void:
 	var safe := _safe_margins()
-	_top.position = Vector2(0, 0)
-	_top.size = Vector2(size.x, 0)
-	var tm: StyleBoxFlat = _top.get_theme_stylebox("panel")
-	tm.content_margin_left = 14 + safe.x
-	tm.content_margin_right = 14 + safe.z
-	tm.content_margin_top = 8 + safe.y
-	_top.reset_size()
+	var next_text := _next.text
+	_next.text = "First wave 99s (+99g)"   # measure with the longest label it can show
+	# Bars: stats across the top, buttons across the bottom.
+	_set_side(false, safe)
 	top_h = _top.get_combined_minimum_size().y
-	_top.size = Vector2(size.x, top_h)
-	var bm: StyleBoxFlat = _bottom.get_theme_stylebox("panel")
-	bm.content_margin_bottom = 8 + safe.w
 	bottom_h = _bottom.get_combined_minimum_size().y
-	_bottom.position = Vector2(0, size.y - bottom_h)
-	_bottom.size = Vector2(size.x, bottom_h)
+	var bar_area := Rect2(8 + safe.x, top_h + 4, size.x - 16 - safe.x - safe.z, size.y - top_h - bottom_h - 8)
+	# Side panel: stats above the buttons, down the right edge.
+	_set_side(true, safe)
+	var w := maxf(220.0, maxf(_top.get_combined_minimum_size().x, _bottom.get_combined_minimum_size().x))
+	var side_area := Rect2(8 + safe.x, 8 + safe.y, size.x - w - 16 - safe.x, size.y - 16 - safe.y - safe.w)
+	side = _fit(side_area) > _fit(bar_area) + 1.0
+	_next.text = next_text
+	if side:
+		var th := _top.get_combined_minimum_size().y
+		_top.position = Vector2(size.x - w, 0)
+		_top.size = Vector2(w, th)
+		_bottom.position = Vector2(size.x - w, th)
+		_bottom.size = Vector2(w, size.y - th)
+		map_area = side_area
+	else:
+		_set_side(false, safe)
+		_top.position = Vector2.ZERO
+		_top.size = Vector2(size.x, top_h)
+		_bottom.position = Vector2(0, size.y - bottom_h)
+		_bottom.size = Vector2(size.x, bottom_h)
+		map_area = bar_area
 	if _overlay:
 		_overlay.size = size
+
+
+## Map height that fits in an area, keeping the map's proportions.
+func _fit(area: Rect2) -> float:
+	return minf(area.size.y, area.size.x / map_aspect)
+
+
+func _set_side(on: bool, safe: Vector4) -> void:
+	_row.vertical = on
+	_brow.vertical = on
+	_row.add_theme_constant_override("separation", 10 if on else 18)
+	_brow.alignment = BoxContainer.ALIGNMENT_BEGIN if on else BoxContainer.ALIGNMENT_CENTER
+	var tm: StyleBoxFlat = _top.get_theme_stylebox("panel")
+	var bm: StyleBoxFlat = _bottom.get_theme_stylebox("panel")
+	tm.content_margin_left = 14 + (0.0 if on else safe.x)
+	tm.content_margin_right = 14 + safe.z
+	tm.content_margin_top = (14 if on else 8) + safe.y
+	tm.content_margin_bottom = 6 if on else 8
+	bm.content_margin_left = 14 if on else 10
+	bm.content_margin_right = (14 if on else 10) + (safe.z if on else 0.0)
+	bm.content_margin_bottom = 8 + safe.w
+	_top.reset_size()
+	_bottom.reset_size()
+
+
+## Lays the HUD out again, e.g. when a level with a different map shape loads.
+func relayout() -> void:
+	_layout()
 
 
 ## Hides the stats and spell bars (and any open card) while the level map is up.
@@ -329,10 +380,10 @@ func show_popup(info: Dictionary, anchor: Rect2) -> void:
 	_popup.reset_size()
 	var ps := _popup.get_combined_minimum_size()
 	var p := Vector2(anchor.end.x + 6, anchor.position.y)
-	if p.x + ps.x > size.x - 8:
+	if p.x + ps.x > map_area.end.x:
 		p.x = anchor.position.x - ps.x - 6
-	p.x = clampf(p.x, 8, size.x - ps.x - 8)
-	p.y = clampf(p.y, top_h + 4, size.y - bottom_h - ps.y - 4)
+	p.x = clampf(p.x, map_area.position.x, map_area.end.x - ps.x)
+	p.y = clampf(p.y, map_area.position.y, map_area.end.y - ps.y)
 	_popup.position = p
 
 
@@ -357,7 +408,7 @@ func _build_toast() -> void:
 func toast(msg: String) -> void:
 	_toast_label.text = msg
 	_toast.reset_size()
-	_toast.position = Vector2((size.x - _toast.size.x) / 2.0, top_h + 10)
+	_toast.position = Vector2(map_area.position.x + (map_area.size.x - _toast.size.x) / 2.0, map_area.position.y + 10)
 	if _toast_tween:
 		_toast_tween.kill()
 	_toast_tween = create_tween()

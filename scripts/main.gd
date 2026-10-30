@@ -132,14 +132,15 @@ func _process(delta: float) -> void:
 	hud.refresh(sim, armed, speed, paused)
 
 
-## Fit the map between the top and bottom bars, keeping its proportions.
+## Fit the map into the space the HUD leaves free, keeping its proportions.
 func _layout() -> void:
-	var vs := get_viewport_rect().size
 	var map_px := Vector2(level.cols, level.rows) * T
-	var avail := Vector2(vs.x - 16, vs.y - hud.top_h - hud.bottom_h - 8)
-	var s := minf(avail.x / map_px.x, avail.y / map_px.y)
+	hud.map_aspect = map_px.x / map_px.y
+	hud.relayout()
+	var area: Rect2 = hud.map_area
+	var s := minf(area.size.x / map_px.x, area.size.y / map_px.y)
 	frame.scale = Vector2(s, s)
-	frame.position = Vector2((vs.x - map_px.x * s) / 2.0, hud.top_h + 4 + (avail.y - map_px.y * s) / 2.0)
+	frame.position = area.position + (area.size - map_px * s) / 2.0
 
 
 func _on_map_input(event: InputEvent) -> void:
