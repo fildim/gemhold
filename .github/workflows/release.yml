@@ -1,0 +1,57 @@
+# Builds Gemhold.exe and publishes it as a GitHub Release.
+# Runs when a version tag is pushed (git tag v0.2.1 && git push origin v0.2.1),
+# or by hand from the Actions tab.
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  GODOT_VERSION: 4.6.2
+
+jobs:
+  windows:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Godot and export templates
+        run: |
+          base=https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable
+          curl -sSL -o godot.zip "$base/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
+          unzip -q godot.zip
+          mv Godot_v${GODOT_VERSION}-stable_linux.x86_64 godot
+          curl -sSL -o templates.tpz "$base/Godot_v${GODOT_VERSION}-stable_export_templates.tpz"
+          dest=~/.local/share/godot/export_templates/${GODOT_VERSION}.stable
+          mkdir -p "$dest"
+          unzip -q -j templates.tpz "templates/windows_*" "templates/version.txt" -d "$dest"
+          rm godot.zip templates.tpz
+
+      - name: Import and test
+        run: |
+          ./godot --headless --import || true
+          ./godot --headless --script res://tests/level_check.gd
+          ./godot --headless --script res://tests/save_test.gd
+
+      - name: Export Gemhold.exe
+        run: |
+          mkdir -p build/windows
+          ./godot --headless --export-release "Windows Desktop" build/windows/Gemhold.exe
+          test -s build/windows/Gemhold.exe
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: build/windows/Gemhold.exe
+          name: Gemhold ${{ github.ref_name }}
+          generate_release_notes: true
+          body: |
+            **Download `Gemhold.exe` below and double-click it to play.** No install needed.
+
+            Windows may say "Windows protected your PC" because the game isn't code-signed:
+            click **More info**, then **Run anyway**.

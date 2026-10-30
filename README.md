@@ -1,6 +1,14 @@
 # Gemhold
 
-A dark-lord tower defense for Android, built with **Godot 4.6**. You guard a cave of gems; heroes walk the roads to steal them.
+<p align="center">
+  <a href="https://github.com/fildim/gemhold/releases/latest/download/Gemhold.exe"><img src="https://img.shields.io/badge/Download_for_Windows-Gemhold.exe-e8b84a?style=for-the-badge&logo=windows&logoColor=white" alt="Download Gemhold for Windows" height="48"></a>
+  <br>
+  <sub>Always the latest version · <a href="https://github.com/fildim/gemhold/releases/latest">release notes</a> · no install needed, just double-click</sub>
+</p>
+
+> **Windows may say "Windows protected your PC"** because the game isn't code-signed. Click **More info**, then **Run anyway**.
+
+A dark-lord tower defense for Windows and Android, built with **Godot 4.6**. You guard a cave of gems; heroes walk the roads to steal them.
 
 The campaign opens on a level map. Level 1 ("Mossfold Pass") is ported from the web prototype with the same rules and balance; levels 2–5 (Rimewater Ford, Gloamwood Hollow, Cinderfall Steps and The Hoard Throne) are new. Clearing a level Brilliant unlocks its night mission. Progress saves automatically: unlocked levels, best rating per mission and skills. Each level guards 5 gems.
 
@@ -108,3 +116,14 @@ Debug builds are signed with Godot's debug keystore and are only for testing.
 - [x] Three ratings: gems lost, gem touched, untouched
 - [x] New heroes: Shieldbearer, Cutpurse, Warden
 - [ ] Sound and music
+
+## Publishing a new version
+
+Raise the version in `export_presets.cfg` (both presets) and `project.godot`, commit, then tag and push:
+
+```
+git tag v0.2.2
+git push origin main v0.2.2
+```
+
+GitHub Actions (`.github/workflows/release.yml`) builds `Gemhold.exe` and publishes it as a release; the download button above always points at the newest one.
