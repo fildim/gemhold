@@ -6,9 +6,9 @@ extends Node2D
 const T := 64.0
 ## Campaign order. Add new level files here.
 const LEVELS: Array[String] = ["res://levels/level_01.json", "res://levels/level_02.json", "res://levels/level_03.json", "res://levels/level_04.json", "res://levels/level_05.json", "res://levels/level_06.json", "res://levels/level_07.json", "res://levels/level_08.json"]
-## Each lair's battle music, in campaign order (public-domain recordings, assets/music/CREDITS.md):
-## Grieg, Mozart, Mozart's Requiem, Mussorgsky, Wagner, Dvořák, Beethoven and Holst.
-const MUSIC: Array[String] = ["mountain", "mozart40", "dies", "baldmountain", "valkyries", "newworld", "fate", "mars"]
+## Each lair's battle music, in campaign order (assets/music/CREDITS.md):
+## Grieg, Kevin MacLeod, Wagner, Kevin MacLeod and Beethoven.
+const MUSIC: Array[String] = ["mountain", "heroicage", "curseofthescarab", "volatilereaction", "valkyries", "crusade", "fate", "fivearmies"]
 
 var level_index := 0
 var night := false            # playing the level's night mission

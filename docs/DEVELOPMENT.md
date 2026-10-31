@@ -157,18 +157,18 @@ With a paid Apple developer account, the same workflow could sign the build and 
 
 ## Sound
 
-Sound effects are synthesised by `tools/make_audio.gd` (oscillators, noise and plucked strings). The music is public-domain orchestral recordings from Wikimedia Commons in `assets/music/` (sources and licences in `assets/music/CREDITS.md`), looped in `audio.gd`. The level map plays Mussorgsky's *Promenade*, and each lair has its own piece (`MUSIC` in `main.gd`):
+Sound effects are synthesised by `tools/make_audio.gd` (oscillators, noise and plucked strings). The music is public-domain and CC-BY (Kevin MacLeod, credited in the Guide) orchestral tracks from Wikimedia Commons in `assets/music/` (sources and licences in `assets/music/CREDITS.md`), looped in `audio.gd`. The level map plays Mussorgsky's *Promenade*, and each lair has its own piece (`MUSIC` in `main.gd`):
 
 | Lair | Music |
 |---|---|
 | 1 Mossfold Pass | Grieg, *In the Hall of the Mountain King* |
-| 2 Rimewater Ford | Mozart, *Symphony No. 40*, I |
-| 3 Gloamwood Hollow | Mozart, *Requiem*, Dies irae (Karajan, 1960) |
-| 4 Cinderfall Steps | Mussorgsky, *Night on Bald Mountain* |
+| 2 Rimewater Ford | Kevin MacLeod, *Heroic Age* |
+| 3 Gloamwood Hollow | Kevin MacLeod, *Curse of the Scarab* |
+| 4 Cinderfall Steps | Kevin MacLeod, *Volatile Reaction* |
 | 5 The Hoard Throne | Wagner, *Ride of the Valkyries* |
-| 6 Saltmarsh Crossing | Dvořák, *New World Symphony*, IV |
+| 6 Saltmarsh Crossing | Kevin MacLeod, *Crusade* |
 | 7 The Iron Column | Beethoven, *Symphony No. 5* |
-| 8 Gloomspire Summit | Holst, *Mars* from *The Planets* |
+| 8 Gloomspire Summit | Kevin MacLeod, *Five Armies* |
 
 To swap a piece, drop an .ogg (at most 3 min, normalised to -14 LUFS) into `assets/music/`, put its name in `MUSIC` and add it to CREDITS.md. To change a sound effect, edit its function in `tools/make_audio.gd` and rebuild:
 
