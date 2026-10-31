@@ -1,6 +1,6 @@
 # Music credits
 
-All tracks are from Wikimedia Commons (licences checked 2026-10-31), cut to at most 3 minutes and loudness-normalised (ffmpeg loudnorm, -14 LUFS). The in-game Guide has a "Music credits" page; keep it in step with this file.
+All tracks are from Wikimedia Commons (licences checked 2026-10-31), cut to their most intense 2:30 (the loudest 150-second window) and loudness-normalised (ffmpeg loudnorm, -14 LUFS). The in-game Guide has a "Music credits" page; keep it in step with this file.
 
 ## Kevin MacLeod — CC BY 3.0
 
@@ -22,3 +22,9 @@ All tracks are from Wikimedia Commons (licences checked 2026-10-31), cut to at m
 | mountain.ogg | Grieg, *In the Hall of the Mountain King* | Musopen Symphony Orchestra | https://commons.wikimedia.org/wiki/File:Musopen_-_In_the_Hall_Of_The_Mountain_King.ogg |
 | valkyries.ogg | Wagner, *Ride of the Valkyries* | — | https://commons.wikimedia.org/wiki/File:Richard_Wagner_-_Ride_of_the_Valkyries.ogg |
 | fate.ogg | Beethoven, Symphony No. 5, I. Allegro con brio | Musopen | https://commons.wikimedia.org/wiki/File:Ludwig_van_Beethoven_-_symphony_no._5_in_c_minor,_op._67_-_i._allegro_con_brio.ogg |
+
+## Spare tracks for new lairs (spare/, not in the game yet)
+
+Kevin MacLeod (incompetech.com), CC BY 3.0, from Wikimedia Commons, prepared the same way. `spare/.gdignore` keeps them out of builds: move one up into assets/music when a new lair uses it, and add it to the Guide's "Music credits" page.
+
+Black Vortex, Darkling, Final Battle of the Dark Wizards, Firebrand, Killers, Malicious, Ossuary 2 - Turn, Prelude and Action, Rynos Theme, Unholy Knight.

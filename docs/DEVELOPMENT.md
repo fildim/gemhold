@@ -4,7 +4,7 @@ The rules in detail, how the project is organised, tests, builds and publishing.
 
 A dark-lord tower defense for Windows, macOS, Linux, Android, iPhone and the web, built with **Godot 4.6**. You guard a cave of gems; heroes walk the roads to steal them. It has music and sound effects (the **Sound** button switches both on or off), and the first lair teaches you as you play: each tip freezes the battle, darkens the screen and lights up the one thing to tap. The first time you have a skill point to spend, the map does the same for Dark Arts. **Skip tutorial** turns the tips off; **Reset progress** brings them back.
 
-The campaign opens on a level map. Level 1 ("Mossfold Pass") is ported from the web prototype with the same rules and balance; levels 2–8 (Rimewater Ford, Gloamwood Hollow, Cinderfall Steps, The Hoard Throne, Saltmarsh Crossing, The Iron Column and Gloomspire Summit) are new. Saltmarsh Crossing is one long road full of fast swarms, The Iron Column sends armoured heroes down two roads that join before the den, and Gloomspire Summit brings heroes up four roads at once. Clearing a level Brilliant unlocks its night mission. Progress saves automatically: unlocked levels, best rating per mission and skills. Each level guards 5 gems.
+The campaign opens on a level map: twenty lairs in two chapters of ten (the arrows beside the heading switch chapter). Lair 1 ("Mossfold Pass") is the tutorial, ported from the web prototype. From there each lair turns one or two difficulty levers further, and later lairs mix them, so no two play alike (see **Campaign** below). Clearing a level Brilliant unlocks its night mission. Progress saves automatically: unlocked levels, best rating per mission and skills. Each level guards 5 gems.
 
 ## What's in a battle
 
@@ -13,11 +13,11 @@ The campaign opens on a level map. Level 1 ("Mossfold Pass") is ported from the 
 - **Threat** (dynamic difficulty, never shown): after each wave the game checks how deep into your defence its heroes got, meaning how much of the stretch your towers and den can reach they walked through. The threat multiplies hero health and only ever rises: a lot after a wave you stopped early (up to +40%), only a little after one that got close (+1–3%). Riches draw heroes too: unspent gold above 250 adds to it after every wave (+5% per 100 gold, up to +25%), so hoarding is never the safe choice. It starts at ×1.0 each battle and tops out at ×4.0; tune it with `THREAT` in `defs.gd`.
 - **Veterancy:** towers rank up from damage dealt, up to 3 ranks (+8% damage each). A tower at rank 3 that is also upgraded to level III unlocks its ability: Volley (Huts fire a second arrow), Dread (Crypt hits can terrify a hero) and Lava (heroes a Shrine kills have a 35% chance to leave a pool of burning ground).
 - **Meteor** (60 mana): tap Meteor, then the map; a moment later it lands for 280 damage around that spot, through armour.
-- **Cutting** costs mana. It clears woods, frees **Gold Mines** (gold over time) and **Mana Wells** (faster mana), and razes **Hero Barracks**, which otherwise send extra heroes while waves are coming. The **Cut woods** button clears a random patch of woods for the same mana, without hunting for one on the map. From lair 5 buildings take several cuts (`site_cuts` in the level file: 2 on lairs 5–6, 3 on 7–8); `cut_cost` in game_sim.gd spreads 1.5x/2x of the base mana over them, and each cut on a barracks slows its musters by 30%.
-- **Heroes:** Peasant, Footman, Scout, Cleric (heals nearby heroes) and Knight (armoured, carries 2 gems), plus three that arrive from level 4: the **Shieldbearer** (other heroes within 1.2 tiles take 35% less damage), the **Cutpurse** (fast, fragile, carries 2 gems) and the **Warden** (his lantern clears slow and Dread from heroes around him).
+- **Cutting** costs mana. It clears woods, frees **Gold Mines** (gold over time) and **Mana Wells** (faster mana), and razes **Hero Barracks**, which otherwise send extra heroes while waves are coming. The **Cut woods** button clears a random patch of woods for the same mana, without hunting for one on the map. From lair 4 buildings can take several cuts (`site_cuts` in the level file, or `cuts` on one building, rising to 4 by the end); `cut_cost` in game_sim.gd spreads 1.5x/2x/2.5x of the base mana over 2/3/4 cuts, and each cut on a barracks slows its musters by 30%.
+- **Heroes:** Peasant, Footman, Scout, Cleric (heals nearby heroes) and Knight (armoured, carries 2 gems), then the **Cutpurse** (lair 4: fast, fragile, carries 2 gems), the **Shieldbearer** (lair 5: other heroes within 1.2 tiles take 35% less damage) and the **Warden** (lair 5: his lantern clears slow and Dread from heroes around him). Chapter II adds the **Herald** (lair 11: heroes near his banner, himself included, walk 35% faster), the **Berserker** (lair 13: below half health he runs 2.1× as fast) and the **Champion** (lair 15: a 1500-health armoured boss who carries 3 gems; when he falls, three Footmen rise where he lay).
 - **Loose gems:** a slain carrier drops his gems and they float back along the road to the hoard. Any hero on that road (or one joined to it) with room to carry turns toward them, even back the way he came, so kill the carrier where your towers can cover the gems.
 - **Targeting:** towers shoot gem carriers first, then the special support heroes (Cleric, Shieldbearer, Warden), then whoever has the least health left.
-- **Loot:** a slain hero drops a coin (32%), a mana potion (15%) or nothing, never both. Coins are worth 4 gold plus 1.4× the hero's bounty, growing with the wave number but not with the threat, so doing well does not snowball into riches. Tap loot to pick it up at once; whatever is still lying on the map is gathered automatically when the next wave starts (on its timer or called early).
+- **Loot:** a slain hero drops a coin (32%), a mana potion (15%) or nothing, never both. Coins are worth 4 gold plus 1.4× the hero's bounty, growing with the wave number and the square root of the lair's `hp_mul`, but not with the threat, so doing well does not snowball into riches. Tap loot to pick it up at once; whatever is still lying on the map is gathered automatically when the next wave starts (on its timer or called early).
 - **The end:** after the last wave, the battle is won the moment its last hero falls or flees; gems still rolling home count as home.
 - **The den fights back:** your lair holds charges (1 to start). Each is a bolt it fires automatically at heroes within 2.6 tiles, gem carriers first, ignoring armour. Spent charges refill one every 8 s. The sparks circling above the cave show how many are ready.
 - **Ratings and stars:** Survived ★ (you lost gems), Wicked ★★ (none lost, but a hero touched one, even if you got it back) and Brilliant ★★★ (no hero ever touched a gem).
@@ -35,7 +35,7 @@ The campaign opens on a level map. Level 1 ("Mossfold Pass") is ported from the 
 ```
 project.godot            engine settings (landscape, mobile-friendly renderer)
 scenes/main.tscn         the one scene: map, level select, HUD layer
-levels/level_0N.json     map grids, roads, starting gold, waves, intro text
+levels/level_NN.json     map grids, roads, starting gold, waves, intro text
 scripts/
   data/defs.gd           all balance numbers: towers, heroes, spells
   core/level.gd          loads a level file
@@ -61,8 +61,8 @@ tools/make_audio.gd      synthesises every sound; edit it and run it to change t
 ```
 
 **Tuning balance:** edit `scripts/data/defs.gd`.
-**Adding a level:** copy `levels/level_02.json`, give it a new `id`, edit it, and add its path to `LEVELS` in `scripts/main.gd`. The map has five spots; add more to `SPOTS` in `scripts/ui/level_select.gd`. Optional `intro` text shows on the start card.
-In the level file, `terrain` uses `m` moss, `f` frost, `a` ash and `L` lair; a capital `M`, `F` or `A` is a raised tile of that ground. Add `"hp_mul": 1.4` to make heroes tougher on a later level. `"night": true` makes a level night-only (normally night is the unlockable mission). `sites` lists map buildings: `{"kind": "mine"|"well", "cell": [x, y]}` or `{"kind": "camp", "cell": [x, y], "path": 0, "spawn": "2p,1f", "every": 30}`. In `trees`, `T` marks woods. `paths` lists each road's corner tiles; roads start off the map edge and end next to the lair. Waves use hero codes: `p` peasant, `f` footman, `s` scout, `c` cleric, `k` knight, `b` shieldbearer, `t` cutpurse, `w` warden. For example, `"6p,2f"` is 6 peasants and 2 footmen.
+**Adding a level:** copy a level file, give it a new `id`, edit it, and add its path to `LEVELS` in `scripts/main.gd`. `LEVELS` is the campaign order; file numbers only say when a map was made, so ids (and players' saved stars) never move when lairs are reordered. The map shows ten lairs a chapter (`PER_PAGE`, `SPOTS` and `CHAPTERS` in `scripts/ui/level_select.gd`). Optional `intro` text shows on the start card. Check the new lair with `tests/difficulty.gd` (below) so it fits the curve.
+In the level file, `terrain` uses `m` moss, `f` frost, `a` ash and `L` lair; a capital `M`, `F` or `A` is a raised tile of that ground. Add `"hp_mul": 1.4` to make heroes tougher on a later level. `"night": true` makes a level night-only (normally night is the unlockable mission). `sites` lists map buildings: `{"kind": "mine"|"well", "cell": [x, y]}` or `{"kind": "camp", "cell": [x, y], "path": 0, "spawn": "2p,1f", "every": 30}`; any building can add `"cuts": 3` to override the level's `site_cuts`. In `trees`, `T` marks woods. `paths` lists each road's corner tiles; roads start off the map edge and end next to the lair. Waves use hero codes: `p` peasant, `f` footman, `s` scout, `c` cleric, `k` knight, `b` shieldbearer, `t` cutpurse, `w` warden, `h` herald, `r` berserker, `x` champion. For example, `"6p,2f"` is 6 peasants and 2 footmen.
 
 ## Tests
 
@@ -70,8 +70,9 @@ From this folder, with Godot on your PATH:
 
 ```
 godot --headless --import
-godot --headless --script res://tests/sim_test.gd     # plays every level by day, and at night with mid-game skills
-godot --headless --script res://tests/sim_test.gd -- 6 7  # just those levels, without and with skills
+godot --headless --script res://tests/sim_test.gd     # the bot (tests/bot.gd) plays every lair by day and at night, with the skill points a player would have by then
+godot --headless --script res://tests/sim_test.gd -- 6 7  # just those campaign lairs, without and with skills
+godot --headless --script res://tests/difficulty.gd    # how much headroom the bot has on each lair (the difficulty curve)
 godot --headless --script res://tests/level_check.gd  # level files: grid sizes, woods on roads, roads reaching the lair
 godot --headless --script res://tests/save_test.gd    # unlocking, ratings, stars as skill points, loot, damaged save files
 godot --headless --script res://tests/scene_test.gd   # boots the real scene, taps tiles, casts spells, plays the night level
@@ -170,7 +171,7 @@ Sound effects are synthesised by `tools/make_audio.gd` (oscillators, noise and p
 | 7 The Iron Column | Beethoven, *Symphony No. 5* |
 | 8 Gloomspire Summit | Kevin MacLeod, *Five Armies* |
 
-To swap a piece, drop an .ogg (at most 3 min, normalised to -14 LUFS) into `assets/music/`, put its name in `MUSIC` and add it to CREDITS.md. To change a sound effect, edit its function in `tools/make_audio.gd` and rebuild:
+To swap a piece, drop an .ogg (its most intense 2:30, normalised to -14 LUFS) into `assets/music/` (ready ones wait in `assets/music/spare/`), put its name in `MUSIC` and add it to CREDITS.md. To change a sound effect, edit its function in `tools/make_audio.gd` and rebuild:
 
 ```
 godot --headless -s res://tools/make_audio.gd -- coin boom   # just these, or no names for all
