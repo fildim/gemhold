@@ -7,6 +7,7 @@ extends Node
 ## Sound and music can each be switched off; the choice is kept in Prefs.
 
 const DIR := "res://assets/audio/"
+const MUSIC_DIR := "res://assets/music/"   # public-domain recordings, see CREDITS.md there
 ## name -> [volume dB, fewest seconds between two plays, random pitch spread]
 const SFX := {
 	"click": [-12.0, 0.03, 0.05], "error": [-10.0, 0.2, 0.0],
@@ -175,6 +176,11 @@ static func label() -> String:
 ## A music track by name ("map", or a lair's piece), loaded the first time it plays.
 func _music_stream(track: String) -> AudioStream:
 	if not _streams.has(track):
-		var p := DIR + track + ".wav"
-		_streams[track] = load(p) if track != "" and ResourceLoader.exists(p) else null
+		_streams[track] = null
+		for p in [MUSIC_DIR + track + ".ogg", MUSIC_DIR + track + ".mp3"]:
+			if track != "" and ResourceLoader.exists(p):
+				var s: AudioStream = load(p)
+				s.loop = true
+				_streams[track] = s
+				break
 	return _streams[track]

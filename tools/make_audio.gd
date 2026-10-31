@@ -1,5 +1,5 @@
 extends SceneTree
-## Renders every sound effect and the music into assets/audio as WAV files.
+## Renders every sound effect into assets/audio as WAV files (music is recorded, in assets/music).
 ## All of it is synthesised here (oscillators, noise and plucked strings), so the sounds are
 ## original and can be re-tuned and rebuilt. From the project folder:
 ##   godot --headless -s res://tools/make_audio.gd             (everything)
@@ -10,7 +10,7 @@ const RATE := 22050
 const OUT := "res://assets/audio/"
 const SOUNDS: Array[String] = ["click", "error", "hut", "crypt", "beam", "zap", "die", "grab", "lost",
 	"coin", "potion", "horn", "build", "upgrade", "sell", "chop", "raze", "whoosh", "boom", "rank",
-	"win", "lose", "map", "mountain", "turca", "dies", "toccata", "valkyries", "gallop", "fate", "mars"]
+	"win", "lose"]
 
 var rng := RandomNumberGenerator.new()
 var _wrap := false   # set while rendering a loop: writes past the end land at the start

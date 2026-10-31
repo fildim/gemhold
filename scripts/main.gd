@@ -6,9 +6,9 @@ extends Node2D
 const T := 64.0
 ## Campaign order. Add new level files here.
 const LEVELS: Array[String] = ["res://levels/level_01.json", "res://levels/level_02.json", "res://levels/level_03.json", "res://levels/level_04.json", "res://levels/level_05.json", "res://levels/level_06.json", "res://levels/level_07.json", "res://levels/level_08.json"]
-## Each lair's battle music, in campaign order (tools/make_audio.gd): Grieg, Mozart, Dies Irae,
-## Bach, Wagner, Rossini, Beethoven and Holst.
-const MUSIC: Array[String] = ["mountain", "turca", "dies", "toccata", "valkyries", "gallop", "fate", "mars"]
+## Each lair's battle music, in campaign order (public-domain recordings, assets/music/CREDITS.md):
+## Grieg, Mozart, Mozart's Requiem, Mussorgsky, Wagner, Dvořák, Beethoven and Holst.
+const MUSIC: Array[String] = ["mountain", "mozart40", "dies", "baldmountain", "valkyries", "newworld", "fate", "mars"]
 
 var level_index := 0
 var night := false            # playing the level's night mission
@@ -253,7 +253,7 @@ func _arts_tip() -> void:
 		else:
 			spot.hide_tip()
 	else:
-		spot.show_tip("Skills work in every battle from now on. Not happy with your choice? [b]Refund all points[/b] at the bottom and spend them again. Earn more stars by beating lairs with better ratings and at night.", skill_tree.back_rect(), true)
+		spot.show_tip("Skills work in every battle from now on. Not happy with your choice? [b]Refund all points[/b] (top right) and spend them again. Earn more stars by beating lairs with better ratings and at night.", skill_tree.back_rect(), true)
 
 
 ## Fit the map into the space the HUD leaves free, keeping its proportions.

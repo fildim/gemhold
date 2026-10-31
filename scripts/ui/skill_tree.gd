@@ -66,6 +66,15 @@ func setup(hud: Control, save: SaveData) -> void:
 	_points.add_theme_color_override("font_color", Hud.EMBER)
 	_points.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	head.add_child(_points)
+	_reset = Button.new()
+	_reset.text = "Refund all points"
+	_reset.focus_mode = Control.FOCUS_NONE
+	_reset.add_theme_color_override("font_color", Hud.DIM)
+	_reset.add_theme_font_size_override("font_size", 28)
+	_reset.custom_minimum_size = Vector2(0, 64)
+	_reset.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	_reset.pressed.connect(_on_reset)
+	head.add_child(_reset)
 	var back := Button.new()
 	_back = back
 	back.text = "Back to map"
@@ -80,16 +89,6 @@ func setup(hud: Control, save: SaveData) -> void:
 	_cols = HBoxContainer.new()
 	_cols.add_theme_constant_override("separation", 14)
 	box.add_child(_cols)
-
-	_reset = Button.new()
-	_reset.text = "Refund all points"
-	_reset.focus_mode = Control.FOCUS_NONE
-	_reset.size_flags_horizontal = Control.SIZE_SHRINK_END
-	_reset.add_theme_color_override("font_color", Hud.DIM)
-	_reset.add_theme_font_size_override("font_size", 24)
-	_reset.custom_minimum_size = Vector2(0, 56)
-	_reset.pressed.connect(_on_reset)
-	box.add_child(_reset)
 	refresh()
 
 
@@ -126,9 +125,9 @@ func _column(type: String, title: String) -> Control:
 		var b := Button.new()
 		b.focus_mode = Control.FOCUS_NONE
 		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
-		b.custom_minimum_size = Vector2(0, 76)
+		b.custom_minimum_size = Vector2(0, 88)
 		b.text = "%s   %s\n%s" % [sk["name"], "●".repeat(r) + "○".repeat(int(sk["max"]) - r), sk["text"]]
-		b.add_theme_font_size_override("font_size", 27)
+		b.add_theme_font_size_override("font_size", 33)
 		b.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART   # wrap so four columns fit any screen
 		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		b.disabled = not _save.can_buy(id)

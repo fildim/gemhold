@@ -157,20 +157,20 @@ With a paid Apple developer account, the same workflow could sign the build and 
 
 ## Sound
 
-Every sound effect and all the music are synthesised by `tools/make_audio.gd` (oscillators, noise and plucked strings), so the recordings are original. The level map has its own slow loop, and each lair fights to a fast arrangement of a public-domain classical piece (`MUSIC` in `main.gd`):
+Sound effects are synthesised by `tools/make_audio.gd` (oscillators, noise and plucked strings). The music is public-domain orchestral recordings from Wikimedia Commons in `assets/music/` (sources and licences in `assets/music/CREDITS.md`), looped in `audio.gd`. The level map plays Mussorgsky's *Promenade*, and each lair has its own piece (`MUSIC` in `main.gd`):
 
 | Lair | Music |
 |---|---|
 | 1 Mossfold Pass | Grieg, *In the Hall of the Mountain King* |
-| 2 Rimewater Ford | Mozart, *Rondo alla Turca* |
-| 3 Gloamwood Hollow | *Dies Irae* (medieval chant) |
-| 4 Cinderfall Steps | Bach, *Toccata in D minor* |
+| 2 Rimewater Ford | Mozart, *Symphony No. 40*, I |
+| 3 Gloamwood Hollow | Mozart, *Requiem*, Dies irae (Karajan, 1960) |
+| 4 Cinderfall Steps | Mussorgsky, *Night on Bald Mountain* |
 | 5 The Hoard Throne | Wagner, *Ride of the Valkyries* |
-| 6 Saltmarsh Crossing | Rossini, *William Tell* gallop |
+| 6 Saltmarsh Crossing | Dvořák, *New World Symphony*, IV |
 | 7 The Iron Column | Beethoven, *Symphony No. 5* |
 | 8 Gloomspire Summit | Holst, *Mars* from *The Planets* |
 
-To change a sound or a piece, edit its function in `tools/make_audio.gd` and rebuild:
+To swap a piece, drop an .ogg/.mp3 into `assets/music/`, put its name in `MUSIC` and add it to CREDITS.md. To change a sound effect, edit its function in `tools/make_audio.gd` and rebuild:
 
 ```
 godot --headless -s res://tools/make_audio.gd -- coin boom   # just these, or no names for all
