@@ -23,6 +23,7 @@ var armed := false            # meteor waiting for a target
 var selected := Vector2i(-1, -1)
 var tutorial: Tutorial        # tips on the first lair, or null
 var spot: Control             # the tutorial spotlight, over everything
+var guide: Control            # the player's guide, opened from the map
 var _arts_spent := -1         # skill points spent when the Dark Arts tip opened
 var _arts_intro := false      # the Dark Arts intro tip is up
 
@@ -62,6 +63,11 @@ func _ready() -> void:
 	select.setup(hud, infos, save)
 	select.level_chosen.connect(_choose)
 	skill_tree.setup(hud, save)
+	guide = preload("res://scripts/ui/guide_screen.gd").new()
+	$UI.add_child(guide)
+	guide.setup(hud)
+	select.guide_pressed.connect(guide.open)
+	guide.closed.connect(func() -> void: guide.visible = false)
 	select.skills_pressed.connect(func() -> void:
 		skill_tree.refresh()
 		skill_tree.visible = true)
@@ -217,7 +223,7 @@ func _on_tip_skip() -> void:
 func _arts_tip() -> void:
 	var stage: int = Prefs.get_value("arts_tip", 0)
 	_arts_intro = false
-	if not select.visible:
+	if not select.visible or guide.visible:
 		spot.hide_tip()
 		return
 	if skill_tree.visible and not Prefs.get_value("arts_intro", false):
@@ -352,10 +358,15 @@ func _on_ended(won: bool) -> void:
 	hud.show_end(sim, level_index + 1 < LEVELS.size(), new_best, save.stars(mission) - stars_before, save.points_free(), night_opened)
 
 
-## Android back button: close the panel, cancel the meteor, or pause. On the map it quits.
+## Android back button: close the panel, cancel the meteor, or pause. On the map it closes the
+## Guide or Dark Arts, or quits.
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_WM_GO_BACK_REQUEST:
-		if on_map:
+		if on_map and guide.visible:
+			guide.visible = false
+		elif on_map and skill_tree.visible:
+			skill_tree.closed.emit()
+		elif on_map:
 			get_tree().quit()
 		elif hud.popup_open():
 			_deselect()

@@ -5,6 +5,7 @@ extends Control
 
 signal level_chosen(index: int)
 signal skills_pressed
+signal guide_pressed
 
 const Hud := preload("res://scripts/ui/hud.gd")
 
@@ -23,6 +24,7 @@ var _reset: Button
 var _reset_armed := false
 var _skills: Button
 var _sound: Button
+var _guide: Button
 
 
 func setup(hud: Control, levels: Array, save: SaveData) -> void:
@@ -57,6 +59,13 @@ func setup(hud: Control, levels: Array, save: SaveData) -> void:
 	_skills.add_theme_stylebox_override("normal", hud._box(Color("3d2a12"), Color("8a6420"), 4, 8, 18))
 	_skills.pressed.connect(func() -> void: skills_pressed.emit())
 	add_child(_skills)
+	_guide = Button.new()
+	_guide.text = "Guide"
+	_guide.focus_mode = Control.FOCUS_NONE
+	_guide.custom_minimum_size = Vector2(0, 68)
+	_guide.add_theme_font_size_override("font_size", 30)
+	_guide.pressed.connect(func() -> void: guide_pressed.emit())
+	add_child(_guide)
 	_reset = Button.new()
 	_reset.focus_mode = Control.FOCUS_NONE
 	_reset.add_theme_font_size_override("font_size", 26)
@@ -108,6 +117,8 @@ func _layout() -> void:
 	_sound.position = Vector2(_reset.position.x - _sound.size.x - 10, size.y - _sound.size.y - 12)
 	_skills.reset_size()
 	_skills.position = Vector2(14, size.y - _skills.size.y - 12)
+	_guide.reset_size()
+	_guide.position = Vector2(_skills.position.x + _skills.size.x + 10, size.y - _guide.size.y - 12)
 	queue_redraw()
 
 
