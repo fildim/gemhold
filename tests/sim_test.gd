@@ -78,7 +78,7 @@ func _play(lv: Level, skills: Dictionary) -> bool:
 	var ranks := {}
 	for tw: GameSim.Tower in sim.towers.values():
 		ranks[tw.rank] = ranks.get(tw.rank, 0) + 1
-	print("  Bot finished at %.0fs: over=%s won=%s wave=%d lost=%d towers=%d gold=%d rank=%s loot=%d tower ranks=%s" % [t, sim.over, sim.won, sim.wave, sim.lost, sim.towers.size(), sim.gold, sim.rank(), looted, ranks])
+	print("  Bot finished at %.0fs: over=%s won=%s wave=%d lost=%d towers=%d gold=%d rank=%s threat=x%.2f loot=%d tower ranks=%s" % [t, sim.over, sim.won, sim.wave, sim.lost, sim.towers.size(), sim.gold, sim.rank(), sim.threat, looted, ranks])
 	# A battle with no defence at all should be lost.
 	var idle := GameSim.new(lv)
 	var t2 := 0.0

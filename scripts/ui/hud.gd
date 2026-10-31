@@ -304,7 +304,7 @@ func refresh(sim: GameSim, armed: bool, speed: int, paused: bool) -> void:
 	_mana_bar.max_value = sim.mana_max
 	_mana_bar.value = sim.mana
 	_gems.text = "%d/%d" % [sim.gems_left(), sim.level.gems]
-	_wave.text = "Wave %d/%d" % [sim.wave, sim.level.waves.size()]
+	_wave.text = "Wave %d/%d  ·  Threat ×%.1f" % [sim.wave, sim.level.waves.size(), sim.threat]
 	if sim.wave < sim.level.waves.size():
 		var s := int(ceil(sim.timer))
 		_next.disabled = false

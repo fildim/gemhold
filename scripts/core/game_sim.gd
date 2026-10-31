@@ -3,6 +3,8 @@ extends RefCounted
 ## The rules of one battle: heroes, towers, spells, waves, gems, map buildings and loot.
 ## No drawing code lives here, so battles can run headless in tests.
 
+const COVER_STEP := 0.25   # tiles between samples when measuring how much of a road is defended
+
 signal toast(text: String)
 signal ended(won: bool)
 signal ground_changed
@@ -25,6 +27,7 @@ class Enemy:
 	var face := 1
 	var bob := 0.0
 	var gone := false
+	var wave := 0         # which wave it marched with, 0 for barracks troops
 
 
 class Tower:
@@ -58,9 +61,10 @@ class Tower:
 		return v
 
 	func has_ability() -> bool:
-		return rank >= Defs.ABILITY_RANK
+		return rank >= Defs.ABILITY_RANK and lvl >= Defs.ABILITY_LEVEL
 
-	## Ability strength: Volley damage share, Dread chance, or Lava damage per second as a share of a hit.
+	## Ability strength: Volley damage share, Dread chance, or Lava damage per second as a share of
+	## the beam at full heat.
 	func ability_power() -> float:
 		var a: Dictionary = Defs.ABILITIES[type]
 		return a["base"] + a["per_rank"] * ability_rank
@@ -137,6 +141,11 @@ var lost := 0
 var wave := 0
 var timer := 0.0
 var queue: Array[String] = []
+var queue_wave: Array[int] = []   # the wave each queued hero belongs to
+var threat := 1.0         # dynamic difficulty: multiplies hero health, see _judge_wave
+var wave_left := {}       # wave -> its heroes still queued or on the map
+var wave_peak := {}       # wave -> most of the defended road any of its heroes got through
+var _cover := {}          # road -> defended length up to each COVER_STEP along it; empty = rebuild
 var spawn_t := 0.0
 var lane := 0
 var enemies: Array = []
@@ -205,7 +214,7 @@ func update(dt: float) -> void:
 	if not queue.is_empty():
 		spawn_t -= dt
 		if spawn_t <= 0.0:
-			_spawn(queue.pop_front())
+			_spawn(queue.pop_front(), -1, 0.0, queue_wave.pop_front())
 			spawn_t = Defs.SPAWN_INTERVAL
 	_update_sites(dt)
 	_update_den(dt)
@@ -242,6 +251,10 @@ func start_wave() -> void:
 		list[i] = list[j]
 		list[j] = tmp
 	queue.append_array(list)
+	for i in list.size():
+		queue_wave.append(wave + 1)
+	wave_left[wave + 1] = list.size()
+	wave_peak[wave + 1] = 0.0
 	wave += 1
 	timer = level.wave_gap if wave < level.waves.size() else 0.0
 	spawn_t = 0.0
@@ -262,12 +275,13 @@ func call_early() -> int:
 	return bonus
 
 
-func _spawn(code: String, path := -1, dist := 0.0) -> void:
+func _spawn(code: String, path := -1, dist := 0.0, w := 0) -> void:
 	var d: Dictionary = Defs.ENEMIES[code]
 	var e := Enemy.new()
 	e.code = code
+	e.wave = w
 	e.d = d
-	var mul := level.hp_mul * (1.0 + Defs.WAVE_HP_SCALE * maxi(0, wave - 1))
+	var mul := level.hp_mul * (1.0 + Defs.WAVE_HP_SCALE * maxi(0, wave - 1)) * threat
 	e.hp = d["hp"] * mul
 	e.max_hp = e.hp
 	if path < 0:
@@ -365,6 +379,11 @@ func _update_enemies(dt: float) -> void:
 			if e.carry > 0:
 				lost += e.carry
 				toast.emit("%s escaped with %s" % [e.d["name"], "a gem" if e.carry == 1 else "%d gems" % e.carry])
+		if e.wave > 0:
+			# How much of the defence it has walked through. Running away means it reached the
+			# hoard or grabbed a dropped gem: as far as it gets.
+			var reach := _cover_share(e.path, e.dist) if e.dir == 1 else 1.0
+			wave_peak[e.wave] = maxf(wave_peak.get(e.wave, 0.0), reach)
 		var p := level.path_pos(e.path, e.dist)
 		if absf(p.x - e.pos.x) > 0.0001:
 			e.face = 1 if p.x > e.pos.x else -1
@@ -386,7 +405,58 @@ func _update_enemies(dt: float) -> void:
 					g.n -= take
 					e.carry += take
 					e.dir = -1
+	for e: Enemy in enemies:
+		if e.wave > 0 and (e.gone or e.hp <= 0.0):
+			wave_left[e.wave] -= 1
+			if wave_left[e.wave] == 0:
+				_judge_wave(e.wave)
 	enemies = enemies.filter(func(e: Enemy) -> bool: return not e.gone and e.hp > 0.0)
+
+
+## Share (0..1) of road i's defended stretch, the parts a tower or the den can reach, that lies
+## before distance d. Measures how deep into the defence a hero got, wherever towers stand.
+func _cover_share(i: int, d: float) -> float:
+	if _cover.is_empty():
+		for k in level.paths.size():
+			var total: float = level.paths[k]["total"]
+			var cum := PackedFloat32Array()
+			var sum := 0.0
+			for n in int(total / COVER_STEP) + 1:
+				var p := level.path_pos(k, n * COVER_STEP)
+				var hit := p.distance_to(level.lair_center) <= Defs.DEN["range"]
+				for tw: Tower in towers.values():
+					if hit:
+						break
+					hit = p.distance_to(tw.pos) <= tw.stat("range")
+				if hit:
+					sum += COVER_STEP
+				cum.append(sum)
+			_cover[k] = cum
+	var arr: PackedFloat32Array = _cover[i]
+	var last := arr[arr.size() - 1]
+	return arr[clampi(int(d / COVER_STEP), 0, arr.size() - 1)] / last if last > 0.0 else 1.0
+
+
+## Dynamic difficulty. Once every hero of a wave is gone, see how close the wave came: the
+## most of its road's defended stretch any of them got through. A wave stopped early raises the threat a lot;
+## one that got close eases it a little, so a struggling player isn't buried.
+func _judge_wave(w: int) -> void:
+	var t: Dictionary = Defs.THREAT
+	var reach: float = wave_peak.get(w, 0.0)
+	var before := threat
+	if reach < t["easy"]:
+		threat += t["up_min"] + (t["up_max"] - t["up_min"]) * (t["easy"] - reach) / t["easy"]
+	elif reach < t["hard"]:
+		threat += t["up_min"]
+	elif reach < 1.0:
+		threat -= t["down"]
+	else:
+		threat -= t["down_touched"]
+	threat = clampf(threat, t["min"], t["max"])
+	wave_left.erase(w)
+	wave_peak.erase(w)
+	if absf(threat - before) >= 0.1:
+		_text(level.lair_center + Vector2(0, -1.5), "Threat ×%.1f" % threat, Color("ff9a7a") if threat > before else Color("9ad08a"))
 
 
 func _update_drops(dt: float) -> void:
@@ -465,17 +535,6 @@ func _update_beam(tw: Tower, dt: float) -> void:
 	var e := tw.beam
 	var dps := tw.stat("dmg") * (1.0 + (Defs.HEAT_MAX - 1.0) * tw.heat)
 	hurt(e, dps * dt, true, tw)
-	if tw.has_ability():
-		tw.cd -= dt
-		if tw.cd <= 0.0:
-			tw.cd = Defs.ABILITIES["ash"]["every"]
-			var pl := Pool.new()
-			pl.pos = e.pos
-			pl.r = Defs.ABILITIES["ash"]["r"]
-			pl.dur = Defs.ABILITIES["ash"]["dur"]
-			pl.dps = tw.stat("dmg") * tw.ability_power()
-			pl.src = tw
-			pools.append(pl)
 	if e.hp <= 0.0:
 		tw.beam = null
 
@@ -566,6 +625,19 @@ func hurt(e: Enemy, dmg: float, pierce := false, src: Tower = null) -> void:
 			drops.append(g)
 			e.carry = 0
 		_roll_loot(e)
+		if src != null and src.type == "ash" and src.has_ability() and rng.randf() < Defs.ABILITIES["ash"]["chance"]:
+			_lava(src, e.pos)
+
+
+## Lava: a pool of burning ground where a Cinder Shrine killed a hero.
+func _lava(tw: Tower, at: Vector2) -> void:
+	var pl := Pool.new()
+	pl.pos = at
+	pl.r = Defs.ABILITIES["ash"]["r"]
+	pl.dur = Defs.ABILITIES["ash"]["dur"]
+	pl.dps = tw.stat("dmg") * Defs.HEAT_MAX * tw.ability_power()
+	pl.src = tw
+	pools.append(pl)
 
 
 ## Damage reduction from the strongest living Shieldbearer next to e (never from itself).
@@ -583,7 +655,7 @@ func _tower_xp(tw: Tower, amount: float) -> void:
 	while tw.rank < ranks.size() and tw.xp >= ranks[tw.rank]:
 		tw.rank += 1
 		var msg := "Rank %d" % tw.rank
-		if tw.rank == Defs.ABILITY_RANK:
+		if tw.has_ability() and tw.rank == Defs.ABILITY_RANK:
 			msg = Defs.ABILITIES[tw.type]["name"] + "!"
 		_text(tw.pos + Vector2(0, -0.9), msg, Color("c9c0ff"))
 
@@ -689,6 +761,7 @@ func cast_meteor(pos: Vector2) -> bool:
 
 ## On night levels, tiles near the lair, your towers and your mines and wells are lit.
 func _relight() -> void:
+	_cover.clear()   # towers changed, so did the defended stretch of each road
 	lit.clear()
 	if not level.night:
 		return
@@ -762,7 +835,7 @@ func cell_info(c: Vector2i) -> Dictionary:
 		if tw.has_ability():
 			txt += "%s: %s" % [ab["name"], ab["text"]]
 		else:
-			txt += "%s at rank %d: %s" % [ab["name"], Defs.ABILITY_RANK, ab["text"]]
+			txt += "%s at rank %d and level III: %s" % [ab["name"], Defs.ABILITY_RANK, ab["text"]]
 		return {"title": "%s, level %d" % [d["name"], tw.lvl], "text": txt, "actions": acts}
 	if not is_lit(c):
 		return {"title": "Darkness", "text": "You can't build where you can't see. Towers, mines and wells light the ground around them.", "actions": []}
@@ -896,6 +969,9 @@ func do_action(id: String, c: Vector2i) -> String:
 			gold -= cost
 			tw.spent += cost
 			tw.lvl += 1
+			_cover.clear()   # range grew
+			if tw.has_ability() and tw.lvl == Defs.ABILITY_LEVEL:
+				_text(tw.pos + Vector2(0, -0.9), Defs.ABILITIES[tw.type]["name"] + "!", Color("c9c0ff"))
 		"sell":
 			if not towers.has(c):
 				return "No tower here"

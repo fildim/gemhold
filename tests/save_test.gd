@@ -259,6 +259,33 @@ func _init() -> void:
 	print("loot from 2000 kills: %d coins (%.0f%%), %d potions (%.0f%%)" % [coins, coins / 20.0, potions, potions / 20.0])
 	_check(absf(coins / 2000.0 - 0.35) < 0.04 and absf(potions / 2000.0 - 0.15) < 0.03, "drop rates near 35% coins, 15% potions")
 
+	# Dynamic difficulty: a wave stopped early raises the threat a lot, a close one eases it a bit.
+	var th := GameSim.new(lv)
+	var judge := func(reach: float) -> float:
+		var before := th.threat
+		th.wave_peak[99] = reach
+		th._judge_wave(99)
+		return th.threat - before
+	var big: float = judge.call(0.05)
+	var small: float = judge.call(0.6)
+	var ease: float = judge.call(0.85)
+	var grabbed: float = judge.call(1.0)
+	print("threat steps: easy %+.2f, middling %+.2f, close %+.2f, gem touched %+.2f -> x%.2f" % [big, small, ease, grabbed, th.threat])
+	_check(big > 0.3 and small > 0.0 and small < big and ease < 0.0 and grabbed < ease, "threat climbs fast on easy waves and eases on hard ones")
+	th.threat = 2.0
+	th.wave = 5
+	th._spawn("p", 0)
+	_check(is_equal_approx(th.enemies.back().max_hp, 32.0 * 2.0 * (1.0 + Defs.WAVE_HP_SCALE * 4)), "threat multiplies hero health")
+
+	# Abilities need veteran rank 3 and upgrade level III together.
+	var ab := GameSim.Tower.new()
+	ab.type = "ash"
+	ab.rank = 3
+	ab.lvl = 2
+	var at_rank_only := ab.has_ability()
+	ab.lvl = 3
+	_check(not at_rank_only and ab.has_ability(), "abilities unlock at rank 3 and level III")
+
 	back.reset()
 	_check(back.unlocked == 1 and back.best.is_empty() and back.points_total() == 0, "reset clears progress")
 	DirAccess.remove_absolute(FILE)

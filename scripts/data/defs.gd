@@ -61,6 +61,14 @@ const MANA_REGEN := 1.2      # per second
 const MANA_PER_KILL := 3.0
 const SPAWN_INTERVAL := 0.85
 const WAVE_HP_SCALE := 0.12  # +12% hero health per wave
+
+## Dynamic difficulty (GameSim._judge_wave). After each wave the threat, which multiplies hero
+## health, moves by how deep into the defence that wave got: the most of its road's defended stretch
+## (where towers or the den can reach) any of its heroes walked through, from 0 to 1.
+## Under `easy`: up by up_min..up_max (the earlier they fell, the more). Up to `hard`: up by up_min.
+## Past `hard`: down by `down`. A hero reaching the hoard or a dropped gem: down by down_touched.
+const THREAT := {"easy": 0.45, "hard": 0.7, "up_min": 0.05, "up_max": 0.35, "down": 0.05,
+	"down_touched": 0.1, "min": 0.85, "max": 3.0}
 const DROP_SPEED := 0.7      # dropped gems roll home along the road at this many tiles/s
 
 ## The den (your lair) strikes heroes near it. It holds charges: each is one bolt, and spent
@@ -74,14 +82,15 @@ const DEN := {"charges": 1, "range": 2.6, "dmg": 70, "refill": 8.0, "rate": 0.5}
 const METEOR := {"cost": 60, "radius": 1.3, "dmg": 140, "delay": 0.55}
 
 ## Tower veterancy: towers earn 1 XP per point of damage dealt and rank up at these totals.
-## Each rank adds damage; rank ABILITY_RANK unlocks the tower's ability.
+## Each rank adds damage. A tower at rank ABILITY_RANK and upgrade level ABILITY_LEVEL unlocks its ability.
 const TOWER_XP_RANKS := [150, 500, 1200]
 const RANK_DMG := 0.08
-const ABILITY_RANK := 2
+const ABILITY_RANK := 3
+const ABILITY_LEVEL := 3
 const ABILITIES := {
 	"moss": {"name": "Volley", "text": "A second arrow hits another hero in range.", "base": 0.5, "per_rank": 0.2},
 	"frost": {"name": "Dread", "text": "Hits may terrify a hero: it backs away, or freezes if carrying a gem.", "base": 0.12, "per_rank": 0.06, "dur": 1.6},
-	"ash": {"name": "Lava", "text": "The beam leaves burning ground under its target.", "base": 0.3, "per_rank": 0.15, "dur": 3.0, "r": 0.7, "every": 1.0},
+	"ash": {"name": "Lava", "text": "Heroes it kills may leave a pool of burning ground.", "base": 0.3, "per_rank": 0.15, "dur": 3.0, "r": 0.7, "chance": 0.35},
 }
 
 ## Map buildings. Cutting (a mana action) frees mines and wells for you, or razes a hero barracks.
