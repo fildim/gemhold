@@ -9,6 +9,8 @@ signal toast(text: String)
 signal ended(won: bool)
 signal ground_changed
 signal light_changed
+## A sound effect to play (see Sfx.SFX): the rules say what happened, the view decides how it sounds.
+signal sound(name: String)
 
 
 class Enemy:
@@ -259,6 +261,7 @@ func start_wave() -> void:
 	timer = level.wave_gap if wave < level.waves.size() else 0.0
 	spawn_t = 0.0
 	toast.emit("Wave %d: heroes approach" % wave)
+	sound.emit("horn")
 
 
 ## Call the next wave now. Also gathers every coin and potion lying on the map.
@@ -349,6 +352,7 @@ func _update_den(dt: float) -> void:
 	s.pierce = true
 	s.spd = 9.0
 	shots.append(s)
+	sound.emit("zap")
 
 
 func _update_enemies(dt: float) -> void:
@@ -374,11 +378,13 @@ func _update_enemies(dt: float) -> void:
 			if take > 0:
 				touched = true
 				_text(level.lair_center + Vector2(0, -0.6), "-%d gem" % take, Color("ff7a90"))
+				sound.emit("grab")
 		if e.dir == -1 and e.dist <= 0.0:
 			e.gone = true
 			if e.carry > 0:
 				lost += e.carry
 				toast.emit("%s escaped with %s" % [e.d["name"], "a gem" if e.carry == 1 else "%d gems" % e.carry])
+				sound.emit("lost")
 		if e.wave > 0:
 			# How much of the defence it has walked through. Running away means it reached the
 			# hoard or grabbed a dropped gem: as far as it gets.
@@ -405,6 +411,7 @@ func _update_enemies(dt: float) -> void:
 					g.n -= take
 					e.carry += take
 					e.dir = -1
+					sound.emit("grab")
 	for e: Enemy in enemies:
 		if e.wave > 0 and (e.gone or e.hp <= 0.0):
 			wave_left[e.wave] -= 1
@@ -507,6 +514,7 @@ func _update_towers(dt: float) -> void:
 		tw.flash = 0.15
 		var s := _make_shot(tw, best)
 		shots.append(s)
+		sound.emit("hut" if s.kind == "arrow" else "crypt")
 		if tw.type == "moss" and tw.has_ability():
 			var second := _pick_target(tw, best)
 			if second != null:
@@ -596,6 +604,7 @@ func _update_fx(dt: float) -> void:
 		if f.kind == "meteor" and not f.hit and f.t >= Defs.METEOR["delay"]:
 			f.hit = true
 			_boom(f.pos, Defs.METEOR["radius"], 0.5)
+			sound.emit("boom")
 			for e: Enemy in enemies:
 				if e.pos.distance_to(f.pos) <= Defs.METEOR["radius"]:
 					hurt(e, Defs.METEOR["dmg"], true)
@@ -616,6 +625,7 @@ func hurt(e: Enemy, dmg: float, pierce := false, src: Tower = null) -> void:
 		gold += int(e.d["gold"])
 		mana = minf(mana_max, mana + Defs.MANA_PER_KILL)
 		_text(e.pos + Vector2(0, -0.3), "+%d" % int(e.d["gold"]), Color("e8b84a"))
+		sound.emit("die")
 		if e.carry > 0:
 			var g := Drop.new()
 			g.pos = e.pos
@@ -658,6 +668,7 @@ func _tower_xp(tw: Tower, amount: float) -> void:
 		if tw.has_ability() and tw.rank == Defs.ABILITY_RANK:
 			msg = Defs.ABILITIES[tw.type]["name"] + "!"
 		_text(tw.pos + Vector2(0, -0.9), msg, Color("c9c0ff"))
+		sound.emit("rank")
 
 
 ## One roll per slain hero, so it drops a coin, a potion or nothing, never both.
@@ -704,6 +715,7 @@ func gather_loot() -> int:
 
 
 func _take_loot(l: Loot) -> void:
+	sound.emit(l.kind)
 	if l.kind == "coin":
 		gold += l.amount
 		_text(l.pos + Vector2(0, -0.3), "+%d" % l.amount, Color("e8b84a"))
@@ -754,6 +766,7 @@ func cast_meteor(pos: Vector2) -> bool:
 	f.pos = pos
 	f.dur = Defs.METEOR["delay"] + 0.5
 	fx.append(f)
+	sound.emit("whoosh")
 	return true
 
 
@@ -927,6 +940,7 @@ func do_action(id: String, c: Vector2i) -> String:
 		tw.ability_rank = skill(type + "_ability")
 		towers[c] = tw
 		_relight()
+		sound.emit("build")
 		return ""
 	match id:
 		"clear":
@@ -939,6 +953,7 @@ func do_action(id: String, c: Vector2i) -> String:
 			trees.erase(c)
 			_text(Vector2(c) + Vector2(0.5, 0.3), "+%d" % Defs.CLEAR_GOLD, Color("e8b84a"))
 			ground_changed.emit()
+			sound.emit("chop")
 		"cut":
 			if not sites.has(c) or (sites[c] as Site).owned:
 				return "Nothing to cut"
@@ -949,6 +964,7 @@ func do_action(id: String, c: Vector2i) -> String:
 			mana -= d["cut"]
 			s.owned = true
 			s.t = 0.0
+			sound.emit("raze")
 			if s.kind == "camp":
 				gold += d["bounty"]
 				_boom(s.pos, 0.9, 0.5)
@@ -970,6 +986,7 @@ func do_action(id: String, c: Vector2i) -> String:
 			tw.spent += cost
 			tw.lvl += 1
 			_cover.clear()   # range grew
+			sound.emit("upgrade")
 			if tw.has_ability() and tw.lvl == Defs.ABILITY_LEVEL:
 				_text(tw.pos + Vector2(0, -0.9), Defs.ABILITIES[tw.type]["name"] + "!", Color("c9c0ff"))
 		"sell":
@@ -979,6 +996,7 @@ func do_action(id: String, c: Vector2i) -> String:
 			gold += int(tw.spent * Defs.SELL_REFUND)
 			towers.erase(c)
 			_relight()
+			sound.emit("sell")
 		_:
 			return "Unknown action"
 	return ""

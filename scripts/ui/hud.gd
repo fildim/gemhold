@@ -13,6 +13,7 @@ signal restart_pressed
 signal next_level_pressed
 signal night_pressed
 signal map_pressed
+signal hint_closed
 
 const NIGHT := Color("15110d")
 const PANEL := Color("231b14")
@@ -59,12 +60,17 @@ var _toast_label: Label
 var _toast_tween: Tween
 var _overlay: Control
 var _card_box: VBoxContainer
+var _sound: Button
+var _hint: PanelContainer
+var _hint_text: RichTextLabel
 
 
 func _ready() -> void:
 	body_font = load("res://assets/fonts/AlegreyaSans-Bold.ttf")
 	bold_font = load("res://assets/fonts/AlegreyaSans-ExtraBold.ttf")
 	var grenze: FontFile = load("res://assets/fonts/GrenzeGotisch.ttf")
+	for f: Font in [body_font, bold_font, grenze]:
+		f.fallbacks = [Symbols.font()]
 	var fv := FontVariation.new()
 	fv.base_font = grenze
 	fv.variation_opentype = {TextServerManager.get_primary_interface().name_to_tag("wght"): 700}
@@ -73,6 +79,7 @@ func _ready() -> void:
 	_build_bars()
 	_build_popup()
 	_build_toast()
+	_build_hint()
 	_build_overlay()
 	resized.connect(_layout)
 	_layout()
@@ -180,6 +187,7 @@ func _build_bars() -> void:
 	_meteor = _button(brow, "Meteor 60", meteor_pressed)
 	_speed = _button(brow, "1×", speed_pressed)
 	_pause = _button(brow, "Pause", pause_pressed)
+	_sound = sound_button(brow)
 	_button(brow, "Map", map_pressed)
 	for b in [_meteor]:
 		b.add_theme_color_override("font_color", Color("c9c0ff"))
@@ -202,6 +210,25 @@ func _icon(kind: String) -> Control:
 	ic.custom_minimum_size = Vector2(20, 20)
 	ic.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	return ic
+
+
+## Sound on -> Music off -> Muted. Also used on the level map.
+func sound_button(parent: Control) -> Button:
+	var b := Button.new()
+	b.text = Sfx.label()
+	b.custom_minimum_size = Vector2(0, 48)
+	b.focus_mode = Control.FOCUS_NONE
+	b.add_to_group("sound_buttons")
+	b.pressed.connect(func() -> void:
+		Sfx.cycle()
+		refresh_sound())
+	parent.add_child(b)
+	return b
+
+
+## Updates every sound button's label (the map has one too).
+func refresh_sound() -> void:
+	get_tree().call_group("sound_buttons", "set_text", Sfx.label())
 
 
 func _button(parent: Control, text: String, sig: Signal) -> Button:
@@ -283,6 +310,7 @@ func set_battle_visible(on: bool) -> void:
 	_bottom.visible = on
 	if not on:
 		_overlay.visible = false
+		_hint.visible = false
 		hide_popup()
 
 
@@ -450,6 +478,52 @@ func toast(msg: String) -> void:
 	_toast.modulate.a = 1.0
 	_toast_tween.tween_interval(1.6)
 	_toast_tween.tween_property(_toast, "modulate:a", 0.0, 0.3)
+
+
+## The tutorial's tip panel, along the bottom of the map. Taps go through it to the map,
+## except on its × button.
+func _build_hint() -> void:
+	_hint = PanelContainer.new()
+	_hint.add_theme_stylebox_override("panel", _box(Color(PANEL, 0.94), GOLD, 1, 10, 14))
+	_hint.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_hint.visible = false
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 10)
+	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_hint.add_child(row)
+	_hint_text = RichTextLabel.new()
+	_hint_text.bbcode_enabled = true
+	_hint_text.fit_content = true
+	_hint_text.scroll_active = false
+	_hint_text.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_hint_text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_hint_text.custom_minimum_size = Vector2(300, 0)
+	row.add_child(_hint_text)
+	var close := Button.new()
+	close.text = "×"
+	close.focus_mode = Control.FOCUS_NONE
+	close.custom_minimum_size = Vector2(44, 40)
+	close.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	close.add_theme_font_size_override("font_size", 24)
+	close.pressed.connect(func() -> void: hint_closed.emit())
+	row.add_child(close)
+	add_child(_hint)
+
+
+## Shows a tutorial tip (BBCode), or hides the panel for "".
+func show_hint(bbcode: String) -> void:
+	if bbcode == "":
+		_hint.visible = false
+		return
+	if not _hint.visible or _hint_text.text != bbcode:
+		_hint_text.text = bbcode
+		var w := minf(620.0, map_area.size.x - 20.0)
+		_hint.custom_minimum_size = Vector2(w, 0)
+		_hint_text.custom_minimum_size = Vector2(w - 90.0, 0)
+		_hint.visible = true
+	_hint.reset_size()   # every frame: the text's height settles a frame after it changes
+	_hint.position = Vector2(map_area.position.x + (map_area.size.x - _hint.size.x) / 2.0,
+		map_area.end.y - _hint.size.y - 8.0)
 
 
 # ---------------------------------------------------------------- start / end screens

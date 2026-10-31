@@ -1,14 +1,26 @@
 # Gemhold
 
 <p align="center">
-  <a href="https://github.com/fildim/gemhold/releases/latest/download/Gemhold.exe"><img src="https://img.shields.io/badge/Download_for_Windows-Gemhold.exe-e8b84a?style=for-the-badge&logo=windows&logoColor=white" alt="Download Gemhold for Windows" height="48"></a>
+  <a href="https://fildim.github.io/gemhold/"><img src="https://img.shields.io/badge/Play_in_your_browser-iPhone_·_iPad_·_any_device-e2683a?style=for-the-badge&logo=googlechrome&logoColor=white" alt="Play Gemhold in your browser" height="48"></a>
+  <br><br>
+  <a href="https://github.com/fildim/gemhold/releases/latest/download/Gemhold.exe"><img src="https://img.shields.io/badge/Windows-Gemhold.exe-e8b84a?style=for-the-badge&logo=windows&logoColor=white" alt="Download for Windows" height="36"></a>
+  <a href="https://github.com/fildim/gemhold/releases/latest/download/Gemhold-macOS.zip"><img src="https://img.shields.io/badge/macOS-Gemhold--macOS.zip-e8b84a?style=for-the-badge&logo=apple&logoColor=white" alt="Download for macOS" height="36"></a>
+  <a href="https://github.com/fildim/gemhold/releases/latest/download/Gemhold-Linux.zip"><img src="https://img.shields.io/badge/Linux-Gemhold--Linux.zip-e8b84a?style=for-the-badge&logo=linux&logoColor=white" alt="Download for Linux" height="36"></a>
+  <a href="https://github.com/fildim/gemhold/releases/latest/download/Gemhold.apk"><img src="https://img.shields.io/badge/Android-Gemhold.apk-e8b84a?style=for-the-badge&logo=android&logoColor=white" alt="Download for Android" height="36"></a>
   <br>
-  <sub>Always the latest version · <a href="https://github.com/fildim/gemhold/releases/latest">release notes</a> · no install needed, just double-click</sub>
+  <sub>Always the latest version · <a href="https://github.com/fildim/gemhold/releases/latest">release notes and all files</a></sub>
 </p>
 
-> **Windows may say "Windows protected your PC"** because the game isn't code-signed. Click **More info**, then **Run anyway**.
+| System | How to start it |
+|---|---|
+| **Windows** | Double-click `Gemhold.exe`. If it says "Windows protected your PC" (the game isn't code-signed), click **More info**, then **Run anyway**. |
+| **macOS** | Unzip, then right-click **Gemhold** and choose **Open**, then **Open** again. Only needed the first time, because the app isn't notarised by Apple. |
+| **Linux** | Unzip and run `Gemhold.x86_64`. |
+| **Android** | Download `Gemhold.apk` on the phone and open it. Allow installing apps from your browser when asked. |
+| **iPhone / iPad** | Open the **browser version** in Safari, tap **Share**, then **Add to Home Screen**: it opens full screen like an app and keeps your progress. Or sideload `Gemhold-iOS-unsigned.ipa` from the release (see [iPhone app](#iphone-app)). |
+| **Any browser** | [fildim.github.io/gemhold](https://fildim.github.io/gemhold/). Nothing to install; progress is saved in the browser. |
 
-A dark-lord tower defense for Windows and Android, built with **Godot 4.6**. You guard a cave of gems; heroes walk the roads to steal them.
+A dark-lord tower defense for Windows, macOS, Linux, Android, iPhone and the web, built with **Godot 4.6**. You guard a cave of gems; heroes walk the roads to steal them. It has music and sound effects (the **Sound** button cycles Sound on, Music off and Muted), and the first lair teaches you as you play.
 
 The campaign opens on a level map. Level 1 ("Mossfold Pass") is ported from the web prototype with the same rules and balance; levels 2–8 (Rimewater Ford, Gloamwood Hollow, Cinderfall Steps, The Hoard Throne, Saltmarsh Crossing, The Iron Column and Gloomspire Summit) are new. Saltmarsh Crossing is one long road full of fast swarms, The Iron Column sends armoured heroes down two roads that join before the den, and Gloomspire Summit brings heroes up four roads at once. Clearing a level Brilliant unlocks its night mission. Progress saves automatically: unlocked levels, best rating per mission and skills. Each level guards 5 gems.
 
@@ -50,9 +62,15 @@ scripts/
   ui/hud.gd              stats bar, buttons, tile panel, start and end screens
   ui/level_select.gd     the campaign map (tap a lair to play it)
   ui/skill_tree.gd       Dark Arts, the skill tree
+  ui/tutorial.gd         tips on the first lair, one at a time
+  ui/symbols.gd          drawn fallback glyphs (★ ● ○) so they show in browsers too
+  audio/audio.gd         sound effects and music (autoload SfxPlayer, called as Sfx.play)
+  core/prefs.gd          sound, music and tutorial settings in user://settings.cfg
   main.gd                connects everything, handles taps
 tests/                   headless checks (see below)
 assets/fonts/            Grenze Gotisch and Alegreya Sans (SIL Open Font License, see OFL.txt)
+assets/audio/            sound effects and music, all made by tools/make_audio.gd
+tools/make_audio.gd      synthesises every sound; edit it and run it to change them
 ```
 
 **Tuning balance:** edit `scripts/data/defs.gd`.
@@ -71,6 +89,7 @@ godot --headless --script res://tests/level_check.gd  # level files: grid sizes,
 godot --headless --script res://tests/save_test.gd    # unlocking, ratings, stars as skill points, loot, damaged save files
 godot --headless --script res://tests/scene_test.gd   # boots the real scene, taps tiles, casts spells, plays the night level
 godot --headless --script res://tests/tower_test.gd   # the three tower types side by side against set groups of heroes
+godot --headless --script res://tests/tutorial_test.gd  # the first-lair tips: where they point and how they move on
 ```
 
 ## Putting it on your Android phone
@@ -120,15 +139,42 @@ Debug builds are signed with Godot's debug keystore and are only for testing.
 - [x] Night missions, unlocked by a Brilliant clear: build only where you can see
 - [x] Three ratings: gems lost, gem touched, untouched
 - [x] New heroes: Shieldbearer, Cutpurse, Warden
-- [ ] Sound and music
+- [x] Sound effects and music
+- [x] Tutorial tips on the first lair
+- [x] Builds for Windows, macOS, Linux, Android, iPhone and the web
 
 ## Publishing a new version
 
-Raise the version in `export_presets.cfg` (both presets) and `project.godot`, commit, then tag and push:
+Raise the version in `export_presets.cfg` (Android `version/*`, Windows `application/*_version`, macOS and iOS `application/short_version` and `application/version`) and `project.godot`, commit, then tag and push:
 
 ```
-git tag v0.2.2
-git push origin main v0.2.2
+git tag v0.4.0
+git push origin main v0.4.0
 ```
 
-GitHub Actions (`.github/workflows/release.yml`) builds `Gemhold.exe` and publishes it as a release; the download button above always points at the newest one.
+GitHub Actions (`.github/workflows/release.yml`) then builds every platform and publishes them as one release; the download buttons above always point at the newest one. It also puts the web version on GitHub Pages.
+
+**One-time setup** (repository settings on github.com):
+
+- **Web version:** Settings > Pages > Build and deployment > Source: **GitHub Actions**. Until then the Pages step is skipped and the rest still publishes.
+- **Android APK in releases:** Settings > Secrets and variables > Actions > New repository secret, named `ANDROID_DEBUG_KEYSTORE`, holding the debug keystore as base64 (`base64 -w0 debug.keystore`). It's the same key the Firebase test builds use, so the APK installs over them. Without the secret the release has no APK.
+
+## iPhone app
+
+Apple only lets apps onto an iPhone through the App Store, TestFlight or a signed install, and signing normally needs the $99/year developer program. The free options:
+
+1. **Browser (easiest):** open [fildim.github.io/gemhold](https://fildim.github.io/gemhold/) in Safari, then Share > **Add to Home Screen**. It runs full screen from its own icon, offline after the first visit.
+2. **Sideload the app:** every release includes `Gemhold-iOS-unsigned.ipa`, built on a GitHub Mac. Install [AltStore](https://altstore.io) or [Sideloadly](https://sideloadly.io) on a Windows PC or Mac, sign in with any free Apple ID, and install the IPA with the iPhone plugged in. With a free Apple ID the app stops opening after 7 days until you install it again from the computer (AltStore can refresh it over Wi-Fi). Turn on **Settings > Privacy & Security > Developer Mode** on the iPhone when it asks.
+
+With a paid Apple developer account, the same workflow could sign the build and send it to TestFlight.
+
+## Sound
+
+Every sound effect and both music loops are synthesised by `tools/make_audio.gd` (oscillators, noise and plucked strings), so they are original. To change one, edit its function there and rebuild:
+
+```
+godot --headless -s res://tools/make_audio.gd -- coin boom   # just these, or no names for all
+godot --headless --import
+```
+
+Volumes and how often each may repeat are in `SFX` at the top of `scripts/audio/audio.gd`. The music and the Shrine's crackle loop; that is set in their `.wav.import` files (`edit/loop_mode=2`).

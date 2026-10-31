@@ -22,6 +22,7 @@ var _sub: Label
 var _reset: Button
 var _reset_armed := false
 var _skills: Button
+var _sound: Button
 
 
 func setup(hud: Control, levels: Array, save: SaveData) -> void:
@@ -61,6 +62,9 @@ func setup(hud: Control, levels: Array, save: SaveData) -> void:
 	_reset.add_theme_color_override("font_color", Hud.DIM)
 	_reset.pressed.connect(_on_reset)
 	add_child(_reset)
+	_sound = hud.sound_button(self)
+	_sound.custom_minimum_size = Vector2(0, 40)
+	_sound.add_theme_font_size_override("font_size", 15)
 	resized.connect(_layout)
 	refresh()
 
@@ -98,6 +102,8 @@ func _layout() -> void:
 		m.position = _spot(m.index) - Vector2(Marker.SIZE.x / 2.0, Marker.R)
 	_reset.reset_size()
 	_reset.position = size - _reset.size - Vector2(14, 12)
+	_sound.reset_size()
+	_sound.position = Vector2(_reset.position.x - _sound.size.x - 10, size.y - _sound.size.y - 12)
 	_skills.reset_size()
 	_skills.position = Vector2(14, size.y - _skills.size.y - 12)
 	queue_redraw()
@@ -110,6 +116,7 @@ func _spot(i: int) -> Vector2:
 
 
 func _on_marker(i: int) -> void:
+	Sfx.play("click")
 	if _save.is_unlocked(i):
 		level_chosen.emit(i)
 	else:
@@ -124,6 +131,7 @@ func _on_reset() -> void:
 		_layout()
 		return
 	_save.reset()
+	Prefs.set_value("tutorial_done", false)
 	_save.save()
 	refresh()
 	_hud.toast("Progress erased")

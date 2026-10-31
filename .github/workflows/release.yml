@@ -1,6 +1,11 @@
-# Builds Gemhold.exe and publishes it as a GitHub Release.
-# Runs when a version tag is pushed (git tag v0.2.1 && git push origin v0.2.1),
+# Builds Gemhold for every platform and publishes a GitHub Release, plus the web version on
+# GitHub Pages. Runs when a version tag is pushed (git tag v0.4.0 && git push origin v0.4.0),
 # or by hand from the Actions tab.
+#
+#   Windows  Gemhold.exe                 Linux  Gemhold-Linux.zip
+#   macOS    Gemhold-macOS.zip           Web    https://fildim.github.io/gemhold/
+#   Android  Gemhold.apk (only if the ANDROID_DEBUG_KEYSTORE secret is set, see README)
+#   iPhone   Gemhold-iOS-unsigned.ipa (sideload with AltStore or Sideloadly)
 name: Release
 
 on:
@@ -10,13 +15,17 @@ on:
 
 permissions:
   contents: write
+  pages: write
+  id-token: write
 
 env:
   GODOT_VERSION: 4.6.2
 
 jobs:
-  windows:
+  desktop-web-android:
     runs-on: ubuntu-latest
+    env:
+      HAS_KEYSTORE: ${{ secrets.ANDROID_DEBUG_KEYSTORE != '' }}
     steps:
       - uses: actions/checkout@v4
 
@@ -29,29 +38,138 @@ jobs:
           curl -sSL -o templates.tpz "$base/Godot_v${GODOT_VERSION}-stable_export_templates.tpz"
           dest=~/.local/share/godot/export_templates/${GODOT_VERSION}.stable
           mkdir -p "$dest"
-          unzip -q -j templates.tpz "templates/windows_*" "templates/version.txt" -d "$dest"
+          unzip -q -j templates.tpz "templates/windows_*" "templates/linux_*x86_64" "templates/macos.zip" \
+            "templates/web_nothreads_*" "templates/android_*" "templates/version.txt" -d "$dest"
           rm godot.zip templates.tpz
+          mkdir -p build && touch build/.gdignore
 
       - name: Import and test
         run: |
           ./godot --headless --import || true
           ./godot --headless --script res://tests/level_check.gd
           ./godot --headless --script res://tests/save_test.gd
+          ./godot --headless --script res://tests/tutorial_test.gd
 
-      - name: Export Gemhold.exe
+      - name: Export Windows, Linux, macOS and web
         run: |
-          mkdir -p build/windows
+          mkdir -p build/windows build/linux build/macos build/web out
           ./godot --headless --export-release "Windows Desktop" build/windows/Gemhold.exe
-          test -s build/windows/Gemhold.exe
+          ./godot --headless --export-release "Linux" build/linux/Gemhold.x86_64
+          ./godot --headless --export-release "macOS" build/macos/Gemhold-macOS.zip
+          ./godot --headless --export-release "Web" build/web/index.html
+          cp build/windows/Gemhold.exe out/
+          (cd build/linux && chmod +x Gemhold.x86_64 && zip -q ../../out/Gemhold-Linux.zip Gemhold.x86_64)
+          cp build/macos/Gemhold-macOS.zip out/
+          ls -l out
+
+      # Signed with the same debug key as the Firebase test builds, so the APK installs over them.
+      - name: Export Android
+        env:
+          KEYSTORE: ${{ secrets.ANDROID_DEBUG_KEYSTORE }}
+        if: env.HAS_KEYSTORE == 'true'
+        run: |
+          echo "$KEYSTORE" | base64 -d > debug.keystore
+          mkdir -p ~/.config/godot
+          cat > ~/.config/godot/editor_settings-4.6.tres <<EOF
+          [gd_resource type="EditorSettings" format=3]
+          [resource]
+          export/android/android_sdk_path = "$ANDROID_SDK_ROOT"
+          export/android/java_sdk_path = "$JAVA_HOME_17_X64"
+          EOF
+          export GODOT_ANDROID_KEYSTORE_DEBUG_PATH="$PWD/debug.keystore"
+          export GODOT_ANDROID_KEYSTORE_DEBUG_USER=androiddebugkey
+          export GODOT_ANDROID_KEYSTORE_DEBUG_PASSWORD=android
+          ./godot --headless --export-debug "Android" out/Gemhold.apk
+          rm debug.keystore
+          test -s out/Gemhold.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: desktop
+          path: out/*
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: build/web
+
+  ios:
+    runs-on: macos-latest
+    continue-on-error: true   # the other platforms still ship if this one breaks
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Godot and the iOS template
+        run: |
+          base=https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable
+          curl -sSL -o godot.zip "$base/Godot_v${GODOT_VERSION}-stable_macos.universal.zip"
+          unzip -q godot.zip
+          curl -sSL -o templates.tpz "$base/Godot_v${GODOT_VERSION}-stable_export_templates.tpz"
+          dest="$HOME/Library/Application Support/Godot/export_templates/${GODOT_VERSION}.stable"
+          mkdir -p "$dest"
+          unzip -q -j templates.tpz "templates/ios.zip" "templates/version.txt" -d "$dest"
+          rm godot.zip templates.tpz
+          mkdir -p build/ios out && touch build/.gdignore
+
+      - name: Export the Xcode project
+        run: |
+          godot=Godot.app/Contents/MacOS/Godot
+          $godot --headless --import || true
+          $godot --headless --export-release "iOS" build/ios/Gemhold.ipa
+          ls build/ios
+
+      # Built without a signature: AltStore or Sideloadly signs it with your own free Apple ID.
+      - name: Build an unsigned IPA
+        run: |
+          cd build/ios
+          xcodebuild -project Gemhold.xcodeproj -scheme Gemhold -configuration Release -sdk iphoneos \
+            -derivedDataPath dd CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
+            DEVELOPMENT_TEAM="" build | tail -n 30
+          mkdir Payload
+          cp -R dd/Build/Products/Release-iphoneos/Gemhold.app Payload/
+          zip -qr ../../out/Gemhold-iOS-unsigned.ipa Payload
+          ls -l ../../out
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ios
+          path: out/*
+
+  release:
+    needs: [desktop-web-android, ios]
+    if: always() && needs.desktop-web-android.result == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: out
+          merge-multiple: true
 
       - name: Publish release
         uses: softprops/action-gh-release@v2
         with:
-          files: build/windows/Gemhold.exe
+          files: out/*
           name: Gemhold ${{ github.ref_name }}
           generate_release_notes: true
           body: |
-            **Download `Gemhold.exe` below and double-click it to play.** No install needed.
+            **Pick your system and download the file below.** See the README for help installing.
 
-            Windows may say "Windows protected your PC" because the game isn't code-signed:
-            click **More info**, then **Run anyway**.
+            | System | File | |
+            |---|---|---|
+            | Windows | `Gemhold.exe` | Double-click. If "Windows protected your PC" appears: **More info**, **Run anyway**. |
+            | macOS | `Gemhold-macOS.zip` | Unzip, then right-click **Gemhold**, **Open**, **Open** (first time only). |
+            | Linux | `Gemhold-Linux.zip` | Unzip and run `Gemhold.x86_64`. |
+            | Android | `Gemhold.apk` | Open it on the phone and allow installing from this source. |
+            | iPhone / iPad | [Play in Safari](https://fildim.github.io/gemhold/) | Share, **Add to Home Screen** for full screen. Or sideload `Gemhold-iOS-unsigned.ipa`. |
+            | Any browser | [fildim.github.io/gemhold](https://fildim.github.io/gemhold/) | Nothing to install. |
+
+  pages:
+    needs: desktop-web-android
+    if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    continue-on-error: true   # needs Settings > Pages > Source: GitHub Actions (once)
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - id: deploy
+        uses: actions/deploy-pages@v4

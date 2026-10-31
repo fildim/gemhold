@@ -11,6 +11,7 @@ var sim: GameSim
 var font: Font
 var selected := Vector2i(-1, -1)
 var armed := false
+var hint := Vector2i(-1, -1)   # a tile the tutorial points at
 
 
 var _fog: ImageTexture
@@ -57,6 +58,11 @@ func _draw() -> void:
 	for c: Vector2i in level.high:
 		_draw_high_shine(c, tm)
 	_draw_selection()
+	if hint.x >= 0 and hint != selected:
+		var hc := (Vector2(hint) + Vector2(0.5, 0.5)) * T
+		var pulse := 0.5 + 0.5 * sin(Time.get_ticks_msec() / 1000.0 * 5.0)
+		Paint.glow(self, hc, T * (0.6 + 0.15 * pulse), Color(1, 0.8, 0.3, 0.35 + 0.25 * pulse))
+		draw_rect(Rect2(Vector2(hint) * T, Vector2(T, T)).grow(-2), Color(1, 0.8, 0.3, 0.6 + 0.4 * pulse), false, 3.0)
 	_draw_den_charges(tm)
 	for s: GameSim.Site in sim.sites.values():
 		_draw_site(s, tm)

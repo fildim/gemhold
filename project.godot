@@ -7,11 +7,17 @@ config_version=5
 
 config/name="Gemhold"
 config/description="Guard your gems from greedy heroes."
-config/version="0.3.0"
+config/version="0.4.0"
 run/main_scene="res://scenes/main.tscn"
 config/quit_on_go_back=false
 config/features=PackedStringArray("4.6", "GL Compatibility")
 config/icon="res://icon.svg"
+boot_splash/bg_color=Color(0.0824, 0.0667, 0.051, 1)
+boot_splash/show_image=false
+
+[autoload]
+
+SfxPlayer="*res://scripts/audio/audio.gd"
 
 [display]
 

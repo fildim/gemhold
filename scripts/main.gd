@@ -18,6 +18,7 @@ var paused := false
 var started := false
 var armed := false            # meteor waiting for a target
 var selected := Vector2i(-1, -1)
+var tutorial: Tutorial     # tips on the first lair, or null
 
 @onready var frame: Control = $MapFrame
 @onready var ground: Node2D = $MapFrame/Ground
@@ -39,6 +40,9 @@ func _ready() -> void:
 	hud.restart_pressed.connect(_restart)
 	hud.next_level_pressed.connect(func() -> void: _choose(level_index + 1))
 	hud.map_pressed.connect(_show_map)
+	hud.hint_closed.connect(func() -> void:
+		if tutorial:
+			tutorial.dismiss())
 	frame.gui_input.connect(_on_map_input)
 	get_viewport().size_changed.connect(_layout)
 	save = SaveData.load_from()
@@ -69,6 +73,8 @@ func _show_map() -> void:
 	hud.set_battle_visible(false)
 	select.refresh()
 	select.visible = true
+	Sfx.set_beams(0)
+	Sfx.play_music("map")
 
 
 func _choose(i: int) -> void:
@@ -106,6 +112,10 @@ func _new_battle() -> void:
 	sim = GameSim.new(level, save.skills)
 	sim.toast.connect(hud.toast)
 	sim.ended.connect(_on_ended)
+	sim.sound.connect(Sfx.play)
+	tutorial = Tutorial.new() if Tutorial.wanted(level_index, night) else null
+	hud.show_hint("")
+	board.hint = Vector2i(-1, -1)
 	ground.setup(level, sim)
 	board.setup(level, sim, hud.bold_font)
 	frame.size = Vector2(level.cols, level.rows) * T
@@ -127,6 +137,17 @@ func _process(delta: float) -> void:
 		var dt := minf(delta, 0.05)
 		for i in speed:
 			sim.update(dt)
+		if tutorial:
+			hud.show_hint("" if hud.popup_open() else tutorial.update(sim, dt * speed))
+			board.hint = tutorial.cell
+	var running := started and not paused and not sim.over
+	var beams := 0
+	if running:
+		for tw: GameSim.Tower in sim.towers.values():
+			if tw.beam != null:
+				beams += 1
+	Sfx.set_beams(beams)
+	Sfx.play_music("" if sim.over else ("battle" if started else "map"))
 	board.armed = armed
 	board.queue_redraw()
 	hud.refresh(sim, armed, speed, paused)
@@ -183,6 +204,7 @@ func _on_action(id: String) -> void:
 	var err := sim.do_action(id, c)
 	if err != "":
 		hud.toast(err)
+		Sfx.play("error")
 		return
 	if id.begins_with("build") or id == "sell" or id == "clear":
 		_deselect()
@@ -207,6 +229,12 @@ func _on_meteor() -> void:
 
 
 func _on_ended(won: bool) -> void:
+	hud.show_hint("")
+	board.hint = Vector2i(-1, -1)
+	Sfx.set_beams(0)
+	Sfx.play("win" if won else "lose")
+	if won and tutorial:
+		Prefs.set_value("tutorial_done", true)   # beat the first lair: no more tips
 	_deselect()
 	var had_night := save.night_unlocked(level.id)
 	var mission := SaveData.mission_id(level.id, night)
