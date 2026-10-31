@@ -7,7 +7,7 @@ config_version=5
 
 config/name="Gemhold"
 config/description="Guard your gems from greedy heroes."
-config/version="0.5.0"
+config/version="0.5.1"
 run/main_scene="res://scenes/main.tscn"
 config/quit_on_go_back=false
 config/features=PackedStringArray("4.6", "GL Compatibility")
