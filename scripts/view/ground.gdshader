@@ -102,7 +102,7 @@ void fragment() {
 	float shade = raised(TEXTURE, p - vec2(0.2, 0.3)) * (1.0 - base);
 	vec3 col = ground * (1.0 - shade * 0.6);
 	float fy = fract(p.y);
-	vec3 face = mix(vec3(0.14, 0.11, 0.09), ground * 0.4, 0.3) * (0.8 + 0.4 * noise(vec2(p.x * 14.0, p.y * 2.0)));
+	vec3 face = vec3(0.2, 0.17, 0.14) * (0.8 + 0.4 * noise(vec2(p.x * 14.0, p.y * 2.0)));
 	face = mix(face * 1.3, face * 0.7, smoothstep(0.72, 1.0, fy));
 	col = mix(col, face, cliff);
 	// A dark line round the whole outcrop so it stands off the ground around it.
@@ -110,7 +110,10 @@ void fragment() {
 	col = mix(col, vec3(0.08, 0.06, 0.05), clamp(outer, 0.0, 1.0) * (1.0 - base) * 0.85);
 	// Lit rim along the top's front edge, and the top itself a touch brighter than low ground.
 	float rim = top * (1.0 - raised(TEXTURE, p + vec2(0.0, LIFT + 0.07)));
-	vec3 crown = ground * 1.2 + vec3(0.22, 0.2, 0.16) * rim;
+	// The same pale, gold-veined stone on every terrain, so a raised tile reads as "any tower".
+	vec3 slab = mix(stone(p) * 1.35, vec3(0.78, 0.72, 0.58), 0.35);
+	slab = mix(slab, vec3(0.95, 0.8, 0.45), ridge(p * 3.0 + 4.0, 0.02) * 0.45);
+	vec3 crown = slab + vec3(0.25, 0.22, 0.15) * rim;
 	col = mix(col, crown, top);
 	COLOR = vec4(col, 1.0);
 }

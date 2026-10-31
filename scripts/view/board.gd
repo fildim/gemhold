@@ -54,6 +54,8 @@ func _draw() -> void:
 			Paint.gem(self, ring[i] * T, T * 0.1)
 	for pl: GameSim.Pool in sim.pools:
 		_draw_pool(pl, tm)
+	for c: Vector2i in level.high:
+		_draw_high_shine(c, tm)
 	_draw_selection()
 	_draw_den_charges(tm)
 	for s: GameSim.Site in sim.sites.values():
@@ -558,6 +560,23 @@ func _draw_den_charges(tm: float) -> void:
 			if i == sim.den_charges:
 				var k: float = sim.den_refill / Defs.DEN["refill"]
 				draw_arc(p, T * 0.075 * depth, -PI / 2, -PI / 2 + TAU * k, 16, Color("a0b4ff"), 2.0, true)
+
+
+## Raised tiles shimmer: a slow golden glow on the rock top and a few twinkling glints, so they
+## stand out as the tiles any tower can use.
+func _draw_high_shine(c: Vector2i, tm: float) -> void:
+	var top := (Vector2(c) + Vector2(0.5, 0.36)) * T
+	var k := float(c.x * 7 + c.y * 13)
+	var pulse := 0.5 + 0.5 * sin(tm * 2.0 + k)
+	Paint.glow(self, top, T * (0.42 + 0.06 * pulse), Color(1, 0.85, 0.45, 0.16 + 0.14 * pulse))
+	for i in 3:
+		var t := fmod(tm * 0.7 + i / 3.0 + Paint.hash01(c.x, c.y, i), 1.0)
+		var a := sin(t * PI)   # fades in and out over its cycle
+		var p := top + Vector2(Paint.hash01(c.x, c.y, i + 10) - 0.5, (Paint.hash01(c.x, c.y, i + 20) - 0.5) * 0.6) * T * 0.6
+		var s := T * 0.06 * a
+		var col := Color(1, 0.95, 0.75, 0.9 * a)
+		draw_line(p - Vector2(s, 0), p + Vector2(s, 0), col, 1.5, true)
+		draw_line(p - Vector2(0, s), p + Vector2(0, s), col, 1.5, true)
 
 
 ## A ball of crackling energy that swells and shrinks: a den charge, or a bolt in flight.

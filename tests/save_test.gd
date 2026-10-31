@@ -259,7 +259,7 @@ func _init() -> void:
 	print("loot from 2000 kills: %d coins (%.0f%%), %d potions (%.0f%%)" % [coins, coins / 20.0, potions, potions / 20.0])
 	_check(absf(coins / 2000.0 - 0.35) < 0.04 and absf(potions / 2000.0 - 0.15) < 0.03, "drop rates near 35% coins, 15% potions")
 
-	# Dynamic difficulty: a wave stopped early raises the threat a lot, a close one eases it a bit.
+	# Dynamic difficulty: the threat only rises, a lot after an easy wave and a little after a close one.
 	var th := GameSim.new(lv)
 	var judge := func(reach: float) -> float:
 		var before := th.threat
@@ -271,7 +271,7 @@ func _init() -> void:
 	var ease: float = judge.call(0.85)
 	var grabbed: float = judge.call(1.0)
 	print("threat steps: easy %+.2f, middling %+.2f, close %+.2f, gem touched %+.2f -> x%.2f" % [big, small, ease, grabbed, th.threat])
-	_check(big > 0.3 and small > 0.0 and small < big and ease < 0.0 and grabbed < ease, "threat climbs fast on easy waves and eases on hard ones")
+	_check(big > 0.3 and small < big and ease > 0.0 and ease < small and grabbed > 0.0 and grabbed <= ease, "threat climbs fast on easy waves, slowly on hard ones, never falls")
 	th.threat = 2.0
 	th.wave = 5
 	th._spawn("p", 0)

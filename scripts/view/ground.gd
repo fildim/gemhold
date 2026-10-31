@@ -86,12 +86,11 @@ func _draw_details() -> void:
 	for c in level.cols:
 		for r in level.rows:
 			var t := level.terrain_at(Vector2i(c, r))
-			if t == "lair":
+			if t == "lair" or level.high.has(Vector2i(c, r)):   # raised tiles are bare stone
 				continue
 			var o := Vector2(c, r) * T
-			# Kept off the tile's rim, where the shader may already show the neighbouring ground,
-			# and on raised tiles off the cliff face along their bottom.
-			var span := Vector2(0.7, 0.5) if level.high.has(Vector2i(c, r)) else Vector2(0.7, 0.7)
+			# Kept off the tile's rim, where the shader may already show the neighbouring ground.
+			var span := Vector2(0.7, 0.7)
 			for i in 7:
 				var p := o + (Vector2(0.15, 0.15) + Vector2(Paint.hash01(c, r, i + 50), Paint.hash01(c, r, i + 70)) * span) * T
 				var v := Paint.hash01(c, r, i + 90)

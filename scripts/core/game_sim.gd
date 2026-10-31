@@ -438,25 +438,25 @@ func _cover_share(i: int, d: float) -> float:
 
 
 ## Dynamic difficulty. Once every hero of a wave is gone, see how close the wave came: the
-## most of its road's defended stretch any of them got through. A wave stopped early raises the threat a lot;
-## one that got close eases it a little, so a struggling player isn't buried.
+## most of its road's defended stretch any of them got through. The threat only ever rises: a lot
+## after a wave stopped early, only a little after one that got close, so it never feels hopeless.
 func _judge_wave(w: int) -> void:
 	var t: Dictionary = Defs.THREAT
 	var reach: float = wave_peak.get(w, 0.0)
 	var before := threat
 	if reach < t["easy"]:
-		threat += t["up_min"] + (t["up_max"] - t["up_min"]) * (t["easy"] - reach) / t["easy"]
+		threat += t["up_easy"] + (t["up_max"] - t["up_easy"]) * (t["easy"] - reach) / t["easy"]
 	elif reach < t["hard"]:
-		threat += t["up_min"]
+		threat += t["up_mid"]
 	elif reach < 1.0:
-		threat -= t["down"]
+		threat += t["up_close"]
 	else:
-		threat -= t["down_touched"]
-	threat = clampf(threat, t["min"], t["max"])
+		threat += t["up_touched"]
+	threat = minf(threat, t["max"])
 	wave_left.erase(w)
 	wave_peak.erase(w)
-	if absf(threat - before) >= 0.1:
-		_text(level.lair_center + Vector2(0, -1.5), "Threat ×%.1f" % threat, Color("ff9a7a") if threat > before else Color("9ad08a"))
+	if threat - before >= 0.1:
+		_text(level.lair_center + Vector2(0, -1.5), "Threat ×%.1f" % threat, Color("ff9a7a"))
 
 
 func _update_drops(dt: float) -> void:
