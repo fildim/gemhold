@@ -42,14 +42,15 @@ func _ready() -> void:
 	_me = self
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	sound_on = Prefs.get_value("sound", true)
-	music_on = Prefs.get_value("music", true)
+	music_on = Prefs.get_value("music", true) and sound_on
+	sound_on = music_on   # one switch for both
 	for bus in ["Sfx", "Music"]:
 		if AudioServer.get_bus_index(bus) < 0:
 			AudioServer.add_bus()
 			AudioServer.set_bus_name(AudioServer.bus_count - 1, bus)
 			AudioServer.set_bus_send(AudioServer.bus_count - 1, "Master")
 	AudioServer.set_bus_volume_db(AudioServer.get_bus_index("Sfx"), SFX_BUS_DB)
-	for n in SFX.keys() + ["beam", "map", "battle"]:
+	for n in SFX.keys() + ["beam"]:   # music loads when first played
 		var p: String = DIR + n + ".wav"
 		if ResourceLoader.exists(p):
 			_streams[n] = load(p)
@@ -121,7 +122,7 @@ func _set_beams(n: int) -> void:
 		_beam.volume_db = BEAM_DB + 2.5 * (mini(n, 3) - 1)
 
 
-## "map", "battle", or "" for silence. Fades from one to the other.
+## "map", a lair's piece (see main.gd MUSIC), or "" for silence. Fades from one to the other.
 static func play_music(track: String) -> void:
 	if _me:
 		_me._play_music(track)
@@ -138,26 +139,21 @@ func _play_music(track: String) -> void:
 		_music_tween.tween_property(_music, "volume_db", -40.0, 0.5)
 	_music_tween.tween_callback(func() -> void:
 		_music.stop()
-		if music_on and _streams.has(track):
-			_music.stream = _streams[track]
+		if music_on and _music_stream(track):
+			_music.stream = _music_stream(track)
 			_music.volume_db = -40.0
 			_music.play())
 	_music_tween.tween_property(_music, "volume_db", MUSIC_DB, 1.0)
 
 
-## Cycles all on -> music off -> everything off. Returns the new label.
+## Switches all sound and music on or off together. Returns the new label.
 static func cycle() -> String:
 	return _me._cycle() if _me else label()
 
 
 func _cycle() -> String:
-	if sound_on and music_on:
-		music_on = false
-	elif sound_on:
-		sound_on = false
-	else:
-		sound_on = true
-		music_on = true
+	sound_on = not (sound_on and music_on)
+	music_on = sound_on
 	Prefs.set_value("sound", sound_on)
 	Prefs.set_value("music", music_on)
 	_set_beams(_beams)
@@ -172,8 +168,13 @@ func _cycle() -> String:
 
 
 static func label() -> String:
-	var sound_on: bool = Prefs.get_value("sound", true)
-	var music_on: bool = Prefs.get_value("music", true)
-	if sound_on and music_on:
-		return "Sound on"
-	return "Music off" if sound_on else "Muted"
+	var on: bool = Prefs.get_value("sound", true) and Prefs.get_value("music", true)
+	return "Sound on" if on else "Sound off"
+
+
+## A music track by name ("map", or a lair's piece), loaded the first time it plays.
+func _music_stream(track: String) -> AudioStream:
+	if not _streams.has(track):
+		var p := DIR + track + ".wav"
+		_streams[track] = load(p) if track != "" and ResourceLoader.exists(p) else null
+	return _streams[track]

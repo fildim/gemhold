@@ -134,7 +134,8 @@ func _init() -> void:
 	_check(tg2._pick_target(tw) == thief, "gem carriers come first of all")
 	_check(strong != null, "setup")
 
-	# Coins are worth more from stronger heroes.
+	# Coins are worth more from stronger kinds of hero, but not from tougher (threat, later waves) ones,
+	# or doing well would pay more and more.
 	var coins_of := func(code: String, hp_mult: float) -> int:
 		var cs := GameSim.new(lv)
 		for i in 400:
@@ -152,7 +153,7 @@ func _init() -> void:
 	var knight: int = coins_of.call("k", 1.0)
 	var late_peasant: int = coins_of.call("p", 2.0)
 	print("coin values: peasant %d, knight %d, peasant at 2x health %d" % [peasant, knight, late_peasant])
-	_check(knight > peasant * 3 and late_peasant > peasant, "coins scale with hero strength")
+	_check(knight > peasant * 3 and late_peasant == peasant, "coins scale with the kind of hero, not its health")
 
 	# Tower prices: 50 for the first of a type, +15 for each more of that type; upgrades 75 and 100.
 	var pr := GameSim.new(lv)
@@ -258,7 +259,7 @@ func _init() -> void:
 			else:
 				potions += 1
 	print("loot from 2000 kills: %d coins (%.0f%%), %d potions (%.0f%%)" % [coins, coins / 20.0, potions, potions / 20.0])
-	_check(absf(coins / 2000.0 - 0.35) < 0.04 and absf(potions / 2000.0 - 0.15) < 0.03, "drop rates near 35% coins, 15% potions")
+	_check(absf(coins / 2000.0 - Defs.LOOT_COIN_CHANCE) < 0.04 and absf(potions / 2000.0 - Defs.LOOT_POTION_CHANCE) < 0.03, "drop rates as set in Defs")
 
 	# Dynamic difficulty: the threat only rises, a lot after an easy wave and a little after a close one.
 	var th := GameSim.new(lv)
@@ -273,6 +274,10 @@ func _init() -> void:
 	var grabbed: float = judge.call(1.0)
 	print("threat steps: easy %+.2f, middling %+.2f, close %+.2f, gem touched %+.2f -> x%.2f" % [big, small, ease, grabbed, th.threat])
 	_check(big > 0.3 and small < big and ease > 0.0 and ease < small and grabbed > 0.0 and grabbed <= ease, "threat climbs fast on easy waves, slowly on hard ones, never falls")
+	th.gold = 1000
+	var rich: float = judge.call(1.0)
+	th.gold = 0
+	_check(rich > grabbed + 0.2, "hoarded gold raises the threat")
 	th.threat = 2.0
 	th.wave = 5
 	th._spawn("p", 0)

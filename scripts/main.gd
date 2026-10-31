@@ -6,6 +6,9 @@ extends Node2D
 const T := 64.0
 ## Campaign order. Add new level files here.
 const LEVELS: Array[String] = ["res://levels/level_01.json", "res://levels/level_02.json", "res://levels/level_03.json", "res://levels/level_04.json", "res://levels/level_05.json", "res://levels/level_06.json", "res://levels/level_07.json", "res://levels/level_08.json"]
+## Each lair's battle music, in campaign order (tools/make_audio.gd): Grieg, Mozart, Dies Irae,
+## Bach, Wagner, Rossini, Beethoven and Holst.
+const MUSIC: Array[String] = ["mountain", "turca", "dies", "toccata", "valkyries", "gallop", "fate", "mars"]
 
 var level_index := 0
 var night := false            # playing the level's night mission
@@ -21,6 +24,7 @@ var selected := Vector2i(-1, -1)
 var tutorial: Tutorial        # tips on the first lair, or null
 var spot: Control             # the tutorial spotlight, over everything
 var _arts_spent := -1         # skill points spent when the Dark Arts tip opened
+var _arts_intro := false      # the Dark Arts intro tip is up
 
 @onready var frame: Control = $MapFrame
 @onready var ground: Node2D = $MapFrame/Ground
@@ -156,7 +160,7 @@ func _process(delta: float) -> void:
 			if tw.beam != null:
 				beams += 1
 	Sfx.set_beams(beams)
-	Sfx.play_music("" if sim.over else ("battle" if started else "map"))
+	Sfx.play_music("" if sim.over else (MUSIC[level_index % MUSIC.size()] if started else "map"))
 	board.armed = armed
 	board.queue_redraw()
 	hud.refresh(sim, armed, speed, paused)
@@ -189,6 +193,8 @@ func _cell_rect(c: Vector2, tiles := Vector2.ONE) -> Rect2:
 func _on_tip_ok() -> void:
 	if not on_map and tutorial:
 		tutorial.dismiss()
+	elif _arts_intro:
+		Prefs.set_value("arts_intro", true)
 	else:
 		Prefs.set_value("arts_tip", 2)
 	spot.hide_tip()
@@ -200,14 +206,24 @@ func _on_tip_skip() -> void:
 		tutorial = null
 	Prefs.set_value("tutorial_done", true)
 	Prefs.set_value("arts_tip", 2)
+	Prefs.set_value("arts_intro", true)
 	spot.hide_tip()
 
 
-## The Dark Arts tips, on the level map, once there is a point to spend: open Dark Arts, buy a
-## skill, then a word on refunds. arts_tip in Prefs: 0 not yet, 1 a skill was bought, 2 done.
+## The Dark Arts tips, on the level map. The first time Dark Arts opens, a tip explains it
+## (arts_intro in Prefs). Once there is a point to spend: open Dark Arts, buy a skill, then a
+## word on refunds (arts_tip: 0 not yet, 1 a skill was bought, 2 done).
 func _arts_tip() -> void:
 	var stage: int = Prefs.get_value("arts_tip", 0)
-	if stage >= 2 or not select.visible:
+	_arts_intro = false
+	if not select.visible:
+		spot.hide_tip()
+		return
+	if skill_tree.visible and not Prefs.get_value("arts_intro", false):
+		_arts_intro = true
+		spot.show_tip(skill_tree.INTRO, Rect2(), true)
+		return
+	if stage >= 2:
 		spot.hide_tip()
 		return
 	if not skill_tree.visible:
@@ -226,7 +242,7 @@ func _arts_tip() -> void:
 			return
 		var r: Rect2 = skill_tree.first_buyable_rect()
 		if r.has_area():
-			spot.show_tip("Each column makes one kind of tower stronger; [b]The Hoard[/b] powers your den and your starting gold and mana. [b]Tap a skill[/b] to buy a rank.", r, false)
+			spot.show_tip("[b]Tap a skill[/b] to buy a rank with one of your points.", r, false)
 		else:
 			spot.hide_tip()
 	else:

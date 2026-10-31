@@ -52,19 +52,21 @@ func setup(hud: Control, levels: Array, save: SaveData) -> void:
 		_markers.append(m)
 	_skills = Button.new()
 	_skills.focus_mode = Control.FOCUS_NONE
-	_skills.custom_minimum_size = Vector2(0, 52)
+	_skills.custom_minimum_size = Vector2(0, 68)
+	_skills.add_theme_font_size_override("font_size", 30)
 	_skills.add_theme_stylebox_override("normal", hud._box(Color("3d2a12"), Color("8a6420"), 4, 8, 18))
 	_skills.pressed.connect(func() -> void: skills_pressed.emit())
 	add_child(_skills)
 	_reset = Button.new()
 	_reset.focus_mode = Control.FOCUS_NONE
-	_reset.add_theme_font_size_override("font_size", 18)
+	_reset.add_theme_font_size_override("font_size", 26)
+	_reset.custom_minimum_size = Vector2(0, 60)
 	_reset.add_theme_color_override("font_color", Hud.DIM)
 	_reset.pressed.connect(_on_reset)
 	add_child(_reset)
 	_sound = hud.sound_button(self)
-	_sound.custom_minimum_size = Vector2(0, 40)
-	_sound.add_theme_font_size_override("font_size", 18)
+	_sound.custom_minimum_size = Vector2(0, 60)
+	_sound.add_theme_font_size_override("font_size", 26)
 	resized.connect(_layout)
 	refresh()
 
@@ -133,6 +135,7 @@ func _on_reset() -> void:
 	_save.reset()
 	Prefs.set_value("tutorial_done", false)
 	Prefs.set_value("arts_tip", 0)
+	Prefs.set_value("arts_intro", false)
 	_save.save()
 	refresh()
 	_hud.toast("Progress erased")
@@ -171,7 +174,7 @@ class Marker extends Control:
 	signal pressed(index: int)
 
 	const R := 34.0
-	const SIZE := Vector2(190, 140)
+	const SIZE := Vector2(240, 140)
 
 	var index := 0
 	var title := ""
@@ -217,7 +220,7 @@ class Marker extends Control:
 		if not locked:
 			_draw_moon(c + Vector2(R * 1.05, -R * 0.55))
 		var tc := Color("efe4cc") if not locked else Color("a8977c", 0.6)
-		draw_string(font, Vector2(0, R * 2.0 + 24), title, HORIZONTAL_ALIGNMENT_CENTER, size.x, 22, tc)
+		draw_string(font, Vector2(0, R * 2.0 + 24), title, HORIZONTAL_ALIGNMENT_CENTER, size.x, 25, tc)
 		# Best rating as three stars: gold ones earned, dark ones still to win.
 		for k in 3:
 			var p := Vector2(size.x / 2.0 + (k - 1) * 22.0, R * 2.0 + 44)

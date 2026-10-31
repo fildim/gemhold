@@ -477,7 +477,6 @@ func _cover_share(i: int, d: float) -> float:
 func _judge_wave(w: int) -> void:
 	var t: Dictionary = Defs.THREAT
 	var reach: float = wave_peak.get(w, 0.0)
-	var before := threat
 	if reach < t["easy"]:
 		threat += t["up_easy"] + (t["up_max"] - t["up_easy"]) * (t["easy"] - reach) / t["easy"]
 	elif reach < t["hard"]:
@@ -486,11 +485,11 @@ func _judge_wave(w: int) -> void:
 		threat += t["up_close"]
 	else:
 		threat += t["up_touched"]
+	# Riches draw heroes: unspent gold over the line adds threat too.
+	threat += minf(t["rich_max"], maxf(0.0, gold - t["rich"]) * t["per_gold"])
 	threat = minf(threat, t["max"])
 	wave_left.erase(w)
 	wave_peak.erase(w)
-	if threat - before >= 0.1:
-		_text(level.lair_center + Vector2(0, -1.5), "Threat ×%.1f" % threat, Color("ff9a7a"))
 
 
 func _update_drops(dt: float) -> void:
@@ -707,9 +706,10 @@ func _roll_loot(e: Enemy) -> void:
 	l.pos = e.pos + Vector2(rng.randf_range(-0.25, 0.25), rng.randf_range(0.1, 0.3))
 	if r < Defs.LOOT_COIN_CHANCE:
 		l.kind = "coin"
-		# Worth more for stronger heroes: their bounty, scaled by how much tougher than
-		# base they are this wave and level.
-		l.amount = Defs.LOOT_COIN_BONUS + roundi(float(e.d["gold"]) * Defs.LOOT_COIN_MUL * e.max_hp / float(e.d["hp"]))
+		# Worth more for stronger kinds of hero and later waves, but not for the threat: it rises
+		# when you do well, and paying more for that would snowball into riches.
+		var later := level.hp_mul * (1.0 + Defs.WAVE_HP_SCALE * maxi(0, wave - 1))
+		l.amount = Defs.LOOT_COIN_BONUS + roundi(float(e.d["gold"]) * Defs.LOOT_COIN_MUL * later)
 	else:
 		l.kind = "potion"
 		l.amount = Defs.LOOT_POTION_MANA

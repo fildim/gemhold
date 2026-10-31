@@ -1,5 +1,5 @@
 extends SceneTree
-## Renders every sound effect and both music loops into assets/audio as WAV files.
+## Renders every sound effect and the music into assets/audio as WAV files.
 ## All of it is synthesised here (oscillators, noise and plucked strings), so the sounds are
 ## original and can be re-tuned and rebuilt. From the project folder:
 ##   godot --headless -s res://tools/make_audio.gd             (everything)
@@ -10,7 +10,7 @@ const RATE := 22050
 const OUT := "res://assets/audio/"
 const SOUNDS: Array[String] = ["click", "error", "hut", "crypt", "beam", "zap", "die", "grab", "lost",
 	"coin", "potion", "horn", "build", "upgrade", "sell", "chop", "raze", "whoosh", "boom", "rank",
-	"win", "lose", "map", "battle"]
+	"win", "lose", "map", "mountain", "turca", "dies", "toccata", "valkyries", "gallop", "fate", "mars"]
 
 var rng := RandomNumberGenerator.new()
 var _wrap := false   # set while rendering a loop: writes past the end land at the start
@@ -412,37 +412,258 @@ func _map() -> PackedFloat32Array:
 	return b
 
 
-## Battle: a marching drum, a low bass, chords and a plucked tune in D minor. 16 bars at 92 bpm;
-## the first eight are quieter (arpeggios only), the tune comes in on the second eight.
-func _battle() -> PackedFloat32Array:
+# ---------------------------------------------------------------- lair music
+# Each lair fights to its own piece: public-domain classical themes, arranged fast and loud with
+# drums and bass, and played on the synth voices below. Picked per lair in main.gd (MUSIC).
+
+## A tune written as [midi, beats, midi, beats, ...] (midi -1 is a rest), shifted by `shift`
+## semitones and starting at beat `at`. Returns [[start beat, beats, midi], ...].
+static func _seq(flat: Array, shift := 0, at := 0.0) -> Array:
+	var out := []
+	var t := at
+	for i in range(0, flat.size(), 2):
+		if flat[i] >= 0:
+			out.append([t, float(flat[i + 1]), int(flat[i]) + shift])
+		t += float(flat[i + 1])
+	return out
+
+
+static func _len(flat: Array) -> float:
+	var t := 0.0
+	for i in range(1, flat.size(), 2):
+		t += float(flat[i])
+	return t
+
+
+## flat repeated n times.
+static func _rep(flat: Array, n: int) -> Array:
+	var out := []
+	for i in n:
+		out.append_array(flat)
+	return out
+
+
+## flat with every note moved by shift semitones.
+static func _shifted(flat: Array, shift: int) -> Array:
+	var out := flat.duplicate()
+	for i in range(0, out.size(), 2):
+		if out[i] >= 0:
+			out[i] += shift
+	return out
+
+
+## One note on a lead voice: "brass", "strings", "organ" or "pluck" (piano-like).
+func _voice(b: PackedFloat32Array, at: float, dur: float, m: int, amp: float, tone: String) -> void:
+	var f := hz(m)
+	match tone:
+		"brass":
+			_note(b, at, dur * 0.92, f, f, amp, "saw", 0.02, 0.0, 2200.0, 0.08)
+			_note(b, at, dur * 0.92, f * 0.5, f * 0.5, amp * 0.3, "square", 0.02, 0.0, 900.0)
+		"strings":
+			_note(b, at, dur * 0.95, f, f, amp, "saw", 0.03, 0.0, 1900.0, 0.12)
+			_note(b, at, dur * 0.95, f * 1.005, f * 1.005, amp * 0.6, "saw", 0.03, 0.0, 1900.0)
+		"organ":
+			_note(b, at, dur * 0.96, f, f, amp * 0.6, "square", 0.004, 0.0, 2600.0)
+			_note(b, at, dur * 0.96, f * 2.0, f * 2.0, amp * 0.22, "saw", 0.004, 0.0, 3200.0)
+			_note(b, at, dur * 0.96, f * 0.5, f * 0.5, amp * 0.35, "saw", 0.004, 0.0, 1200.0)
+		_:
+			_pluck(b, at, f, amp * 1.4, maxf(0.35, dur * 1.6), 0.995, 0.65)
+			_note(b, at, dur * 0.8, f, f, amp * 0.2, "tri", 0.004, 0.2)
+
+
+func _play(b: PackedFloat32Array, notes: Array, beat: float, amp: float, tone: String) -> void:
+	for n in notes:
+		_voice(b, n[0] * beat, n[1] * beat, n[2], amp, tone)
+
+
+## Bass notes, plucked short and hard.
+func _bass(b: PackedFloat32Array, notes: Array, beat: float, amp: float) -> void:
+	for n in notes:
+		_pluck(b, n[0] * beat, hz(n[2]), amp, maxf(0.2, n[1] * beat * 1.1), 0.99, 0.45)
+
+
+func _snare(b: PackedFloat32Array, at: float, amp: float) -> void:
+	_noise(b, at, 0.18, amp, 6000.0, 2500.0, 0.001, 0.05, 900.0)
+	_note(b, at, 0.1, 220.0, 160.0, amp * 0.4, "tri", 0.001, 0.03)
+
+
+func _hat(b: PackedFloat32Array, at: float, amp: float) -> void:
+	_noise(b, at, 0.04, amp, 9000.0, 7000.0, 0.001, 0.012, 5000.0)
+
+
+## A drum kit over beats from..to: kick on 1 and 3 (every beat when drive), snare on 2 and 4,
+## hats on the eighths.
+func _kit(b: PackedFloat32Array, from: int, to: int, beat: float, amp: float, drive := false) -> void:
+	for k in range(from, to):
+		if drive or k % 2 == 0:
+			_drum(b, k * beat, amp, 75.0)
+		if k % 2 == 1:
+			_snare(b, k * beat, amp * 0.55)
+		_hat(b, k * beat, amp * 0.18)
+		_hat(b, (k + 0.5) * beat, amp * 0.12)
+
+
+## Grieg, In the Hall of the Mountain King (B minor): plucked, then the whole band an octave up.
+func _mountain() -> PackedFloat32Array:
 	_wrap = true
-	var beat := 60.0 / 92.0
-	var bar := beat * 4.0
-	var b := _buf(bar * 16.0)
-	var chords := [[50, 53, 57], [46, 50, 53], [43, 46, 50], [45, 49, 52]]   # Dm Bb Gm A
-	for half in 2:
-		var o := half * bar * 8.0
-		for i in 4:
-			var at := o + i * bar * 2.0
-			var ch: Array = chords[i]
-			_pad(b, at, bar * 2.0 + 0.4, ch, 0.03, 650.0)
-			for k in 8:   # bass: root on the beat, the octave pushing on the offbeat
-				_pluck(b, at + k * beat, hz(ch[0] - 24 + (12 if k % 4 == 3 else 0)), 0.5, beat * 1.2, 0.99, 0.4)
-			for k in 16:  # arpeggio of eighths
-				var m: int = ch[[0, 1, 2, 1][k % 4]] + 12
-				_pluck(b, at + k * beat * 0.5, hz(m), 0.12 if half == 0 else 0.08, beat, 0.993, 0.6)
-		for k in 32:
-			var acc := 0.55 if k % 4 == 0 else (0.4 if k % 2 == 0 else 0.22)
-			_drum(b, o + k * beat, acc)
-			if k % 8 == 6:
-				_drum(b, o + (k + 0.5) * beat, 0.25)
-			_noise(b, o + (k + 0.5) * beat, 0.05, 0.05, 6000.0, 4000.0, 0.001, 0.015, 3000.0)
-	var tune := [[0, 69], [1, 74], [2, 77], [2.5, 76], [3, 74], [4, 69], [5, 70], [6, 69], [7, 65],
-		[8, 70], [9, 74], [10, 77], [11, 79], [12, 77], [13, 74], [14, 70], [15, 74],
-		[16, 79], [17, 77], [18, 74], [18.5, 72], [19, 70], [20, 67], [21, 70], [22, 74], [23, 70],
-		[24, 73], [25, 76], [26, 79], [26.5, 77], [27, 76], [28, 73], [29, 76], [30, 73], [31, 69]]
-	for n in tune:
-		_pluck(b, bar * 8.0 + n[0] * beat, hz(n[1]), 0.3, beat * 2.0, 0.996, 0.5)
-		_note(b, bar * 8.0 + n[0] * beat, beat * 0.9, hz(n[1]), hz(n[1]), 0.05, "tri", 0.02, 0.3)
-	_echo(b, beat * 0.75, 0.3, 3)
+	var beat := 60.0 / 150.0
+	var a := [59, .5, 61, .5, 62, .5, 64, .5, 66, .5, 62, .5, 66, 1, 65, .5, 61, .5, 65, 1, 64, .5, 60, .5, 64, 1,
+		59, .5, 61, .5, 62, .5, 64, .5, 66, .5, 62, .5, 66, .5, 71, .5, 69, .5, 66, .5, 62, .5, 66, .5, 69, 2]
+	var shifts := [0, 7, 12, 7]
+	var b := _buf(beat * 64.0)
+	for p in 4:
+		var at := p * 16.0
+		_play(b, _seq(a, shifts[p], at), beat, 0.32, "pluck" if p < 2 else "brass")
+		if p >= 2:
+			_play(b, _seq(a, shifts[p] - 12, at), beat, 0.18, "strings")
+		var root := 35 + (7 if shifts[p] == 7 else 0)
+		_bass(b, _seq(_rep([root, .5, root + 12, .5], 16), 0, at), beat, 0.5)
+		_kit(b, int(at), int(at) + 16, beat, 0.35 + 0.15 * p, p >= 2)
+	_echo(b, beat * 0.5, 0.18, 2)
+	return b
+
+
+## Mozart, Rondo alla Turca (A minor): piano, then strings, then brass with drums.
+func _turca() -> PackedFloat32Array:
+	_wrap = true
+	var beat := 60.0 / 126.0
+	var t := [71, .25, 69, .25, 68, .25, 69, .25, 72, .5, -1, .5, 74, .25, 72, .25, 71, .25, 72, .25, 76, .5, -1, .5,
+		77, .25, 76, .25, 75, .25, 76, .25, 83, .25, 81, .25, 80, .25, 81, .25, 83, .25, 81, .25, 80, .25, 81, .25,
+		84, 1, 81, .5, 84, .5, 83, .5, 81, .5, 79, .5, 81, .5, 83, .5, 81, .5, 79, .5, 81, .5,
+		83, .5, 81, .5, 79, .5, 78, .5, 76, 1]
+	var b := _buf(beat * 48.0)
+	var tones := ["pluck", "strings", "brass"]
+	for p in 3:
+		var at := p * 16.0
+		_play(b, _seq(t, -12 if p == 2 else 0, at), beat, 0.3, tones[p])
+		# Oom-pah: the root on the beat, the chord on the off-beat. A minor, then E, then A minor.
+		for k in 16:
+			var e := k >= 10 and k < 14
+			_bass(b, [[at + k, 0.5, 40 if e else 45]], beat, 0.45)
+			for m in ([56, 59, 64] if e else [57, 60, 64]):
+				_pluck(b, (at + k + 0.5) * beat, hz(m), 0.12, beat * 0.4, 0.99, 0.5)
+		_kit(b, int(at), int(at) + 16, beat, 0.25 + 0.15 * p, p == 2)
+	return b
+
+
+## Dies Irae, the medieval chant of the Last Judgement, over a galloping D minor bass.
+func _dies() -> PackedFloat32Array:
+	_wrap = true
+	var beat := 60.0 / 138.0
+	var l1 := [65, 1, 64, 1, 65, 1, 62, 1, 64, 1, 60, 1, 62, 2]
+	var l2 := [65, 1, 65, 1, 67, 1, 65, 1, 64, 1, 62, 1, 60, 1, 62, 1]
+	var l3 := [69, 1, 67, 1, 69, 1, 65, 1, 67, 1, 64, 1, 62, 2]
+	var tune := l1 + l2 + l1 + l3
+	var b := _buf(beat * 64.0)
+	_play(b, _seq(tune, 0, 0.0), beat, 0.3, "brass")
+	_play(b, _seq(tune, 12, 32.0), beat, 0.26, "strings")
+	_play(b, _seq(tune, 0, 32.0), beat, 0.22, "brass")
+	_bass(b, _seq(_rep([38, .5, 38, .5, 45, .5, 50, .5], 32)), beat, 0.5)
+	_kit(b, 0, 32, beat, 0.4)
+	_kit(b, 32, 64, beat, 0.55, true)
+	_echo(b, beat * 0.75, 0.2, 2)
+	return b
+
+
+## Bach, Toccata in D minor: the opening flourish and the diminished run on the organ, then a
+## driving passage that keeps returning to A, with drums.
+func _toccata() -> PackedFloat32Array:
+	_wrap = true
+	var beat := 60.0 / 96.0
+	var intro := [69, .125, 67, .125, 69, 1.25, -1, .5, 67, .125, 65, .125, 64, .125, 62, .125, 61, .5, 62, 1.5, -1, 1.5]
+	var run := [49, .25, 52, .25, 55, .25, 58, .25, 61, .25, 64, .25, 67, .25, 70, .25, 73, .25, 76, .25, 79, .25, 82, .25,
+		62, .25, 65, .25, 69, .25, 74, .25, 74, 2]
+	var c1 := [76, .25, 69, .25, 74, .25, 69, .25, 73, .25, 69, .25, 74, .25, 69, .25, 77, .25, 69, .25, 76, .25, 69, .25, 74, .25, 69, .25, 73, .25, 69, .25]
+	var c2 := [79, .25, 69, .25, 77, .25, 69, .25, 76, .25, 69, .25, 74, .25, 69, .25, 73, .25, 69, .25, 74, .25, 69, .25, 76, .25, 69, .25, 73, .25, 69, .25]
+	var tune := intro + _shifted(intro, -12) + run + c1 + c2 + c1 + c2 + [74, 1, 73, 1, 74, 2]
+	var total := _len(tune)
+	var b := _buf(beat * total)
+	_play(b, _seq(tune), beat, 0.3, "organ")
+	var drive := int(_len(intro) * 2.0 + _len(run))   # drums come in with the driving passage
+	for k in range(drive, int(total), 2):
+		_voice(b, k * beat, 2.0 * beat, 38 if (k / 4) % 2 == 0 else 45, 0.25, "organ")
+	_kit(b, drive, int(total), beat, 0.5, true)
+	_echo(b, beat * 0.5, 0.25, 3)
+	return b
+
+
+## Wagner, Ride of the Valkyries (B minor): galloping short-long horn calls over tremolo strings.
+func _valkyries() -> PackedFloat32Array:
+	_wrap = true
+	var beat := 60.0 / 112.0
+	var p := []
+	for cl in [[54, 59, 2], [59, 62, 2], [62, 66, 2], [66, 69, 1], [66, 62, 1], [62, 66, 2], [66, 69, 2], [69, 73, 2], [73, 71, 2]]:
+		p.append_array([cl[0], 1.0 / 3.0, cl[1], cl[2] - 1.0 / 3.0])
+	var shifts := [0, 5, 0, 7]
+	var b := _buf(beat * 64.0)
+	for i in 4:
+		var at := i * 16.0
+		_play(b, _seq(p, shifts[i], at), beat, 0.32, "brass")
+		if i >= 2:
+			_play(b, _seq(p, shifts[i] + 12, at), beat, 0.16, "strings")
+		_bass(b, _seq(_rep([47 + shifts[i], .25], 64), 0, at), beat, 0.22)
+		_kit(b, int(at), int(at) + 16, beat, 0.35 + 0.1 * i, i >= 2)
+	_echo(b, beat * 0.5, 0.2, 2)
+	return b
+
+
+## Rossini, the William Tell gallop: the da-da-dum call in E, then in A.
+func _gallop() -> PackedFloat32Array:
+	_wrap = true
+	var beat := 60.0 / 152.0
+	var g1 := [64, .25, 64, .25, 64, .5, 64, .25, 64, .25, 64, .5, 64, .25, 64, .25, 69, .5, 71, .5, 73, .5]
+	var g2 := [64, .25, 64, .25, 64, .5, 64, .25, 64, .25, 64, .5, 64, .25, 69, .25, 73, .5, 71, .5, 68, .5]
+	var g4 := [76, .5, 73, .5, 69, .5, 71, .5, 68, .5, 64, .5, 69, 1]
+	var ph := g1 + g2 + g1 + g4
+	var shifts := [0, 5, 0, 7]
+	var b := _buf(beat * 64.0)
+	for i in 4:
+		var at := i * 16.0
+		_play(b, _seq(ph, shifts[i], at), beat, 0.3, "strings" if i % 2 == 0 else "brass")
+		_bass(b, _seq(_rep([40 + shifts[i], .5, 47 + shifts[i], .5], 16), 0, at), beat, 0.45)
+		_kit(b, int(at), int(at) + 16, beat, 0.4 + 0.05 * i, true)
+	return b
+
+
+## Beethoven, Symphony No. 5 (C minor): fate knocking, then the knocks climbing.
+func _fate() -> PackedFloat32Array:
+	_wrap = true
+	var beat := 60.0 / 112.0
+	var p1 := [-1, .5, 67, .5, 67, .5, 67, .5, 63, 2, -1, .5, 65, .5, 65, .5, 65, .5, 62, 2]
+	var p2 := [-1, .5, 67, .5, 67, .5, 67, .5, 63, .5, 68, .5, 68, .5, 68, .5, 67, .5, 75, .5, 75, .5, 75, .5, 72, 2]
+	var p3 := [-1, .5, 67, .5, 67, .5, 67, .5, 62, .5, 68, .5, 68, .5, 68, .5, 67, .5, 77, .5, 77, .5, 77, .5, 74, 2]
+	var p4 := [72, .5, 72, .5, 72, .5, 67, .5, 68, .5, 68, .5, 68, .5, 65, .5, 67, .5, 67, .5, 67, .5, 63, .5, 62, 1, 55, 1]
+	var tune := p1 + p2 + p3 + p4
+	var b := _buf(beat * 64.0)
+	_play(b, _seq(tune, -12, 0.0), beat, 0.32, "strings")
+	_play(b, _seq(tune, 0, 0.0), beat, 0.18, "strings")
+	_play(b, _seq(tune, 0, 32.0), beat, 0.3, "brass")
+	_play(b, _seq(tune, -12, 32.0), beat, 0.25, "strings")
+	_bass(b, _seq(_rep([36, .5, 36, .5, 43, .5, 36, .5], 16)), beat, 0.4)
+	_bass(b, _seq(_rep([36, .5, 48, .5], 32), 0, 32.0), beat, 0.45)
+	for n in _seq(tune) + _seq(tune, 0, 32.0):   # timpani on every long note
+		if n[1] >= 1.0:
+			_drum(b, n[0] * beat, 0.7, 60.0)
+	_kit(b, 32, 64, beat, 0.45, true)
+	_echo(b, beat * 0.5, 0.2, 2)
+	return b
+
+
+## Holst, Mars from The Planets: the five-beat battering ostinato on G, with brass rising over it.
+func _mars() -> PackedFloat32Array:
+	_wrap = true
+	var beat := 60.0 / 168.0
+	var bar := [43, 1.0 / 3.0, 43, 1.0 / 3.0, 43, 1.0 / 3.0, 43, 1, 43, 1, 43, .5, 43, .5, 43, 1]
+	var ost := _rep(bar, 16)
+	var b := _buf(beat * 80.0)
+	_bass(b, _seq(ost), beat, 0.55)
+	_bass(b, _seq(ost, 12), beat, 0.3)
+	for n in _seq(ost):
+		_drum(b, n[0] * beat, 0.3, 70.0)
+	for k in 16:
+		_snare(b, (k * 5 + 3) * beat, 0.3)
+	var brass := [-1, 10, 55, 10, 56, 10, 55, 5, 62, 5, 61, 10, 67, 5, 68, 5, 70, 5, 73, 5, 72, 5, 67, 5]
+	_play(b, _seq(brass), beat, 0.3, "brass")
+	_play(b, _seq(brass, -12), beat, 0.2, "brass")
+	_echo(b, beat * 0.5, 0.2, 2)
 	return b

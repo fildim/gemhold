@@ -2,13 +2,13 @@
 
 importer="wav"
 type="AudioStreamWAV"
-uid="uid://b0vwk6k2q0f8x"
-path="res://.godot/imported/battle.wav-591619e226ad72dffbfe813ea62f286f.sample"
+uid="uid://bk2fu2bfreen6"
+path="res://.godot/imported/mars.wav-2f5a07afe72b1b903b73b5a306c4d773.sample"
 
 [deps]
 
-source_file="res://assets/audio/battle.wav"
-dest_files=["res://.godot/imported/battle.wav-591619e226ad72dffbfe813ea62f286f.sample"]
+source_file="res://assets/audio/mars.wav"
+dest_files=["res://.godot/imported/mars.wav-2f5a07afe72b1b903b73b5a306c4d773.sample"]
 
 [params]
 

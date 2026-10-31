@@ -203,12 +203,12 @@ func _stat(parent: Control, icon: String) -> Label:
 func _icon(kind: String) -> Control:
 	var ic := StatIcon.new()
 	ic.kind = kind
-	ic.custom_minimum_size = Vector2(20, 20)
+	ic.custom_minimum_size = Vector2(26, 26)
 	ic.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	return ic
 
 
-## Sound on -> Music off -> Muted. Also used on the level map.
+## Sound on / Sound off (music and effects together). Also used on the level map.
 func sound_button(parent: Control) -> Button:
 	var b := Button.new()
 	b.text = Sfx.label()
@@ -282,6 +282,15 @@ func _set_side(on: bool, safe: Vector4) -> void:
 	_brow.vertical = on
 	_row.add_theme_constant_override("separation", 10 if on else 18)
 	_brow.alignment = BoxContainer.ALIGNMENT_BEGIN if on else BoxContainer.ALIGNMENT_CENTER
+	# The side panel (phones, wide windows) gets bigger text, and its buttons share out the
+	# whole height of the screen so they are easy to hit.
+	for l: Label in [_gold, _mana, _gems, _wave]:
+		l.add_theme_font_size_override("font_size", 30 if on else 23)
+	_mana_bar.custom_minimum_size = Vector2(120 if on else 90, 14 if on else 12)
+	for b: Button in _brow.get_children():
+		b.add_theme_font_size_override("font_size", 28 if on else 22)
+		b.size_flags_vertical = Control.SIZE_EXPAND_FILL if on else Control.SIZE_FILL
+		b.custom_minimum_size.y = 56 if on else 48
 	var tm: StyleBoxFlat = _top.get_theme_stylebox("panel")
 	var bm: StyleBoxFlat = _bottom.get_theme_stylebox("panel")
 	tm.content_margin_left = 14 + (0.0 if on else safe.x)
@@ -327,7 +336,7 @@ func refresh(sim: GameSim, armed: bool, speed: int, paused: bool) -> void:
 	_mana_bar.max_value = sim.mana_max
 	_mana_bar.value = sim.mana
 	_gems.text = "%d/%d" % [sim.gems_left(), sim.level.gems]
-	_wave.text = "Wave %d/%d  ·  Threat ×%.1f" % [sim.wave, sim.level.waves.size(), sim.threat]
+	_wave.text = "Wave %d/%d" % [sim.wave, sim.level.waves.size()]
 	if sim.wave < sim.level.waves.size():
 		var s := int(ceil(sim.timer))
 		_next.disabled = false
@@ -614,16 +623,17 @@ class StatIcon extends Control:
 
 	func _draw() -> void:
 		var c := size / 2.0
+		var k := size.x / 20.0   # drawn for 20 px, scaled to the icon size
 		match kind:
 			"coin":
-				draw_circle(c, 9, Color("e8b84a"))
-				draw_arc(c, 9, 0, TAU, 20, Color("8a6420"), 1.5, true)
-				draw_circle(c, 4, Color("c9952e"))
+				draw_circle(c, 9 * k, Color("e8b84a"))
+				draw_arc(c, 9 * k, 0, TAU, 20, Color("8a6420"), 1.5 * k, true)
+				draw_circle(c, 4 * k, Color("c9952e"))
 			"drop":
-				var pts := PackedVector2Array([c + Vector2(0, -9)])
+				var pts := PackedVector2Array([c + Vector2(0, -9) * k])
 				for i in 13:
 					var a := -0.15 * PI + 1.3 * PI * i / 12.0
-					pts.append(c + Vector2(0, 3) + Vector2(cos(a), sin(a)) * 6.0)
+					pts.append(c + (Vector2(0, 3) + Vector2(cos(a), sin(a)) * 6.0) * k)
 				draw_colored_polygon(pts, Color("7e6cf0"))
 			"gem":
-				Paint.gem(self, c, 9)
+				Paint.gem(self, c, 9 * k)

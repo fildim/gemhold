@@ -20,7 +20,7 @@
 | **iPhone / iPad** | Open the **browser version** in Safari, tap **Share**, then **Add to Home Screen**: it opens full screen like an app and keeps your progress. Or sideload `Gemhold-iOS-unsigned.ipa` from the release (see [iPhone app](#iphone-app)). |
 | **Any browser** | [fildim.github.io/gemhold](https://fildim.github.io/gemhold/). Nothing to install; progress is saved in the browser. |
 
-A dark-lord tower defense for Windows, macOS, Linux, Android, iPhone and the web, built with **Godot 4.6**. You guard a cave of gems; heroes walk the roads to steal them. It has music and sound effects (the **Sound** button cycles Sound on, Music off and Muted), and the first lair teaches you as you play: each tip freezes the battle, darkens the screen and lights up the one thing to tap. The first time you have a skill point to spend, the map does the same for Dark Arts. **Skip tutorial** turns the tips off; **Reset progress** brings them back.
+A dark-lord tower defense for Windows, macOS, Linux, Android, iPhone and the web, built with **Godot 4.6**. You guard a cave of gems; heroes walk the roads to steal them. It has music and sound effects (the **Sound** button switches both on or off), and the first lair teaches you as you play: each tip freezes the battle, darkens the screen and lights up the one thing to tap. The first time you have a skill point to spend, the map does the same for Dark Arts. **Skip tutorial** turns the tips off; **Reset progress** brings them back.
 
 The campaign opens on a level map. Level 1 ("Mossfold Pass") is ported from the web prototype with the same rules and balance; levels 2–8 (Rimewater Ford, Gloamwood Hollow, Cinderfall Steps, The Hoard Throne, Saltmarsh Crossing, The Iron Column and Gloomspire Summit) are new. Saltmarsh Crossing is one long road full of fast swarms, The Iron Column sends armoured heroes down two roads that join before the den, and Gloomspire Summit brings heroes up four roads at once. Clearing a level Brilliant unlocks its night mission. Progress saves automatically: unlocked levels, best rating per mission and skills. Each level guards 5 gems.
 
@@ -28,13 +28,13 @@ The campaign opens on a level map. Level 1 ("Mossfold Pass") is ported from the 
 
 - **Towers** need their own ground (moss, frost, ash). **Raised tiles** are single tiles of pale, shimmering stone set higher than the rest: any of the three towers can be built on them, whatever the ground, and they give it extra range (Hut +0.8, Shrine +0.6, Crypt +0.5). Which tower to put up high is your call. The first tower of each type costs 50 gold and each more of that type standing costs 15 more (50, 65, 80…); upgrades cost 75 (level II) and 100 (level III).
 - **Three ways to attack**, none stronger overall: the **Warband Hut** fires fast, light arrows (best on crowds, blunted by armour); the **Bone Crypt** fires slow, heavy bolts that slow heroes hard; the **Cinder Shrine** holds a continuous beam on one hero that ignores armour and heats up to 5× damage, but starts cold on every new target (best on knights). `tests/tower_test.gd` compares them. Every level starts with 230 gold.
-- **Threat** (dynamic difficulty): after each wave the game checks how deep into your defence its heroes got, meaning how much of the stretch your towers and den can reach they walked through. The threat multiplies hero health and only ever rises: a lot after a wave you stopped early (up to +35%), only a little after one that got close (+1–2%), so it keeps pushing without feeling impossible. It shows next to the wave counter, starts at ×1.0 each battle and tops out at ×3.0; tune it with `THREAT` in `defs.gd`.
+- **Threat** (dynamic difficulty, never shown): after each wave the game checks how deep into your defence its heroes got, meaning how much of the stretch your towers and den can reach they walked through. The threat multiplies hero health and only ever rises: a lot after a wave you stopped early (up to +40%), only a little after one that got close (+1–3%). Riches draw heroes too: unspent gold above 250 adds to it after every wave (+5% per 100 gold, up to +25%), so hoarding is never the safe choice. It starts at ×1.0 each battle and tops out at ×4.0; tune it with `THREAT` in `defs.gd`.
 - **Veterancy:** towers rank up from damage dealt, up to 3 ranks (+8% damage each). A tower at rank 3 that is also upgraded to level III unlocks its ability: Volley (Huts fire a second arrow), Dread (Crypt hits can terrify a hero) and Lava (heroes a Shrine kills have a 35% chance to leave a pool of burning ground).
 - **Cutting** costs mana. It clears woods, frees **Gold Mines** (gold over time) and **Mana Wells** (faster mana), and razes **Hero Barracks**, which otherwise send extra heroes while waves are coming.
 - **Heroes:** Peasant, Footman, Scout, Cleric (heals nearby heroes) and Knight (armoured, carries 2 gems), plus three that arrive from level 4: the **Shieldbearer** (other heroes within 1.2 tiles take 35% less damage), the **Cutpurse** (fast, fragile, carries 2 gems) and the **Warden** (his lantern clears slow and Dread from heroes around him).
 - **Loose gems:** a slain carrier drops his gems and they float back along the road to the hoard. Any hero on that road (or one joined to it) with room to carry turns toward them, even back the way he came, so kill the carrier where your towers can cover the gems.
 - **Targeting:** towers shoot gem carriers first, then the special support heroes (Cleric, Shieldbearer, Warden), then whoever has the least health left.
-- **Loot:** a slain hero drops a coin (35%), a mana potion (15%) or nothing, never both. Coins are worth 5 gold plus 1.5× the hero's bounty, scaled by how tough the hero is this wave. Tap loot to pick it up at once; whatever is still lying on the map is gathered automatically when the next wave starts (on its timer or called early).
+- **Loot:** a slain hero drops a coin (32%), a mana potion (15%) or nothing, never both. Coins are worth 4 gold plus 1.4× the hero's bounty, growing with the wave number but not with the threat, so doing well does not snowball into riches. Tap loot to pick it up at once; whatever is still lying on the map is gathered automatically when the next wave starts (on its timer or called early).
 - **The den fights back:** your lair holds charges (1 to start). Each is a bolt it fires automatically at heroes within 2.6 tiles, gem carriers first, ignoring armour. Spent charges refill one every 8 s. The sparks circling above the cave show how many are ready.
 - **Ratings and stars:** Survived ★ (you lost gems), Wicked ★★ (none lost, but a hero touched one, even if you got it back) and Brilliant ★★★ (no hero ever touched a gem).
 - **Night missions:** clearing a level Brilliant unlocks the same level at night, with its own best rating and stars. You can only build where you can see; the lair, your towers and your mines and wells light the ground around them. A moon on the map marks it: faint while locked, pale when open, gold once won.
@@ -171,7 +171,20 @@ With a paid Apple developer account, the same workflow could sign the build and 
 
 ## Sound
 
-Every sound effect and both music loops are synthesised by `tools/make_audio.gd` (oscillators, noise and plucked strings), so they are original. To change one, edit its function there and rebuild:
+Every sound effect and all the music are synthesised by `tools/make_audio.gd` (oscillators, noise and plucked strings), so the recordings are original. The level map has its own slow loop, and each lair fights to a fast arrangement of a public-domain classical piece (`MUSIC` in `main.gd`):
+
+| Lair | Music |
+|---|---|
+| 1 Mossfold Pass | Grieg, *In the Hall of the Mountain King* |
+| 2 Rimewater Ford | Mozart, *Rondo alla Turca* |
+| 3 Gloamwood Hollow | *Dies Irae* (medieval chant) |
+| 4 Cinderfall Steps | Bach, *Toccata in D minor* |
+| 5 The Hoard Throne | Wagner, *Ride of the Valkyries* |
+| 6 Saltmarsh Crossing | Rossini, *William Tell* gallop |
+| 7 The Iron Column | Beethoven, *Symphony No. 5* |
+| 8 Gloomspire Summit | Holst, *Mars* from *The Planets* |
+
+To change a sound or a piece, edit its function in `tools/make_audio.gd` and rebuild:
 
 ```
 godot --headless -s res://tools/make_audio.gd -- coin boom   # just these, or no names for all

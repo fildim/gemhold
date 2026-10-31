@@ -35,6 +35,8 @@ func setup(hud: Control) -> void:
 	_text.fit_content = true
 	_text.scroll_active = false
 	_text.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	for k in ["normal_font_size", "bold_font_size"]:
+		_text.add_theme_font_size_override(k, 26)
 	box.add_child(_text)
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 10)
@@ -42,7 +44,8 @@ func setup(hud: Control) -> void:
 	_ok = Button.new()
 	_ok.text = "Got it"
 	_ok.focus_mode = Control.FOCUS_NONE
-	_ok.custom_minimum_size = Vector2(120, 48)
+	_ok.custom_minimum_size = Vector2(140, 60)
+	_ok.add_theme_font_size_override("font_size", 26)
 	_ok.add_theme_stylebox_override("normal", hud._box(Color("5a2414"), Hud.EMBER, 4, 8, 20))
 	_ok.pressed.connect(func() -> void: ok_pressed.emit())
 	row.add_child(_ok)
@@ -52,7 +55,7 @@ func setup(hud: Control) -> void:
 	_skip = Button.new()
 	_skip.text = "Skip tutorial"
 	_skip.focus_mode = Control.FOCUS_NONE
-	_skip.add_theme_font_size_override("font_size", 18)
+	_skip.add_theme_font_size_override("font_size", 22)
 	_skip.add_theme_color_override("font_color", Hud.DIM)
 	_skip.pressed.connect(func() -> void: skip_pressed.emit())
 	row.add_child(_skip)
@@ -66,7 +69,7 @@ func show_tip(text: String, target: Rect2, ok: bool) -> void:
 		_key = key
 		_text.text = text
 		_ok.visible = ok
-		var w := minf(640.0, size.x - 32.0)
+		var w := minf(760.0, size.x - 32.0)
 		_text.custom_minimum_size = Vector2(w - 40.0, 0)
 	visible = true
 	_panel.reset_size()

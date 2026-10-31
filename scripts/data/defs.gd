@@ -60,15 +60,18 @@ const MANA_MAX := 100.0
 const MANA_REGEN := 1.2      # per second
 const MANA_PER_KILL := 3.0
 const SPAWN_INTERVAL := 0.85
-const WAVE_HP_SCALE := 0.12  # +12% hero health per wave
+const WAVE_HP_SCALE := 0.13  # +13% hero health per wave
 
 ## Dynamic difficulty (GameSim._judge_wave). After each wave the threat, which multiplies hero
 ## health, rises by how deep into the defence that wave got: the most of its road's defended
 ## stretch (where towers or the den can reach) any of its heroes walked through, from 0 to 1.
 ## It never falls. Under `easy`: up by up_easy..up_max (the earlier they fell, the more).
 ## Up to `hard`: up_mid. Past `hard`: up_close. A hero reaching the hoard or a dropped gem: up_touched.
-const THREAT := {"easy": 0.45, "hard": 0.7, "up_max": 0.35, "up_easy": 0.08, "up_mid": 0.05,
-	"up_close": 0.02, "up_touched": 0.01, "max": 3.0}
+## Riches draw heroes too: gold left unspent above `rich` adds per_gold threat per coin, up to
+## rich_max a wave, so hoarding gold is never the safe choice.
+const THREAT := {"easy": 0.45, "hard": 0.7, "up_max": 0.4, "up_easy": 0.1, "up_mid": 0.06,
+	"up_close": 0.03, "up_touched": 0.01, "max": 4.0,
+	"rich": 250, "per_gold": 0.0005, "rich_max": 0.25}
 const DROP_SPEED := 0.7      # dropped gems roll home along the road at this many tiles/s
 
 ## The den (your lair) strikes heroes near it. It holds charges: each is one bolt, and spent
@@ -104,11 +107,11 @@ const SITES := {
 }
 
 ## Loot dropped by slain heroes. It stays where it fell until you tap it.
-const LOOT_COIN_CHANCE := 0.35
+const LOOT_COIN_CHANCE := 0.32
 const LOOT_POTION_CHANCE := 0.15
 const LOOT_POTION_MANA := 15
-const LOOT_COIN_MUL := 1.5    # a coin is worth this times the hero's bounty, scaled by its toughness,
-const LOOT_COIN_BONUS := 5    # plus this flat amount, so even small heroes drop a worthwhile coin
+const LOOT_COIN_MUL := 1.4    # a coin is worth this times the hero's bounty, grown by wave (not threat),
+const LOOT_COIN_BONUS := 4    # plus this flat amount, so even small heroes drop a worthwhile coin
 
 ## Night levels: you can only build on lit tiles. Radii in tiles.
 ## Night missions unlock when a level is cleared Brilliant.

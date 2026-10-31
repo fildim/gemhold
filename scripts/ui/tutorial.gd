@@ -13,9 +13,9 @@ const TIPS := [
 	["wave", "Heroes march when the timer runs out. [b]Tap First wave[/b] to call them now and earn the seconds left as gold.", false],
 	["carrier", "[b]This hero has your gem![/b] Kill him before he gets off the map and the gem floats back home. Other heroes will go for it on the way, so keep killing.", true],
 	["loot", "A slain hero dropped something. [b]Tap it[/b] to pick it up now; anything left lying around is gathered when the next wave starts.", true],
+	["woods", "[b]Tap the woods[/b], then [b]Cut woods[/b]. Woods block good spots along the road. Cutting costs mana, pays gold for the timber and opens the ground for a tower. On later lairs the woods also hide [b]Gold Mines[/b] and [b]Mana Wells[/b] you can cut free the same way.", false],
 	["more", "Kills pay gold. Build more towers along the road. A [b]Bone Crypt[/b] on frost slows heroes down; a [b]Cinder Shrine[/b] on ash burns through armour.", true],
 	["upgrade", "You can afford an upgrade. [b]Tap your tower[/b], then [b]Upgrade[/b] for more damage and range.", false],
-	["woods", "[b]Tap the woods[/b], then [b]Cut woods[/b]. It costs mana, pays gold for the timber and opens a new place to build.", false],
 	["meteor", "Meteor is ready. [b]Tap Meteor[/b]...", false],
 ]
 
@@ -104,7 +104,7 @@ func _ready(id: String, sim: GameSim) -> bool:
 		"upgrade":
 			return sim.wave >= 2 and sim.gold >= int(Defs.TOWERS["moss"]["cost"][1]) and not sim.towers.is_empty()
 		"woods":
-			return sim.wave >= 2 and sim.mana >= Defs.CLEAR_MANA and _woods_spot(sim).x >= 0
+			return sim.wave >= 1 and sim.mana >= Defs.CLEAR_MANA and _woods_spot(sim).x >= 0
 		"meteor":
 			return sim.wave >= 3 and sim.can_meteor()
 	return false
