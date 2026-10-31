@@ -9,7 +9,7 @@ Eight lairs, each with its own battle music, a night mission to unlock in every 
 ## Play
 
 <p align="center">
-  <a href="https://fildim.github.io/gemhold/"><img src="https://img.shields.io/badge/Browser_·_iPhone_·_iPad-Play_now-e2683a?style=for-the-badge&logo=googlechrome&logoColor=white" alt="Play in your browser" height="40"></a>
+  <a href="https://fildim.github.io/gemhold/"><img src="https://img.shields.io/badge/Browser-Play_now-e2683a?style=for-the-badge&logo=googlechrome&logoColor=white" alt="Play in your browser" height="40"></a>
   <br>
   <a href="https://github.com/fildim/gemhold/releases/latest/download/Gemhold.exe"><img src="https://img.shields.io/badge/Windows-Gemhold.exe-e8b84a?style=for-the-badge&logo=windows&logoColor=white" alt="Download for Windows" height="40"></a>
   <br>
