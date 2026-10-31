@@ -80,12 +80,12 @@ jobs:
           export GODOT_ANDROID_KEYSTORE_DEBUG_USER=androiddebugkey
           export GODOT_ANDROID_KEYSTORE_DEBUG_PASSWORD=android
           ./godot --headless --export-debug "Android" out/Gemhold.apk
-          rm debug.keystore
+          rm -f debug.keystore out/*.idsig
           test -s out/Gemhold.apk
 
       - uses: actions/upload-artifact@v4
         with:
-          name: desktop
+          name: desktop-files
           path: out/*
 
       - uses: actions/upload-pages-artifact@v3
@@ -131,7 +131,7 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: ios
+          name: ios-files
           path: out/*
 
   release:
@@ -141,6 +141,7 @@ jobs:
     steps:
       - uses: actions/download-artifact@v4
         with:
+          pattern: "*-files"   # not the web build, which goes to Pages
           path: out
           merge-multiple: true
 
