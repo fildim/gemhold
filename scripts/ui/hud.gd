@@ -4,6 +4,7 @@ extends Control
 
 signal next_wave_pressed
 signal meteor_pressed
+signal cut_pressed
 signal speed_pressed
 signal pause_pressed
 signal action_pressed(id: String)
@@ -49,6 +50,7 @@ var _gems: Label
 var _wave: Label
 var _next: Button
 var _meteor: Button
+var _cut: Button
 var _speed: Button
 var _pause: Button
 var _popup: PanelContainer
@@ -181,11 +183,12 @@ func _build_bars() -> void:
 	_next = _button(brow, "Next wave", next_wave_pressed)
 	_next.add_theme_stylebox_override("normal", _box(Color("3d2a12"), Color("8a6420"), 4, 8, 14))
 	_meteor = _button(brow, "Meteor 60", meteor_pressed)
+	_cut = _button(brow, "Cut woods 15", cut_pressed)
 	_speed = _button(brow, "1×", speed_pressed)
 	_pause = _button(brow, "Pause", pause_pressed)
 	_sound = sound_button(brow)
 	_button(brow, "Map", map_pressed)
-	for b in [_meteor]:
+	for b in [_meteor, _cut]:
 		b.add_theme_color_override("font_color", Color("c9c0ff"))
 
 
@@ -346,6 +349,8 @@ func refresh(sim: GameSim, armed: bool, speed: int, paused: bool) -> void:
 		_next.text = "Final wave"
 	_meteor.disabled = not sim.can_meteor() and not armed
 	_meteor.text = "Cancel meteor" if armed else "Meteor %d" % Defs.METEOR["cost"]
+	_cut.disabled = sim.trees.is_empty() or sim.mana < Defs.CLEAR_MANA
+	_cut.text = "Cut woods %d" % Defs.CLEAR_MANA
 	_speed.text = "%d×" % speed
 	_pause.text = "Resume" if paused else "Pause"
 	for a in _popup_actions:

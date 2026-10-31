@@ -37,6 +37,7 @@ var _arts_intro := false      # the Dark Arts intro tip is up
 func _ready() -> void:
 	hud.next_wave_pressed.connect(_on_next_wave)
 	hud.meteor_pressed.connect(_on_meteor)
+	hud.cut_pressed.connect(_on_cut)
 	hud.speed_pressed.connect(func() -> void: speed = 2 if speed == 1 else 1)
 	hud.pause_pressed.connect(func() -> void: paused = not paused)
 	hud.action_pressed.connect(_on_action)
@@ -311,6 +312,16 @@ func _on_action(id: String) -> void:
 func _on_next_wave() -> void:
 	if started and not sim.over:
 		sim.call_early()
+
+
+## Cuts a random patch of woods for mana (and timber gold).
+func _on_cut() -> void:
+	if not started or sim.over:
+		return
+	var err := sim.cut_random_woods()
+	if err != "":
+		hud.toast(err)
+		Sfx.play("error")
 
 
 func _on_meteor() -> void:

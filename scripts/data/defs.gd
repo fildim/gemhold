@@ -76,13 +76,14 @@ const DROP_SPEED := 0.7      # dropped gems roll home along the road at this man
 
 ## The den (your lair) strikes heroes near it. It holds charges: each is one bolt, and spent
 ## charges refill one at a time. Every point in the Den skill adds one more charge.
-## The Hoard skills: each point adds this much starting gold or maximum mana.
+## The Hoard skills: each point adds this much starting gold or maximum mana (Starfall: see METEOR).
 const HOARD_GOLD := 50
 const HOARD_MANA := 15
 
 const DEN := {"charges": 1, "range": 2.6, "dmg": 70, "refill": 8.0, "rate": 0.5}
 
-const METEOR := {"cost": 60, "radius": 1.3, "dmg": 140, "delay": 0.55}
+const METEOR := {"cost": 60, "radius": 1.3, "dmg": 280, "delay": 0.55}
+const HOARD_METEOR := 0.25   # Starfall (The Hoard): +25% meteor damage per point
 
 ## Tower veterancy: towers earn 1 XP per point of damage dealt and rank up at these totals.
 ## Each rank adds damage. A tower at rank ABILITY_RANK and upgrade level ABILITY_LEVEL unlocks its ability.
@@ -146,5 +147,6 @@ const SKILLS := {
 		{"id": "den_charge", "name": "Hoard's Wrath", "text": "+1 den charge", "max": 5},
 		{"id": "hoard_gold", "name": "Buried Gold", "text": "+50 starting gold", "max": 5},
 		{"id": "hoard_mana", "name": "Deep Well", "text": "+15 max mana", "max": 4},
+		{"id": "meteor_dmg", "name": "Starfall", "text": "+25% meteor damage", "max": 3},
 	],
 }

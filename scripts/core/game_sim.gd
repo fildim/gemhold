@@ -633,7 +633,7 @@ func _update_fx(dt: float) -> void:
 			sound.emit("boom")
 			for e: Enemy in enemies:
 				if e.pos.distance_to(f.pos) <= Defs.METEOR["radius"]:
-					hurt(e, Defs.METEOR["dmg"], true)
+					hurt(e, meteor_damage(), true)
 	fx = fx.filter(func(f: Fx) -> bool: return f.t < f.dur)
 
 
@@ -779,6 +779,19 @@ func _boom(pos: Vector2, r: float, dur: float) -> void:
 
 
 # ---------------------------------------------------------------- spells
+
+## Meteor damage, with the Starfall skill.
+func meteor_damage() -> float:
+	return Defs.METEOR["dmg"] * (1.0 + Defs.HOARD_METEOR * skill("meteor_dmg"))
+
+
+## Cuts a random patch of woods (the HUD's Cut woods button). Returns "" or why it could not.
+func cut_random_woods() -> String:
+	if trees.is_empty():
+		return "No woods left"
+	var cells: Array = trees.keys()
+	return do_action("clear", cells[rng.randi_range(0, cells.size() - 1)])
+
 
 func can_meteor() -> bool:
 	return mana >= Defs.METEOR["cost"]

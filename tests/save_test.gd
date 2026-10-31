@@ -278,6 +278,15 @@ func _init() -> void:
 	var rich: float = judge.call(1.0)
 	th.gold = 0
 	_check(rich > grabbed + 0.2, "hoarded gold raises the threat")
+
+	# Starfall adds meteor damage; Cut woods clears a random patch for mana.
+	var sf := GameSim.new(lv, {"meteor_dmg": 2})
+	_check(is_equal_approx(sf.meteor_damage(), Defs.METEOR["dmg"] * (1.0 + 2.0 * Defs.HOARD_METEOR)), "Starfall raises meteor damage")
+	var woods := sf.trees.size()
+	sf.mana = 100.0
+	_check(sf.cut_random_woods() == "" and sf.trees.size() == woods - 1 and sf.mana == 100.0 - Defs.CLEAR_MANA, "Cut woods clears one patch for its mana")
+	sf.mana = 0.0
+	_check(sf.cut_random_woods() != "", "Cut woods needs mana")
 	th.threat = 2.0
 	th.wave = 5
 	th._spawn("p", 0)
