@@ -1,29 +1,29 @@
 class_name Tutorial
 extends RefCounted
-## Tips for the first lair, shown one at a time over the map while you play. Each tip waits for
-## its moment (enough gold, loot on the ground, a hero with a gem...) and goes away once you do
-## what it says, or when you tap it away. A tip whose lesson you already learned is skipped.
-## Once all are done (or the lair is won) they never show again; Prefs remembers.
+## Tips for the first lair, one at a time. While a tip is up the battle is frozen and the screen
+## dark except for the one thing it is about (see spotlight.gd), so the player does that and
+## nothing else. Each tip waits for its moment (enough gold, loot on the ground, a hero with a
+## gem...) and ends when the player does what it says, or taps "Got it" on tips that only explain.
+## A tip whose lesson the player already learned is skipped. Once all are done (or the lair is
+## won, or the player skips the tutorial) they never show again; Prefs remembers.
 
-## [id, text]. Checked in this order, so earlier tips come first when several are ready.
+## [id, text, "Got it" button]. Checked in this order, so earlier tips come first.
 const TIPS := [
-	["build", "Tap the glowing green moss tile beside the road and build a [b]Warband Hut[/b]. Towers need their own ground: moss for Huts, frost for Crypts, ash for Shrines."],
-	["wave", "Heroes march when the timer runs out. Tap [b]First wave[/b] to call them now and earn the seconds left as gold."],
-	["carrier", "A hero has your gem! Kill him before he gets off the map and the gem floats back home."],
-	["loot", "A slain hero dropped something. [b]Tap coins and potions[/b] to pick them up, or call the next wave early to gather them all."],
-	["more", "Kills pay gold. Build more towers along the road; a [b]Bone Crypt[/b] on frost slows heroes down."],
-	["upgrade", "You can afford an upgrade. [b]Tap a tower[/b] and upgrade it for more damage and range."],
-	["woods", "[b]Tap the woods[/b] to clear them with mana. You get gold for the timber and a new place to build."],
-	["meteor", "Meteor is ready. Tap [b]Meteor[/b], then tap a crowd of heroes."],
+	["build", "Heroes walk the road to steal your gems. Stop them with towers.\n[b]Tap the lit moss tile[/b], then build a [b]Warband Hut[/b] there. Each tower needs its own ground: moss for Huts, frost for Crypts, ash for Shrines.", false],
+	["wave", "Heroes march when the timer runs out. [b]Tap First wave[/b] to call them now and earn the seconds left as gold.", false],
+	["carrier", "[b]This hero has your gem![/b] Kill him before he gets off the map and the gem floats back home. Other heroes will go for it on the way, so keep killing.", true],
+	["loot", "A slain hero dropped something. [b]Tap it[/b] to pick it up now; anything left lying around is gathered when the next wave starts.", true],
+	["more", "Kills pay gold. Build more towers along the road. A [b]Bone Crypt[/b] on frost slows heroes down; a [b]Cinder Shrine[/b] on ash burns through armour.", true],
+	["upgrade", "You can afford an upgrade. [b]Tap your tower[/b], then [b]Upgrade[/b] for more damage and range.", false],
+	["woods", "[b]Tap the woods[/b], then [b]Cut woods[/b]. It costs mana, pays gold for the timber and opens a new place to build.", false],
+	["meteor", "Meteor is ready. [b]Tap Meteor[/b]...", false],
 ]
-const CARRIER_TIME := 7.0     # the gem warning stays this long
-const MORE_TIME := 14.0
 
 var done := {}                # tip id -> true
 var current := -1             # index into TIPS, or -1
-var cell := Vector2i(-1, -1)  # a tile to point at, or (-1, -1)
-var _shown := 0.0
+var target := {}              # what to light up: {"cell", "action"}, {"button"}, {"at"} or {"map"}
 var _trees := -1
+var _loot := 0               # loot on the map when the loot tip came up
 
 
 ## Whether the tips should run for this battle.
@@ -31,14 +31,12 @@ static func wanted(level_index: int, night: bool) -> bool:
 	return level_index == 0 and not night and not Prefs.get_value("tutorial_done", false)
 
 
-## Call every frame. Returns the tip to show (BBCode), or "" for none.
-func update(sim: GameSim, dt: float) -> String:
+## Call every frame while the battle runs. armed: the meteor is waiting for a target.
+func update(sim: GameSim, armed := false) -> void:
 	if _trees < 0:
 		_trees = sim.trees.size()
-	if current >= 0:
-		_shown += dt
-		if _finished(TIPS[current][0], sim):
-			_close()
+	if current >= 0 and _finished(_current_id(), sim):
+		_close()
 	if current < 0:
 		for i in TIPS.size():
 			var id: String = TIPS[i][0]
@@ -48,27 +46,47 @@ func update(sim: GameSim, dt: float) -> String:
 				done[id] = true   # learned it without being told
 			elif _ready(id, sim):
 				current = i
-				_shown = 0.0
+				_loot = sim.loot.size()
 				break
-	if done.size() == TIPS.size() and not Prefs.get_value("tutorial_done", false):
-		Prefs.set_value("tutorial_done", true)
-	if _current_id() != "build":
-		cell = Vector2i(-1, -1)
-	elif cell.x < 0:
-		cell = _best_hut_spot(sim)
-	return TIPS[current][1] if current >= 0 else ""
+	if done.size() == TIPS.size():
+		finish()
+	target = _target(sim, armed) if current >= 0 else {}
 
 
-## The tip's × button.
+## The tip to show, or "" for none.
+func text(armed := false) -> String:
+	if current < 0:
+		return ""
+	if _current_id() == "meteor" and armed:
+		return "Now [b]tap a crowd of heroes[/b] on the map. The meteor lands a moment later."
+	return TIPS[current][1]
+
+
+## Whether the tip has a "Got it" button (it only explains; there is nothing to tap).
+func has_ok() -> bool:
+	return current >= 0 and TIPS[current][2]
+
+
+## "Got it".
 func dismiss() -> void:
 	if current >= 0:
 		_close()
 
 
+## Never show tips again.
+func finish() -> void:
+	if not Prefs.get_value("tutorial_done", false):
+		Prefs.set_value("tutorial_done", true)
+
+
 func _close() -> void:
-	done[TIPS[current][0]] = true
+	done[_current_id()] = true
 	current = -1
-	cell = Vector2i(-1, -1)
+	target = {}
+
+
+func _current_id() -> String:
+	return TIPS[current][0] if current >= 0 else ""
 
 
 func _ready(id: String, sim: GameSim) -> bool:
@@ -78,15 +96,15 @@ func _ready(id: String, sim: GameSim) -> bool:
 		"wave":
 			return not sim.towers.is_empty()
 		"carrier":
-			return sim.enemies.any(func(e: GameSim.Enemy) -> bool: return e.carry > 0)
+			return _carrier(sim) != null
 		"loot":
 			return not sim.loot.is_empty()
 		"more":
 			return sim.wave >= 1 and sim.gold >= sim.build_cost("moss")
 		"upgrade":
-			return sim.wave >= 2 and sim.gold >= int(Defs.TOWERS["moss"]["cost"][1])
+			return sim.wave >= 2 and sim.gold >= int(Defs.TOWERS["moss"]["cost"][1]) and not sim.towers.is_empty()
 		"woods":
-			return sim.wave >= 2 and sim.mana >= Defs.CLEAR_MANA and not sim.trees.is_empty()
+			return sim.wave >= 2 and sim.mana >= Defs.CLEAR_MANA and _woods_spot(sim).x >= 0
 		"meteor":
 			return sim.wave >= 3 and sim.can_meteor()
 	return false
@@ -99,11 +117,9 @@ func _finished(id: String, sim: GameSim) -> bool:
 		"wave":
 			return sim.wave > 0
 		"carrier":
-			return id == _current_id() and _shown >= CARRIER_TIME
+			return id == _current_id() and _carrier(sim) == null
 		"loot":
-			return id == _current_id() and sim.loot.is_empty()
-		"more":
-			return sim.towers.size() >= 3 or (id == _current_id() and _shown >= MORE_TIME)
+			return id == _current_id() and sim.loot.size() < _loot
 		"upgrade":
 			return sim.towers.values().any(func(t: GameSim.Tower) -> bool: return t.lvl >= 2)
 		"woods":
@@ -113,8 +129,46 @@ func _finished(id: String, sim: GameSim) -> bool:
 	return false
 
 
-func _current_id() -> String:
-	return TIPS[current][0] if current >= 0 else ""
+func _target(sim: GameSim, armed: bool) -> Dictionary:
+	match _current_id():
+		"build":
+			if not target.has("cell"):
+				return {"cell": _best_hut_spot(sim), "action": "build:moss"}
+			return target   # keep pointing at the same tile
+		"wave":
+			return {"button": "next"}
+		"carrier":
+			var e := _carrier(sim)
+			return {"at": e.pos} if e else {}
+		"loot":
+			return {"at": sim.loot[0].pos}
+		"upgrade":
+			var tw: GameSim.Tower = sim.towers.values()[0]
+			return {"cell": tw.cell, "action": "upgrade"}
+		"woods":
+			return {"cell": _woods_spot(sim), "action": "clear"}
+		"meteor":
+			return {"map": true} if armed else {"button": "meteor"}
+	return {}
+
+
+func _carrier(sim: GameSim) -> GameSim.Enemy:
+	for e: GameSim.Enemy in sim.enemies:
+		if e.carry > 0 and e.hp > 0.0:
+			return e
+	return null
+
+
+## The woods tile nearest the lair (clearing it opens ground where it matters).
+func _woods_spot(sim: GameSim) -> Vector2i:
+	var best := Vector2i(-1, -1)
+	var best_d := INF
+	for c: Vector2i in sim.trees:
+		var d := (Vector2(c) + Vector2(0.5, 0.5)).distance_to(sim.level.lair_center)
+		if d < best_d:
+			best_d = d
+			best = c
+	return best
 
 
 ## The free moss tile whose Hut would cover the most road.

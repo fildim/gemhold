@@ -17,6 +17,7 @@ const SFX := {
 	"chop": [-6.0, 0.05, 0.05], "raze": [-5.0, 0.1, 0.0], "whoosh": [-6.0, 0.05, 0.05],
 	"boom": [-3.0, 0.05, 0.08], "rank": [-9.0, 0.2, 0.0], "win": [-4.0, 1.0, 0.0], "lose": [-4.0, 1.0, 0.0],
 }
+const SFX_BUS_DB := -9.0      # all effects at once, under the music (the SFX values are relative)
 const MUSIC_DB := -15.0
 const BEAM_DB := -20.0       # one Shrine burning; a little louder with more (up to 3)
 const VOICES := 16
@@ -47,6 +48,7 @@ func _ready() -> void:
 			AudioServer.add_bus()
 			AudioServer.set_bus_name(AudioServer.bus_count - 1, bus)
 			AudioServer.set_bus_send(AudioServer.bus_count - 1, "Master")
+	AudioServer.set_bus_volume_db(AudioServer.get_bus_index("Sfx"), SFX_BUS_DB)
 	for n in SFX.keys() + ["beam", "map", "battle"]:
 		var p: String = DIR + n + ".wav"
 		if ResourceLoader.exists(p):

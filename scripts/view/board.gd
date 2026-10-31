@@ -11,7 +11,6 @@ var sim: GameSim
 var font: Font
 var selected := Vector2i(-1, -1)
 var armed := false
-var hint := Vector2i(-1, -1)   # a tile the tutorial points at
 
 
 var _fog: ImageTexture
@@ -58,11 +57,6 @@ func _draw() -> void:
 	for c: Vector2i in level.high:
 		_draw_high_shine(c, tm)
 	_draw_selection()
-	if hint.x >= 0 and hint != selected:
-		var hc := (Vector2(hint) + Vector2(0.5, 0.5)) * T
-		var pulse := 0.5 + 0.5 * sin(Time.get_ticks_msec() / 1000.0 * 5.0)
-		Paint.glow(self, hc, T * (0.6 + 0.15 * pulse), Color(1, 0.8, 0.3, 0.35 + 0.25 * pulse))
-		draw_rect(Rect2(Vector2(hint) * T, Vector2(T, T)).grow(-2), Color(1, 0.8, 0.3, 0.6 + 0.4 * pulse), false, 3.0)
 	_draw_den_charges(tm)
 	for s: GameSim.Site in sim.sites.values():
 		_draw_site(s, tm)
@@ -71,9 +65,7 @@ func _draw() -> void:
 	for tw: GameSim.Tower in tws:
 		_draw_tower(tw, tm)
 	for g: GameSim.Drop in sim.drops:
-		var p := g.pos * T
-		Paint.glow(self, p, T * 0.3, Color(1, 0.4, 0.5, 0.5))
-		Paint.gem(self, p + Vector2(0, (-0.1 + sin(tm * 5.0) * 0.05) * T), T * 0.13)
+		_draw_gems(g.pos * T + Vector2(0, (-0.1 + sin(tm * 5.0) * 0.05) * T), g.n, 0.3)
 	var es: Array = sim.enemies.duplicate()
 	es.sort_custom(func(a: GameSim.Enemy, b: GameSim.Enemy) -> bool: return a.pos.y < b.pos.y)
 	for e: GameSim.Enemy in es:
@@ -93,6 +85,21 @@ func _draw() -> void:
 		_draw_fx(f)
 	if armed:
 		draw_rect(full, Color(1, 0.42, 0.13, 0.09))
+
+
+## n gems side by side, far enough apart that each one shows; glow 0 is the small halo
+## of a carried gem, more for gems lying on the road.
+func _draw_gems(c: Vector2, n: int, glow: float) -> void:
+	var gap := T * 0.3
+	for i in n:
+		var gp := c + Vector2((i - (n - 1) / 2.0) * gap, absf(i - (n - 1) / 2.0) * T * 0.06)
+		Paint.glow(self, gp, T * (0.2 + glow * 0.3), Color(1, 0.38, 0.5, 0.65 - glow * 0.5))
+		Paint.gem(self, gp, T * 0.12)
+	if n > 1:
+		var lbl := "%d" % n
+		var at := c + Vector2(n * gap * 0.5 + 2.0, -T * 0.06)
+		draw_string_outline(font, at, lbl, HORIZONTAL_ALIGNMENT_LEFT, -1, 20, 4, OUTLINE)
+		draw_string(font, at, lbl, HORIZONTAL_ALIGNMENT_LEFT, -1, 20, Color("ff9aae"))
 
 
 func _draw_selection() -> void:
@@ -292,10 +299,7 @@ func _draw_enemy(e: GameSim.Enemy, tm: float) -> void:
 		var fy := y - u * 1.75 + sin(sim.time * 14.0) * 1.5
 		draw_string_outline(font, Vector2(x - 10, fy), "!!", HORIZONTAL_ALIGNMENT_CENTER, 20, 18, 4, OUTLINE)
 		draw_string(font, Vector2(x - 10, fy), "!!", HORIZONTAL_ALIGNMENT_CENTER, 20, 18, Color("c9c0ff"))
-	for i in e.carry:
-		var gp := Vector2((e.pos.x + (i - (e.carry - 1) / 2.0) * 0.2) * T, (e.pos.y - e.d["r"] * 2.3 - 0.08) * T)
-		Paint.glow(self, gp, T * 0.2, Color(1, 0.38, 0.5, 0.65))
-		Paint.gem(self, gp, T * 0.12)
+	_draw_gems(Vector2(e.pos.x, e.pos.y - e.d["r"] * 2.3 - 0.08) * T, e.carry, 0.0)
 	if e.hp < e.max_hp:
 		var w := maxf(16.0, u * 2.6)
 		var hy := y - u * (1.8 if code == "k" else 1.65) - 6.0
@@ -456,12 +460,12 @@ func _draw_fx(f: GameSim.Fx) -> void:
 				draw_circle(m, T * 0.28, Color("ff6a20"))
 				draw_circle(m, T * 0.14, Color("ffe08a"))
 		"text":
-			var fs := 22
-			var pos := Vector2(p.x - 60, (f.pos.y - k * 0.6) * T)
+			var fs := 28
+			var pos := Vector2(p.x - 80, (f.pos.y - k * 0.6) * T)
 			var col := f.color
 			col.a = 1.0 - k
-			draw_string_outline(font, pos, f.text, HORIZONTAL_ALIGNMENT_CENTER, 120, fs, 4, Color(0, 0, 0, col.a * 0.7))
-			draw_string(font, pos, f.text, HORIZONTAL_ALIGNMENT_CENTER, 120, fs, col)
+			draw_string_outline(font, pos, f.text, HORIZONTAL_ALIGNMENT_CENTER, 160, fs, 4, Color(0, 0, 0, col.a * 0.7))
+			draw_string(font, pos, f.text, HORIZONTAL_ALIGNMENT_CENTER, 160, fs, col)
 
 
 # ---------------------------------------------------------------- lava, map buildings, loot

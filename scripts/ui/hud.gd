@@ -13,7 +13,6 @@ signal restart_pressed
 signal next_level_pressed
 signal night_pressed
 signal map_pressed
-signal hint_closed
 
 const NIGHT := Color("15110d")
 const PANEL := Color("231b14")
@@ -61,8 +60,6 @@ var _toast_tween: Tween
 var _overlay: Control
 var _card_box: VBoxContainer
 var _sound: Button
-var _hint: PanelContainer
-var _hint_text: RichTextLabel
 
 
 func _ready() -> void:
@@ -79,7 +76,6 @@ func _ready() -> void:
 	_build_bars()
 	_build_popup()
 	_build_toast()
-	_build_hint()
 	_build_overlay()
 	resized.connect(_layout)
 	_layout()
@@ -104,15 +100,15 @@ func _box(bg: Color, border: Color, bottom := 1, radius := 8, pad := 10) -> Styl
 func _make_theme() -> Theme:
 	var t := Theme.new()
 	t.default_font = body_font
-	t.default_font_size = 19
+	t.default_font_size = 23
 	t.set_color("font_color", "Label", BONE)
 	t.set_color("default_color", "RichTextLabel", BONE)
 	t.set_font("bold_font", "RichTextLabel", bold_font)
 	t.set_font("normal_font", "RichTextLabel", body_font)
-	t.set_font_size("normal_font_size", "RichTextLabel", 19)
-	t.set_font_size("bold_font_size", "RichTextLabel", 19)
+	t.set_font_size("normal_font_size", "RichTextLabel", 22)
+	t.set_font_size("bold_font_size", "RichTextLabel", 22)
 	t.set_font("font", "Button", bold_font)
-	t.set_font_size("font_size", "Button", 19)
+	t.set_font_size("font_size", "Button", 22)
 	for c in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color", "font_hover_pressed_color"]:
 		t.set_color(c, "Button", BONE)
 	t.set_color("font_disabled_color", "Button", Color(BONE, 0.4))
@@ -310,7 +306,6 @@ func set_battle_visible(on: bool) -> void:
 	_bottom.visible = on
 	if not on:
 		_overlay.visible = false
-		_hint.visible = false
 		hide_popup()
 
 
@@ -356,7 +351,7 @@ func refresh(sim: GameSim, armed: bool, speed: int, paused: bool) -> void:
 func _build_popup() -> void:
 	_popup = PanelContainer.new()
 	_popup.visible = false
-	_popup.custom_minimum_size = Vector2(250, 0)
+	_popup.custom_minimum_size = Vector2(300, 0)
 	add_child(_popup)
 	_popup_box = VBoxContainer.new()
 	_popup_box.add_theme_constant_override("separation", 8)
@@ -377,7 +372,7 @@ func show_popup(info: Dictionary, anchor: Rect2) -> void:
 	var title := Label.new()
 	title.text = info["title"]
 	title.add_theme_font_override("font", display_font)
-	title.add_theme_font_size_override("font_size", 26)
+	title.add_theme_font_size_override("font_size", 30)
 	title.add_theme_color_override("font_color", GOLD)
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	head.add_child(title)
@@ -392,7 +387,7 @@ func show_popup(info: Dictionary, anchor: Rect2) -> void:
 	var text := Label.new()
 	text.text = info["text"]
 	text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	text.custom_minimum_size = Vector2(230, 0)
+	text.custom_minimum_size = Vector2(280, 0)
 	text.add_theme_color_override("font_color", DIM)
 	text.add_theme_font_override("font", body_font)
 	_popup_box.add_child(text)
@@ -408,7 +403,7 @@ func show_popup(info: Dictionary, anchor: Rect2) -> void:
 		var id: String = a["id"]
 		b.pressed.connect(func() -> void: action_pressed.emit(id))
 		_popup_box.add_child(b)
-		_popup_actions.append({"button": b, "gold": int(a.get("gold", 0)), "mana": int(a.get("mana", 0))})
+		_popup_actions.append({"id": id, "button": b, "gold": int(a.get("gold", 0)), "mana": int(a.get("mana", 0))})
 	_popup.visible = true
 	_popup.reset_size()
 	var ps := _popup.get_combined_minimum_size()
@@ -480,50 +475,20 @@ func toast(msg: String) -> void:
 	_toast_tween.tween_property(_toast, "modulate:a", 0.0, 0.3)
 
 
-## The tutorial's tip panel, along the bottom of the map. Taps go through it to the map,
-## except on its × button.
-func _build_hint() -> void:
-	_hint = PanelContainer.new()
-	_hint.add_theme_stylebox_override("panel", _box(Color(PANEL, 0.94), GOLD, 1, 10, 14))
-	_hint.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_hint.visible = false
-	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 10)
-	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_hint.add_child(row)
-	_hint_text = RichTextLabel.new()
-	_hint_text.bbcode_enabled = true
-	_hint_text.fit_content = true
-	_hint_text.scroll_active = false
-	_hint_text.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_hint_text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_hint_text.custom_minimum_size = Vector2(300, 0)
-	row.add_child(_hint_text)
-	var close := Button.new()
-	close.text = "×"
-	close.focus_mode = Control.FOCUS_NONE
-	close.custom_minimum_size = Vector2(44, 40)
-	close.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	close.add_theme_font_size_override("font_size", 24)
-	close.pressed.connect(func() -> void: hint_closed.emit())
-	row.add_child(close)
-	add_child(_hint)
+## Where a HUD button is on screen, for the tutorial spotlight: "next" or "meteor".
+func button_rect(button: String) -> Rect2:
+	var b: Button = {"next": _next, "meteor": _meteor}.get(button)
+	return b.get_global_rect() if b and b.is_visible_in_tree() else Rect2()
 
 
-## Shows a tutorial tip (BBCode), or hides the panel for "".
-func show_hint(bbcode: String) -> void:
-	if bbcode == "":
-		_hint.visible = false
-		return
-	if not _hint.visible or _hint_text.text != bbcode:
-		_hint_text.text = bbcode
-		var w := minf(620.0, map_area.size.x - 20.0)
-		_hint.custom_minimum_size = Vector2(w, 0)
-		_hint_text.custom_minimum_size = Vector2(w - 90.0, 0)
-		_hint.visible = true
-	_hint.reset_size()   # every frame: the text's height settles a frame after it changes
-	_hint.position = Vector2(map_area.position.x + (map_area.size.x - _hint.size.x) / 2.0,
-		map_area.end.y - _hint.size.y - 8.0)
+## Where the open tile panel's button for an action is on screen, or an empty rect.
+func action_rect(id: String) -> Rect2:
+	if not _popup.visible:
+		return Rect2()
+	for a in _popup_actions:
+		if a["id"] == id:
+			return (a["button"] as Button).get_global_rect()
+	return Rect2()
 
 
 # ---------------------------------------------------------------- start / end screens
@@ -545,7 +510,7 @@ func _build_overlay() -> void:
 	center.add_child(card)
 	_card_box = VBoxContainer.new()
 	_card_box.add_theme_constant_override("separation", 12)
-	_card_box.custom_minimum_size = Vector2(520, 0)
+	_card_box.custom_minimum_size = Vector2(600, 0)
 	card.add_child(_card_box)
 
 
@@ -565,7 +530,7 @@ func _show_card(title: String, bbcode: String, buttons: Array) -> void:
 	rt.fit_content = true
 	rt.scroll_active = false
 	rt.text = bbcode
-	rt.custom_minimum_size = Vector2(520, 0)
+	rt.custom_minimum_size = Vector2(600, 0)
 	_card_box.add_child(rt)
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 10)

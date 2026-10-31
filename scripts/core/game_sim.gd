@@ -244,6 +244,7 @@ func mana_regen() -> float:
 func start_wave() -> void:
 	if wave >= level.waves.size():
 		return
+	gather_loot()   # whatever the last wave dropped is picked up as the next one marches in
 	var list: Array[String] = level.waves[wave].duplicate()
 	var wrng := RandomNumberGenerator.new()
 	wrng.seed = wave * 7919 + 13
@@ -264,12 +265,11 @@ func start_wave() -> void:
 	sound.emit("horn")
 
 
-## Call the next wave now. Also gathers every coin and potion lying on the map.
+## Call the next wave now (which, like every wave start, gathers the loot lying on the map).
 ## Returns the gold bonus paid for the time skipped.
 func call_early() -> int:
 	if over or wave >= level.waves.size():
 		return 0
-	gather_loot()
 	var bonus := int(ceil(timer))
 	gold += bonus
 	if bonus > 0:
@@ -368,7 +368,13 @@ func _update_enemies(dt: float) -> void:
 			if e.dir == 1:
 				e.dist = maxf(0.0, e.dist - sp * 0.6 * dt)
 		else:
-			e.dist += sp * dt * e.dir
+			var goal := _gem_goal(e)
+			if goal >= 0.0:
+				# A gem lies out on this road: go for it, back the way it came if need be.
+				var step := minf(sp * dt, absf(goal - e.dist))
+				e.dist += step * signf(goal - e.dist)
+			else:
+				e.dist += sp * dt * e.dir
 		var total: float = level.paths[e.path]["total"]
 		if e.dir == 1 and e.dist >= total:
 			var take := mini(int(e.d["cap"]), home)
@@ -418,6 +424,27 @@ func _update_enemies(dt: float) -> void:
 			if wave_left[e.wave] == 0:
 				_judge_wave(e.wave)
 	enemies = enemies.filter(func(e: Enemy) -> bool: return not e.gone and e.hp > 0.0)
+
+
+## Where along its road a hero with room to carry more should walk to reach the nearest gem lying
+## outside the lair, or -1 if none is on its road. Gems on a joined road count when they lie on
+## this one too.
+func _gem_goal(e: Enemy) -> float:
+	if e.carry >= int(e.d["cap"]):
+		return -1.0
+	var best := -1.0
+	var best_gap := INF
+	for g: Drop in drops:
+		if g.n <= 0:
+			continue
+		var d := g.dist if g.path == e.path else level.nearest_dist(e.path, g.pos)
+		if g.path != e.path and level.path_pos(e.path, d).distance_to(g.pos) > 0.3:
+			continue
+		var gap := absf(d - e.dist)
+		if gap < best_gap:
+			best_gap = gap
+			best = d
+	return best
 
 
 ## Share (0..1) of road i's defended stretch, the parts a tower or the den can reach, that lies

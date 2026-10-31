@@ -73,13 +73,14 @@ func _init() -> void:
 	# Loot never expires.
 	var lv := Level.load_from("res://levels/level_01.json")
 	var lt := GameSim.new(lv)
+	lt.timer = 1e6   # no wave starts, which would gather it
 	var coin := GameSim.Loot.new()
 	coin.kind = "coin"
 	coin.amount = 5
 	lt.loot.append(coin)
 	for i in 2000:
 		lt.update(0.05)   # 100 s
-	_check(lt.loot.has(coin), "loot stays until it is tapped")
+	_check(lt.loot.has(coin), "loot stays until it is tapped or a wave starts")
 	_check(lv.gems == 5, "levels hold 5 gems")
 
 	# The den: 1 charge to start, +1 per Den skill point; fires at heroes near it and refills.
@@ -181,7 +182,7 @@ func _init() -> void:
 	var hd := GameSim.new(lv, {"hoard_gold": 2, "hoard_mana": 3})
 	_check(hd.gold == lv.start_gold + 100 and hd.mana_max == 145.0, "Hoard skills add gold and max mana")
 
-	# Calling a wave early gathers every coin and potion on the map.
+	# Every wave start, called early or not, gathers every coin and potion on the map.
 	var ga := GameSim.new(lv)
 	for k in ["coin", "potion", "coin"]:
 		var it := GameSim.Loot.new()
@@ -288,6 +289,25 @@ func _init() -> void:
 
 	back.reset()
 	_check(back.unlocked == 1 and back.best.is_empty() and back.points_total() == 0, "reset clears progress")
+
+	# Heroes go for gems lying out on their road, even back the way they came.
+	var gs := GameSim.new(Level.load_from("res://levels/level_01.json"))
+	gs.timer = 1e6
+	gs._spawn("p", 0, 8.0)
+	var hero: GameSim.Enemy = gs.enemies[0]
+	var loose := GameSim.Drop.new()
+	loose.path = 0
+	loose.dist = 4.0
+	loose.n = 2
+	loose.pos = gs.level.path_pos(0, 4.0)
+	gs.drops.append(loose)
+	gs.update(0.1)
+	_check(hero.dist < 8.0, "a hero turns back toward a gem behind him")
+	for i in 200:
+		gs.update(0.05)
+		if hero.carry > 0:
+			break
+	_check(hero.carry == 1 and loose.n == 1, "he picks it up (a peasant carries one of the two)")
 	DirAccess.remove_absolute(FILE)
 	print("save_test: %s" % ("all passed" if fails == 0 else "%d failed" % fails))
 	quit(0 if fails == 0 else 1)

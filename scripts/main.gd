@@ -18,7 +18,9 @@ var paused := false
 var started := false
 var armed := false            # meteor waiting for a target
 var selected := Vector2i(-1, -1)
-var tutorial: Tutorial     # tips on the first lair, or null
+var tutorial: Tutorial        # tips on the first lair, or null
+var spot: Control             # the tutorial spotlight, over everything
+var _arts_spent := -1         # skill points spent when the Dark Arts tip opened
 
 @onready var frame: Control = $MapFrame
 @onready var ground: Node2D = $MapFrame/Ground
@@ -40,9 +42,11 @@ func _ready() -> void:
 	hud.restart_pressed.connect(_restart)
 	hud.next_level_pressed.connect(func() -> void: _choose(level_index + 1))
 	hud.map_pressed.connect(_show_map)
-	hud.hint_closed.connect(func() -> void:
-		if tutorial:
-			tutorial.dismiss())
+	spot = preload("res://scripts/ui/spotlight.gd").new()
+	$UI.add_child(spot)
+	spot.setup(hud)
+	spot.ok_pressed.connect(_on_tip_ok)
+	spot.skip_pressed.connect(_on_tip_skip)
 	frame.gui_input.connect(_on_map_input)
 	get_viewport().size_changed.connect(_layout)
 	save = SaveData.load_from()
@@ -114,8 +118,6 @@ func _new_battle() -> void:
 	sim.ended.connect(_on_ended)
 	sim.sound.connect(Sfx.play)
 	tutorial = Tutorial.new() if Tutorial.wanted(level_index, night) else null
-	hud.show_hint("")
-	board.hint = Vector2i(-1, -1)
 	ground.setup(level, sim)
 	board.setup(level, sim, hud.bold_font)
 	frame.size = Vector2(level.cols, level.rows) * T
@@ -132,15 +134,22 @@ func _restart() -> void:
 
 func _process(delta: float) -> void:
 	if on_map:
+		_arts_tip()
 		return
-	if started and not paused and not sim.over:
+	# While a tutorial tip is up the battle stands still.
+	var tip := ""
+	if tutorial and started and not sim.over:
+		tutorial.update(sim, armed)
+		tip = tutorial.text(armed)
+	if tip != "":
+		spot.show_tip(tip, _tip_rect(tutorial.target), tutorial.has_ok())
+	else:
+		spot.hide_tip()
+	if started and not paused and not sim.over and tip == "":
 		var dt := minf(delta, 0.05)
 		for i in speed:
 			sim.update(dt)
-		if tutorial:
-			hud.show_hint("" if hud.popup_open() else tutorial.update(sim, dt * speed))
-			board.hint = tutorial.cell
-	var running := started and not paused and not sim.over
+	var running := started and not paused and not sim.over and tip == ""
 	var beams := 0
 	if running:
 		for tw: GameSim.Tower in sim.towers.values():
@@ -151,6 +160,77 @@ func _process(delta: float) -> void:
 	board.armed = armed
 	board.queue_redraw()
 	hud.refresh(sim, armed, speed, paused)
+
+
+## Screen rectangle for what a tutorial tip points at (see Tutorial.target).
+func _tip_rect(t: Dictionary) -> Rect2:
+	if t.has("cell"):
+		var c: Vector2i = t["cell"]
+		if hud.popup_open() and selected != c:
+			_deselect()   # a panel for some other tile: close it so the right one can open
+		var r: Rect2 = hud.action_rect(t["action"]) if selected == c else Rect2()
+		return r if r.has_area() else _cell_rect(c)
+	if t.has("button"):
+		return hud.button_rect(t["button"])
+	if t.has("at"):
+		var p: Vector2 = t["at"]
+		return _cell_rect(Vector2(p.x - 0.75, p.y - 0.9), Vector2(1.5, 1.5))
+	if t.has("map"):
+		return _cell_rect(Vector2.ZERO, Vector2(level.cols, level.rows))
+	return Rect2()
+
+
+## A rectangle in tiles (a tile by default) as a rectangle on screen.
+func _cell_rect(c: Vector2, tiles := Vector2.ONE) -> Rect2:
+	var xf := frame.get_global_transform_with_canvas()
+	return Rect2(xf * (c * T), tiles * T * frame.scale)
+
+
+func _on_tip_ok() -> void:
+	if not on_map and tutorial:
+		tutorial.dismiss()
+	else:
+		Prefs.set_value("arts_tip", 2)
+	spot.hide_tip()
+
+
+func _on_tip_skip() -> void:
+	if tutorial:
+		tutorial.finish()
+		tutorial = null
+	Prefs.set_value("tutorial_done", true)
+	Prefs.set_value("arts_tip", 2)
+	spot.hide_tip()
+
+
+## The Dark Arts tips, on the level map, once there is a point to spend: open Dark Arts, buy a
+## skill, then a word on refunds. arts_tip in Prefs: 0 not yet, 1 a skill was bought, 2 done.
+func _arts_tip() -> void:
+	var stage: int = Prefs.get_value("arts_tip", 0)
+	if stage >= 2 or not select.visible:
+		spot.hide_tip()
+		return
+	if not skill_tree.visible:
+		if stage == 1:
+			Prefs.set_value("arts_tip", 2)   # closed the tree after buying: done
+		if stage == 0 and save.points_free() > 0:
+			spot.show_tip("[b]You earned stars![/b] Every star is a skill point for your dark powers. [b]Tap Dark Arts[/b] to spend them.", select.skills_rect(), false)
+		else:
+			spot.hide_tip()
+		return
+	if stage == 0:
+		if _arts_spent < 0:
+			_arts_spent = save.points_spent()
+		if save.points_spent() > _arts_spent:
+			Prefs.set_value("arts_tip", 1)
+			return
+		var r: Rect2 = skill_tree.first_buyable_rect()
+		if r.has_area():
+			spot.show_tip("Each column makes one kind of tower stronger; [b]The Hoard[/b] powers your den and your starting gold and mana. [b]Tap a skill[/b] to buy a rank.", r, false)
+		else:
+			spot.hide_tip()
+	else:
+		spot.show_tip("Skills work in every battle from now on. Not happy with your choice? [b]Refund all points[/b] at the bottom and spend them again. Earn more stars by beating lairs with better ratings and at night.", skill_tree.back_rect(), true)
 
 
 ## Fit the map into the space the HUD leaves free, keeping its proportions.
@@ -229,12 +309,12 @@ func _on_meteor() -> void:
 
 
 func _on_ended(won: bool) -> void:
-	hud.show_hint("")
-	board.hint = Vector2i(-1, -1)
 	Sfx.set_beams(0)
 	Sfx.play("win" if won else "lose")
 	if won and tutorial:
-		Prefs.set_value("tutorial_done", true)   # beat the first lair: no more tips
+		tutorial.finish()   # beat the first lair: no more tips
+		tutorial = null
+	spot.hide_tip()
 	_deselect()
 	var had_night := save.night_unlocked(level.id)
 	var mission := SaveData.mission_id(level.id, night)

@@ -15,6 +15,7 @@ var _stars: Label
 var _points: Label
 var _cols: HBoxContainer
 var _reset: Button
+var _back: Button
 
 
 func setup(hud: Control, save: SaveData) -> void:
@@ -54,16 +55,17 @@ func setup(hud: Control, save: SaveData) -> void:
 	head.add_child(info)
 	_stars = Label.new()
 	_stars.add_theme_font_override("font", hud.bold_font)
-	_stars.add_theme_font_size_override("font_size", 22)
+	_stars.add_theme_font_size_override("font_size", 26)
 	_stars.add_theme_color_override("font_color", Hud.GOLD)
 	info.add_child(_stars)
 	_points = Label.new()
 	_points.add_theme_font_override("font", hud.bold_font)
-	_points.add_theme_font_size_override("font_size", 24)
+	_points.add_theme_font_size_override("font_size", 28)
 	_points.add_theme_color_override("font_color", Hud.EMBER)
 	_points.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	head.add_child(_points)
 	var back := Button.new()
+	_back = back
 	back.text = "Back to map"
 	back.focus_mode = Control.FOCUS_NONE
 	back.custom_minimum_size = Vector2(0, 48)
@@ -113,7 +115,7 @@ func _column(type: String, title: String) -> Control:
 	var h := Label.new()
 	h.text = title
 	h.add_theme_font_override("font", _hud.display_font)
-	h.add_theme_font_size_override("font_size", 28)
+	h.add_theme_font_size_override("font_size", 32)
 	h.add_theme_color_override("font_color", TREE_COLORS[type])
 	col.add_child(h)
 	for sk: Dictionary in Defs.SKILLS[type]:
@@ -122,9 +124,9 @@ func _column(type: String, title: String) -> Control:
 		var b := Button.new()
 		b.focus_mode = Control.FOCUS_NONE
 		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
-		b.custom_minimum_size = Vector2(0, 54)
+		b.custom_minimum_size = Vector2(0, 64)
 		b.text = "%s   %s\n%s" % [sk["name"], "●".repeat(r) + "○".repeat(int(sk["max"]) - r), sk["text"]]
-		b.add_theme_font_size_override("font_size", 17)
+		b.add_theme_font_size_override("font_size", 21)
 		b.disabled = not _save.can_buy(id)
 		if r >= int(sk["max"]):
 			b.add_theme_color_override("font_disabled_color", Hud.GOLD)
@@ -146,3 +148,16 @@ func _on_reset() -> void:
 	_save.save()
 	refresh()
 	_hud.toast("Points refunded")
+
+
+## For the tutorial spotlight: the first skill a point can buy now, and the way back.
+func first_buyable_rect() -> Rect2:
+	for col in _cols.get_children():
+		for b in col.get_child(0).get_children():
+			if b is Button and not b.disabled:
+				return b.get_global_rect()
+	return Rect2()
+
+
+func back_rect() -> Rect2:
+	return _back.get_global_rect()

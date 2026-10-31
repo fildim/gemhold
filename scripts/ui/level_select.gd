@@ -58,13 +58,13 @@ func setup(hud: Control, levels: Array, save: SaveData) -> void:
 	add_child(_skills)
 	_reset = Button.new()
 	_reset.focus_mode = Control.FOCUS_NONE
-	_reset.add_theme_font_size_override("font_size", 15)
+	_reset.add_theme_font_size_override("font_size", 18)
 	_reset.add_theme_color_override("font_color", Hud.DIM)
 	_reset.pressed.connect(_on_reset)
 	add_child(_reset)
 	_sound = hud.sound_button(self)
 	_sound.custom_minimum_size = Vector2(0, 40)
-	_sound.add_theme_font_size_override("font_size", 15)
+	_sound.add_theme_font_size_override("font_size", 18)
 	resized.connect(_layout)
 	refresh()
 
@@ -132,6 +132,7 @@ func _on_reset() -> void:
 		return
 	_save.reset()
 	Prefs.set_value("tutorial_done", false)
+	Prefs.set_value("arts_tip", 0)
 	_save.save()
 	refresh()
 	_hud.toast("Progress erased")
@@ -162,7 +163,7 @@ func _draw() -> void:
 		var c := _spot(i)
 		Paint.ellipse(self, c, Marker.R * 0.8, Marker.R * 0.8, Color(0, 0, 0, 0.35))
 		Paint.ellipse_outline(self, c, Marker.R * 0.8, Marker.R * 0.8, Color(Hud.DIM, 0.25), 2.0)
-		draw_string(_hud.bold_font, c + Vector2(-40, Marker.R + 26), "Uncharted", HORIZONTAL_ALIGNMENT_CENTER, 80, 16, Color(Hud.DIM, 0.4))
+		draw_string(_hud.bold_font, c + Vector2(-40, Marker.R + 26), "Uncharted", HORIZONTAL_ALIGNMENT_CENTER, 80, 19, Color(Hud.DIM, 0.4))
 
 
 ## One tappable lair on the map.
@@ -216,7 +217,7 @@ class Marker extends Control:
 		if not locked:
 			_draw_moon(c + Vector2(R * 1.05, -R * 0.55))
 		var tc := Color("efe4cc") if not locked else Color("a8977c", 0.6)
-		draw_string(font, Vector2(0, R * 2.0 + 24), title, HORIZONTAL_ALIGNMENT_CENTER, size.x, 19, tc)
+		draw_string(font, Vector2(0, R * 2.0 + 24), title, HORIZONTAL_ALIGNMENT_CENTER, size.x, 22, tc)
 		# Best rating as three stars: gold ones earned, dark ones still to win.
 		for k in 3:
 			var p := Vector2(size.x / 2.0 + (k - 1) * 22.0, R * 2.0 + 44)
@@ -252,3 +253,8 @@ class Marker extends Control:
 		if col.a > 0.5:
 			pts.append(pts[0])
 			draw_polyline(pts, Color("5a3a10"), 1.0, true)
+
+
+## For the tutorial spotlight.
+func skills_rect() -> Rect2:
+	return _skills.get_global_rect()

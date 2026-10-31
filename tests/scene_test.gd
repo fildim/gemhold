@@ -16,6 +16,7 @@ func _process(_delta: float) -> bool:
 		assert(main.on_map and main.select.visible, "game should open on the level map")
 		main.save.path = SAVE   # never touch the real save file
 		Prefs.path = "user://scene_test_settings.cfg"
+		Prefs.set_value("tutorial_done", true)   # tips freeze the battle; tutorial_test covers them
 		main._choose(0)
 	if frames == 5:
 		main.started = true
