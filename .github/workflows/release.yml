@@ -1,9 +1,9 @@
-# Builds Gemhold for every platform and publishes a GitHub Release, plus the web version on
-# GitHub Pages. Runs when a version tag is pushed (git tag v0.4.0 && git push origin v0.4.0),
+# Builds Gemhold for every platform and publishes a GitHub Release. The web version goes to
+# GitHub Pages from web.yml instead. Runs when a version tag is pushed (git tag v0.4.0 && git push origin v0.4.0),
 # or by hand from the Actions tab.
 #
 #   Windows  Gemhold.exe                 Linux  Gemhold-Linux.zip
-#   macOS    Gemhold-macOS.zip           Web    https://fildim.github.io/gemhold/
+#   macOS    Gemhold-macOS.zip
 #   Android  Gemhold.apk (only if the ANDROID_DEBUG_KEYSTORE secret is set, see README)
 #   iPhone   Gemhold-iOS-unsigned.ipa (sideload with AltStore or Sideloadly)
 name: Release
@@ -15,14 +15,12 @@ on:
 
 permissions:
   contents: write
-  pages: write
-  id-token: write
 
 env:
   GODOT_VERSION: 4.6.2
 
 jobs:
-  desktop-web-android:
+  desktop-android:
     runs-on: ubuntu-latest
     env:
       HAS_KEYSTORE: ${{ secrets.ANDROID_DEBUG_KEYSTORE != '' }}
@@ -39,7 +37,7 @@ jobs:
           dest=~/.local/share/godot/export_templates/${GODOT_VERSION}.stable
           mkdir -p "$dest"
           unzip -q -j templates.tpz "templates/windows_*" "templates/linux_*x86_64" "templates/macos.zip" \
-            "templates/web_nothreads_*" "templates/android_*" "templates/version.txt" -d "$dest"
+            "templates/android_*" "templates/version.txt" -d "$dest"
           rm godot.zip templates.tpz
           mkdir -p build && touch build/.gdignore
 
@@ -50,13 +48,12 @@ jobs:
           ./godot --headless --script res://tests/save_test.gd
           ./godot --headless --script res://tests/tutorial_test.gd
 
-      - name: Export Windows, Linux, macOS and web
+      - name: Export Windows, Linux and macOS
         run: |
-          mkdir -p build/windows build/linux build/macos build/web out
+          mkdir -p build/windows build/linux build/macos out
           ./godot --headless --export-release "Windows Desktop" build/windows/Gemhold.exe
           ./godot --headless --export-release "Linux" build/linux/Gemhold.x86_64
           ./godot --headless --export-release "macOS" build/macos/Gemhold-macOS.zip
-          ./godot --headless --export-release "Web" build/web/index.html
           cp build/windows/Gemhold.exe out/
           (cd build/linux && chmod +x Gemhold.x86_64 && zip -q ../../out/Gemhold-Linux.zip Gemhold.x86_64)
           cp build/macos/Gemhold-macOS.zip out/
@@ -88,9 +85,6 @@ jobs:
           name: desktop-files
           path: out/*
 
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: build/web
 
   ios:
     runs-on: macos-latest
@@ -135,13 +129,13 @@ jobs:
           path: out/*
 
   release:
-    needs: [desktop-web-android, ios]
-    if: always() && needs.desktop-web-android.result == 'success'
+    needs: [desktop-android, ios]
+    if: always() && needs.desktop-android.result == 'success'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@v4
         with:
-          pattern: "*-files"   # not the web build, which goes to Pages
+          pattern: "*-files"   # the game files from both jobs
           path: out
           merge-multiple: true
 
@@ -162,15 +156,3 @@ jobs:
             | Android | `Gemhold.apk` | Open it on the phone and allow installing from this source. |
             | iPhone / iPad | [Play in Safari](https://fildim.github.io/gemhold/) | Share, **Add to Home Screen** for full screen. Or sideload `Gemhold-iOS-unsigned.ipa`. |
             | Any browser | [fildim.github.io/gemhold](https://fildim.github.io/gemhold/) | Nothing to install. |
-
-  pages:
-    needs: desktop-web-android
-    if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
-    runs-on: ubuntu-latest
-    continue-on-error: true   # needs Settings > Pages > Source: GitHub Actions (once)
-    environment:
-      name: github-pages
-      url: ${{ steps.deploy.outputs.page_url }}
-    steps:
-      - id: deploy
-        uses: actions/deploy-pages@v4

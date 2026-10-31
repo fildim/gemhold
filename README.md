@@ -153,11 +153,11 @@ git tag v0.4.0
 git push origin main v0.4.0
 ```
 
-GitHub Actions (`.github/workflows/release.yml`) then builds every platform and publishes them as one release; the download buttons above always point at the newest one. It also puts the web version on GitHub Pages.
+GitHub Actions (`.github/workflows/release.yml`) then builds every platform and publishes them as one release; the download buttons above always point at the newest one. The web version is separate (`.github/workflows/web.yml`): every push to `main` rebuilds it on GitHub Pages, because Pages only accepts deployments from the default branch.
 
 **One-time setup** (repository settings on github.com):
 
-- **Web version:** Settings > Pages > Build and deployment > Source: **GitHub Actions**. Until then the Pages step is skipped and the rest still publishes.
+- **Web version:** Settings > Pages > Build and deployment > Source: **GitHub Actions**. (Done for this repository.)
 - **Android APK in releases:** Settings > Secrets and variables > Actions > New repository secret, named `ANDROID_DEBUG_KEYSTORE`, holding the debug keystore as base64 (`base64 -w0 debug.keystore`). It's the same key the Firebase test builds use, so the APK installs over them. Without the secret the release has no APK.
 
 ## iPhone app
