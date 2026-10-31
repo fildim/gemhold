@@ -170,7 +170,7 @@ Sound effects are synthesised by `tools/make_audio.gd` (oscillators, noise and p
 | 7 The Iron Column | Beethoven, *Symphony No. 5* |
 | 8 Gloomspire Summit | Holst, *Mars* from *The Planets* |
 
-To swap a piece, drop an .ogg/.mp3 into `assets/music/`, put its name in `MUSIC` and add it to CREDITS.md. To change a sound effect, edit its function in `tools/make_audio.gd` and rebuild:
+To swap a piece, drop an .ogg (at most 3 min, normalised to -14 LUFS) into `assets/music/`, put its name in `MUSIC` and add it to CREDITS.md. To change a sound effect, edit its function in `tools/make_audio.gd` and rebuild:
 
 ```
 godot --headless -s res://tools/make_audio.gd -- coin boom   # just these, or no names for all
