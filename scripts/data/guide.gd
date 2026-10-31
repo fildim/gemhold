@@ -111,7 +111,9 @@ static func topics() -> Array:
 		+ "[b]Mana Well[/b] (%d mana): +%.1f mana a second.\n\n" % [Defs.SITES["well"]["cut"], Defs.SITES["well"]["regen"]]
 		+ "Free them early: they pay back over the whole battle."))
 	t.append(_t("Your powers", "Hero barracks",
-		"A barracks keeps sending extra heroes onto its road while the waves are still coming.\n\n[b]Raze it[/b] (%d mana) to stop it for good, and take %d gold from the ruins." % [Defs.SITES["camp"]["cut"], Defs.SITES["camp"]["bounty"]]))
+		"A barracks keeps sending extra heroes onto its road while the waves are still coming.\n\n[b]Raze it[/b] (%d mana) to stop it for good, and take %d gold from the ruins." + "
+
+From lair 5 on, buildings are sturdier: mines, wells and barracks take [b]2 cuts[/b], and [b]3[/b] from lair 7 (the dots under them). Each cut costs less, but the whole job costs more. Every cut on a barracks also slows its musters." % [Defs.SITES["camp"]["cut"], Defs.SITES["camp"]["bounty"]]))
 	t.append(_t("Your powers", "Loot",
 		"Slain heroes sometimes drop a [b]coin[/b] (gold, more from tougher kinds of hero) or a [b]mana potion[/b] (+%d mana).\n\nTap loot to take it at once. Anything still lying around is gathered by itself when the next wave starts." % Defs.LOOT_POTION_MANA))
 

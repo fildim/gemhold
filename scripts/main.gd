@@ -23,6 +23,7 @@ var armed := false            # meteor waiting for a target
 var selected := Vector2i(-1, -1)
 var tutorial: Tutorial        # tips on the first lair, or null
 var spot: Control             # the tutorial spotlight, over everything
+var _site_tip := ""           # building kind the tip on screen explains, or ""
 var guide: Control            # the player's guide, opened from the map
 var _arts_spent := -1         # skill points spent when the Dark Arts tip opened
 var _arts_intro := false      # the Dark Arts intro tip is up
@@ -152,7 +153,15 @@ func _process(delta: float) -> void:
 	if tutorial and started and not sim.over:
 		tutorial.update(sim, armed)
 		tip = tutorial.text(armed)
-	if tip != "":
+	var site_cell := Vector2i(-1, -1)
+	_site_tip = ""
+	if tip == "" and started and not sim.over:
+		site_cell = _site_tip_cell()
+		if site_cell.x >= 0:
+			tip = _site_tip_text((sim.sites[site_cell] as GameSim.Site).kind)
+	if site_cell.x >= 0:
+		spot.show_tip(tip, _cell_rect(Vector2(site_cell)), true)
+	elif tip != "":
 		spot.show_tip(tip, _tip_rect(tutorial.target), tutorial.has_ok())
 	else:
 		spot.hide_tip()
@@ -171,6 +180,32 @@ func _process(delta: float) -> void:
 	board.armed = armed
 	board.queue_redraw()
 	hud.refresh(sim, armed, speed, paused)
+
+
+## The first time a lair has a barracks, mine or well, a tip explains it (Prefs "site_tip_<kind>").
+## Returns the cell of a building still to explain, or (-1, -1).
+func _site_tip_cell() -> Vector2i:
+	for s: GameSim.Site in sim.sites.values():
+		if not s.owned and not Prefs.get_value("site_tip_" + s.kind, false):
+			_site_tip = s.kind
+			return s.cell
+	_site_tip = ""
+	return Vector2i(-1, -1)
+
+
+func _site_tip_text(kind: String) -> String:
+	var d: Dictionary = Defs.SITES[kind]
+	var t := ""
+	match kind:
+		"camp":
+			t = "[b]Hero Barracks![/b] It sends extra heroes onto the road while waves are coming. [b]Tap it and Raze it[/b] with mana to stop them and win %d gold." % d["bounty"]
+		"mine":
+			t = "[b]A Gold Mine[/b], overgrown. [b]Tap it and Cut it free[/b] with mana; then it pays %d gold every %d s for the rest of the battle." % [d["gold"], int(d["every"])]
+		"well":
+			t = "[b]A Mana Well[/b], choked with roots. [b]Tap it and Cut it free[/b] with mana for +%.1f mana per second, so you can cast and cut more." % d["regen"]
+	if level.site_cuts > 1:
+		t += " Here each building takes [b]%d cuts[/b] (the dots under it)." % level.site_cuts
+	return t
 
 
 ## Screen rectangle for what a tutorial tip points at (see Tutorial.target).
@@ -198,6 +233,11 @@ func _cell_rect(c: Vector2, tiles := Vector2.ONE) -> Rect2:
 
 
 func _on_tip_ok() -> void:
+	if not on_map and _site_tip != "":
+		Prefs.set_value("site_tip_" + _site_tip, true)
+		_site_tip = ""
+		spot.hide_tip()
+		return
 	if not on_map and tutorial:
 		tutorial.dismiss()
 	elif _arts_intro:
@@ -214,6 +254,8 @@ func _on_tip_skip() -> void:
 	Prefs.set_value("tutorial_done", true)
 	Prefs.set_value("arts_tip", 2)
 	Prefs.set_value("arts_intro", true)
+	for k in Defs.SITES:
+		Prefs.set_value("site_tip_" + k, true)
 	spot.hide_tip()
 
 
@@ -253,7 +295,7 @@ func _arts_tip() -> void:
 		else:
 			spot.hide_tip()
 	else:
-		spot.show_tip("Skills work in every battle from now on. Not happy with your choice? [b]Refund all points[/b] (top right) and spend them again. Earn more stars by beating lairs with better ratings and at night.", skill_tree.back_rect(), true)
+		spot.show_tip("Skills work in every battle from now on. Not happy with your choice? [b]Refund all points[/b] (top right) and spend them again. Earn more stars by beating lairs with better ratings and at night.", skill_tree.reset_rect(), true)
 
 
 ## Fit the map into the space the HUD leaves free, keeping its proportions.

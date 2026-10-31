@@ -25,6 +25,7 @@ var waves: Array = []    # Array of Array[String] hero codes
 var night := false       # only lit tiles can be built on (set for night missions)
 var hp_mul := 1.0        # hero health multiplier, so later levels can be tougher
 var sites: Array = []    # [{"kind", "cell": Vector2i, "path", "spawn": Array[String], "every"}]
+var site_cuts := 1       # cuts (each paid in mana) to free a mine or well or raze a barracks; grows on later lairs
 
 const CORNER_RADIUS := 0.5   # tiles; roads curve through their corner tiles
 
@@ -68,6 +69,7 @@ func _parse(d: Dictionary) -> void:
 		waves.append(_parse_wave(String(w)))
 	night = bool(d.get("night", false))
 	hp_mul = float(d.get("hp_mul", 1.0))
+	site_cuts = maxi(1, int(d.get("site_cuts", 1)))
 	for s in d.get("sites", []):
 		var site := {"kind": String(s["kind"]), "cell": Vector2i(int(s["cell"][0]), int(s["cell"][1]))}
 		if site["kind"] == "camp":

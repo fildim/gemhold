@@ -60,11 +60,11 @@ func _play(lv: Level, skills: Dictionary) -> bool:
 	var looted := 0
 	while not sim.over and t < 1200.0:
 		# Take the first thing each tile offers (cut, build, upgrade); never sell.
-		var uncut := sim.sites.values().any(func(s: GameSim.Site) -> bool: return not s.owned)
+		var uncut := sim.sites.values().any(func(s: GameSim.Site) -> bool: return not s.owned and s.kind == "camp")
 		for v in sim.sites.keys() + spots:
 			for a: Dictionary in sim.cell_info(v)["actions"]:
 				if a["id"] == "clear" and uncut:
-					break   # save mana for mines, wells and barracks first
+					break   # save mana to raze barracks first
 				if a["id"] != "sell":
 					sim.do_action(a["id"], v)
 					break

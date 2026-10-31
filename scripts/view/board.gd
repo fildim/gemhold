@@ -484,6 +484,9 @@ func _draw_pool(pl: GameSim.Pool, tm: float) -> void:
 func _draw_site(s: GameSim.Site, tm: float) -> void:
 	var c := s.pos * T
 	Paint.ellipse(self, c + Vector2(0.03, 0.3) * T, T * 0.44, T * 0.14, Color(0, 0, 0, 0.35))
+	if not s.owned and s.cuts_left > 1:   # one pip per cut still needed
+		for i in s.cuts_left:
+			draw_circle(c + Vector2((i - (s.cuts_left - 1) * 0.5) * 0.16, 0.44) * T, T * 0.05, Color(0.79, 0.75, 1.0, 0.9))
 	match s.kind:
 		"mine":
 			var hill := PackedVector2Array([c + Vector2(-0.45, 0.3) * T])

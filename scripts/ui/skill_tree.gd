@@ -164,3 +164,7 @@ func first_buyable_rect() -> Rect2:
 
 func back_rect() -> Rect2:
 	return _back.get_global_rect()
+
+
+func reset_rect() -> Rect2:
+	return _reset.get_global_rect()

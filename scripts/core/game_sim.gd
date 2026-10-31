@@ -115,6 +115,7 @@ class Site:
 	var cell := Vector2i.ZERO
 	var pos := Vector2.ZERO
 	var owned := false    # mines and wells: cut free; camps: razed
+	var cuts_left := 1    # cuts still needed (Level.site_cuts at the start)
 	var t := 0.0
 	var path := 0
 	var spawn: Array[String] = []
@@ -186,6 +187,7 @@ func _init(lv: Level, skill_ranks := {}) -> void:
 		s.kind = sd["kind"]
 		s.cell = sd["cell"]
 		s.pos = Vector2(s.cell) + Vector2(0.5, 0.5)
+		s.cuts_left = level.site_cuts
 		if s.kind == "camp":
 			s.path = sd["path"]
 			s.spawn = sd["spawn"]
@@ -913,25 +915,33 @@ func _ground_name(t: String) -> String:
 	return t
 
 
+## Mana for one cut. Buildings that take several cuts cost more in all, but less per cut:
+## the whole job costs 1.5x the base for 2 cuts, 2x for 3, 2.5x for 4.
+func cut_cost(s: Site) -> int:
+	var n := level.site_cuts
+	return ceili(float(Defs.SITES[s.kind]["cut"]) * (1.0 + 0.5 * (n - 1)) / n)
+
+
 func _site_info(s: Site) -> Dictionary:
 	var d: Dictionary = Defs.SITES[s.kind]
-	var cut := {"id": "cut", "price": "%d mana" % d["cut"], "mana": d["cut"]}
+	var cut := {"id": "cut", "price": "%d mana" % cut_cost(s), "mana": cut_cost(s)}
+	var more := "" if s.cuts_left <= 1 else "\n%d cuts left, %d mana each." % [s.cuts_left, cut_cost(s)]
 	match s.kind:
 		"mine":
 			if s.owned:
 				return {"title": d["name"], "text": "Yours. Earns %d gold every %d s." % [d["gold"], int(d["every"])], "actions": []}
 			cut["label"] = "Cut free"
-			return {"title": d["name"], "text": d["text"] % [d["gold"], int(d["every"])], "actions": [cut]}
+			return {"title": d["name"], "text": d["text"] % [d["gold"], int(d["every"])] + more, "actions": [cut]}
 		"well":
 			if s.owned:
 				return {"title": d["name"], "text": "Yours. +%.1f mana per second." % d["regen"], "actions": []}
 			cut["label"] = "Cut free"
-			return {"title": d["name"], "text": d["text"] % d["regen"], "actions": [cut]}
+			return {"title": d["name"], "text": d["text"] % d["regen"] + more, "actions": [cut]}
 	if s.owned:
 		return {"title": "Ruined barracks", "text": "Nothing left but ash.", "actions": []}
 	cut["label"] = "Raze"
-	cut["price"] = "%d mana  +%dg" % [d["cut"], d["bounty"]]
-	return {"title": d["name"], "text": d["text"] % d["bounty"], "actions": [cut]}
+	cut["price"] = "%d mana  +%dg" % [cut_cost(s), d["bounty"]]
+	return {"title": d["name"], "text": d["text"] % d["bounty"] + more, "actions": [cut]}
 
 
 ## Range (in tiles) to preview when a tile is selected, or 0.
@@ -1003,9 +1013,17 @@ func do_action(id: String, c: Vector2i) -> String:
 				return "Nothing to cut"
 			var s: Site = sites[c]
 			var d: Dictionary = Defs.SITES[s.kind]
-			if mana < d["cut"]:
+			if mana < cut_cost(s):
 				return "Not enough mana"
-			mana -= d["cut"]
+			mana -= cut_cost(s)
+			s.cuts_left -= 1
+			if s.cuts_left > 0:
+				sound.emit("chop")
+				_text(s.pos + Vector2(0, -0.4), "%d more" % s.cuts_left, Color("c9c0ff"))
+				if s.kind == "camp":   # a damaged barracks musters more slowly
+					s.every *= 1.3
+					s.t = maxf(s.t, s.every * 0.5)
+				return ""
 			s.owned = true
 			s.t = 0.0
 			sound.emit("raze")

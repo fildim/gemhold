@@ -59,6 +59,7 @@
  },
  "first_wave_delay": 20,
  "wave_gap": 24,
+ "site_cuts": 1,
  "waves": [
   "8p",
   "6p,4t",
