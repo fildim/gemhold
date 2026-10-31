@@ -1,19 +1,11 @@
 {
  "id": "level_03",
  "title": "Gloamwood Hollow",
- "intro": "A sunken hollow between two roads. A few raised tiles stand above the rest: any tower can be built on one, and it reaches further from up there. Choose which tower each height is worth. Cut free the old gold mine and mana well, and raze the hero barracks in the west before it floods the road with extra heroes.",
- "hp_mul": 1.4,
+ "intro": "A sunken hollow between two roads. A few raised tiles stand above the rest: any tower can be built on one, and it reaches further from up there. Choose which tower each height is worth. In the west stands a hero barracks that sends extra heroes down the road while waves are coming: raze it early.",
  "cols": 16,
  "rows": 10,
- "legend": {
-  "m": "moss",
-  "f": "frost",
-  "a": "ash",
-  "M": "high moss",
-  "F": "high frost",
-  "A": "high ash",
-  "L": "lair"
- },
+ "hp_mul": 1.35,
+ "legend": {"m": "moss", "f": "frost", "a": "ash", "M": "high moss", "F": "high frost", "A": "high ash", "L": "lair"},
  "terrain": [
   "mmmmmmffffaaaaaa",
   "mmmmmmffffaaaaaa",
@@ -33,33 +25,25 @@
   "TT.T..........T.",
   "T.....T..T..T.TT",
   ".T..T....T.T...T",
-  "T..T..T..T.T..T.",
+  "T..T.......T..T.",
   "TT.........T..TT",
   ".T..T.....T.T...",
-  "T.TT.TT.TT.T.TT."
+  "T.TT.T.....T.TT."
  ],
  "paths": [
   [[-1, 1], [4, 1], [4, 4], [2, 4], [2, 7], [6, 7]],
   [[16, 8], [13, 8], [13, 3], [10, 3], [10, 7], [9, 7]]
  ],
- "lair": {
-  "cell": [7, 7],
-  "size": [2, 2],
-  "center": [8, 8]
- },
+ "lair": {"cell": [7, 7], "size": [2, 2], "center": [8, 8]},
  "sites": [
   {"kind": "camp", "cell": [1, 4], "path": 0, "spawn": "2p,1f", "every": 30},
-  {"kind": "camp", "cell": [15, 6], "path": 1, "spawn": "1f,1s", "every": 26},
   {"kind": "mine", "cell": [14, 5]},
   {"kind": "well", "cell": [2, 8]}
  ],
- "start": {
-  "gold": 230,
-  "mana": 40,
-  "gems": 5
- },
+ "start": {"gold": 230, "mana": 40, "gems": 5},
  "first_wave_delay": 20,
  "wave_gap": 24,
+ "site_cuts": 1,
  "waves": [
   "8p",
   "6p,6s",
@@ -74,7 +58,6 @@
   "10f,5c,6s",
   "3k,8f,4c",
   "4k,10s",
-  "5k,8f,6c",
-  "6k,12f,6c"
+  "5k,8f,6c"
  ]
 }

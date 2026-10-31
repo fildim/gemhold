@@ -115,7 +115,8 @@ class Site:
 	var cell := Vector2i.ZERO
 	var pos := Vector2.ZERO
 	var owned := false    # mines and wells: cut free; camps: razed
-	var cuts_left := 1    # cuts still needed (Level.site_cuts at the start)
+	var cuts := 1         # cuts it takes in all (its own "cuts" in the level file, else Level.site_cuts)
+	var cuts_left := 1    # cuts still needed
 	var t := 0.0
 	var path := 0
 	var spawn: Array[String] = []
@@ -152,6 +153,7 @@ var _cover := {}          # road -> defended length up to each COVER_STEP along 
 var spawn_t := 0.0
 var lane := 0
 var enemies: Array = []
+var _rally: Array = []    # [{"codes", "path", "dist", "wave"}]: heroes to raise where a Champion fell
 var towers := {}          # Vector2i -> Tower
 var shots: Array = []
 var drops: Array = []
@@ -187,7 +189,8 @@ func _init(lv: Level, skill_ranks := {}) -> void:
 		s.kind = sd["kind"]
 		s.cell = sd["cell"]
 		s.pos = Vector2(s.cell) + Vector2(0.5, 0.5)
-		s.cuts_left = level.site_cuts
+		s.cuts = sd.get("cuts", level.site_cuts)
+		s.cuts_left = s.cuts
 		if s.kind == "camp":
 			s.path = sd["path"]
 			s.spawn = sd["spawn"]
@@ -291,6 +294,8 @@ func _spawn(code: String, path := -1, dist := 0.0, w := 0) -> void:
 	e.wave = w
 	e.d = d
 	var mul := level.hp_mul * (1.0 + Defs.WAVE_HP_SCALE * maxi(0, wave - 1)) * threat
+	if level.night:
+		mul *= Defs.NIGHT_HP
 	e.hp = d["hp"] * mul
 	e.max_hp = e.hp
 	if path < 0:
@@ -362,12 +367,25 @@ func _update_den(dt: float) -> void:
 
 
 func _update_enemies(dt: float) -> void:
+	for r: Dictionary in _rally:
+		for code in r["codes"]:
+			_spawn(code, r["path"], r["dist"], r["wave"])
+		if r["wave"] > 0:
+			wave_left[r["wave"]] += r["codes"].size()
+	_rally.clear()
+	var heralds := enemies.filter(func(o: Enemy) -> bool: return o.hp > 0.0 and o.d.has("haste"))
 	for e: Enemy in enemies:
 		if e.hp <= 0.0:
 			continue   # slain this frame; removed below
 		if e.slow > 0.0:
 			e.slow -= dt
 		var sp: float = e.d["spd"] * ((1.0 - e.slow_amt) if e.slow > 0.0 else 1.0)
+		if e.d.has("rage") and e.hp < e.max_hp * 0.5:
+			sp *= float(e.d["rage"])
+		for o: Enemy in heralds:
+			if o.pos.distance_to(e.pos) <= Defs.HASTE_RANGE:
+				sp *= 1.0 + float(o.d["haste"])
+				break
 		if e.fear > 0.0:
 			# Terrified: back away from the lair, or freeze if already running with gems.
 			e.fear -= dt
@@ -509,7 +527,7 @@ func _update_drops(dt: float) -> void:
 	drops = drops.filter(func(g: Drop) -> bool: return g.n > 0)
 
 
-## Who a tower shoots: gem carriers first, then special heroes (Cleric, Shieldbearer, Warden),
+## Who a tower shoots: gem carriers first, then special heroes (Cleric, Shieldbearer, Warden, Herald),
 ## then whoever has the least health left. Skips `skip`.
 func _pick_target(tw: Tower, skip: Enemy = null) -> Enemy:
 	var rg := tw.stat("range")
@@ -667,6 +685,10 @@ func hurt(e: Enemy, dmg: float, pierce := false, src: Tower = null) -> void:
 			drops.append(g)
 			e.carry = 0
 		_roll_loot(e)
+		if e.d.has("rally"):
+			# His escort rises where he fell (spawned next frame, outside any loop over heroes).
+			_rally.append({"codes": Level._parse_wave(String(e.d["rally"])), "path": e.path, "dist": e.dist, "wave": e.wave})
+			_text(e.pos + Vector2(0, -0.8), "Rally!", Color("ff9a7a"))
 		if src != null and src.type == "ash" and src.has_ability() and rng.randf() < Defs.ABILITIES["ash"]["chance"]:
 			_lava(src, e.pos)
 
@@ -713,8 +735,9 @@ func _roll_loot(e: Enemy) -> void:
 	if r < Defs.LOOT_COIN_CHANCE:
 		l.kind = "coin"
 		# Worth more for stronger kinds of hero and later waves, but not for the threat: it rises
-		# when you do well, and paying more for that would snowball into riches.
-		var later := level.hp_mul * (1.0 + Defs.WAVE_HP_SCALE * maxi(0, wave - 1))
+		# when you do well, and paying more for that would snowball into riches. Tougher lairs pay
+		# only the square root of their extra hero health, or late lairs would drown you in gold.
+		var later := sqrt(level.hp_mul) * (1.0 + Defs.WAVE_HP_SCALE * maxi(0, wave - 1))
 		l.amount = Defs.LOOT_COIN_BONUS + roundi(float(e.d["gold"]) * Defs.LOOT_COIN_MUL * later)
 	else:
 		l.kind = "potion"
@@ -918,7 +941,7 @@ func _ground_name(t: String) -> String:
 ## Mana for one cut. Buildings that take several cuts cost more in all, but less per cut:
 ## the whole job costs 1.5x the base for 2 cuts, 2x for 3, 2.5x for 4.
 func cut_cost(s: Site) -> int:
-	var n := level.site_cuts
+	var n := s.cuts
 	return ceili(float(Defs.SITES[s.kind]["cut"]) * (1.0 + 0.5 * (n - 1)) / n)
 
 

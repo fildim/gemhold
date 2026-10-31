@@ -1,0 +1,65 @@
+{
+ "id": "level_11",
+ "title": "The Three Gates",
+ "intro": "Three short roads run straight at your den from three sides. There is little room to stop heroes before they arrive, so make every tower count: five raised tiles stand between the roads, and from up there one tower can reach two gates.",
+ "cols": 16,
+ "rows": 10,
+ "hp_mul": 2.67,
+ "legend": {"m": "moss", "f": "frost", "a": "ash", "M": "high moss", "F": "high frost", "A": "high ash", "L": "lair"},
+ "terrain": [
+  "mmmmmmmmffffffff",
+  "mmmmmmmmffffffff",
+  "mmmMmmmmmmFfffff",
+  "mmmmmmmmmmffffff",
+  "aaaaaaaLLaafffff",
+  "aaaaaaaLLaaAffff",
+  "aaAaaaaaaaaaaaaa",
+  "ffffffffmmmmmmmm",
+  "ffffffffmmmmmMmm",
+  "ffffffffmmmmmmmm"
+ ],
+ "trees": [
+  "........T...T.T.",
+  "T.T.....TT......",
+  ".TT........T....",
+  "..........T.TT..",
+  "T..T.T.......T..",
+  "T.........T.....",
+  ".....T....T.....",
+  ".T....TT.T..TTTT",
+  ".......T.TT.T...",
+  "..TTTTT..T.T...."
+ ],
+ "paths": [
+  [[5, -1], [5, 2], [8, 2], [8, 3]],
+  [[16, 6], [12, 6], [12, 4], [9, 4]],
+  [[-1, 8], [4, 8], [4, 5], [6, 5]]
+ ],
+ "lair": {"cell": [7, 4], "size": [2, 2], "center": [8, 5]},
+ "sites": [
+  {"kind": "camp", "cell": [14, 8], "path": 1, "spawn": "2s,1f", "every": 28, "cuts": 3},
+  {"kind": "mine", "cell": [14, 1]},
+  {"kind": "well", "cell": [1, 1]}
+ ],
+ "start": {"gold": 230, "mana": 50, "gems": 5},
+ "first_wave_delay": 30,
+ "wave_gap": 24,
+ "site_cuts": 2,
+ "waves": [
+  "8p",
+  "6s,4p",
+  "6f,2c",
+  "6t,4s",
+  "6f,2b,2w",
+  "1k,8t",
+  "2k,6f,2c",
+  "10s,6t",
+  "2k,3b,3w",
+  "12t,6s",
+  "3k,8f,4c",
+  "4k,4b,4w",
+  "12t,8s,4f",
+  "5k,6b,4c",
+  "6k,6w,8t"
+ ]
+}

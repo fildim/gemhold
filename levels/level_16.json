@@ -1,0 +1,66 @@
+{
+ "id": "level_16",
+ "title": "The Champion's Road",
+ "intro": "A single long road, and at the end of the march the crusade sends its Champions: crowned giants in heavy plate who carry three gems, and when one falls, three Footmen rise where he lay. Bring them down far from your den.",
+ "cols": 16,
+ "rows": 10,
+ "hp_mul": 2.88,
+ "legend": {"m": "moss", "f": "frost", "a": "ash", "M": "high moss", "F": "high frost", "A": "high ash", "L": "lair"},
+ "terrain": [
+  "mmmmmmmmmmmmmmmm",
+  "mmmmmmmmmmmmmmmm",
+  "mmmmMmmmmmmFmmmm",
+  "ffffffffffffffff",
+  "ffffffffffffffff",
+  "ffffffAfffffffff",
+  "aaaaaaaaaaaaaaaa",
+  "aaaaaaaaaaaaaLLa",
+  "aaaaaaaaaaaaaLLa",
+  "aaaaaaaaaaaaaaaa"
+ ],
+ "trees": [
+  "TT..T...TT..TTT.",
+  "..............TT",
+  ".TT...T.T...T..T",
+  ".T............T.",
+  "....TTTTTTT...T.",
+  "...T...T.TTT.T..",
+  "................",
+  "T..T.T..TTT.....",
+  ".....T..T.......",
+  "...T....T......."
+ ],
+ "paths": [
+  [[-1, 1], [13, 1], [13, 3], [2, 3], [2, 6], [11, 6], [11, 8], [12, 8]]
+ ],
+ "lair": {"cell": [13, 7], "size": [2, 2], "center": [14, 8]},
+ "sites": [
+  {"kind": "camp", "cell": [15, 3], "path": 0, "spawn": "2f,1b", "every": 30},
+  {"kind": "camp", "cell": [0, 5], "path": 0, "spawn": "1k", "every": 45},
+  {"kind": "mine", "cell": [15, 9]},
+  {"kind": "well", "cell": [0, 9], "cuts": 2}
+ ],
+ "start": {"gold": 230, "mana": 50, "gems": 5},
+ "first_wave_delay": 25,
+ "wave_gap": 24,
+ "site_cuts": 3,
+ "waves": [
+  "8p",
+  "8f",
+  "6s,4t",
+  "6f,2c,2b",
+  "8t,2h",
+  "1k,6f,2w",
+  "2k,4r",
+  "10f,3c",
+  "2k,4b,4r",
+  "12t,4h",
+  "3k,6r,2w",
+  "4k,4b,4c",
+  "1x,8f",
+  "4k,6r,4h",
+  "1x,3k,4b",
+  "6k,8r,4w",
+  "2x,4k,4c,4h"
+ ]
+}

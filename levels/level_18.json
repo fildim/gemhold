@@ -1,0 +1,69 @@
+{
+ "id": "level_18",
+ "title": "Howling Steppe",
+ "intro": "Open grassland, three roads and three barracks, each built to take four cuts. Raze them all and the steppe goes quiet; leave them and they feed every road. There is plenty of room to build, but only one raised tile.",
+ "cols": 16,
+ "rows": 10,
+ "hp_mul": 3.07,
+ "legend": {"m": "moss", "f": "frost", "a": "ash", "M": "high moss", "F": "high frost", "A": "high ash", "L": "lair"},
+ "terrain": [
+  "mmmmmmmmmmmmffff",
+  "mmmmmmmmmmmmffff",
+  "mmmmmmmmmmmmffff",
+  "aaaaaaaaaaaaffff",
+  "aaaaaaaaaaaaffLL",
+  "aaaaaaaaAaaaffLL",
+  "ffffffffffffffff",
+  "ffffffffffffffff",
+  "mmmmmmmmmmmmmmmm",
+  "mmmmmmmmmmmmmmmm"
+ ],
+ "trees": [
+  "T..T.T.TTT..TTT.",
+  "..............TT",
+  ".TTT.....TT....T",
+  "T.........T.....",
+  ".T...T..........",
+  ".....T....T.....",
+  "T......TTT......",
+  ".............T..",
+  "...........TT...",
+  ".TT............."
+ ],
+ "paths": [
+  [[-1, 1], [8, 1], [8, 4], [13, 4]],
+  [[-1, 5], [4, 5], [4, 7], [11, 7], [11, 5], [13, 5]],
+  [[3, 10], [3, 9], [14, 9], [14, 6]]
+ ],
+ "lair": {"cell": [14, 4], "size": [2, 2], "center": [15, 5]},
+ "sites": [
+  {"kind": "camp", "cell": [2, 0], "path": 0, "spawn": "2t", "every": 30},
+  {"kind": "camp", "cell": [1, 7], "path": 1, "spawn": "1r,1f", "every": 32},
+  {"kind": "camp", "cell": [8, 8], "path": 2, "spawn": "1k", "every": 40},
+  {"kind": "mine", "cell": [11, 2], "cuts": 2},
+  {"kind": "well", "cell": [15, 8], "cuts": 2}
+ ],
+ "start": {"gold": 230, "mana": 60, "gems": 5},
+ "first_wave_delay": 30,
+ "wave_gap": 24,
+ "site_cuts": 4,
+ "waves": [
+  "10p",
+  "8f,4s",
+  "8t,2c",
+  "6f,2b,2h",
+  "8r,4p",
+  "1k,8t,2w",
+  "2k,6f,2h",
+  "10s,6r",
+  "3k,3b,3c",
+  "12t,4h,2w",
+  "3k,8r,2c",
+  "4k,4b,4w",
+  "1x,8t,6s",
+  "5k,6r,4h",
+  "1x,4k,4b,4c",
+  "6k,8t,6r",
+  "2x,5k,4w,4h"
+ ]
+}

@@ -1,0 +1,67 @@
+{
+ "id": "level_15",
+ "title": "The Sunken Abbey",
+ "intro": "The heroes rally at a drowned abbey and march out with their whole support: Clerics, Shieldbearers, Wardens and Heralds, down three roads. Each road has its own way of making the heroes on it harder to kill. The mine and well here take three cuts each.",
+ "cols": 16,
+ "rows": 10,
+ "hp_mul": 3.18,
+ "legend": {"m": "moss", "f": "frost", "a": "ash", "M": "high moss", "F": "high frost", "A": "high ash", "L": "lair"},
+ "terrain": [
+  "aaaaaammmmmmmmmm",
+  "aaaaaammmmmmmmmm",
+  "aaaaaammmMmmmmmm",
+  "aaaaaammmmmmmmmm",
+  "aaAaaaffffffmmmm",
+  "aaaaaaffffffmmmm",
+  "fffffffLLffffFff",
+  "fffffffLLfffffff",
+  "mmmmFmmmmmmmmmmm",
+  "mmmmmmmmmmmmmmmm"
+ ],
+ "trees": [
+  "..T..TT......TTT",
+  "T.T.T.TTTT.T.T.T",
+  ".TT..T..T.T.....",
+  "..T......TT..T..",
+  ".T....T......TT.",
+  "TT..TT....T..T..",
+  ".....T.........T",
+  ".T..TT........T.",
+  "..T..........TT.",
+  "..T.T.....T....T"
+ ],
+ "paths": [
+  [[3, -1], [3, 3], [7, 3], [7, 5]],
+  [[16, 2], [11, 2], [11, 6], [9, 6]],
+  [[12, 10], [12, 8], [9, 8], [9, 7]]
+ ],
+ "lair": {"cell": [7, 6], "size": [2, 2], "center": [8, 7]},
+ "sites": [
+  {"kind": "camp", "cell": [1, 1], "path": 0, "spawn": "1c,1b", "every": 32, "cuts": 2},
+  {"kind": "camp", "cell": [15, 4], "path": 1, "spawn": "1w,1h", "every": 34, "cuts": 2},
+  {"kind": "mine", "cell": [14, 9]},
+  {"kind": "well", "cell": [0, 9]}
+ ],
+ "start": {"gold": 230, "mana": 50, "gems": 5},
+ "first_wave_delay": 30,
+ "wave_gap": 24,
+ "site_cuts": 3,
+ "waves": [
+  "8p",
+  "6f,2c",
+  "6s,2w",
+  "6p,4f,2b",
+  "6t,2c,2h",
+  "1k,2b,2c,4f",
+  "8f,3w,2h",
+  "2k,3c,3b",
+  "10s,3h,3w",
+  "3k,4c,4f",
+  "8t,3b,3h,3w",
+  "4k,4c,4b",
+  "10f,4w,4h",
+  "5k,4b,4c,4r",
+  "6k,4c,4w,4h",
+  "6k,6b,6c,4w"
+ ]
+}

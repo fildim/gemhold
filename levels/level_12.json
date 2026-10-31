@@ -1,0 +1,65 @@
+{
+ "id": "level_12",
+ "title": "Heraldmoor",
+ "intro": "The crusade has found its voice. Heralds march with the heroes now, and everyone near a Herald's banner walks faster. Kill the Heralds first. Thick woods crowd the two roads, which join before your den: clear the trees where you need room.",
+ "cols": 16,
+ "rows": 10,
+ "hp_mul": 3.62,
+ "legend": {"m": "moss", "f": "frost", "a": "ash", "M": "high moss", "F": "high frost", "A": "high ash", "L": "lair"},
+ "terrain": [
+  "ffffffmmmmmmmmmm",
+  "ffffffmmmmmmmmmm",
+  "ffffffmmmMmmmmmm",
+  "fffffffmmmmmmmmm",
+  "fLLfffaaaaaaaaaa",
+  "fLLfffaaaaAaaaaa",
+  "ffffffaaaaaaaaaa",
+  "mmmmmmFaaaaaaaaa",
+  "mmmmmmmmaaaaaaaa",
+  "mmmmmmmmaaaaaaaa"
+ ],
+ "trees": [
+  "......T..TT..TTT",
+  "TT..TT..TT......",
+  ".T.T.T.T...T...T",
+  "....TT.TT..T.T..",
+  "................",
+  "....TT..TT..T...",
+  "......T.........",
+  "TTTTT..T.TTT.TTT",
+  "TTTT.TT.TTT.....",
+  "....T.TTT..T..T."
+ ],
+ "paths": [
+  [[16, 1], [10, 1], [10, 4], [3, 4]],
+  [[16, 8], [12, 8], [12, 6], [7, 6], [7, 4], [3, 4]]
+ ],
+ "lair": {"cell": [1, 4], "size": [2, 2], "center": [2, 5]},
+ "sites": [
+  {"kind": "camp", "cell": [15, 6], "path": 1, "spawn": "1h,2p", "every": 32, "cuts": 3},
+  {"kind": "mine", "cell": [14, 3]},
+  {"kind": "well", "cell": [4, 8]}
+ ],
+ "start": {"gold": 230, "mana": 50, "gems": 5},
+ "first_wave_delay": 25,
+ "wave_gap": 24,
+ "site_cuts": 2,
+ "waves": [
+  "8p",
+  "6f,1h",
+  "8s,1h",
+  "6f,2c,1h",
+  "6t,2h",
+  "1k,6f,1h",
+  "8s,4t,2h",
+  "2k,4f,2h",
+  "3b,3w,6f",
+  "10t,3h",
+  "3k,6f,2c,2h",
+  "8s,8t,3h",
+  "4k,4b,2h",
+  "4k,6f,4w,2h",
+  "5k,8t,4h",
+  "6k,4b,4c,4h"
+ ]
+}

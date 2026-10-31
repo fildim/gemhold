@@ -72,6 +72,8 @@ func _parse(d: Dictionary) -> void:
 	site_cuts = maxi(1, int(d.get("site_cuts", 1)))
 	for s in d.get("sites", []):
 		var site := {"kind": String(s["kind"]), "cell": Vector2i(int(s["cell"][0]), int(s["cell"][1]))}
+		if s.has("cuts"):
+			site["cuts"] = maxi(1, int(s["cuts"]))
 		if site["kind"] == "camp":
 			site["path"] = int(s.get("path", 0))
 			site["spawn"] = _parse_wave(String(s.get("spawn", "1p")))

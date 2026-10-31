@@ -39,6 +39,9 @@ const SLOW_TIME := 2.5
 ## spd is in tiles per second, r is body radius in tiles, cap is how many gems they can carry.
 ## guard: other heroes within GUARD_RANGE take this much less damage (Shieldbearer).
 ## ward: clears slow and Dread from heroes within this many tiles, itself included (Warden).
+## haste: heroes within HASTE_RANGE (itself included) walk this much faster (Herald).
+## rage: below half health it walks this many times faster (Berserker).
+## rally: heroes that rise where it falls and march on with its wave (Champion).
 ## special: towers shoot these support heroes before ordinary ones (gem carriers still come first).
 const ENEMIES := {
 	"p": {"name": "Peasant", "hp": 32, "spd": 1.05, "gold": 4, "r": 0.2, "armor": 0, "cap": 1},
@@ -49,9 +52,13 @@ const ENEMIES := {
 	"b": {"name": "Shieldbearer", "hp": 130, "spd": 0.72, "gold": 12, "r": 0.27, "armor": 3, "cap": 1, "guard": 0.35, "special": true},
 	"t": {"name": "Cutpurse", "hp": 48, "spd": 1.5, "gold": 10, "r": 0.19, "armor": 0, "cap": 2},
 	"w": {"name": "Warden", "hp": 95, "spd": 0.9, "gold": 12, "r": 0.23, "armor": 1, "cap": 1, "ward": 1.4, "special": true},
+	"h": {"name": "Herald", "hp": 110, "spd": 0.85, "gold": 12, "r": 0.23, "armor": 1, "cap": 1, "haste": 0.35, "special": true},
+	"r": {"name": "Berserker", "hp": 180, "spd": 0.72, "gold": 14, "r": 0.26, "armor": 0, "cap": 1, "rage": 2.1},
+	"x": {"name": "Champion", "hp": 1500, "spd": 0.5, "gold": 80, "r": 0.38, "armor": 6, "cap": 3, "rally": "3f"},
 }
 
 const GUARD_RANGE := 1.2
+const HASTE_RANGE := 1.5
 const TOWER_COST_STEP := 15
 const SELL_REFUND := 0.6
 const CLEAR_MANA := 15
@@ -117,6 +124,8 @@ const LOOT_COIN_BONUS := 4    # plus this flat amount, so even small heroes drop
 ## Night levels: you can only build on lit tiles. Radii in tiles.
 ## Night missions unlock when a level is cleared Brilliant.
 const LIGHT := {"lair": 2.3, "tower": 1.7}
+## Darkness is the night mission's challenge, so its heroes are this much less tough than by day.
+const NIGHT_HP := 0.85
 
 
 ## Skill trees, one per tower type. Effects are applied in GameSim.

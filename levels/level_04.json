@@ -1,19 +1,11 @@
 {
  "id": "level_04",
  "title": "Cinderfall Steps",
- "intro": "New heroes march here. Cutpurses are quick and carry off two gems at once. Shieldbearers guard the heroes around them, and Wardens' lanterns burn away slow and Dread. A barracks in the west keeps sending Cutpurses until you raze it. The raised tiles take any tower and let it see further.",
- "hp_mul": 2.4,
+ "intro": "Shieldbearers and Wardens march here. Shieldbearers guard the heroes around them, and Wardens' lanterns burn away slow and Dread. The barracks in the west takes two cuts to raze and keeps sending Cutpurses until you do. The raised tiles take any tower and let it see further.",
  "cols": 16,
  "rows": 10,
- "legend": {
-  "m": "moss",
-  "f": "frost",
-  "a": "ash",
-  "M": "high moss",
-  "F": "high frost",
-  "A": "high ash",
-  "L": "lair"
- },
+ "hp_mul": 1.94,
+ "legend": {"m": "moss", "f": "frost", "a": "ash", "M": "high moss", "F": "high frost", "A": "high ash", "L": "lair"},
  "terrain": [
   "mmmmmffffffaaaaa",
   "mmmmmffffffaaaaa",
@@ -30,10 +22,10 @@
   "TT.T.TT.T..TT.TT",
   ".....T.T....T.T.",
   "TT.T.T.T....T.TT",
-  "T..T..T.T...T.T.",
+  "T..T........T.T.",
   "T.T..T......T..T",
-  "TT.T.....T..T.T.",
-  "T.T..T.T.T..T..T",
+  "TT.T........T.T.",
+  "T.T..T......T..T",
   "TT.T......T.T.T.",
   "TT.T............",
   "T.TT.T.TT.T.TT.T"
@@ -42,21 +34,13 @@
   [[-1, 1], [4, 1], [4, 8], [6, 8], [6, 5]],
   [[16, 8], [11, 8], [11, 1], [9, 1], [9, 4]]
  ],
- "lair": {
-  "cell": [7, 4],
-  "size": [2, 2],
-  "center": [8, 5]
- },
+ "lair": {"cell": [7, 4], "size": [2, 2], "center": [8, 5]},
  "sites": [
-  {"kind": "camp", "cell": [2, 3], "path": 0, "spawn": "2t", "every": 28},
+  {"kind": "camp", "cell": [2, 3], "path": 0, "spawn": "2t", "every": 28, "cuts": 2},
   {"kind": "mine", "cell": [14, 4]},
   {"kind": "well", "cell": [6, 1]}
  ],
- "start": {
-  "gold": 230,
-  "mana": 40,
-  "gems": 5
- },
+ "start": {"gold": 230, "mana": 40, "gems": 5},
  "first_wave_delay": 20,
  "wave_gap": 24,
  "site_cuts": 1,

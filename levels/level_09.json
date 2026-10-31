@@ -1,0 +1,62 @@
+{
+ "id": "level_09",
+ "title": "Thornback Ridge",
+ "intro": "One road climbs the ridge, doubling back on itself three times, so towers in the middle can cover two stretches at once. Cutpurses join the heroes here: quick, and each one carries off two gems. The barracks in the north-east keeps sending them, and from here on a building can take more than one cut.",
+ "cols": 16,
+ "rows": 10,
+ "hp_mul": 1.61,
+ "legend": {"m": "moss", "f": "frost", "a": "ash", "M": "high moss", "F": "high frost", "A": "high ash", "L": "lair"},
+ "terrain": [
+  "mmmmmmmmffffffff",
+  "mmmmmmmmffffffff",
+  "mmmmmMmmffFfffff",
+  "mmmmmmmmffffffff",
+  "aaaaaaaaaaaaaaff",
+  "aaaaaaaaaaaaaaff",
+  "aaaaAaaaaaaLLaff",
+  "ffffffffffaLLaff",
+  "ffffffffffaaaaff",
+  "ffffffffffaaaaff"
+ ],
+ "trees": [
+  "..T.TTT......T..",
+  "...............T",
+  ".T.T..T....T....",
+  ".TTTTTT.TT.TT...",
+  "..............TT",
+  ".T.TT.TT.T......",
+  "...T..TTT.....T.",
+  "....TTT.........",
+  "................",
+  "...T.T.T.T....T."
+ ],
+ "paths": [
+  [[-1, 1], [13, 1], [13, 4], [2, 4], [2, 8], [10, 8], [10, 7]]
+ ],
+ "lair": {"cell": [11, 6], "size": [2, 2], "center": [12, 7]},
+ "sites": [
+  {"kind": "camp", "cell": [14, 2], "path": 0, "spawn": "2t", "every": 30, "cuts": 2},
+  {"kind": "mine", "cell": [15, 6]},
+  {"kind": "well", "cell": [0, 9]}
+ ],
+ "start": {"gold": 230, "mana": 40, "gems": 5},
+ "first_wave_delay": 20,
+ "wave_gap": 24,
+ "site_cuts": 1,
+ "waves": [
+  "8p",
+  "6p,4s",
+  "6f,2c",
+  "4t,6p",
+  "8f,2c",
+  "6s,4t",
+  "1k,6f",
+  "8t,4p",
+  "2k,4c,4f",
+  "10s,6t",
+  "3k,6f,2c",
+  "8t,6f,3c",
+  "4k,6t",
+  "5k,8f,4c"
+ ]
+}

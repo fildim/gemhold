@@ -1,0 +1,70 @@
+{
+ "id": "level_19",
+ "title": "Lanternfall Vale",
+ "intro": "Your den lies at the bottom of the vale, and four short roads drop into it from every side. Every kind of hero comes, Champions too, and two barracks keep the roads busy. Four raised tiles sit between the roads.",
+ "cols": 16,
+ "rows": 10,
+ "hp_mul": 3.38,
+ "legend": {"m": "moss", "f": "frost", "a": "ash", "M": "high moss", "F": "high frost", "A": "high ash", "L": "lair"},
+ "terrain": [
+  "mmmmmmffffffffff",
+  "mmmmmmffffffffff",
+  "mmmmmmffffffffff",
+  "mmMmmmfffffFffff",
+  "mmmmmmmLLfffffff",
+  "aaaaaaaLLaaaaaaa",
+  "ffffffaaaaaaaaaa",
+  "ffAfffaaaaAaaaaa",
+  "ffffffaaaaaaaaaa",
+  "ffffffaaaaaaaaaa"
+ ],
+ "trees": [
+  "T...TT.T.T..TTT.",
+  ".T..........T...",
+  "....T........T..",
+  ".T...........TT.",
+  ".TT..........T..",
+  "T.T...........TT",
+  "T.T..T..........",
+  "T..TT.T.TT.T....",
+  "..T.T...T..T.T..",
+  "T.TT...TTT...T.."
+ ],
+ "paths": [
+  [[10, -1], [10, 2], [8, 2], [8, 3]],
+  [[16, 7], [12, 7], [12, 5], [9, 5]],
+  [[5, 10], [5, 8], [7, 8], [7, 6]],
+  [[-1, 2], [3, 2], [3, 4], [6, 4]]
+ ],
+ "lair": {"cell": [7, 4], "size": [2, 2], "center": [8, 5]},
+ "sites": [
+  {"kind": "camp", "cell": [1, 0], "path": 3, "spawn": "1t,1s", "every": 30},
+  {"kind": "camp", "cell": [15, 9], "path": 1, "spawn": "1r,1h", "every": 32},
+  {"kind": "mine", "cell": [14, 1]},
+  {"kind": "well", "cell": [1, 9]}
+ ],
+ "start": {"gold": 230, "mana": 60, "gems": 5},
+ "first_wave_delay": 30,
+ "wave_gap": 24,
+ "site_cuts": 3,
+ "waves": [
+  "8p",
+  "6p,6s",
+  "6f,2c,2h",
+  "8t,4s",
+  "6f,2b,2w",
+  "1k,6r",
+  "2k,6f,2h",
+  "10s,6t",
+  "2k,3b,3w,4r",
+  "12t,6s,2h",
+  "3k,8f,4c",
+  "4k,4b,4w",
+  "1x,10t,6s",
+  "5k,6r,4c",
+  "1x,4k,4h,4w",
+  "6k,6b,6r",
+  "1x,6k,8t,4h",
+  "2x,6k,4b,4w"
+ ]
+}

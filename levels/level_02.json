@@ -1,19 +1,11 @@
 {
  "id": "level_02",
  "title": "Rimewater Ford",
- "intro": "Your hoard sits deep in frozen country now. The ice around your lair only takes Bone Crypts, which slow but barely wound. Do your killing further out: Warband Huts on the northern moss, Cinder Shrines in the eastern ash.",
+ "intro": "Your hoard sits deep in frozen country now. The ice around your lair only takes Bone Crypts, which slow but barely wound: do your killing further out, with Warband Huts on the northern moss and Cinder Shrines in the eastern ash. Two old buildings lie overgrown on this map. Cut free the gold mine for steady gold and the mana well for faster mana.",
  "cols": 16,
  "rows": 10,
- "hp_mul": 1.2,
- "legend": {
-  "m": "moss",
-  "f": "frost",
-  "a": "ash",
-  "M": "high moss",
-  "F": "high frost",
-  "A": "high ash",
-  "L": "lair"
- },
+ "hp_mul": 0.88,
+ "legend": {"m": "moss", "f": "frost", "a": "ash", "M": "high moss", "F": "high frost", "A": "high ash", "L": "lair"},
  "terrain": [
   "ffffffffffmmmmmm",
   "ffffffffffmmmmmm",
@@ -27,45 +19,30 @@
   "ffffffmmmmaaaaaa"
  ],
  "trees": [
-  "TT.TT.T..T..TT.T",
+  "TT.TT.T..T..TT..",
   "T..T.TT.T.T.T..T",
   "..T..T......T.T.",
-  "T.T.T..T..T..T..",
+  "....T..T..T..T..",
   "........T..TT..T",
-  "T.......T.T...T.",
-  "TT.T.T..T.T.T...",
+  "........T.T...T.",
+  ".....T..T.T.T...",
   ".T.T..T....T.T.T",
   "TT..T.T.....TTT.",
-  "T.TT..TTT...TT.T"
+  "..TT..TTT...TT.T"
  ],
  "paths": [
-  [
-   [11, -1],
-   [11, 2],
-   [6, 2],
-   [6, 4],
-   [3, 4]
-  ],
-  [
-   [10, 10],
-   [10, 7],
-   [7, 7],
-   [7, 5],
-   [3, 5]
-  ]
+  [[11, -1], [11, 2], [6, 2], [6, 4], [3, 4]],
+  [[10, 10], [10, 7], [7, 7], [7, 5], [3, 5]]
  ],
- "lair": {
-  "cell": [1, 4],
-  "size": [2, 2],
-  "center": [2, 5]
- },
- "start": {
-  "gold": 230,
-  "mana": 30,
-  "gems": 5
- },
+ "lair": {"cell": [1, 4], "size": [2, 2], "center": [2, 5]},
+ "sites": [
+  {"kind": "mine", "cell": [15, 0]},
+  {"kind": "well", "cell": [0, 9]}
+ ],
+ "start": {"gold": 230, "mana": 30, "gems": 5},
  "first_wave_delay": 15,
  "wave_gap": 24,
+ "site_cuts": 1,
  "waves": [
   "6p",
   "5p,4s",
@@ -78,8 +55,6 @@
   "2k,4c",
   "10s,6p",
   "10f,4c",
-  "2k,8f,4s",
-  "3k,5c,6s",
-  "4k,8f,4c"
+  "2k,8f,4s"
  ]
 }

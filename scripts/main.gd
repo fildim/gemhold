@@ -4,8 +4,9 @@ extends Node2D
 ## and records results in the save file.
 
 const T := 64.0
-## Campaign order. Add new level files here.
-const LEVELS: Array[String] = ["res://levels/level_01.json", "res://levels/level_02.json", "res://levels/level_03.json", "res://levels/level_04.json", "res://levels/level_05.json", "res://levels/level_06.json", "res://levels/level_07.json", "res://levels/level_08.json"]
+## Campaign order. Add new level files here. File numbers follow when each map was made, not its place in the campaign, so
+## level ids (and the saved progress keyed by them) stay put when the campaign is reordered.
+const LEVELS: Array[String] = ["res://levels/level_01.json", "res://levels/level_02.json", "res://levels/level_03.json", "res://levels/level_09.json", "res://levels/level_04.json", "res://levels/level_06.json", "res://levels/level_10.json", "res://levels/level_07.json", "res://levels/level_11.json", "res://levels/level_08.json", "res://levels/level_12.json", "res://levels/level_13.json", "res://levels/level_14.json", "res://levels/level_15.json", "res://levels/level_16.json", "res://levels/level_17.json", "res://levels/level_18.json", "res://levels/level_19.json", "res://levels/level_20.json", "res://levels/level_05.json"]
 ## Each lair's battle music, in campaign order (assets/music/CREDITS.md):
 ## Grieg, Kevin MacLeod, Wagner, Kevin MacLeod and Beethoven.
 const MUSIC: Array[String] = ["mountain", "heroicage", "curseofthescarab", "volatilereaction", "valkyries", "crusade", "fate", "fivearmies"]
@@ -158,7 +159,7 @@ func _process(delta: float) -> void:
 	if tip == "" and started and not sim.over:
 		site_cell = _site_tip_cell()
 		if site_cell.x >= 0:
-			tip = _site_tip_text((sim.sites[site_cell] as GameSim.Site).kind)
+			tip = _site_tip_text(sim.sites[site_cell])
 	if site_cell.x >= 0:
 		spot.show_tip(tip, _cell_rect(Vector2(site_cell)), true)
 	elif tip != "":
@@ -193,7 +194,8 @@ func _site_tip_cell() -> Vector2i:
 	return Vector2i(-1, -1)
 
 
-func _site_tip_text(kind: String) -> String:
+func _site_tip_text(s: GameSim.Site) -> String:
+	var kind := s.kind
 	var d: Dictionary = Defs.SITES[kind]
 	var t := ""
 	match kind:
@@ -203,8 +205,8 @@ func _site_tip_text(kind: String) -> String:
 			t = "[b]A Gold Mine[/b], overgrown. [b]Tap it and Cut it free[/b] with mana; then it pays %d gold every %d s for the rest of the battle." % [d["gold"], int(d["every"])]
 		"well":
 			t = "[b]A Mana Well[/b], choked with roots. [b]Tap it and Cut it free[/b] with mana for +%.1f mana per second, so you can cast and cut more." % d["regen"]
-	if level.site_cuts > 1:
-		t += " Here each building takes [b]%d cuts[/b] (the dots under it)." % level.site_cuts
+	if s.cuts > 1:
+		t += " This one takes [b]%d cuts[/b] (the dots under it)." % s.cuts
 	return t
 
 

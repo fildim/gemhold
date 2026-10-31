@@ -1,0 +1,64 @@
+{
+ "id": "level_10",
+ "title": "Emberfen",
+ "intro": "A fen of smouldering ash: almost every tile here takes only Cinder Shrines. Armoured heroes march in, and the raised tiles are the only places a Hut or a Crypt can stand. Choose well which tower each one gets.",
+ "cols": 16,
+ "rows": 10,
+ "hp_mul": 2.16,
+ "legend": {"m": "moss", "f": "frost", "a": "ash", "M": "high moss", "F": "high frost", "A": "high ash", "L": "lair"},
+ "terrain": [
+  "aaaaaaaammmaaaaa",
+  "aaaaaaaammmaaaaa",
+  "aaaaaaaaaaaaaaaa",
+  "aaAaaaaaaAaaaaff",
+  "aaaaaaaaaaaaaLLf",
+  "ffffaaaaAaaaaLLf",
+  "ffffaaaaaaaaaaff",
+  "ffffaaaaaaaaaaff",
+  "aaaaaaaaaaaaAaaa",
+  "aaaaaaaammmaaaaa"
+ ],
+ "trees": [
+  "....T.TTT..T..T.",
+  "TT.T.TT..T..T..T",
+  "...........T.TTT",
+  "...TTT.TT.T.....",
+  "T...............",
+  "T.T..T...T......",
+  "...TT.TT...T....",
+  ".T.........T..T.",
+  ".....T...T.T..T.",
+  ".TT.T.T.T.T...T."
+ ],
+ "paths": [
+  [[-1, 2], [6, 2], [6, 4], [12, 4]],
+  [[3, 10], [3, 7], [10, 7], [10, 5], [12, 5]]
+ ],
+ "lair": {"cell": [13, 4], "size": [2, 2], "center": [14, 5]},
+ "sites": [
+  {"kind": "camp", "cell": [1, 8], "path": 1, "spawn": "1f,1b", "every": 32},
+  {"kind": "mine", "cell": [15, 9]},
+  {"kind": "well", "cell": [0, 0], "cuts": 1}
+ ],
+ "start": {"gold": 230, "mana": 40, "gems": 5},
+ "first_wave_delay": 25,
+ "wave_gap": 24,
+ "site_cuts": 2,
+ "waves": [
+  "6f",
+  "4f,4p",
+  "6f,2c",
+  "1k,4f",
+  "6f,2b",
+  "2k,2c",
+  "8f,2w",
+  "2k,3b,2f",
+  "10f,3c",
+  "3k,2b,2w",
+  "4k,6f",
+  "3k,4b,4c",
+  "5k,6f,2w",
+  "6k,4b,4w",
+  "7k,6f,4c"
+ ]
+}

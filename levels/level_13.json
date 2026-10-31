@@ -1,0 +1,65 @@
+{
+ "id": "level_13",
+ "title": "Frostfang Pass",
+ "intro": "A frozen pass where almost only Bone Crypts can stand, and the heroes have brought Wardens whose lanterns melt the chill. Moss in the south-west and ash in the south-east, and five raised tiles, are your only other ground.",
+ "cols": 16,
+ "rows": 10,
+ "hp_mul": 2.52,
+ "legend": {"m": "moss", "f": "frost", "a": "ash", "M": "high moss", "F": "high frost", "A": "high ash", "L": "lair"},
+ "terrain": [
+  "fffffffLLfffffff",
+  "fffffffLLfffffff",
+  "ffffFfffffffFfff",
+  "ffffffffffffffff",
+  "ffMfffffffffffff",
+  "fffffffFffffffff",
+  "fffffffffffffAff",
+  "mmffffffffffffaa",
+  "mmffffffffffffaa",
+  "mmffffffffffffaa"
+ ],
+ "trees": [
+  "....TT.....T.T..",
+  "T.T.T..........T",
+  "TT.T.T....T...T.",
+  "..TTT........TT.",
+  ".......T.....T..",
+  ".TT.....TT......",
+  ".........T.TT...",
+  "...TT.........TT",
+  "T..T..T..TTT..T.",
+  ".T.TT.T....T...T"
+ ],
+ "paths": [
+  [[2, 10], [2, 6], [5, 6], [5, 3], [7, 3], [7, 2]],
+  [[13, 10], [13, 7], [10, 7], [10, 4], [8, 4], [8, 2]]
+ ],
+ "lair": {"cell": [7, 0], "size": [2, 2], "center": [8, 1]},
+ "sites": [
+  {"kind": "camp", "cell": [15, 4], "path": 1, "spawn": "2s,1h", "every": 30, "cuts": 3},
+  {"kind": "mine", "cell": [0, 0]},
+  {"kind": "well", "cell": [15, 0]}
+ ],
+ "start": {"gold": 230, "mana": 50, "gems": 5},
+ "first_wave_delay": 25,
+ "wave_gap": 24,
+ "site_cuts": 2,
+ "waves": [
+  "8p",
+  "8s",
+  "6f,2w",
+  "8t,1h",
+  "6s,6p,2w",
+  "1k,4w,4f",
+  "10s,2h",
+  "8t,3w",
+  "2k,4f,2h,2w",
+  "12s,4t",
+  "3k,4w,4f",
+  "10t,3h,3w",
+  "4k,6s,2h",
+  "4k,4b,6w",
+  "12t,6s,4h",
+  "6k,6w,4h,6f"
+ ]
+}

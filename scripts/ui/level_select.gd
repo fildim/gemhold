@@ -9,10 +9,13 @@ signal guide_pressed
 
 const Hud := preload("res://scripts/ui/hud.gd")
 
-## Where each campaign stop sits, as a fraction of the screen. Spots past the last level file
-## are drawn as unexplored ground, so the map shows how much campaign is planned.
-const SPOTS: Array[Vector2] = [Vector2(0.07, 0.70), Vector2(0.19, 0.36), Vector2(0.31, 0.68), Vector2(0.44, 0.34),
-	Vector2(0.56, 0.66), Vector2(0.68, 0.32), Vector2(0.81, 0.64), Vector2(0.93, 0.30)]
+## The campaign comes in chapters of PER_PAGE lairs, one chapter on screen at a time. SPOTS is
+## where each stop of a chapter sits, as a fraction of the screen: a trail along the top row and
+## back along the bottom. Spots past the last level file are drawn as unexplored ground.
+const PER_PAGE := 10
+const SPOTS: Array[Vector2] = [Vector2(0.10, 0.10), Vector2(0.30, 0.16), Vector2(0.50, 0.08), Vector2(0.70, 0.16), Vector2(0.90, 0.10),
+	Vector2(0.90, 0.68), Vector2(0.70, 0.74), Vector2(0.50, 0.66), Vector2(0.30, 0.74), Vector2(0.10, 0.68)]
+const CHAPTERS: Array[String] = ["Chapter I: The Lowland Roads", "Chapter II: The Crusade"]
 
 var _hud: Control
 var _levels: Array = []       # [{"id", "title", "waves"}]
@@ -25,6 +28,10 @@ var _reset_armed := false
 var _skills: Button
 var _sound: Button
 var _guide: Button
+var _page := 0
+var _beaten := 0
+var _prev: Button
+var _next: Button
 
 
 func setup(hud: Control, levels: Array, save: SaveData) -> void:
@@ -43,7 +50,7 @@ func setup(hud: Control, levels: Array, save: SaveData) -> void:
 	_sub.add_theme_font_override("font", hud.body_font)
 	_sub.add_theme_color_override("font_color", Hud.DIM)
 	add_child(_sub)
-	for i in mini(levels.size(), SPOTS.size()):
+	for i in levels.size():
 		var m := Marker.new()
 		m.index = i
 		m.title = levels[i]["title"]
@@ -76,13 +83,42 @@ func setup(hud: Control, levels: Array, save: SaveData) -> void:
 	_sound = hud.sound_button(self)
 	_sound.custom_minimum_size = Vector2(0, 60)
 	_sound.add_theme_font_size_override("font_size", 26)
+	_prev = _page_button("« Chapter I", -1)
+	_next = _page_button("Chapter II »", 1)
 	resized.connect(_layout)
 	refresh()
 
 
+func _page_button(text: String, step: int) -> Button:
+	var b := Button.new()
+	b.text = text
+	b.focus_mode = Control.FOCUS_NONE
+	b.custom_minimum_size = Vector2(0, 60)
+	b.add_theme_font_size_override("font_size", 26)
+	b.pressed.connect(func() -> void:
+		Sfx.play("click")
+		_show_page(_page + step))
+	add_child(b)
+	return b
+
+
+func _pages() -> int:
+	return maxi(1, ceili(_levels.size() / float(PER_PAGE)))
+
+
+func _show_page(p: int) -> void:
+	_page = clampi(p, 0, _pages() - 1)
+	for m: Marker in _markers:
+		m.visible = m.index / PER_PAGE == _page
+	_prev.visible = _page > 0
+	_next.visible = _page < _pages() - 1
+	_sub.text = "%s  ·  %d of %d lairs defended" % [CHAPTERS[mini(_page, CHAPTERS.size() - 1)], _beaten, _levels.size()]
+	_layout()
+
+
 ## Re-reads the save, e.g. after a battle ends.
 func refresh() -> void:
-	var beaten := 0
+	_beaten = 0
 	for m: Marker in _markers:
 		var id: String = _levels[m.index]["id"]
 		m.locked = not _save.is_unlocked(m.index)
@@ -91,14 +127,13 @@ func refresh() -> void:
 		m.current = not m.locked and m.stars == 0
 		m.queue_redraw()
 		if m.stars > 0:
-			beaten += 1
-	_sub.text = "%d of %d lairs defended. Tap a lair to defend it." % [beaten, _levels.size()]
+			_beaten += 1
 	var free := _save.points_free()
 	_skills.text = "Dark Arts · ★ %d%s" % [_save.points_total(), "  (%d to spend)" % free if free > 0 else ""]
 	_reset_armed = false
 	_reset.text = "Reset progress"
-	_layout()
-	queue_redraw()
+	# Open on the chapter of the newest lair the player may play.
+	_show_page((mini(_save.unlocked, _levels.size()) - 1) / PER_PAGE)
 
 
 func _layout() -> void:
@@ -119,13 +154,18 @@ func _layout() -> void:
 	_skills.position = Vector2(14, size.y - _skills.size.y - 12)
 	_guide.reset_size()
 	_guide.position = Vector2(_skills.position.x + _skills.size.x + 10, size.y - _guide.size.y - 12)
+	_prev.reset_size()
+	_prev.position = Vector2(14, _heading.position.y + 8)
+	_next.reset_size()
+	_next.position = Vector2(size.x - _next.size.x - 14, _heading.position.y + 8)
 	queue_redraw()
 
 
 func _spot(i: int) -> Vector2:
 	# Keep markers clear of the heading on short (landscape phone) screens.
 	var top := 130.0
-	return Vector2(SPOTS[i].x * size.x, top + SPOTS[i].y * (size.y - top - 60.0))
+	var s := SPOTS[i % PER_PAGE]
+	return Vector2(s.x * size.x, top + s.y * (size.y - top - 60.0))
 
 
 func _on_marker(i: int) -> void:
@@ -161,10 +201,11 @@ func _draw() -> void:
 		var r := 40.0 + Paint.hash01(k, 3) * 110.0
 		Paint.glow(self, p, r, Color(tints[k % 3], 0.22))
 	# The trail between stops: bright where it has been walked, dim and dotted beyond.
-	for i in SPOTS.size() - 1:
+	var first := _page * PER_PAGE
+	for i in range(first, first + PER_PAGE - 1):
 		var a := _spot(i)
 		var b := _spot(i + 1)
-		var bend := Vector2(0, -60.0 if i % 2 == 0 else 60.0)
+		var bend := (b - a).orthogonal().normalized() * (40.0 if i % 2 == 0 else -40.0)
 		var pts := PackedVector2Array([a])
 		pts.append_array(Paint.quad(a, (a + b) / 2.0 + bend, b, 24))
 		var walked := i + 1 < _levels.size() and _save.is_unlocked(i + 1)
@@ -173,7 +214,7 @@ func _draw() -> void:
 			if walked or j % 2 == 0:
 				draw_circle(pts[j], 3.0 if walked else 2.5, col)
 	# Planned stops with no level yet.
-	for i in range(_levels.size(), SPOTS.size()):
+	for i in range(maxi(first, _levels.size()), first + PER_PAGE):
 		var c := _spot(i)
 		Paint.ellipse(self, c, Marker.R * 0.8, Marker.R * 0.8, Color(0, 0, 0, 0.35))
 		Paint.ellipse_outline(self, c, Marker.R * 0.8, Marker.R * 0.8, Color(Hud.DIM, 0.25), 2.0)

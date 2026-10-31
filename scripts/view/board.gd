@@ -238,8 +238,10 @@ func _draw_shrine(x: float, y: float, s: float, lv: int, flash: bool, tm: float,
 
 # ---------------------------------------------------------------- heroes
 
-const TUNIC := {"p": "9a7446", "f": "4e6584", "s": "4d7638", "c": "efe9da", "k": "c9a43c", "b": "6e7682", "t": "4a3a5a", "w": "5a4630"}
-const TUNIC_DARK := {"p": "6a4a26", "f": "2e3e54", "s": "2e4a20", "c": "b8ae96", "k": "7a5e18", "b": "3e444c", "t": "2a2036", "w": "362818"}
+const TUNIC := {"p": "9a7446", "f": "4e6584", "s": "4d7638", "c": "efe9da", "k": "c9a43c", "b": "6e7682", "t": "4a3a5a", "w": "5a4630",
+	"h": "a8343e", "r": "c08a60", "x": "d8dce0"}
+const TUNIC_DARK := {"p": "6a4a26", "f": "2e3e54", "s": "2e4a20", "c": "b8ae96", "k": "7a5e18", "b": "3e444c", "t": "2a2036", "w": "362818",
+	"h": "5e1a22", "r": "7a4e30", "x": "7e8690"}
 
 
 func _draw_enemy(e: GameSim.Enemy, tm: float) -> void:
@@ -256,11 +258,15 @@ func _draw_enemy(e: GameSim.Enemy, tm: float) -> void:
 	Paint.ellipse(self, Vector2(x, yb + u * 0.95), u * 0.75, u * 0.22, Color(0, 0, 0, 0.33))
 	var tun := Color(TUNIC[code])
 	var dark := Color(TUNIC_DARK[code])
-	if code == "k":  # cape behind
+	if e.d.has("haste"):  # the Herald's rallying ring on the ground
+		Paint.ellipse_outline(self, Vector2(x, yb + u * 0.95), Defs.HASTE_RANGE * T * 0.5, Defs.HASTE_RANGE * T * 0.16, Color(1, 0.8, 0.3, 0.35), 2.0)
+	if e.d.has("rage") and e.hp < e.max_hp * 0.5:  # raging
+		Paint.glow(self, Vector2(x, y - u * 0.3), u * 1.6, Color(1, 0.2, 0.1, 0.5))
+	if code == "k" or code == "x":  # cape behind
 		var cape := PackedVector2Array([Vector2(x - f * u * 0.2, y - u * 0.35)])
 		cape.append_array(Paint.quad(Vector2(x - f * u * 0.2, y - u * 0.35), Vector2(x - f * u * (0.9 + walk * 0.1), y + u * 0.2), Vector2(x - f * u * 0.6, y + u * 0.75), 6))
 		cape.append(Vector2(x - f * u * 0.05, y + u * 0.55))
-		draw_colored_polygon(cape, Color("8a1e2c"))
+		draw_colored_polygon(cape, Color("5a2a7a") if code == "x" else Color("8a1e2c"))
 	if code == "s":  # bow on the back
 		var a0 := PI * 0.6 if f > 0 else -PI * 0.4
 		draw_arc(Vector2(x - f * u * 0.3, y - u * 0.05), u * 0.5, a0, a0 + PI * 0.8, 12, Color("6a4a22"), maxf(1.5, u * 0.12), true)
@@ -302,7 +308,7 @@ func _draw_enemy(e: GameSim.Enemy, tm: float) -> void:
 	_draw_gems(Vector2(e.pos.x, e.pos.y - e.d["r"] * 2.3 - 0.08) * T, e.carry, 0.0)
 	if e.hp < e.max_hp:
 		var w := maxf(16.0, u * 2.6)
-		var hy := y - u * (1.8 if code == "k" else 1.65) - 6.0
+		var hy := y - u * (1.8 if code == "k" or code == "x" else 1.65) - 6.0
 		draw_rect(Rect2(x - w / 2 - 1, hy - 1, w + 2, 6), Color(0, 0, 0, 0.7))
 		draw_rect(Rect2(x - w / 2, hy, w * e.hp / e.max_hp, 4), Color("6fd36f") if e.hp / e.max_hp > 0.4 else Color("e0503a"))
 
@@ -335,6 +341,24 @@ func _draw_headgear(code: String, x: float, y: float, u: float, f: float, lw: fl
 				var a := PI * 1.05 + PI * 0.9 * i / 10.0
 				cowl.append(Vector2(x, y - u * 0.78) + Vector2(cos(a), sin(a)) * u * 0.4)
 			draw_colored_polygon(cowl, Color("efe9da"))
+		"h":  # feathered cap
+			Paint.ellipse(self, Vector2(x, y - u * 0.95), u * 0.42, u * 0.2, Color("5e1a22"))
+			draw_line(Vector2(x - f * u * 0.2, y - u * 1.0), Vector2(x - f * u * 0.65, y - u * 1.45), Color("f0e6c8"), maxf(1.5, u * 0.12))
+		"r":  # wild red hair and beard
+			for i in 7:
+				var a := PI + PI * i / 6.0
+				draw_line(Vector2(x, y - u * 0.75), Vector2(x, y - u * 0.75) + Vector2(cos(a), sin(a)) * u * 0.55, Color("b0401c"), maxf(1.5, u * 0.14))
+			Paint.ellipse(self, Vector2(x + f * u * 0.08, y - u * 0.42), u * 0.24, u * 0.16, Color("b0401c"))
+		"x":  # crowned great helm
+			var helm := PackedVector2Array()
+			for i in 13:
+				var a := PI * 0.9 + PI * 1.2 * i / 12.0
+				helm.append(Vector2(x, y - u * 0.7) + Vector2(cos(a), sin(a)) * u * 0.44)
+			Paint.vgrad_poly(self, helm, Color("eef2f6"), Color("7e8690"))
+			draw_rect(Rect2(x - u * 0.25, y - u * 0.72, u * 0.5, u * 0.06), OUTLINE)
+			var crown := PackedVector2Array([Vector2(x - u * 0.34, y - u * 1.05), Vector2(x - u * 0.34, y - u * 1.35), Vector2(x - u * 0.17, y - u * 1.18),
+				Vector2(x, y - u * 1.42), Vector2(x + u * 0.17, y - u * 1.18), Vector2(x + u * 0.34, y - u * 1.35), Vector2(x + u * 0.34, y - u * 1.05)])
+			draw_colored_polygon(crown, Color("e8b84a"))
 		"k":  # gold helm and plume
 			var helm := PackedVector2Array()
 			for i in 13:
@@ -378,8 +402,20 @@ func _draw_held(code: String, x: float, y: float, yb: float, u: float, f: float)
 		"c":  # holy staff
 			draw_line(Vector2(hx, yb + u * 0.8), Vector2(hx, y - u * 1.2), Color("8a6420"), w)
 			draw_line(Vector2(hx - u * 0.18, y - u * 1.0), Vector2(hx + u * 0.18, y - u * 1.0), Color("8a6420"), w)
-		"f", "k":
-			var knight := code == "k"
+		"h":  # war banner
+			var top := Vector2(hx, y - u * 1.6)
+			draw_line(Vector2(hx, yb + u * 0.8), top, Color("4a3220"), w)
+			var wave := sin(sim.time * 5.0) * u * 0.08
+			var flag := PackedVector2Array([top, top + Vector2(-f * u * 0.75, wave), top + Vector2(-f * u * 0.7, u * 0.5 + wave), top + Vector2(0, u * 0.45)])
+			draw_colored_polygon(flag, Color("e8b84a"))
+			draw_circle(top + Vector2(-f * u * 0.36, u * 0.24 + wave * 0.5), u * 0.1, Color("a8343e"))
+		"r":  # two-handed axe
+			var tip := Vector2(hx + f * u * 0.2, y - u * 1.25)
+			draw_line(Vector2(hx - f * u * 0.15, y + u * 0.45), tip, Color("6a4422"), w)
+			var blade := PackedVector2Array([tip + Vector2(0, -u * 0.05), tip + Vector2(f * u * 0.45, -u * 0.3), tip + Vector2(f * u * 0.45, u * 0.35), tip + Vector2(0, u * 0.2)])
+			draw_colored_polygon(blade, Color("c9d2da"))
+		"f", "k", "x":
+			var knight := code == "k" or code == "x"
 			var tip := Vector2(hx + f * u * 0.05, y - u * (0.9 if knight else 1.4))
 			draw_line(Vector2(hx - f * u * 0.1, y + u * 0.3), tip, Color("dfe6ec") if knight else Color("6a4422"), w)
 			if not knight:

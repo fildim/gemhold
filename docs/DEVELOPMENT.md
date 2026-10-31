@@ -21,8 +21,35 @@ The campaign opens on a level map: twenty lairs in two chapters of ten (the arro
 - **The end:** after the last wave, the battle is won the moment its last hero falls or flees; gems still rolling home count as home.
 - **The den fights back:** your lair holds charges (1 to start). Each is a bolt it fires automatically at heroes within 2.6 tiles, gem carriers first, ignoring armour. Spent charges refill one every 8 s. The sparks circling above the cave show how many are ready.
 - **Ratings and stars:** Survived ★ (you lost gems), Wicked ★★ (none lost, but a hero touched one, even if you got it back) and Brilliant ★★★ (no hero ever touched a gem).
-- **Night missions:** clearing a level Brilliant unlocks the same level at night, with its own best rating and stars. You can only build where you can see; the lair, your towers and your mines and wells light the ground around them. A moon on the map marks it: faint while locked, pale when open, gold once won.
+- **Night missions:** clearing a level Brilliant unlocks the same level at night, with its own best rating and stars. Darkness is the challenge, so night heroes have 15% less health (`NIGHT_HP` in defs.gd). You can only build where you can see; the lair, your towers and your mines and wells light the ground around them. A moon on the map marks it: faint while locked, pale when open, gold once won.
 - **Dark Arts** (skill tree, on the map): every star is a skill point to spend across the Hut, Crypt and Shrine trees, or on The Hoard: a den charge, +50 starting gold, +15 max mana or +25% meteor damage (Starfall) per point. Stars come from each mission's best rating, day and night counted separately, so replaying a lair for a better rating earns more points. There is no player XP.
+
+## Campaign
+
+Twenty lairs, in two chapters of ten. Each lair turns one or two levers further than the last: the roads (how many, how long, whether they join), raised tiles, woods crowding the roads, which ground dominates, buildings and how many cuts they take, how many waves and heroes, which hero abilities appear, and hero health (`hp_mul`). Hero health is tuned last, with `tests/difficulty.gd`, so the bot's headroom falls smoothly from about ×3.5 on the tutorial to about ×1.15 on the finale, assuming the player spends about 2.4 stars per lair beaten in Dark Arts (`Bot.points_before`).
+
+| # | Lair | File | Roads | Raised | Buildings (cuts) | Waves | What's new |
+|---|---|---|---|---|---|---|---|
+| 1 | Mossfold Pass | 01 | 2 | 0 | none | 12 | Tutorial |
+| 2 | Rimewater Ford | 02 | 2 | 0 | mine, well (1) | 12 | Easy buildings; frost around the den |
+| 3 | Gloamwood Hollow | 03 | 2 | 3 | barracks, mine, well (1) | 14 | Raised tiles, first barracks |
+| 4 | Thornback Ridge | 09 | 1 long | 3 | barracks (2), mine, well (1) | 14 | Cutpurse; a building taking 2 cuts |
+| 5 | Cinderfall Steps | 04 | 2 | 3 | barracks (2), mine, well (1) | 15 | Shieldbearer, Warden |
+| 6 | Saltmarsh Crossing | 06 | 1 long | 3 | barracks, mine, well (2) | 14 | Fast swarms |
+| 7 | Emberfen | 10 | 2 | 4 | barracks, mine (2), well (1) | 15 | Nearly all ash: raised tiles are the only Hut and Crypt ground |
+| 8 | The Iron Column | 07 | 2, joined | 3 | barracks, mine, well (3) | 14 | Armour |
+| 9 | The Three Gates | 11 | 3 short | 5 | barracks (3), mine, well (2) | 15 | Three roads, little time |
+| 10 | Gloomspire Summit | 08 | 4 | 4 | 2 barracks, mine, well (3) | 16 | Four roads |
+| 11 | Heraldmoor | 12 | 2, joined | 3 | barracks (3), mine, well (2) | 16 | Herald; thick woods |
+| 12 | Frostfang Pass | 13 | 2 | 5 | barracks (3), mine, well (2) | 16 | Nearly all frost, against Wardens |
+| 13 | Redwater Crossing | 14 | 2 long | 3 | 2 barracks, mine, well (2) | 16 | Berserker |
+| 14 | The Sunken Abbey | 15 | 3 | 4 | 2 barracks (2), mine, well (3) | 16 | Every support hero at once |
+| 15 | The Champion's Road | 16 | 1 long | 3 | 2 barracks (3), mine (3), well (2) | 17 | Champion |
+| 16 | Ashen Maze | 17 | 2 | 7 | 2 barracks, mine, well (3) | 17 | Woods everywhere, many raised tiles |
+| 17 | Howling Steppe | 18 | 3 | 1 | 3 barracks (4), mine, well (2) | 17 | Barracks-heavy, open ground |
+| 18 | Lanternfall Vale | 19 | 4 short | 4 | 2 barracks, mine, well (3) | 18 | Every hero, four roads |
+| 19 | The Last Bridge | 20 | 3, joined | 3 | 3 barracks, mine, well (3) | 18 | Three roads meet on one bridge |
+| 20 | The Hoard Throne | 05 | 3 | 3 | 2 barracks (4), mine, well (3) | 20 | Finale: three Champions in the last wave |
 
 ## Open and play
 
@@ -127,6 +154,8 @@ Debug builds are signed with Godot's debug keystore and are only for testing.
 - [x] Night missions, unlocked by a Brilliant clear: build only where you can see
 - [x] Three ratings: gems lost, gem touched, untouched
 - [x] New heroes: Shieldbearer, Cutpurse, Warden
+- [x] Twenty lairs in two chapters, tuned to a smooth difficulty curve (`tests/difficulty.gd`)
+- [x] Chapter II heroes: Herald, Berserker, Champion
 - [x] Sound effects and music
 - [x] Tutorial tips on the first lair
 - [x] Builds for Windows, macOS, Linux, Android, iPhone and the web

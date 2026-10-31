@@ -61,7 +61,7 @@ static func topics() -> Array:
 		+ "A tower at [b]rank %d[/b] that is also [b]upgraded to level III[/b] unlocks its ability: Volley (Hut), Dread (Crypt) or Lava (Shrine). Dark Arts can make each ability stronger.\n\n" % Defs.ABILITY_RANK
 		+ "Towers that see a lot of action rank up fastest, so upgrade the ones at the busy spots."))
 	t.append(_t("Towers", "Who towers shoot",
-		"Towers always pick, in this order:\n\n1. a hero [b]carrying a gem[/b]\n2. a [b]support hero[/b] (Cleric, Shieldbearer, Warden)\n3. whoever has the [b]least health[/b] left\n\nSo a thief running home is never ignored, and healers and protectors die first."))
+		"Towers always pick, in this order:\n\n1. a hero [b]carrying a gem[/b]\n2. a [b]support hero[/b] (Cleric, Shieldbearer, Warden, Herald)\n3. whoever has the [b]least health[/b] left\n\nSo a thief running home is never ignored, and healers and protectors die first."))
 
 	# ------------------------------------------------------------ heroes
 	t.append(_t("Heroes", "Gem carriers",
@@ -78,13 +78,23 @@ static func topics() -> Array:
 		"Slow, very tough ([b]%d health[/b]) and armoured (%d). He carries [b]2 gems[/b].\n\n" % [e["k"]["hp"], e["k"]["armor"]]
 		+ "Arrows barely scratch him. Cinder Shrines ignore armour, and the Meteor does too. A Crypt keeps him in range long enough to burn."))
 	t.append(_t("Heroes", "Shieldbearer",
-		"Arrives from the fourth lair. Heroes within %.1f tiles of him take %d%% less damage (not him, and not from beams, the den or the Meteor).\n\n"
+		"Arrives from the fifth lair. Heroes within %.1f tiles of him take %d%% less damage (not him, and not from beams, the den or the Meteor).\n\n"
 		% [Defs.GUARD_RANGE, roundi(e["b"]["guard"] * 100)]
 		+ "Kill him first and the whole group goes soft. Towers already aim for him before ordinary heroes."))
 	t.append(_t("Heroes", "Cutpurse",
 		"Arrives from the fourth lair. Fast, fragile, and carries [b]2 gems[/b]. Losing one Cutpurse can cost you a whole Brilliant rating.\n\nCrypts and the den's bolts are your best answer."))
 	t.append(_t("Heroes", "Warden",
-		"Arrives from the fourth lair. His lantern [b]clears slow and Dread[/b] from every hero near him, himself included.\n\nCrypts do little around a Warden. Kill him first, then the chill works again."))
+		"Arrives from the fifth lair. His lantern [b]clears slow and Dread[/b] from every hero near him, himself included.\n\nCrypts do little around a Warden. Kill him first, then the chill works again."))
+	t.append(_t("Heroes", "Herald",
+		"Arrives from the eleventh lair. Heroes within %.1f tiles of his banner, himself included, march [b]%d%% faster[/b]. The gold ring around his feet shows how far it reaches.\n\n"
+		% [Defs.HASTE_RANGE, roundi(e["h"]["haste"] * 100)]
+		+ "A group with a Herald runs past towers that would have held it. Towers aim for him before ordinary heroes; a Crypt's chill still works on his followers."))
+	t.append(_t("Heroes", "Berserker",
+		"Arrives from the thirteenth lair. Tough and unarmoured, but once he drops [b]below half health he runs %.0f× as fast[/b] and glows red.\n\n" % e["r"]["rage"]
+		+ "Don't start on a Berserker just before the cave. Hit him early, or hard enough to finish him in one stretch: Crypts and heated Shrine beams."))
+	t.append(_t("Heroes", "Champion",
+		"Arrives from the fifteenth lair, at the head of the final waves. A crowned giant with [b]%d health[/b], heavy armour (%d), and he carries [b]3 gems[/b].\n\n" % [e["x"]["hp"], e["x"]["armor"]]
+		+ "When he falls, [b]three Footmen rise[/b] where he lay and march on. Bring him down far from the cave, with Shrines, the Meteor and the den's bolts."))
 	t.append(_t("Heroes", "Heroes get stronger",
 		"Each wave's heroes are tougher than the last. The game also watches how you play: when you crush a wave far from the cave, the next heroes come back much tougher; when a wave gets close, only a little.\n\n"
 		+ "[b]Riches draw heroes too.[/b] Gold you leave unspent above %d makes every following wave stronger. Spend it on towers and upgrades instead of saving it.\n\n" % roundi(Defs.THREAT["rich"])
