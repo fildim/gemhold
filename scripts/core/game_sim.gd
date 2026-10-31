@@ -229,7 +229,11 @@ func update(dt: float) -> void:
 	_update_fx(dt)
 	if lost >= level.gems:
 		_end(false)
-	elif wave >= level.waves.size() and queue.is_empty() and enemies.is_empty() and drops.is_empty():
+	elif wave >= level.waves.size() and queue.is_empty() and enemies.is_empty():
+		# No hero is left to take them, so gems still rolling home count as home now.
+		for g: Drop in drops:
+			home += g.n
+		drops.clear()
 		_end(true)
 
 

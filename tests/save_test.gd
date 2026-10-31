@@ -287,6 +287,18 @@ func _init() -> void:
 	_check(sf.cut_random_woods() == "" and sf.trees.size() == woods - 1 and sf.mana == 100.0 - Defs.CLEAR_MANA, "Cut woods clears one patch for its mana")
 	sf.mana = 0.0
 	_check(sf.cut_random_woods() != "", "Cut woods needs mana")
+
+	# After the last wave, the battle ends as soon as the last hero is gone, even with a gem still
+	# rolling home: no one is left to take it.
+	var fin := GameSim.new(lv)
+	fin.wave = lv.waves.size()
+	fin.home = lv.gems - 1
+	var rolling := GameSim.Drop.new()
+	rolling.n = 1
+	rolling.dist = 1.0
+	fin.drops.append(rolling)
+	fin.update(0.05)
+	_check(fin.over and fin.won and fin.home == lv.gems and fin.lost == 0, "the last hero gone ends the battle; rolling gems count as home")
 	th.threat = 2.0
 	th.wave = 5
 	th._spawn("p", 0)
