@@ -19,10 +19,17 @@ Tracks are from Wikimedia Commons and OpenGameArt.org (licences checked 2026-10-
 
 | File | Piece | Performer | Source |
 |---|---|---|---|
-| map.ogg | Mussorgsky, *Pictures at an Exhibition*, Promenade | Musopen | https://commons.wikimedia.org/wiki/File:Modest_Mussorgsky_-_pictures_at_an_exhibition_-_promenade_-_moderato_non_tanto,_pesante.ogg |
 | mountain.ogg | Grieg, *In the Hall of the Mountain King* | Musopen Symphony Orchestra | https://commons.wikimedia.org/wiki/File:Musopen_-_In_the_Hall_Of_The_Mountain_King.ogg |
 | valkyries.ogg | Wagner, *Ride of the Valkyries* | — | https://commons.wikimedia.org/wiki/File:Richard_Wagner_-_Ride_of_the_Valkyries.ogg |
 | fate.ogg | Beethoven, Symphony No. 5, I. Allegro con brio | Musopen | https://commons.wikimedia.org/wiki/File:Ludwig_van_Beethoven_-_symphony_no._5_in_c_minor,_op._67_-_i._allegro_con_brio.ogg |
+
+## Matthew Pablo — CC BY 3.0
+
+"Dark Descent - Extended Cut" by Matthew Pablo (matthewpablo.com), licensed under Creative Commons: By Attribution 3.0, http://creativecommons.org/licenses/by/3.0/
+
+| File | Source |
+|---|---|
+| map.ogg | https://opengameart.org/content/dark-descent-extended-cut (whole track, 1:51) |
 
 ## OpenGameArt.org — CC0 (public domain)
 

@@ -145,7 +145,10 @@ static func topics() -> Array:
 		"[b]Kevin MacLeod[/b] (incompetech.com), licensed under Creative Commons: By Attribution 3.0 (creativecommons.org/licenses/by/3.0): Heroic Age, Curse of the Scarab, Volatile Reaction, Crusade, Five Armies, Black Vortex, Darkling, Final Battle of the Dark Wizards, Firebrand, Killers, Malicious, Ossuary 2 - Turn, Prelude and Action, Rynos Theme, Unholy Knight.
 
 "
-		+ "Public-domain recordings from Wikimedia Commons: Grieg, In the Hall of the Mountain King (Musopen); Wagner, Ride of the Valkyries; Beethoven, Symphony No. 5 (Musopen); Mussorgsky, Promenade (Musopen).\n\n"
+		+ "Public-domain recordings from Wikimedia Commons: Grieg, In the Hall of the Mountain King (Musopen); Wagner, Ride of the Valkyries; Beethoven, Symphony No. 5 (Musopen).\n\n"
+		+ "[b]Matthew Pablo[/b] (matthewpablo.com), licensed under Creative Commons: By Attribution 3.0: Dark Descent (the map).
+
+"
 		+ "Public domain (CC0) from OpenGameArt.org: The Final Battle by skrjablin; QaziJamJam (orchestral battle theme) by Emma_MA."))
 	return t
 

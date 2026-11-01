@@ -187,7 +187,7 @@ With a paid Apple developer account, the same workflow could sign the build and 
 
 ## Sound
 
-Sound effects are synthesised by `tools/make_audio.gd` (oscillators, noise and plucked strings). The music is public-domain, CC0 and CC-BY (credited in the Guide) orchestral tracks from Wikimedia Commons and OpenGameArt.org in `assets/music/` (sources and licences in `assets/music/CREDITS.md`), looped in `audio.gd`. The level map plays Mussorgsky's *Promenade*, and each lair has its own piece (`MUSIC` in `main.gd`, keyed by level id):
+Sound effects are synthesised by `tools/make_audio.gd` (oscillators, noise and plucked strings). The music is public-domain, CC0 and CC-BY (credited in the Guide) orchestral tracks from Wikimedia Commons and OpenGameArt.org in `assets/music/` (sources and licences in `assets/music/CREDITS.md`), looped in `audio.gd`. The level map plays Matthew Pablo's *Dark Descent*, and each lair has its own piece (`MUSIC` in `main.gd`, keyed by level id):
 
 | Lair | Music |
 |---|---|
