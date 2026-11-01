@@ -187,20 +187,32 @@ With a paid Apple developer account, the same workflow could sign the build and 
 
 ## Sound
 
-Sound effects are synthesised by `tools/make_audio.gd` (oscillators, noise and plucked strings). The music is public-domain and CC-BY (Kevin MacLeod, credited in the Guide) orchestral tracks from Wikimedia Commons in `assets/music/` (sources and licences in `assets/music/CREDITS.md`), looped in `audio.gd`. The level map plays Mussorgsky's *Promenade*, and each lair has its own piece (`MUSIC` in `main.gd`):
+Sound effects are synthesised by `tools/make_audio.gd` (oscillators, noise and plucked strings). The music is public-domain, CC0 and CC-BY (credited in the Guide) orchestral tracks from Wikimedia Commons and OpenGameArt.org in `assets/music/` (sources and licences in `assets/music/CREDITS.md`), looped in `audio.gd`. The level map plays Mussorgsky's *Promenade*, and each lair has its own piece (`MUSIC` in `main.gd`, keyed by level id):
 
 | Lair | Music |
 |---|---|
 | 1 Mossfold Pass | Grieg, *In the Hall of the Mountain King* |
 | 2 Rimewater Ford | Kevin MacLeod, *Heroic Age* |
 | 3 Gloamwood Hollow | Kevin MacLeod, *Curse of the Scarab* |
-| 4 Cinderfall Steps | Kevin MacLeod, *Volatile Reaction* |
-| 5 The Hoard Throne | Wagner, *Ride of the Valkyries* |
+| 4 Thornback Ridge | Kevin MacLeod, *Prelude and Action* |
+| 5 Cinderfall Steps | Kevin MacLeod, *Volatile Reaction* |
 | 6 Saltmarsh Crossing | Kevin MacLeod, *Crusade* |
-| 7 The Iron Column | Beethoven, *Symphony No. 5* |
-| 8 Gloomspire Summit | Kevin MacLeod, *Five Armies* |
+| 7 Emberfen | Kevin MacLeod, *Firebrand* |
+| 8 The Iron Column | Beethoven, *Symphony No. 5* |
+| 9 The Three Gates | Kevin MacLeod, *Killers* |
+| 10 Gloomspire Summit | Kevin MacLeod, *Five Armies* |
+| 11 Heraldmoor | Kevin MacLeod, *Rynos Theme* |
+| 12 Frostfang Pass | Kevin MacLeod, *Darkling* |
+| 13 Redwater Crossing | Kevin MacLeod, *Malicious* |
+| 14 The Sunken Abbey | Kevin MacLeod, *Ossuary 2 - Turn* |
+| 15 The Champion's Road | Kevin MacLeod, *Unholy Knight* |
+| 16 Ashen Maze | Kevin MacLeod, *Black Vortex* |
+| 17 Howling Steppe | Emma_MA, *QaziJamJam* (CC0) |
+| 18 Lanternfall Vale | Kevin MacLeod, *Final Battle of the Dark Wizards* |
+| 19 The Last Bridge | skrjablin, *The Final Battle* (CC0) |
+| 20 The Hoard Throne | Wagner, *Ride of the Valkyries* |
 
-To swap a piece, drop an .ogg (its most intense 2:30, normalised to -14 LUFS) into `assets/music/` (ready ones wait in `assets/music/spare/`), put its name in `MUSIC` and add it to CREDITS.md. To change a sound effect, edit its function in `tools/make_audio.gd` and rebuild:
+To swap a piece, drop an .ogg (its most intense 2:30, normalised to -14 LUFS) into `assets/music/` (cut with ffmpeg; tracks still waiting for a lair are in `DesktopGemhold music to try`, and a track's source is deleted from there once it is in the game), put its name in `MUSIC` and add it to CREDITS.md. To change a sound effect, edit its function in `tools/make_audio.gd` and rebuild:
 
 ```
 godot --headless -s res://tools/make_audio.gd -- coin boom   # just these, or no names for all

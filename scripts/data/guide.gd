@@ -142,10 +142,11 @@ static func topics() -> Array:
 		+ "• Keep enough mana for one Meteor when a dangerous wave is due.\n"
 		+ "• Missed a Brilliant? Replay the lair: only your best rating counts."))
 	t.append(_t("Progress", "Music credits",
-		"[b]Kevin MacLeod[/b] (incompetech.com), licensed under Creative Commons: By Attribution 3.0 (creativecommons.org/licenses/by/3.0): Heroic Age, Curse of the Scarab, Volatile Reaction, Crusade, Five Armies.
+		"[b]Kevin MacLeod[/b] (incompetech.com), licensed under Creative Commons: By Attribution 3.0 (creativecommons.org/licenses/by/3.0): Heroic Age, Curse of the Scarab, Volatile Reaction, Crusade, Five Armies, Black Vortex, Darkling, Final Battle of the Dark Wizards, Firebrand, Killers, Malicious, Ossuary 2 - Turn, Prelude and Action, Rynos Theme, Unholy Knight.
 
 "
-		+ "Public-domain recordings from Wikimedia Commons: Grieg, In the Hall of the Mountain King (Musopen); Wagner, Ride of the Valkyries; Beethoven, Symphony No. 5 (Musopen); Mussorgsky, Promenade (Musopen)."))
+		+ "Public-domain recordings from Wikimedia Commons: Grieg, In the Hall of the Mountain King (Musopen); Wagner, Ride of the Valkyries; Beethoven, Symphony No. 5 (Musopen); Mussorgsky, Promenade (Musopen).\n\n"
+		+ "Public domain (CC0) from OpenGameArt.org: The Final Battle by skrjablin; QaziJamJam (orchestral battle theme) by Emma_MA."))
 	return t
 
 

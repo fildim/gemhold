@@ -7,9 +7,12 @@ const T := 64.0
 ## Campaign order. Add new level files here. File numbers follow when each map was made, not its place in the campaign, so
 ## level ids (and the saved progress keyed by them) stay put when the campaign is reordered.
 const LEVELS: Array[String] = ["res://levels/level_01.json", "res://levels/level_02.json", "res://levels/level_03.json", "res://levels/level_09.json", "res://levels/level_04.json", "res://levels/level_06.json", "res://levels/level_10.json", "res://levels/level_07.json", "res://levels/level_11.json", "res://levels/level_08.json", "res://levels/level_12.json", "res://levels/level_13.json", "res://levels/level_14.json", "res://levels/level_15.json", "res://levels/level_16.json", "res://levels/level_17.json", "res://levels/level_18.json", "res://levels/level_19.json", "res://levels/level_20.json", "res://levels/level_05.json"]
-## Each lair's battle music, in campaign order (assets/music/CREDITS.md):
-## Grieg, Kevin MacLeod, Wagner, Kevin MacLeod and Beethoven.
-const MUSIC: Array[String] = ["mountain", "heroicage", "curseofthescarab", "volatilereaction", "valkyries", "crusade", "fate", "fivearmies"]
+## Each lair's battle music, by level id (tracks in assets/music, credits in CREDITS.md there).
+const MUSIC := {"level_01": "mountain", "level_02": "heroicage", "level_03": "curseofthescarab", "level_09": "preludeandaction",
+	"level_04": "volatilereaction", "level_06": "crusade", "level_10": "firebrand", "level_07": "fate", "level_11": "killers",
+	"level_08": "fivearmies", "level_12": "rynostheme", "level_13": "darkling", "level_14": "malicious", "level_15": "ossuary2_turn",
+	"level_16": "unholyknight", "level_17": "blackvortex", "level_18": "orchestralbattle", "level_19": "finalbattleofthedarkwizards",
+	"level_20": "finalbattle", "level_05": "valkyries"}
 
 var level_index := 0
 var night := false            # playing the level's night mission
@@ -177,7 +180,7 @@ func _process(delta: float) -> void:
 			if tw.beam != null:
 				beams += 1
 	Sfx.set_beams(beams)
-	Sfx.play_music("" if sim.over else (MUSIC[level_index % MUSIC.size()] if started else "map"))
+	Sfx.play_music("" if sim.over else (MUSIC.get(level.id, "mountain") if started else "map"))
 	board.armed = armed
 	board.queue_redraw()
 	hud.refresh(sim, armed, speed, paused)

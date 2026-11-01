@@ -1,10 +1,10 @@
 # Music credits
 
-All tracks are from Wikimedia Commons (licences checked 2026-10-31), cut to their most intense 2:30 (the loudest 150-second window) and loudness-normalised (ffmpeg loudnorm, -14 LUFS). The in-game Guide has a "Music credits" page; keep it in step with this file.
+Tracks are from Wikimedia Commons and OpenGameArt.org (licences checked 2026-10-31 and 2026-11-01), cut to their most intense 2:30 (the loudest 150-second window) and loudness-normalised (ffmpeg loudnorm, -14 LUFS). The in-game Guide has a "Music credits" page; keep it in step with this file.
 
 ## Kevin MacLeod — CC BY 3.0
 
-"Heroic Age", "Curse of the Scarab", "Volatile Reaction", "Crusade", "Five Armies" by Kevin MacLeod (incompetech.com), licensed under Creative Commons: By Attribution 3.0, http://creativecommons.org/licenses/by/3.0/
+"Heroic Age", "Curse of the Scarab", "Volatile Reaction", "Crusade", "Five Armies", "Black Vortex", "Darkling", "Final Battle of the Dark Wizards", "Firebrand", "Killers", "Malicious", "Ossuary 2 - Turn", "Prelude and Action", "Rynos Theme", "Unholy Knight" by Kevin MacLeod (incompetech.com), licensed under Creative Commons: By Attribution 3.0, http://creativecommons.org/licenses/by/3.0/
 
 | File | Source |
 |---|---|
@@ -13,6 +13,7 @@ All tracks are from Wikimedia Commons (licences checked 2026-10-31), cut to thei
 | volatilereaction.ogg | https://commons.wikimedia.org/wiki/File:Volatile_Reaction_(ISRC_USUAN1400039).mp3 |
 | crusade.ogg | https://commons.wikimedia.org/wiki/File:Crusade_(ISRC_USUAN1100884).mp3 |
 | fivearmies.ogg | https://commons.wikimedia.org/wiki/File:Five_Armies_(ISRC_USUAN1100875).mp3 |
+| blackvortex.ogg, darkling.ogg, finalbattleofthedarkwizards.ogg, firebrand.ogg, killers.ogg, malicious.ogg, ossuary2_turn.ogg, preludeandaction.ogg, rynostheme.ogg, unholyknight.ogg | Wikimedia Commons, Kevin MacLeod tracks (ISRC USUAN…) |
 
 ## Public domain
 
@@ -23,8 +24,11 @@ All tracks are from Wikimedia Commons (licences checked 2026-10-31), cut to thei
 | valkyries.ogg | Wagner, *Ride of the Valkyries* | — | https://commons.wikimedia.org/wiki/File:Richard_Wagner_-_Ride_of_the_Valkyries.ogg |
 | fate.ogg | Beethoven, Symphony No. 5, I. Allegro con brio | Musopen | https://commons.wikimedia.org/wiki/File:Ludwig_van_Beethoven_-_symphony_no._5_in_c_minor,_op._67_-_i._allegro_con_brio.ogg |
 
-## Spare tracks for new lairs (spare/, not in the game yet)
+## OpenGameArt.org — CC0 (public domain)
 
-Kevin MacLeod (incompetech.com), CC BY 3.0, from Wikimedia Commons, prepared the same way. `spare/.gdignore` keeps them out of builds: move one up into assets/music when a new lair uses it, and add it to the Guide's "Music credits" page.
+| File | Track | Composer | Source |
+|---|---|---|---|
+| finalbattle.ogg | The Final Battle | skrjablin | https://opengameart.org/content/the-final-battle |
+| orchestralbattle.ogg | QaziJamJam (orchestral battle theme) | Emma_MA | https://opengameart.org/content/qazijamjam-orchestral-battle-theme |
 
-Black Vortex, Darkling, Final Battle of the Dark Wizards, Firebrand, Killers, Malicious, Ossuary 2 - Turn, Prelude and Action, Rynos Theme, Unholy Knight.
+Tracks still waiting for a lair are in `Desktop\Gemhold music to try` (not in this repository); once a track is cut and given to a lair, its source file is deleted there, so that folder only holds what is still pending.
