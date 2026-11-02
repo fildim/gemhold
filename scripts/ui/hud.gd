@@ -631,7 +631,7 @@ func _on_card_button(sig: Signal) -> void:
 ## The start card: the goal, the lair's best rating and its night mission.
 func show_intro(level: Level, number: int, best_rank: String, night_open := false, night_best := "") -> void:
 	var txt := "[b]Guard the gems!!![/b]\n\n"
-	txt += "[color=#a8977c]Lair %d · %s · %d waves[/color]" % [number, level.title, level.waves.size()]
+	txt += "[color=#a8977c]Lair %d · %d waves[/color]" % [number, level.waves.size()]
 	if best_rank != "":
 		txt += "   [color=#e8b84a]Best: %s[/color]" % best_rank
 	var buttons := [["Defend the hoard", start_pressed]]
