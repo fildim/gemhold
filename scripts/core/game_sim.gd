@@ -172,6 +172,15 @@ var touched := false      # a hero has laid hands on a gem (grabbed from the hoa
 var over := false
 var won := false
 var rng := RandomNumberGenerator.new()
+# Battle stats, for the score and achievements.
+var kills := 0
+var kills_by := {}        # hero code -> how many were slain
+var best_meteor := 0      # most heroes a single meteor slew
+var built := {}           # tower type -> true for every kind built this battle
+var most_towers := 0      # most towers standing at once
+var early_calls := 0
+var skipped := 0          # seconds of wave countdown skipped by calling early
+var abilities := 0        # times a tower learned its ability
 
 
 func _init(lv: Level, skill_ranks := {}) -> void:
@@ -280,6 +289,8 @@ func call_early() -> int:
 	if over or wave >= level.waves.size():
 		return 0
 	var bonus := int(ceil(timer))
+	early_calls += 1
+	skipped += bonus
 	gold += bonus
 	if bonus > 0:
 		_text(level.lair_center + Vector2(0, -1), "+%d early" % bonus, Color("e8b84a"))
@@ -655,9 +666,11 @@ func _update_fx(dt: float) -> void:
 			f.hit = true
 			_boom(f.pos, Defs.METEOR["radius"], 0.5)
 			sound.emit("boom")
+			var before := kills
 			for e: Enemy in enemies:
 				if e.pos.distance_to(f.pos) <= Defs.METEOR["radius"]:
 					hurt(e, meteor_damage(), true)
+			best_meteor = maxi(best_meteor, kills - before)
 	fx = fx.filter(func(f: Fx) -> bool: return f.t < f.dur)
 
 
@@ -673,6 +686,8 @@ func hurt(e: Enemy, dmg: float, pierce := false, src: Tower = null) -> void:
 		_tower_xp(src, dealt)
 	if e.hp <= 0.0:
 		gold += int(e.d["gold"])
+		kills += 1
+		kills_by[e.code] = int(kills_by.get(e.code, 0)) + 1
 		_text(e.pos + Vector2(0, -0.3), "+%d" % int(e.d["gold"]), Color("e8b84a"))
 		sound.emit("die")
 		if e.carry > 0:
@@ -720,6 +735,7 @@ func _tower_xp(tw: Tower, amount: float) -> void:
 		# Ranks stay hidden; only learning the ability is announced.
 		if tw.has_ability() and tw.rank == Defs.ABILITY_RANK:
 			_text(tw.pos + Vector2(0, -0.9), Defs.ABILITIES[tw.type]["name"] + "!", Color("c9c0ff"))
+			abilities += 1
 			sound.emit("rank")
 
 
@@ -1009,6 +1025,8 @@ func do_action(id: String, c: Vector2i) -> String:
 		tw.xp_mul = 1.0 + 0.25 * skill(type + "_vet")
 		tw.ability_rank = skill(type + "_ability")
 		towers[c] = tw
+		built[type] = true
+		most_towers = maxi(most_towers, towers.size())
 		_relight()
 		sound.emit("build")
 		return ""
@@ -1067,6 +1085,7 @@ func do_action(id: String, c: Vector2i) -> String:
 			sound.emit("upgrade")
 			if tw.has_ability() and tw.lvl == Defs.ABILITY_LEVEL:
 				_text(tw.pos + Vector2(0, -0.9), Defs.ABILITIES[tw.type]["name"] + "!", Color("c9c0ff"))
+				abilities += 1
 		"sell":
 			if not towers.has(c):
 				return "No tower here"
@@ -1101,6 +1120,21 @@ func rank() -> String:
 	if touched:
 		return "Wicked"
 	return "Brilliant"
+
+
+## Leaderboard points for a won battle (0 for a loss): up to 1000 for gems kept, 500 for Wicked or
+## 1000 for Brilliant, 5 per second of countdown skipped by calling waves early and 1 per gold
+## left; then +10% for each lair further along the campaign (number counts from 1) and ×1.5 at night.
+func score(number: int) -> int:
+	if not won:
+		return 0
+	var pts := 1000.0 * (level.gems - lost) / level.gems
+	pts += [0, 0, 500, 1000][SaveData.RANKS.find(rank())]
+	pts += 5.0 * skipped + gold
+	pts *= 1.0 + 0.1 * (number - 1)
+	if level.night:
+		pts *= 1.5
+	return roundi(pts)
 
 
 ## The best rating still within reach if the battle is won from here (shown during the battle).

@@ -316,6 +316,39 @@ func _init() -> void:
 	back.reset()
 	_check(back.unlocked == 1 and back.best.is_empty() and back.points_total() == 0, "reset clears progress")
 
+	# Best scores, lifetime stats and achievements: kept on reset, round trip, merge with an account.
+	var a := SaveData.load_from(FILE + ".none")
+	a.path = FILE
+	_check(a.record_score("level_01", 1500) and not a.record_score("level_01", 1200), "only a higher score is kept")
+	a.record_score("level_01:night", 800)
+	_check(a.total_score() == 2300, "total adds every mission's best")
+	a.add_stat("kills", 40)
+	a.add_stat("kills", 2)
+	_check(a.earn("first_win") and not a.earn("first_win"), "an achievement is earned once")
+	a.reset()
+	_check(a.total_score() == 2300 and a.has_achievement("first_win"), "reset keeps scores and achievements")
+	a.save()
+	var a2 := SaveData.load_from(FILE)
+	_check(int(a2.scores["level_01"]) == 1500 and int(a2.stats["kills"]) == 42 and a2.has_achievement("first_win"), "scores, stats and achievements round trip")
+	a2.merge_online({"level_01": 1000, "level_02": 900}, ["brilliant"])
+	_check(int(a2.scores["level_01"]) == 1500 and int(a2.scores["level_02"]) == 900 and a2.has_achievement("brilliant"), "account merge keeps the best of both")
+	_check(Online.score_key("level_01:night") == "level_01_night", "night missions get a key Firestore accepts")
+
+	# Achievements from a battle: a won lair, scored.
+	var won := GameSim.new(Level.load_from("res://levels/level_01.json"))
+	won.won = true
+	won.over = true
+	won.gold = 1200
+	won.skipped = 10
+	_check(won.score(1) == 1000 + 1000 + 50 + 1200, "score: gems + Brilliant + early seconds + gold")
+	_check(won.score(3) == roundi(3250 * 1.2), "later lairs score more")
+	var fresh := SaveData.load_from(FILE + ".none")
+	var got := Achievements.check_battle(fresh, won, 1)
+	_check(got.has("first_win") and got.has("brilliant") and got.has("rich") and not got.has("last_gem"), "battle achievements")
+	_check(Achievements.check_battle(fresh, won, 1).is_empty(), "nothing is earned twice")
+	for x: Dictionary in Achievements.LIST:
+		_check(Achievements.find(x["id"]) == x, "achievement ids are unique: " + x["id"])
+
 	# Heroes go for gems lying out on their road, even back the way they came.
 	var gs := GameSim.new(Level.load_from("res://levels/level_01.json"))
 	gs.timer = 1e6

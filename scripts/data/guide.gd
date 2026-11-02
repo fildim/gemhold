@@ -134,6 +134,14 @@ static func topics() -> Array:
 	t.append(_t("Progress", "Night missions",
 		"Win a lair [b]Brilliant[/b] and its night mission opens (the moon on the map).\n\n"
 		+ "Same lair, in darkness: you can only build where you can see. Your cave, towers, mines and wells light the ground around them, so each tower you build opens room for the next.\n\nNight missions earn their own stars."))
+	t.append(_t("Progress", "Score and Hall of Fame",
+		"Every won battle scores points:\n\n"
+		+ "• up to [b]1000[/b] for the gems you kept\n"
+		+ "• [b]+500[/b] for Wicked, [b]+1000[/b] for Brilliant\n"
+		+ "• [b]5[/b] for every second you skip by calling waves early\n"
+		+ "• [b]1[/b] for every gold coin left at the end (but hoarding gold makes heroes stronger)\n\n"
+		+ "Each lair further along the campaign is worth [b]10% more[/b], and night missions [b]half as much again[/b]. Your best score on each mission adds up to your total.\n\n"
+		+ "The [b]Hall of Fame[/b] on the map has the online leaderboard (the total and every lair, day and night), your [b]achievements[/b], and an optional account. Sign in to put your name on the board and to keep your scores and achievements on any device. Resetting progress keeps achievements and best scores."))
 	t.append(_t("Progress", "Tips",
 		"• Build your first towers near where the roads come close to the cave, so the den helps.\n"
 		+ "• Mix towers: Crypts to slow, Huts for crowds, Shrines for Knights.\n"

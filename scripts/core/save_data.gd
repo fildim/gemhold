@@ -1,11 +1,12 @@
 class_name SaveData
 extends RefCounted
 ## Campaign progress: unlocked levels, the best result on each (its stars are the skill points)
-## and skill tree ranks.
+## and skill tree ranks; also the best score on each mission, lifetime stats and achievements,
+## which outlive a progress reset and are shared with the online account (see Online).
 ## Stored as JSON in user:// (on Android that is the app's private storage).
 
 const PATH := "user://save.json"
-const VERSION := 3
+const VERSION := 4
 ## Ratings from worst to best, as returned by GameSim.rank().
 const RANKS: Array[String] = ["Plundered", "Survived", "Wicked", "Brilliant"]
 
@@ -13,6 +14,9 @@ var path := PATH
 var unlocked := 1        # number of campaign levels the player may start
 var best := {}           # level id -> {"rank": String, "kept": int}
 var skills := {}         # skill id -> rank
+var scores := {}         # mission id -> best score (GameSim.score)
+var stats := {}          # lifetime counters: "kills", "battles", "wins"
+var achievements := {}   # achievement id -> unix time it was earned
 
 
 ## Reads the save file, or starts fresh if it is missing or unreadable.
@@ -39,6 +43,12 @@ static func load_from(file_path := PATH) -> SaveData:
 			var m := s._skill_max(str(id))
 			if m > 0:
 				s.skills[str(id)] = clampi(int(sk[id]), 0, m)
+	for key in ["scores", "stats", "achievements"]:
+		var m = d.get(key, {})
+		if typeof(m) == TYPE_DICTIONARY:
+			var into: Dictionary = s.get(key)
+			for id in m:
+				into[str(id)] = maxi(0, int(m[id]))
 	if s.points_free() < 0:
 		s.skills.clear()   # damaged or edited file: refund everything
 	return s
@@ -51,7 +61,8 @@ func save() -> bool:
 	if f == null:
 		push_warning("Could not write save: %s" % error_string(FileAccess.get_open_error()))
 		return false
-	f.store_string(JSON.stringify({"version": VERSION, "unlocked": unlocked, "best": best, "skills": skills}, "\t"))
+	f.store_string(JSON.stringify({"version": VERSION, "unlocked": unlocked, "best": best, "skills": skills,
+		"scores": scores, "stats": stats, "achievements": achievements}, "\t"))
 	f.close()
 	var err := DirAccess.rename_absolute(tmp, path)
 	if err != OK:
@@ -95,6 +106,7 @@ func record(index: int, level_id: String, rank: String, kept: int, won: bool) ->
 	return won and improved
 
 
+## Scores, stats and achievements stay: they belong to the player, not to this run of the campaign.
 func reset() -> void:
 	unlocked = 1
 	best.clear()
@@ -147,3 +159,46 @@ func _skill_max(id: String) -> int:
 			if sk["id"] == id:
 				return int(sk["max"])
 	return 0
+
+
+# ---------------------------------------------------------------- scores, stats, achievements
+
+## Keeps a mission's score if it beats the best. Returns true if it did.
+func record_score(mission: String, score: int) -> bool:
+	if score <= int(scores.get(mission, 0)):
+		return false
+	scores[mission] = score
+	return true
+
+
+## The leaderboard total: every mission's best score added up.
+func total_score() -> int:
+	var n := 0
+	for id in scores:
+		n += int(scores[id])
+	return n
+
+
+func add_stat(key: String, n: int) -> void:
+	stats[key] = int(stats.get(key, 0)) + n
+
+
+func has_achievement(id: String) -> bool:
+	return achievements.has(id)
+
+
+## Marks an achievement earned. Returns true if it is new.
+func earn(id: String) -> bool:
+	if achievements.has(id):
+		return false
+	achievements[id] = int(Time.get_unix_time_from_system())
+	return true
+
+
+## Takes in what an online account remembers (best scores, achievements) without losing anything here.
+func merge_online(online_scores: Dictionary, online_achievements: Array) -> void:
+	for id in online_scores:
+		record_score(str(id), int(online_scores[id]))
+	for id in online_achievements:
+		if not achievements.has(str(id)):
+			achievements[str(id)] = int(Time.get_unix_time_from_system())

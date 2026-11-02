@@ -80,6 +80,9 @@ scripts/
   ui/symbols.gd          drawn fallback glyphs (★ ● ○) so they show in browsers too
   audio/audio.gd         sound effects and music (autoload SfxPlayer, called as Sfx.play)
   core/prefs.gd          sound, music and tutorial settings in user://settings.cfg
+  core/online.gd         optional account + leaderboard (Firebase Auth and Firestore over REST), login in user://account.cfg
+  data/achievements.gd   the achievements and when each is earned
+  ui/hall.gd             Hall of Fame: leaderboard, achievements, account
   main.gd                connects everything, handles taps
 tests/                   headless checks (see below)
 assets/fonts/            Grenze Gotisch and Alegreya Sans (SIL Open Font License, see OFL.txt)
@@ -106,6 +109,16 @@ godot --headless --script res://tests/scene_test.gd   # boots the real scene, ta
 godot --headless --script res://tests/tower_test.gd   # the three tower types side by side against set groups of heroes
 godot --headless --script res://tests/tutorial_test.gd  # the first-lair tips: where they point and how they move on
 ```
+
+The online test runs against the local Firebase emulators (needs Java 21+), never the real project:
+
+```
+firebase emulators:exec --only auth,firestore "godot --headless --path . -s res://tests/online_test.gd"
+```
+
+## Leaderboard and accounts
+
+Firebase project `gemhold`: **Authentication** (Email/Password) for accounts and **Firestore** for the leaderboard. Each signed-in player has one document `players/<uid>` with `name`, `total` (sum of best scores), `stars`, `scores` (best per mission; night keys end in `_night`) and `ach` (achievement ids). Anyone can read it; only its owner can write it (`firestore.rules`). Change the rules, then deploy them with `firebase deploy --only firestore:rules`. The web API key in `online.gd` is public by design. Scores are reported by the game, so a player who edits their save could fake one: fine for friends; delete a bad document in the Firebase console.
 
 ## Putting it on your Android phone
 

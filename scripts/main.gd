@@ -32,6 +32,9 @@ var _hero_tip := ""           # hero code the tip on screen introduces, or ""
 var guide: Control            # the player's guide, opened from the map
 var _arts_spent := -1         # skill points spent when the Dark Arts tip opened
 var _arts_intro := false      # the Dark Arts intro tip is up
+var online: Online            # the optional account and leaderboard
+var hall: Control             # Hall of Fame: leaderboard, achievements, account
+var _ids: Array = []          # every lair's level id, campaign order
 
 @onready var frame: Control = $MapFrame
 @onready var ground: Node2D = $MapFrame/Ground
@@ -62,10 +65,13 @@ func _ready() -> void:
 	frame.gui_input.connect(_on_map_input)
 	get_viewport().size_changed.connect(_layout)
 	save = SaveData.load_from()
+	online = Online.new()
+	add_child(online)
 	var infos := []
 	for p in LEVELS:
 		var lv := Level.load_from(p)
 		infos.append({"id": lv.id, "title": lv.title, "waves": lv.waves.size()})
+		_ids.append(lv.id)
 	select.setup(hud, infos, save)
 	select.level_chosen.connect(_choose)
 	skill_tree.setup(hud, save)
@@ -73,17 +79,27 @@ func _ready() -> void:
 	$UI.add_child(guide)
 	guide.setup(hud)
 	select.guide_pressed.connect(guide.open)
+	hall = preload("res://scripts/ui/hall.gd").new()
+	$UI.add_child(hall)
+	hall.setup(hud, save, online, infos)
+	select.hall_pressed.connect(hall.open)
+	hall.closed.connect(func() -> void: hall.visible = false)
 	guide.closed.connect(func() -> void: guide.visible = false)
 	select.skills_pressed.connect(func() -> void:
 		skill_tree.refresh()
 		skill_tree.visible = true)
 	skill_tree.closed.connect(func() -> void:
 		skill_tree.visible = false
+		_announce(Achievements.check_progress(save, _ids))
 		select.refresh())
 	# Keep a level loaded behind the map so the views always have something to draw.
 	_load_level(clampi(save.unlocked - 1, 0, LEVELS.size() - 1))
 	_show_map()
 	_layout.call_deferred()
+	# Players from before achievements existed get the campaign ones they already earned.
+	Achievements.check_progress(save, _ids)
+	save.save()
+	online.sync(save)
 
 
 func _show_map() -> void:
@@ -305,7 +321,7 @@ func _on_tip_skip() -> void:
 func _arts_tip() -> void:
 	var stage: int = Prefs.get_value("arts_tip", 0)
 	_arts_intro = false
-	if not select.visible or guide.visible:
+	if not select.visible or guide.visible or hall.visible:
 		spot.hide_tip()
 		return
 	if skill_tree.visible and not Prefs.get_value("arts_intro", false):
@@ -437,16 +453,28 @@ func _on_ended(won: bool) -> void:
 	var mission := SaveData.mission_id(level.id, night)
 	var stars_before := save.stars(mission)
 	var new_best := save.record(level_index, mission, sim.rank(), level.gems - sim.lost, won)
+	var score := sim.score(level_index + 1)
+	var old_score := int(save.scores.get(mission, 0))
+	save.record_score(mission, score)
+	save.add_stat("kills", sim.kills)
+	save.add_stat("battles", 1)
+	save.add_stat("wins", 1 if won else 0)
+	var got := Achievements.check_battle(save, sim, level_index + 1)
+	got.append_array(Achievements.check_progress(save, _ids))
 	save.save()
+	online.sync(save)
 	var night_opened := not had_night and save.night_unlocked(level.id)
-	hud.show_end(sim, level_index + 1 < LEVELS.size(), new_best, save.stars(mission) - stars_before, save.points_free(), night_opened)
+	hud.show_end(sim, level_index + 1 < LEVELS.size(), new_best, save.stars(mission) - stars_before, save.points_free(), night_opened,
+		score, old_score, got)
 
 
 ## Android back button: close the panel, cancel the meteor, or pause. On the map it closes the
 ## Guide or Dark Arts, or quits.
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_WM_GO_BACK_REQUEST:
-		if on_map and guide.visible:
+		if on_map and hall.visible:
+			hall.visible = false
+		elif on_map and guide.visible:
 			guide.visible = false
 		elif on_map and skill_tree.visible:
 			skill_tree.closed.emit()
@@ -466,3 +494,14 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_cancel"):
 		_deselect()
 		armed = false
+
+
+## Newly earned achievements outside a battle (the end card lists those from battles).
+func _announce(ids: Array[String]) -> void:
+	if ids.is_empty():
+		return
+	save.save()
+	online.sync(save)
+	var names := ids.map(func(id: String) -> String: return Achievements.find(id)["name"])
+	hud.toast("Achievement: " + ", ".join(names))
+	Sfx.play("rank")

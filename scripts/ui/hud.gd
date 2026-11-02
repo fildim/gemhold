@@ -655,7 +655,10 @@ func show_intro(level: Level, number: int, best_rank: String, night_open := fals
 	_show_card(level.title, txt, buttons)
 
 
-func show_end(sim: GameSim, has_next: bool, new_best: bool, new_stars := 0, free_points := 0, night_opened := false) -> void:
+## score is this battle's (GameSim.score), best_before the mission's best until now; earned lists new
+## achievement ids.
+func show_end(sim: GameSim, has_next: bool, new_best: bool, new_stars := 0, free_points := 0, night_opened := false,
+		score := 0, best_before := 0, earned_ach: Array[String] = []) -> void:
 	var kept := sim.level.gems - sim.lost
 	var txt: String
 	if sim.won:
@@ -669,12 +672,21 @@ func show_end(sim: GameSim, has_next: bool, new_best: bool, new_stars := 0, free
 			txt += "   [color=#a8977c]Lose no gems for Wicked.[/color]"
 		"Wicked":
 			txt += "   [color=#a8977c]Let no hero touch a gem for Brilliant.[/color]"
+	if sim.won:
+		txt += "\nScore: [b][color=#e8b84a]%s[/color][/b]" % _thousands(score)
+		if score > best_before and best_before > 0:
+			txt += "   [color=#e2683a]New high score![/color]"
+		elif best_before > score:
+			txt += "   [color=#a8977c]Best: %s[/color]" % _thousands(best_before)
 	if night_opened:
 		txt += "\n[b][color=#9fb4ff]Night mission unlocked for this lair![/color][/b]"
 	if new_best:
 		txt += "\n[color=#e2683a]New best for this lair. Progress saved.[/color]"
 	if new_stars > 0:
 		txt += "\n[b][color=#e8b84a]+%d star%s! You have %d skill point%s to spend in Dark Arts on the map.[/color][/b]" % [new_stars, "" if new_stars == 1 else "s", free_points, "" if free_points == 1 else "s"]
+	for id in earned_ach:
+		var a := Achievements.find(id)
+		txt += "\n[b][color=#c9c0ff]★ Achievement: %s[/color][/b] [color=#a8977c]%s[/color]" % [a["name"], a["text"]]
 	var buttons := []
 	if sim.won and has_next:
 		buttons.append(["Next lair", next_level_pressed])
@@ -703,3 +715,13 @@ class StatIcon extends Control:
 				draw_colored_polygon(pts, Color("7e6cf0"))
 			"gem":
 				Paint.gem(self, c, 9 * k)
+
+
+## 12345 as "12,345".
+static func _thousands(n: int) -> String:
+	var s := str(absi(n))
+	var out := ""
+	while s.length() > 3:
+		out = "," + s.right(3) + out
+		s = s.left(s.length() - 3)
+	return ("-" if n < 0 else "") + s + out

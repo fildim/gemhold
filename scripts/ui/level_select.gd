@@ -6,6 +6,7 @@ extends Control
 signal level_chosen(index: int)
 signal skills_pressed
 signal guide_pressed
+signal hall_pressed
 
 const Hud := preload("res://scripts/ui/hud.gd")
 
@@ -28,6 +29,7 @@ var _confirm: Control       # "Erase all progress?" dialog
 var _skills: Button
 var _sound: Button
 var _guide: Button
+var _hall: Button
 var _page := 0
 var _beaten := 0
 var _prev: Button
@@ -73,6 +75,13 @@ func setup(hud: Control, levels: Array, save: SaveData) -> void:
 	_guide.add_theme_font_size_override("font_size", 30)
 	_guide.pressed.connect(func() -> void: guide_pressed.emit())
 	add_child(_guide)
+	_hall = Button.new()
+	_hall.text = "Hall of Fame"
+	_hall.focus_mode = Control.FOCUS_NONE
+	_hall.custom_minimum_size = Vector2(0, 68)
+	_hall.add_theme_font_size_override("font_size", 30)
+	_hall.pressed.connect(func() -> void: hall_pressed.emit())
+	add_child(_hall)
 	_reset = Button.new()
 	_reset.focus_mode = Control.FOCUS_NONE
 	_reset.add_theme_font_size_override("font_size", 26)
@@ -155,6 +164,8 @@ func _layout() -> void:
 	_skills.position = Vector2(14, size.y - _skills.size.y - 12)
 	_guide.reset_size()
 	_guide.position = Vector2(_skills.position.x + _skills.size.x + 10, size.y - _guide.size.y - 12)
+	_hall.reset_size()
+	_hall.position = Vector2(_guide.position.x + _guide.size.x + 10, size.y - _hall.size.y - 12)
 	_prev.reset_size()
 	_prev.position = Vector2(14, _heading.position.y + 8)
 	_next.reset_size()
@@ -212,7 +223,8 @@ func _build_confirm() -> void:
 	box.add_child(h)
 	var t := Label.new()
 	t.text = "Every lair, star and skill point will be lost,
-and the tips will show again. This can't be undone."
+and the tips will show again. This can't be undone.
+Achievements and best scores are kept."
 	t.add_theme_font_size_override("font_size", 26)
 	box.add_child(t)
 	var row := HBoxContainer.new()

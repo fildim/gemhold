@@ -1,0 +1,23 @@
+rules_version = '2';
+// Online leaderboard: one document per signed-in player, readable by anyone,
+// written only by its owner. Scores are reported by the game, so a determined
+// player could fake them; the limits below just keep documents sane.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /players/{uid} {
+      allow read: if true;
+      allow delete: if request.auth != null && request.auth.uid == uid;
+      allow create, update: if request.auth != null && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['name', 'total', 'stars', 'scores', 'ach', 'updated'])
+        && request.resource.data.name is string
+        && request.resource.data.name.size() >= 2 && request.resource.data.name.size() <= 16
+        && request.resource.data.total is int
+        && request.resource.data.total >= 0 && request.resource.data.total <= 10000000
+        && request.resource.data.stars is int
+        && request.resource.data.stars >= 0 && request.resource.data.stars <= 200
+        && request.resource.data.scores is map && request.resource.data.scores.size() <= 100
+        && request.resource.data.ach is list && request.resource.data.ach.size() <= 64
+        && request.resource.data.updated == request.time;
+    }
+  }
+}
