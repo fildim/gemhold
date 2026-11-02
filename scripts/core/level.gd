@@ -5,7 +5,7 @@ extends RefCounted
 
 var id := ""
 var title := ""
-var intro := ""          # optional story text for the start screen
+var intro := ""          # optional story text (kept in the level files; the start card no longer shows it)
 var cols := 0
 var rows := 0
 var terrain := {}        # Vector2i -> "moss" | "frost" | "ash" | "lair"

@@ -628,21 +628,12 @@ func _on_card_button(sig: Signal) -> void:
 	sig.emit()
 
 
-## The first level teaches the rules; later ones show their own story text.
+## The start card: the goal, the lair's best rating and its night mission.
 func show_intro(level: Level, number: int, best_rank: String, night_open := false, night_best := "") -> void:
-	var txt: String
-	if number == 1:
-		txt = "You are the dark lord. Self-righteous heroes walk the roads to your cave to steal your %d gems. Keep them.\n\n" % level.gems
-		txt += "[b]Each tower needs its own ground.[/b] Warband Huts on green moss, Bone Crypts on frost, Cinder Shrines on ash.\n"
-		txt += "[b]Clear woods[/b] with mana to open more building spots and earn gold from the timber.\n"
-		txt += "[b]Kill a gem carrier[/b] and the gem floats home. Other heroes can snatch it on the way.\n"
-		txt += "[b]Call waves early[/b] for bonus gold. Spend mana on Meteor.\n\n"
-	else:
-		txt = "%s\n\nGuard all [b]%d gems[/b].\n\n" % [level.intro, level.gems]
+	var txt := "[b]Guard the gems!!![/b]\n\n"
 	txt += "[color=#a8977c]Lair %d · %s · %d waves[/color]" % [number, level.title, level.waves.size()]
 	if best_rank != "":
 		txt += "   [color=#e8b84a]Best: %s[/color]" % best_rank
-	txt += "\n[color=#a8977c]Stars (your skill points): ★ Survived (gems lost) · ★★ Wicked (none lost, but a hero touched one) · ★★★ Brilliant (no hero touched a gem)[/color]"
 	var buttons := [["Defend the hoard", start_pressed]]
 	if night_open:
 		txt += "\n\n[color=#9fb4ff][b]Night mission unlocked.[/b] Same lair in darkness: build only where you can see. Earns its own stars.[/color]"
@@ -659,11 +650,8 @@ func show_intro(level: Level, number: int, best_rank: String, night_open := fals
 ## achievement ids.
 func show_end(sim: GameSim, has_next: bool, new_best: bool, new_stars := 0, free_points := 0, night_opened := false,
 		score := 0, best_before := 0, earned_ach: Array[String] = []) -> void:
-	var kept := sim.level.gems - sim.lost
-	var txt: String
-	if sim.won:
-		txt = "All %d waves beaten%s. You kept [b]%d of %d[/b] gems.\n\n" % [sim.level.waves.size(), " at night" if sim.level.night else "", kept, sim.level.gems]
-	else:
+	var txt := ""
+	if not sim.won:
 		txt = "Heroes carried off every gem by wave %d.\n\n" % sim.wave
 	var earned := maxi(0, SaveData.RANKS.find(sim.rank()))
 	txt += "Rating: [b][color=#e8b84a]%s  %s[/color][/b][color=#5b4630]%s[/color]" % [sim.rank(), "★".repeat(earned), "★".repeat(3 - earned)]
