@@ -57,6 +57,21 @@ const ENEMIES := {
 	"x": {"name": "Champion", "hp": 1500, "spd": 0.5, "gold": 80, "r": 0.38, "armor": 6, "cap": 3, "rally": "3f"},
 }
 
+## Shown the first time each hero walks onto the map (see main.gd).
+const HERO_TIPS := {
+	"p": "Weak and slow, but comes in crowds. Huts mow them down.",
+	"f": "Sturdier, with a little armour that blunts Hut arrows.",
+	"s": "Fast and fragile. He can reach the cave before your towers notice. Slow him with a Crypt.",
+	"c": "Heals the heroes around him as he walks. Towers aim for him first; make sure something reaches him early.",
+	"k": "Huge health and heavy armour, and carries [b]2 gems[/b]. Shrine beams melt through armour; Hut arrows barely scratch him.",
+	"b": "His shield makes heroes near him take much less damage. Kill him first and the rest fall faster.",
+	"t": "Fast, fragile, and carries [b]2 gems[/b]. Crypts and the den's bolts are your best answer.",
+	"w": "His lantern clears slow and Dread from every hero near him. Crypts do little until he falls.",
+	"h": "His horn makes nearby heroes walk faster. Towers aim for him first.",
+	"r": "Below half health he runs twice as fast. Hit him early, or hard enough to finish him in one stretch.",
+	"x": "A towering hero with thick armour who carries [b]3 gems[/b]. Where he falls, Footmen rise and march on.",
+}
+
 const GUARD_RANGE := 1.2
 const HASTE_RANGE := 1.5
 const TOWER_COST_STEP := 15
@@ -64,7 +79,7 @@ const SELL_REFUND := 0.6
 const CLEAR_MANA := 15
 const CLEAR_GOLD := 15
 const MANA_MAX := 100.0
-const MANA_REGEN := 1.2      # per second
+const MANA_REGEN := 0.9      # per second, plus HOARD_REGEN per Mana Spring point
 const MANA_PER_KILL := 3.0
 const SPAWN_INTERVAL := 0.85
 const WAVE_HP_SCALE := 0.13  # +13% hero health per wave
@@ -86,6 +101,7 @@ const DROP_SPEED := 0.7      # dropped gems roll home along the road at this man
 ## The Hoard skills: each point adds this much starting gold or maximum mana (Starfall: see METEOR).
 const HOARD_GOLD := 50
 const HOARD_MANA := 15
+const HOARD_REGEN := 0.15   # Mana Spring: +0.15 mana per second per point
 
 const DEN := {"charges": 1, "range": 2.6, "dmg": 70, "refill": 8.0, "rate": 0.5}
 
@@ -94,7 +110,7 @@ const HOARD_METEOR := 0.25   # Starfall (The Hoard): +25% meteor damage per poin
 
 ## Tower veterancy: towers earn 1 XP per point of damage dealt and rank up at these totals.
 ## Each rank adds damage. A tower at rank ABILITY_RANK and upgrade level ABILITY_LEVEL unlocks its ability.
-const TOWER_XP_RANKS := [150, 500, 1200]
+const TOWER_XP_RANKS := [240, 800, 1900]
 const RANK_DMG := 0.08
 const ABILITY_RANK := 3
 const ABILITY_LEVEL := 3
@@ -156,6 +172,7 @@ const SKILLS := {
 		{"id": "den_charge", "name": "Hoard's Wrath", "text": "+1 den charge", "max": 5},
 		{"id": "hoard_gold", "name": "Buried Gold", "text": "+50 starting gold", "max": 5},
 		{"id": "hoard_mana", "name": "Deep Well", "text": "+15 max mana", "max": 4},
+		{"id": "hoard_regen", "name": "Mana Spring", "text": "+0.15 mana per second", "max": 3},
 		{"id": "meteor_dmg", "name": "Starfall", "text": "+25% meteor damage", "max": 3},
 	],
 }

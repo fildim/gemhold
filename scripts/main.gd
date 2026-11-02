@@ -28,6 +28,7 @@ var selected := Vector2i(-1, -1)
 var tutorial: Tutorial        # tips on the first lair, or null
 var spot: Control             # the tutorial spotlight, over everything
 var _site_tip := ""           # building kind the tip on screen explains, or ""
+var _hero_tip := ""           # hero code the tip on screen introduces, or ""
 var guide: Control            # the player's guide, opened from the map
 var _arts_spent := -1         # skill points spent when the Dark Arts tip opened
 var _arts_intro := false      # the Dark Arts intro tip is up
@@ -134,6 +135,7 @@ func _new_battle() -> void:
 	sim.ended.connect(_on_ended)
 	sim.sound.connect(Sfx.play)
 	tutorial = Tutorial.new() if Tutorial.wanted(level_index, night) else null
+	hud.reset_rating()
 	ground.setup(level, sim)
 	board.setup(level, sim, hud.bold_font)
 	frame.size = Vector2(level.cols, level.rows) * T
@@ -158,13 +160,21 @@ func _process(delta: float) -> void:
 		tutorial.update(sim, armed)
 		tip = tutorial.text(armed)
 	var site_cell := Vector2i(-1, -1)
+	var hero: GameSim.Enemy = null
 	_site_tip = ""
+	_hero_tip = ""
 	if tip == "" and started and not sim.over:
 		site_cell = _site_tip_cell()
 		if site_cell.x >= 0:
 			tip = _site_tip_text(sim.sites[site_cell])
+		else:
+			hero = _new_hero()
+			if hero:
+				tip = "[b]New hero: %s[/b]\n%s" % [hero.d["name"], Defs.HERO_TIPS.get(hero.code, "")]
 	if site_cell.x >= 0:
-		spot.show_tip(tip, _cell_rect(Vector2(site_cell)), true)
+		spot.show_tip(tip, _cell_rect(Vector2(site_cell)), true, "No more tips")
+	elif hero:
+		spot.show_tip(tip, _cell_rect(hero.pos - Vector2(0.75, 0.9), Vector2(1.5, 1.5)), true, "No more tips")
 	elif tip != "":
 		spot.show_tip(tip, _tip_rect(tutorial.target), tutorial.has_ok())
 	else:
@@ -186,11 +196,22 @@ func _process(delta: float) -> void:
 	hud.refresh(sim, armed, speed, paused)
 
 
-## The first time a lair has a barracks, mine or well, a tip explains it (Prefs "site_tip_<kind>").
+## The first time a hero of a kind walks onto the map, the battle stops and a tip introduces him
+## (Prefs "hero_tip_<code>"). Returns that hero, or null.
+func _new_hero() -> GameSim.Enemy:
+	var bounds := Rect2(0.3, 0.3, level.cols - 0.6, level.rows - 0.6)
+	for e: GameSim.Enemy in sim.enemies:
+		if e.hp > 0.0 and bounds.has_point(e.pos) and not Prefs.get_value("hero_tip_" + e.code, false):
+			_hero_tip = e.code
+			return e
+	return null
+
+
+## The first time a lair has a barracks, mine or well, a tip explains it (Prefs "building_tip_<kind>").
 ## Returns the cell of a building still to explain, or (-1, -1).
 func _site_tip_cell() -> Vector2i:
 	for s: GameSim.Site in sim.sites.values():
-		if not s.owned and not Prefs.get_value("site_tip_" + s.kind, false):
+		if not s.owned and not Prefs.get_value("building_tip_" + s.kind, false):
 			_site_tip = s.kind
 			return s.cell
 	_site_tip = ""
@@ -239,8 +260,13 @@ func _cell_rect(c: Vector2, tiles := Vector2.ONE) -> Rect2:
 
 func _on_tip_ok() -> void:
 	if not on_map and _site_tip != "":
-		Prefs.set_value("site_tip_" + _site_tip, true)
+		Prefs.set_value("building_tip_" + _site_tip, true)
 		_site_tip = ""
+		spot.hide_tip()
+		return
+	if not on_map and _hero_tip != "":
+		Prefs.set_value("hero_tip_" + _hero_tip, true)
+		_hero_tip = ""
 		spot.hide_tip()
 		return
 	if not on_map and tutorial:
@@ -252,15 +278,24 @@ func _on_tip_ok() -> void:
 	spot.hide_tip()
 
 
+## "Skip tutorial" ends the first lair's lessons and the Dark Arts tips; "No more tips" on a
+## building or hero tip stops those. Each leaves the other kind alone.
 func _on_tip_skip() -> void:
+	if not on_map and (_site_tip != "" or _hero_tip != ""):
+		for k in Defs.SITES:
+			Prefs.set_value("building_tip_" + k, true)
+		for k in Defs.ENEMIES:
+			Prefs.set_value("hero_tip_" + k, true)
+		_site_tip = ""
+		_hero_tip = ""
+		spot.hide_tip()
+		return
 	if tutorial:
 		tutorial.finish()
 		tutorial = null
 	Prefs.set_value("tutorial_done", true)
 	Prefs.set_value("arts_tip", 2)
 	Prefs.set_value("arts_intro", true)
-	for k in Defs.SITES:
-		Prefs.set_value("site_tip_" + k, true)
 	spot.hide_tip()
 
 
@@ -340,7 +375,9 @@ func _select(c: Vector2i) -> void:
 	board.selected = c
 	var xf := frame.get_global_transform_with_canvas()
 	var rect := Rect2(xf * (Vector2(c) * T), Vector2(T, T) * frame.scale)
-	hud.show_popup(sim.cell_info(c), rect)
+	var rg := sim.preview_range(c)
+	var circle := _cell_rect(Vector2(c) + Vector2(0.5 - rg, 0.5 - rg), Vector2(rg, rg) * 2.0) if rg > 0.0 else Rect2()
+	hud.show_popup(sim.cell_info(c), rect, circle)
 
 
 func _deselect() -> void:

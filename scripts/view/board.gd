@@ -135,14 +135,9 @@ func _draw_tower(tw: GameSim.Tower, tm: float) -> void:
 			_draw_crypt(x, y, s, lv, flash, tm)
 		_:
 			_draw_shrine(x, y, s, lv, flash, tm, tw.pos)
-	# veteran chevrons, and a violet halo once the ability is learned
+	# a violet halo once the ability is learned; the pips below show only the upgrade level
 	if tw.has_ability():
 		Paint.ellipse_outline(self, Vector2(x, y + s * 0.3), s * 0.46, s * 0.17, Color(0.79, 0.75, 1, 0.5 + 0.3 * sin(tm * 3.0)), 2.0)
-	for i in tw.rank:
-		var cy := y - s * 0.05 - i * s * 0.09
-		var cx := x - s * 0.42
-		draw_polyline(PackedVector2Array([Vector2(cx - s * 0.07, cy), Vector2(cx, cy - s * 0.05), Vector2(cx + s * 0.07, cy)]), OUTLINE, 5.0, true)
-		draw_polyline(PackedVector2Array([Vector2(cx - s * 0.07, cy), Vector2(cx, cy - s * 0.05), Vector2(cx + s * 0.07, cy)]), Color("c9c0ff"), 2.5, true)
 	for i in lv:
 		var px := x - (lv - 1) * s * 0.07 + i * s * 0.14
 		var py := y + s * 0.42

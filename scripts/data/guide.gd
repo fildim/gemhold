@@ -26,6 +26,7 @@ static func topics() -> Array:
 		+ "[color=#e8b84a]★[/color] [b]Survived[/b]: you lost some gems.\n"
 		+ "[color=#e8b84a]★★[/color] [b]Wicked[/b]: none lost, but a hero touched one.\n"
 		+ "[color=#e8b84a]★★★[/color] [b]Brilliant[/b]: no hero ever touched a gem.\n\n"
+		+ "The stars next to the gem count at the top show the best rating still within reach in this battle; a message tells you the moment it slips.\n\n"
 		+ "Stars are your skill points for Dark Arts. Only your best rating on each lair counts, so replay a lair to earn the stars you missed. A Brilliant win also opens that lair's night mission."))
 	t.append(_t("The basics", "Speed and pause",
 		"[b]1× / 2×[/b] runs the battle at double speed when a wave is easy.\n\n[b]Pause[/b] stops everything; on a phone the back button pauses too. You can still tap tiles and read their panels while paused."))
@@ -57,9 +58,9 @@ static func topics() -> Array:
 		% [hut["high_range"], shrine["high_range"], crypt["high_range"]]
 		+ "There are only a few on each map. Decide what that spot needs most: a Crypt to slow a long bend, a Hut to cover two roads, or a Shrine where Knights come through."))
 	t.append(_t("Towers", "Ranks and abilities",
-		"Towers earn experience from the damage they deal and rank up three times; each rank adds %d%% damage.\n\n" % roundi(Defs.RANK_DMG * 100)
-		+ "A tower at [b]rank %d[/b] that is also [b]upgraded to level III[/b] unlocks its ability: Volley (Hut), Dread (Crypt) or Lava (Shrine). Dark Arts can make each ability stronger.\n\n" % Defs.ABILITY_RANK
-		+ "Towers that see a lot of action rank up fastest, so upgrade the ones at the busy spots."))
+		"Towers grow battle-hardened from the damage they deal. It is not shown (the gold pips under a tower are its upgrade level), but it happens three times, each adding %d%% damage.\n\n" % roundi(Defs.RANK_DMG * 100)
+		+ "A fully battle-hardened tower that is also [b]upgraded to level III[/b] unlocks its ability: Volley (Hut), Dread (Crypt) or Lava (Shrine). Its name flashes over the tower and a violet ring appears. Dark Arts can make each ability stronger.\n\n"
+		+ "Towers that see a lot of action harden fastest, so upgrade the ones at the busy spots."))
 	t.append(_t("Towers", "Who towers shoot",
 		"Towers always pick, in this order:\n\n1. a hero [b]carrying a gem[/b]\n2. a [b]support hero[/b] (Cleric, Shieldbearer, Warden, Herald)\n3. whoever has the [b]least health[/b] left\n\nSo a thief running home is never ignored, and healers and protectors die first."))
 
@@ -128,7 +129,7 @@ static func topics() -> Array:
 	# ------------------------------------------------------------ progress
 	t.append(_t("Progress", "Dark Arts",
 		"Your skills, opened from the map. [b]Every star is a skill point.[/b]\n\n"
-		+ "Each tower kind has its own column: damage, attack speed, range, faster ranks and a stronger ability. [b]The Hoard[/b] column gives your den more charges, every battle more starting gold or mana, and the Meteor more damage.\n\n"
+		+ "Each tower kind has its own column: damage, attack speed, range, faster ranks and a stronger ability. [b]The Hoard[/b] column gives your den more charges, every battle more starting gold, more mana or faster mana (Mana Spring), and the Meteor more damage.\n\n"
 		+ "Tower skills apply to towers you build after buying them. [b]Refund all points[/b] any time to try a different plan."))
 	t.append(_t("Progress", "Night missions",
 		"Win a lair [b]Brilliant[/b] and its night mission opens (the moon on the map).\n\n"

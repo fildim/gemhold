@@ -62,13 +62,15 @@ func setup(hud: Control) -> void:
 
 
 ## Shows a tip (BBCode) with the hole over target (screen rect, may be empty). ok: show "Got it".
-func show_tip(text: String, target: Rect2, ok: bool) -> void:
+## skip: the label of the button that turns this kind of tip off.
+func show_tip(text: String, target: Rect2, ok: bool, skip := "Skip tutorial") -> void:
 	hole = target.grow(PAD) if target.has_area() else Rect2()
-	var key := text + str(ok)
+	var key := text + str(ok) + skip
 	if key != _key or not visible:
 		_key = key
 		_text.text = text
 		_ok.visible = ok
+		_skip.text = skip
 		var w := minf(760.0, size.x - 32.0)
 		_text.custom_minimum_size = Vector2(w - 40.0, 0)
 	visible = true

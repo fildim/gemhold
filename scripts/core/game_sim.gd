@@ -243,7 +243,7 @@ func update(dt: float) -> void:
 
 
 func mana_regen() -> float:
-	var r := Defs.MANA_REGEN
+	var r := Defs.MANA_REGEN + Defs.HOARD_REGEN * skill("hoard_regen")
 	for s: Site in sites.values():
 		if s.kind == "well" and s.owned:
 			r += Defs.SITES["well"]["regen"]
@@ -718,11 +718,10 @@ func _tower_xp(tw: Tower, amount: float) -> void:
 	var ranks: Array = Defs.TOWER_XP_RANKS
 	while tw.rank < ranks.size() and tw.xp >= ranks[tw.rank]:
 		tw.rank += 1
-		var msg := "Rank %d" % tw.rank
+		# Ranks stay hidden; only learning the ability is announced.
 		if tw.has_ability() and tw.rank == Defs.ABILITY_RANK:
-			msg = Defs.ABILITIES[tw.type]["name"] + "!"
-		_text(tw.pos + Vector2(0, -0.9), msg, Color("c9c0ff"))
-		sound.emit("rank")
+			_text(tw.pos + Vector2(0, -0.9), Defs.ABILITIES[tw.type]["name"] + "!", Color("c9c0ff"))
+			sound.emit("rank")
 
 
 ## One roll per slain hero, so it drops a coin, a potion or nothing, never both.
@@ -909,15 +908,10 @@ func cell_info(c: Vector2i) -> Dictionary:
 		var txt := "Damage %d, range %.1f\n" % [int(tw.stat("dmg")), tw.stat("range")]
 		if d["kind"] == "beam":
 			txt = "Burns %d to %d per second as it heats, range %.1f\n" % [int(tw.stat("dmg")), int(tw.stat("dmg") * Defs.HEAT_MAX), tw.stat("range")]
-		var ranks: Array = Defs.TOWER_XP_RANKS
-		if tw.rank < ranks.size():
-			txt += "Veteran rank %d/3 (next at %d/%d damage)\n" % [tw.rank, int(tw.xp), ranks[tw.rank]]
-		else:
-			txt += "Veteran rank 3/3 (max)\n"
 		if tw.has_ability():
 			txt += "%s: %s" % [ab["name"], ab["text"]]
 		else:
-			txt += "%s at rank %d and level III: %s" % [ab["name"], Defs.ABILITY_RANK, ab["text"]]
+			txt += "%s, once the tower is battle-hardened and level III: %s" % [ab["name"], ab["text"]]
 		return {"title": "%s, level %d" % [d["name"], tw.lvl], "text": txt, "actions": acts}
 	if not is_lit(c):
 		return {"title": "Darkness", "text": "You can't build where you can't see. Towers, mines and wells light the ground around them.", "actions": []}
@@ -1103,6 +1097,15 @@ func gems_left() -> int:
 func rank() -> String:
 	if not won:
 		return "Plundered"
+	if lost > 0:
+		return "Survived"
+	if touched:
+		return "Wicked"
+	return "Brilliant"
+
+
+## The best rating still within reach if the battle is won from here (shown during the battle).
+func rating_now() -> String:
 	if lost > 0:
 		return "Survived"
 	if touched:

@@ -187,6 +187,10 @@ func _on_reset() -> void:
 	Prefs.set_value("tutorial_done", false)
 	Prefs.set_value("arts_tip", 0)
 	Prefs.set_value("arts_intro", false)
+	for k in Defs.SITES:
+		Prefs.set_value("building_tip_" + k, false)
+	for k in Defs.ENEMIES:
+		Prefs.set_value("hero_tip_" + k, false)
 	_save.save()
 	refresh()
 	_hud.toast("Progress erased")
@@ -282,7 +286,7 @@ class Marker extends Control:
 				_draw_star(p, 10.0, Color(0, 0, 0, 0.45))
 
 	## Night mission badge: a faint crescent until unlocked, pale and glowing when open,
-	## gold once won, with one dot per night rating.
+	## gold once won, with its own three-star rating beside it.
 	func _draw_moon(m: Vector2) -> void:
 		var r := 11.0
 		var outer := Paint.ellipse_pts(m, r, r, 24)
@@ -296,8 +300,23 @@ class Marker extends Control:
 			Paint.glow(self, m, r * 2.2, Color(1, 0.8, 0.3, 0.35))
 		for poly in Geometry2D.clip_polygons(outer, bite):
 			draw_colored_polygon(poly, col)
-		for k in maxi(0, night):
-			draw_circle(m + Vector2(r + 5, -6 + k * 6), 2.2, Color("e8b84a"))
+		# Night rating: three stars beside the moon, gold when earned, dark until then.
+		if night >= 0:
+			for k in 3:
+				var p := m + Vector2(r + 14 + k * 24, 1)
+				if k < night:
+					Paint.glow(self, p, 22.0, Color(0.62, 0.7, 1, 0.8))
+					_draw_star(p, 12.0, Color("bcc9ff"))
+				else:
+					_draw_star(p, 12.0, Color(0, 0, 0, 0.55))
+					_draw_star_outline(p, 12.0, Color(0.62, 0.7, 1, 0.8))
+
+	func _draw_star_outline(c: Vector2, r: float, col: Color) -> void:
+		var pts := PackedVector2Array()
+		for i in 11:
+			var a := -PI / 2.0 + i * PI / 5.0
+			pts.append(c + Vector2(cos(a), sin(a)) * (r if i % 2 == 0 else r * 0.45))
+		draw_polyline(pts, col, 1.2, true)
 
 	func _draw_star(c: Vector2, r: float, col: Color) -> void:
 		var pts := PackedVector2Array()

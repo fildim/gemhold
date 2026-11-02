@@ -62,6 +62,9 @@ var _toast_tween: Tween
 var _overlay: Control
 var _card_box: VBoxContainer
 var _sound: Button
+var _map_arms := 0
+var _rating: Label
+var _rating_was := ""
 
 
 func _ready() -> void:
@@ -168,6 +171,9 @@ func _build_bars() -> void:
 	mana_box.add_child(_mana)
 	row.add_child(mana_box)
 	_gems = _stat(row, "gem")
+	_rating = Label.new()
+	_rating.add_theme_font_override("font", bold_font)
+	row.add_child(_rating)
 	_wave = Label.new()
 	_wave.add_theme_font_override("font", bold_font)
 	row.add_child(_wave)
@@ -187,7 +193,7 @@ func _build_bars() -> void:
 	_speed = _button(brow, "1×", speed_pressed)
 	_pause = _button(brow, "Pause", pause_pressed)
 	_sound = sound_button(brow)
-	_button(brow, "Map", map_pressed)
+	_add_map_button(brow)
 	for b in [_meteor, _cut]:
 		b.add_theme_color_override("font_color", Color("c9c0ff"))
 
@@ -228,6 +234,29 @@ func sound_button(parent: Control) -> Button:
 ## Updates every sound button's label (the map has one too).
 func refresh_sound() -> void:
 	get_tree().call_group("sound_buttons", "set_text", Sfx.label())
+
+
+## Leaving mid-battle throws the battle away, so the bar's Map button needs a second tap
+## within SELL_CONFIRM_TIME seconds, like Sell.
+func _add_map_button(parent: Control) -> void:
+	var b := _button(parent, "Map", map_pressed)
+	for c in b.pressed.get_connections():
+		b.pressed.disconnect(c["callable"])
+	var armed := [0]   # 0 = not armed, else which arming this is (a stale timer leaves a newer one alone)
+	b.pressed.connect(func() -> void:
+		if armed[0] > 0:
+			armed[0] = 0
+			b.text = "Map"
+			map_pressed.emit()
+			return
+		_map_arms += 1
+		armed[0] = _map_arms
+		var mine := _map_arms
+		b.text = "Leave? Tap again"
+		get_tree().create_timer(SELL_CONFIRM_TIME).timeout.connect(func() -> void:
+			if armed[0] == mine:
+				armed[0] = 0
+				b.text = "Map"))
 
 
 func _button(parent: Control, text: String, sig: Signal) -> Button:
@@ -287,7 +316,7 @@ func _set_side(on: bool, safe: Vector4) -> void:
 	_brow.alignment = BoxContainer.ALIGNMENT_BEGIN if on else BoxContainer.ALIGNMENT_CENTER
 	# The side panel (phones, wide windows) gets bigger text, and its buttons share out the
 	# whole height of the screen so they are easy to hit.
-	for l: Label in [_gold, _mana, _gems, _wave]:
+	for l: Label in [_gold, _mana, _gems, _rating, _wave]:
 		l.add_theme_font_size_override("font_size", 30 if on else 23)
 	_mana_bar.custom_minimum_size = Vector2(120 if on else 90, 14 if on else 12)
 	for b: Button in _brow.get_children():
@@ -340,6 +369,7 @@ func refresh(sim: GameSim, armed: bool, speed: int, paused: bool) -> void:
 	_mana_bar.value = sim.mana
 	_gems.text = "%d/%d" % [sim.gems_left(), sim.level.gems]
 	_wave.text = "Wave %d/%d" % [sim.wave, sim.level.waves.size()]
+	_show_rating(sim.rating_now())
 	if sim.wave < sim.level.waves.size():
 		var s := int(ceil(sim.timer))
 		_next.disabled = false
@@ -360,6 +390,21 @@ func refresh(sim: GameSim, armed: bool, speed: int, paused: bool) -> void:
 			a["button"].add_theme_color_override(c, col)
 
 
+## The rating the battle is heading for, as stars, with a message the moment it slips.
+func _show_rating(r: String) -> void:
+	var stars := maxi(1, SaveData.RANKS.find(r))
+	_rating.text = "★".repeat(stars) + " " + r
+	_rating.add_theme_color_override("font_color", {"Brilliant": GOLD, "Wicked": Color("e0a050"), "Survived": POOR}.get(r, BONE))
+	if _rating_was != "" and SaveData.RANKS.find(r) < SaveData.RANKS.find(_rating_was):
+		toast("A hero touched a gem: Brilliant is lost" if r == "Wicked" else "A gem was carried off: Wicked is lost")
+	_rating_was = r
+
+
+## Forget the last rating, so a fresh battle does not report a change.
+func reset_rating() -> void:
+	_rating_was = ""
+
+
 # ---------------------------------------------------------------- tile panel
 
 func _build_popup() -> void:
@@ -376,8 +421,9 @@ func popup_open() -> bool:
 	return _popup.visible
 
 
-## anchor is the selected tile's rectangle in screen coordinates.
-func show_popup(info: Dictionary, anchor: Rect2) -> void:
+## anchor is the selected tile's rectangle in screen coordinates; avoid (if it has an area) is the
+## range circle shown around it, which the panel keeps clear of when there is room.
+func show_popup(info: Dictionary, anchor: Rect2, avoid := Rect2()) -> void:
 	for c in _popup_box.get_children():
 		_popup_box.remove_child(c)   # now, so the panel can shrink to the new contents
 		c.queue_free()
@@ -421,11 +467,26 @@ func show_popup(info: Dictionary, anchor: Rect2) -> void:
 	_popup.visible = true
 	_popup.reset_size()
 	var ps := _popup.get_combined_minimum_size()
-	var p := Vector2(anchor.end.x + 6, anchor.position.y)
-	if p.x + ps.x > map_area.end.x:
-		p.x = anchor.position.x - ps.x - 6
-	p.x = clampf(p.x, map_area.position.x, map_area.end.x - ps.x)
-	p.y = clampf(p.y, map_area.position.y, map_area.end.y - ps.y)
+	var area := map_area
+	var keep := avoid.merge(anchor) if avoid.has_area() else anchor
+	# Beside the circle (right, left), then below or above it; otherwise whichever side of the
+	# tile has more room, so as little of the circle as possible is covered.
+	var tries := [
+		Vector2(keep.end.x + 6, anchor.position.y), Vector2(keep.position.x - ps.x - 6, anchor.position.y),
+		Vector2(anchor.position.x, keep.end.y + 6), Vector2(anchor.position.x, keep.position.y - ps.y - 6)]
+	var p := Vector2(INF, INF)
+	for t: Vector2 in tries:
+		var q := Vector2(t.x, clampf(t.y, area.position.y, area.end.y - ps.y))
+		if t.x == anchor.position.x:   # below or above: slide sideways, keep the vertical spot
+			q = Vector2(clampf(t.x, area.position.x, area.end.x - ps.x), t.y)
+		if Rect2(q, ps).grow(-1).intersects(keep) == false and area.encloses(Rect2(q, ps)):
+			p = q
+			break
+	if p.x == INF:
+		var right := area.end.x - anchor.end.x > anchor.position.x - area.position.x
+		p = Vector2(area.end.x - ps.x if right else area.position.x, anchor.position.y)
+	p.x = clampf(p.x, area.position.x, area.end.x - ps.x)
+	p.y = clampf(p.y, area.position.y, area.end.y - ps.y)
 	_popup.position = p
 
 
