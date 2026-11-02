@@ -17,6 +17,8 @@ var _stars: Label
 var _points: Label
 var _cols: HBoxContainer
 var _reset: Button
+var _reset_armed := false   # first tap on Refund done, waiting for the second
+var _reset_arms := 0        # counts armings, so a stale timer leaves a newer one alone
 var _back: Button
 
 
@@ -146,11 +148,29 @@ func _on_buy(id: String) -> void:
 		refresh()
 
 
+## Needs a second tap within Hud.SELL_CONFIRM_TIME seconds, like Sell.
 func _on_reset() -> void:
+	if not _reset_armed:
+		_reset_armed = true
+		_reset.text = "Refund all? Tap again"
+		_reset.add_theme_color_override("font_color", Hud.POOR)
+		_reset_arms += 1
+		var mine := _reset_arms
+		get_tree().create_timer(Hud.SELL_CONFIRM_TIME).timeout.connect(func() -> void:
+			if _reset_armed and mine == _reset_arms:
+				_disarm_reset())
+		return
+	_disarm_reset()
 	_save.reset_skills()
 	_save.save()
 	refresh()
 	_hud.toast("Points refunded")
+
+
+func _disarm_reset() -> void:
+	_reset_armed = false
+	_reset.text = "Refund all points"
+	_reset.add_theme_color_override("font_color", Hud.DIM)
 
 
 ## For the tutorial spotlight: the first skill a point can buy now, and the way back.
