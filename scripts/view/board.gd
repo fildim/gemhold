@@ -14,6 +14,7 @@ var armed := false
 
 
 var _fog: ImageTexture
+var _plates: Array = []   # level badge backgrounds: levels I-II, level III
 
 
 func setup(lv: Level, s: GameSim, f: Font) -> void:
@@ -138,13 +139,25 @@ func _draw_tower(tw: GameSim.Tower, tm: float) -> void:
 	# a violet halo once the ability is learned; the pips below show only the upgrade level
 	if tw.has_ability():
 		Paint.ellipse_outline(self, Vector2(x, y + s * 0.3), s * 0.46, s * 0.17, Color(0.79, 0.75, 1, 0.5 + 0.3 * sin(tm * 3.0)), 2.0)
-	for i in lv:
-		var px := x - (lv - 1) * s * 0.07 + i * s * 0.14
-		var py := y + s * 0.42
-		var pip := PackedVector2Array([Vector2(px, py - s * 0.05), Vector2(px + s * 0.04, py), Vector2(px, py + s * 0.05), Vector2(px - s * 0.04, py)])
-		draw_colored_polygon(pip, Color("e8b84a"))
-		pip.append(pip[0])
-		draw_polyline(pip, Color("5a3a10"), 1.0, true)
+	_draw_level_badge(Vector2(x + s * 0.3, y + s * 0.3), lv)
+
+
+## The upgrade level as a gold Roman numeral on a dark plaque at the tower's foot.
+func _draw_level_badge(c: Vector2, lv: int) -> void:
+	var txt: String = ["I", "II", "III"][clampi(lv, 1, 3) - 1]
+	var fs := 26
+	var w := font.get_string_size(txt, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + 14.0
+	var r := Rect2(c - Vector2(w / 2.0, 14.0), Vector2(w, 28.0))
+	if _plates.is_empty():
+		for col in [Color("a07a30"), Color("e8b84a")]:
+			var sb := StyleBoxFlat.new()
+			sb.bg_color = Color("1c140c")
+			sb.border_color = col
+			sb.set_border_width_all(2)
+			sb.set_corner_radius_all(6)
+			_plates.append(sb)
+	draw_style_box(_plates[1 if lv >= 3 else 0], r)
+	draw_string(font, Vector2(r.position.x + 7.0, c.y + 9.0), txt, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color("ffd86a"))
 
 
 func _draw_hut(x: float, y: float, s: float, lv: int, flash: bool, tm: float, seed_x: float) -> void:

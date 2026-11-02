@@ -673,7 +673,6 @@ func hurt(e: Enemy, dmg: float, pierce := false, src: Tower = null) -> void:
 		_tower_xp(src, dealt)
 	if e.hp <= 0.0:
 		gold += int(e.d["gold"])
-		mana = minf(mana_max, mana + Defs.MANA_PER_KILL)
 		_text(e.pos + Vector2(0, -0.3), "+%d" % int(e.d["gold"]), Color("e8b84a"))
 		sound.emit("die")
 		if e.carry > 0:

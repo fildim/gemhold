@@ -58,7 +58,7 @@ static func topics() -> Array:
 		% [hut["high_range"], shrine["high_range"], crypt["high_range"]]
 		+ "There are only a few on each map. Decide what that spot needs most: a Crypt to slow a long bend, a Hut to cover two roads, or a Shrine where Knights come through."))
 	t.append(_t("Towers", "Ranks and abilities",
-		"Towers grow battle-hardened from the damage they deal. It is not shown (the gold pips under a tower are its upgrade level), but it happens three times, each adding %d%% damage.\n\n" % roundi(Defs.RANK_DMG * 100)
+		"Towers grow battle-hardened from the damage they deal. It is not shown (the gold numeral at a tower's foot is its upgrade level), but it happens three times, each adding %d%% damage.\n\n" % roundi(Defs.RANK_DMG * 100)
 		+ "A fully battle-hardened tower that is also [b]upgraded to level III[/b] unlocks its ability: Volley (Hut), Dread (Crypt) or Lava (Shrine). Its name flashes over the tower and a violet ring appears. Dark Arts can make each ability stronger.\n\n"
 		+ "Towers that see a lot of action harden fastest, so upgrade the ones at the busy spots."))
 	t.append(_t("Towers", "Who towers shoot",
@@ -103,7 +103,7 @@ static func topics() -> Array:
 
 	# ------------------------------------------------------------ your powers
 	t.append(_t("Your powers", "Mana",
-		"The purple bar. Mana refills by itself (%.1f a second) and with every kill (+%d). It pays for the Meteor and for cutting woods, mines and wells.\n\nIt stops filling when the bar is full, so spend it." % [Defs.MANA_REGEN, roundi(Defs.MANA_PER_KILL)]))
+		"The purple bar. Mana refills slowly by itself (%.1f a second), faster with Mana Wells and the Mana Spring skill; kills give none. It pays for the Meteor and for cutting woods, mines and wells.\n\nIt stops filling when the bar is full, so spend it." % Defs.MANA_REGEN))
 	t.append(_t("Your powers", "Meteor",
 		"Costs [b]%d mana[/b]. Tap Meteor, then tap the map. A moment later it lands for [b]%d damage[/b] to every hero within %.1f tiles, through armour and shields.\n\n"
 		% [Defs.METEOR["cost"], Defs.METEOR["dmg"], Defs.METEOR["radius"]]

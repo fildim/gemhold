@@ -24,7 +24,7 @@ var _markers: Array = []
 var _heading: Label
 var _sub: Label
 var _reset: Button
-var _reset_armed := false
+var _confirm: Control       # "Erase all progress?" dialog
 var _skills: Button
 var _sound: Button
 var _guide: Button
@@ -130,8 +130,9 @@ func refresh() -> void:
 			_beaten += 1
 	var free := _save.points_free()
 	_skills.text = "Dark Arts · ★ %d%s" % [_save.points_total(), "  (%d to spend)" % free if free > 0 else ""]
-	_reset_armed = false
 	_reset.text = "Reset progress"
+	if _confirm:
+		_confirm.visible = false
 	# Open on the chapter of the newest lair the player may play.
 	_show_page((mini(_save.unlocked, _levels.size()) - 1) / PER_PAGE)
 
@@ -158,6 +159,8 @@ func _layout() -> void:
 	_prev.position = Vector2(14, _heading.position.y + 8)
 	_next.reset_size()
 	_next.position = Vector2(size.x - _next.size.x - 14, _heading.position.y + 8)
+	if _confirm:
+		_confirm.size = size
 	queue_redraw()
 
 
@@ -176,13 +179,68 @@ func _on_marker(i: int) -> void:
 		_hud.toast("Defend the previous lair first")
 
 
-## Two taps, so a stray touch can't wipe the campaign.
+## Asks first, in a dialog, so a stray touch can't wipe the campaign.
 func _on_reset() -> void:
-	if not _reset_armed:
-		_reset_armed = true
-		_reset.text = "Tap again to erase all progress"
-		_layout()
-		return
+	if _confirm == null:
+		_build_confirm()
+	_confirm.size = size
+	_confirm.visible = true
+
+
+func _build_confirm() -> void:
+	_confirm = Control.new()
+	_confirm.mouse_filter = Control.MOUSE_FILTER_STOP
+	add_child(_confirm)
+	var dim := ColorRect.new()
+	dim.color = Color(0.05, 0.04, 0.03, 0.85)
+	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_confirm.add_child(dim)
+	var center := CenterContainer.new()
+	center.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_confirm.add_child(center)
+	var card := PanelContainer.new()
+	card.add_theme_stylebox_override("panel", _hud._box(Hud.PANEL, Hud.POOR, 2, 12, 24))
+	center.add_child(card)
+	var box := VBoxContainer.new()
+	box.add_theme_constant_override("separation", 16)
+	card.add_child(box)
+	var h := Label.new()
+	h.text = "Erase all progress?"
+	h.add_theme_font_override("font", _hud.display_font)
+	h.add_theme_font_size_override("font_size", 44)
+	h.add_theme_color_override("font_color", Hud.GOLD)
+	box.add_child(h)
+	var t := Label.new()
+	t.text = "Every lair, star and skill point will be lost,
+and the tips will show again. This can't be undone."
+	t.add_theme_font_size_override("font_size", 26)
+	box.add_child(t)
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 14)
+	box.add_child(row)
+	var erase := Button.new()
+	erase.text = "Erase everything"
+	erase.focus_mode = Control.FOCUS_NONE
+	erase.custom_minimum_size = Vector2(0, 60)
+	erase.add_theme_font_size_override("font_size", 26)
+	erase.add_theme_stylebox_override("normal", _hud._box(Color("3a1712"), Color("8a2e22"), 2, 8, 20))
+	erase.add_theme_stylebox_override("hover", _hud._box(Color("4a1d16"), Color("b23a2a"), 2, 8, 20))
+	erase.add_theme_color_override("font_color", Hud.POOR)
+	erase.add_theme_color_override("font_hover_color", Hud.POOR)
+	erase.pressed.connect(_erase)
+	row.add_child(erase)
+	var cancel := Button.new()
+	cancel.text = "Cancel"
+	cancel.focus_mode = Control.FOCUS_NONE
+	cancel.custom_minimum_size = Vector2(160, 60)
+	cancel.add_theme_font_size_override("font_size", 26)
+	cancel.pressed.connect(func() -> void: _confirm.visible = false)
+	row.add_child(cancel)
+	_confirm.visible = false
+
+
+func _erase() -> void:
+	_confirm.visible = false
 	_save.reset()
 	Prefs.set_value("tutorial_done", false)
 	Prefs.set_value("arts_tip", 0)
@@ -230,7 +288,7 @@ class Marker extends Control:
 	signal pressed(index: int)
 
 	const R := 34.0
-	const SIZE := Vector2(240, 140)
+	const SIZE := Vector2(240, 160)
 
 	var index := 0
 	var title := ""
@@ -274,7 +332,7 @@ class Marker extends Control:
 			var w := number_font.get_string_size(num, HORIZONTAL_ALIGNMENT_LEFT, -1, 34).x
 			draw_string(number_font, c + Vector2(-w / 2.0, 12), num, HORIZONTAL_ALIGNMENT_LEFT, -1, 34, Color("efe4cc"))
 		if not locked:
-			_draw_moon(c + Vector2(R * 1.05, -R * 0.55))
+			_draw_moon(Vector2(size.x / 2.0 - 36.0, R * 2.0 + 72))
 		var tc := Color("efe4cc") if not locked else Color("a8977c", 0.6)
 		draw_string(font, Vector2(0, R * 2.0 + 24), title, HORIZONTAL_ALIGNMENT_CENTER, size.x, 25, tc)
 		# Best rating as three stars: gold ones earned, dark ones still to win.
@@ -286,7 +344,7 @@ class Marker extends Control:
 				_draw_star(p, 10.0, Color(0, 0, 0, 0.45))
 
 	## Night mission badge: a faint crescent until unlocked, pale and glowing when open,
-	## gold once won, with its own three-star rating beside it.
+	## gold once won, with its own three-star rating beside it, on a row under the day stars.
 	func _draw_moon(m: Vector2) -> void:
 		var r := 11.0
 		var outer := Paint.ellipse_pts(m, r, r, 24)
@@ -300,16 +358,16 @@ class Marker extends Control:
 			Paint.glow(self, m, r * 2.2, Color(1, 0.8, 0.3, 0.35))
 		for poly in Geometry2D.clip_polygons(outer, bite):
 			draw_colored_polygon(poly, col)
-		# Night rating: three stars beside the moon, gold when earned, dark until then.
+		# Night rating: three stars beside the moon, moonlit when earned, dark until then.
 		if night >= 0:
 			for k in 3:
-				var p := m + Vector2(r + 14 + k * 24, 1)
+				var p := m + Vector2(26 + k * 22, 1)
 				if k < night:
-					Paint.glow(self, p, 22.0, Color(0.62, 0.7, 1, 0.8))
-					_draw_star(p, 12.0, Color("bcc9ff"))
+					Paint.glow(self, p, 20.0, Color(0.62, 0.7, 1, 0.8))
+					_draw_star(p, 10.0, Color("bcc9ff"))
 				else:
-					_draw_star(p, 12.0, Color(0, 0, 0, 0.55))
-					_draw_star_outline(p, 12.0, Color(0.62, 0.7, 1, 0.8))
+					_draw_star(p, 10.0, Color(0, 0, 0, 0.55))
+					_draw_star_outline(p, 10.0, Color(0.62, 0.7, 1, 0.8))
 
 	func _draw_star_outline(c: Vector2, r: float, col: Color) -> void:
 		var pts := PackedVector2Array()
