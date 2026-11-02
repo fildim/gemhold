@@ -382,7 +382,9 @@ func _on_map_input(event: InputEvent) -> void:
 		_deselect()   # a map tap while a panel is open just closes it
 		return
 	var c := Vector2i(floori(p.x), floori(p.y))
-	if level.in_bounds(c):
+	if level.in_bounds(c) and level.road.has(c) and not sim.sites.has(c):
+		hud.toast("Nothing can be built on the hero road")   # a passing note, no panel to close
+	elif level.in_bounds(c):
 		_select(c)
 
 
