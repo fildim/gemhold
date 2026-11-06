@@ -48,6 +48,8 @@ var _mana: Label
 var _mana_bar: ProgressBar
 var _gems: Label
 var _wave: Label
+var _rival: Label          # the rival's progress during an online race, in a badge over the map corner
+var _rival_box: PanelContainer
 var _next: Button
 var _meteor: Button
 var _cut: Button
@@ -188,7 +190,7 @@ func _build_bars() -> void:
 	_bottom.add_child(brow)
 	_next = _button(brow, "Next wave", next_wave_pressed)
 	_next.add_theme_stylebox_override("normal", _box(Color("3d2a12"), Color("8a6420"), 4, 8, 14))
-	_meteor = _button(brow, "Meteor 60", meteor_pressed)
+	_meteor = _button(brow, "Meteor %d" % Defs.METEOR["cost"], meteor_pressed)
 	_cut = _button(brow, "Cut woods 15", cut_pressed)
 	_speed = _button(brow, "1×", speed_pressed)
 	_pause = _button(brow, "Pause", pause_pressed)
@@ -536,6 +538,16 @@ func _build_toast() -> void:
 	_toast_label.add_theme_font_override("font", bold_font)
 	_toast.add_child(_toast_label)
 	add_child(_toast)
+	_rival_box = PanelContainer.new()
+	_rival_box.add_theme_stylebox_override("panel", _box(Color(0, 0, 0, 0.7), Color("e2683a"), 1, 10, 12))
+	_rival_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_rival_box.visible = false
+	_rival = Label.new()
+	_rival.add_theme_font_override("font", bold_font)
+	_rival.add_theme_font_size_override("font_size", 26)
+	_rival.add_theme_color_override("font_color", Color("e2683a"))
+	_rival_box.add_child(_rival)
+	add_child(_rival_box)
 
 
 func toast(msg: String) -> void:
@@ -681,6 +693,42 @@ func show_end(sim: GameSim, has_next: bool, new_best: bool, new_stars := 0, free
 	buttons.append(["Play again", restart_pressed])
 	buttons.append(["Map", map_pressed])
 	_show_card("The hoard holds" if sim.won else "The hoard is empty", txt, buttons)
+
+
+## The rival's badge in the map's top-left corner during an online race (Online.race_progress);
+## "" hides it.
+func set_rival(rival_name: String, p: Dictionary = {}) -> void:
+	_rival_box.visible = rival_name != ""
+	if not _rival_box.visible:
+		return
+	if p.get("done", false):
+		_rival.text = "%s: %s" % [rival_name, "survived" if p.get("won", false) else "fell at wave %d" % p.get("wave", 0)]
+	else:
+		_rival.text = "%s: wave %d · %d gems" % [rival_name, p.get("wave", 0), p.get("gems", 0)]
+	_rival_box.reset_size()
+	_rival_box.position = map_area.position + Vector2(8, 8)
+
+
+## The end card of an online race. me and rival are Online.race_progress records; while the rival
+## is still playing, the card says so and is shown again when they finish.
+func show_race_end(me: Dictionary, rival: Dictionary, rival_name: String) -> void:
+	var line := func(who: String, p: Dictionary) -> String:
+		if not p.get("done", false):
+			return "%s: [color=#a8977c]still playing, wave %d · %d gems · %d kills[/color]" % [who, p.get("wave", 0), p.get("gems", 0), p.get("kills", 0)]
+		if p.get("won", false):
+			return "%s: [b][color=#e8b84a]survived[/color][/b] with %d gems · %d kills · score [b]%s[/b]" % [who, p.get("gems", 0), p.get("kills", 0), _thousands(int(p.get("score", 0)))]
+		return "%s: [color=#e2683a]fell at wave %d[/color] · %d kills" % [who, p.get("wave", 0), p.get("kills", 0)]
+	var txt: String = line.call("You", me) + "\n" + line.call(rival_name, rival)
+	var title := "Waiting for %s…" % rival_name
+	if rival.get("done", false):
+		match Online.race_compare(me, rival):
+			1:
+				title = "You win the race!"
+			-1:
+				title = "%s wins the race" % rival_name
+			_:
+				title = "A draw!"
+	_show_card(title, txt, [["Map", map_pressed]])
 
 
 ## Small drawn icons for the stats bar.

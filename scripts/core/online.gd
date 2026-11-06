@@ -202,7 +202,7 @@ func upload(save: SaveData) -> String:
 
 
 ## The top players by `field` ("total", or "scores.<score_key>" for one mission), best first:
-## [{"uid", "name", "value", "stars", "ach"}]. Returns {"error": String} on failure.
+## [{"uid", "name", "value", "stars", "ach", "scores"}]. Returns {"error": String} on failure.
 func top(field: String, limit := 50) -> Variant:
 	var q := {"structuredQuery": {
 		"from": [{"collectionId": "players"}],
@@ -217,8 +217,13 @@ func top(field: String, limit := 50) -> Variant:
 		if typeof(item) != TYPE_DICTIONARY or not item.has("document"):
 			continue
 		var f: Dictionary = item["document"].get("fields", {})
-		var value: Variant = _value(f.get("total", {})) if field == "total" else _map(f.get("scores", {})).get(field.get_slice(".", 1), 0)
+		var sc := _map(f.get("scores", {}))
+		var value: Variant = _value(f.get("total", {})) if field == "total" else sc.get(field.get_slice(".", 1), 0)
+		var scores := {}
+		for k: String in sc:
+			scores[k] = int(sc[k])
 		rows.append({
+			"scores": scores,
 			"uid": str(item["document"]["name"]).get_file(),
 			"name": str(_value(f.get("name", {}))),
 			"value": int(value),
@@ -226,6 +231,131 @@ func top(field: String, limit := 50) -> Variant:
 			"ach": _list(f.get("ach", {})).size(),
 		})
 	return rows
+
+
+# ---------------------------------------------------------------- races
+# A race is one document, races/<code>: {host, host_name, level, state, created, h} from the host,
+# then {guest, guest_name, g} when a rival joins and state turns "on". h and g are each racer's
+# progress ({wave, gems, kills, score, done, won}), which only that racer may write (firestore.rules).
+
+const RACE_LETTERS := "ABCDEFGHJKMNPQRSTUVWXYZ23456789"   # no I, L, O, 0 or 1 to misread
+const RACE_CODE_LEN := 5
+
+
+## Opens a race on level_id. Returns {"code": String}, or {"error": String}.
+func race_host(level_id: String) -> Dictionary:
+	if not signed_in():
+		return {"error": "Sign in first"}
+	for attempt in 4:   # a code already taken: try another
+		var code := ""
+		for i in RACE_CODE_LEN:
+			code += RACE_LETTERS[randi() % RACE_LETTERS.length()]
+		var doc := {
+			"name": "projects/%s/databases/(default)/documents/races/%s" % [PROJECT, code],
+			"fields": _typed_fields({"host": uid, "host_name": player_name, "level": level_id, "state": "open", "h": race_progress()}),
+		}
+		var body := {"writes": [{"update": doc, "currentDocument": {"exists": false},
+			"updateTransforms": [{"fieldPath": "created", "setToServerValue": "REQUEST_TIME"}]}]}
+		var r := await _call("POST", _docs + ":commit", body, true)
+		if r["ok"]:
+			return {"code": code}
+		if not str(r["error"]).contains("exists") and not str(r["error"]).contains("ALREADY"):
+			return {"error": r["error"]}
+	return {"error": "Could not open a race: try again"}
+
+
+## Joins the open race with this code. Returns the race (see race_get), or {"error": String}.
+func race_join(code: String) -> Dictionary:
+	code = code.strip_edges().to_upper()
+	var race := await race_get(code)
+	if race.has("error"):
+		return race
+	if race["host"] == uid:
+		return {"error": "That is your own race: give the code to your rival"}
+	if race["state"] != "open":
+		return {"error": "That race has already begun"}
+	var doc := {
+		"name": "projects/%s/databases/(default)/documents/races/%s" % [PROJECT, code],
+		"fields": _typed_fields({"guest": uid, "guest_name": player_name, "state": "on", "g": race_progress()}),
+	}
+	var body := {"writes": [{"update": doc, "updateMask": {"fieldPaths": ["guest", "guest_name", "state", "g"]},
+		"currentDocument": {"exists": true}}]}
+	var r := await _call("POST", _docs + ":commit", body, true)
+	if not r["ok"]:
+		return {"error": r["error"]}
+	return await race_get(code)
+
+
+## The race with this code: {code, host, host_name, guest, guest_name, level, state, h, g}, or {"error"}.
+func race_get(code: String) -> Dictionary:
+	if code.length() != RACE_CODE_LEN:
+		return {"error": "A race code has %d letters" % RACE_CODE_LEN}
+	var r := await _call("GET", _docs + "/races/" + code, null, true)
+	if not r["ok"]:
+		return {"error": "No race with that code" if str(r["error"]).contains("NOT_FOUND") or str(r["error"]).contains("not found") else r["error"]}
+	var f: Dictionary = r["data"].get("fields", {})
+	var out := {"code": code, "guest": "", "guest_name": "", "g": race_progress()}
+	for k: String in f:
+		out[k] = _value(f[k])
+	return out
+
+
+## Reports this racer's progress: side is "h" (host) or "g" (guest).
+func race_report(code: String, side: String, progress: Dictionary) -> String:
+	var doc := {
+		"name": "projects/%s/databases/(default)/documents/races/%s" % [PROJECT, code],
+		"fields": _typed_fields({side: progress}),
+	}
+	var body := {"writes": [{"update": doc, "updateMask": {"fieldPaths": [side]}, "currentDocument": {"exists": true}}]}
+	var r := await _call("POST", _docs + ":commit", body, true)
+	return "" if r["ok"] else r["error"]
+
+
+## The host calls off a race nobody joined.
+func race_cancel(code: String) -> void:
+	await _call("DELETE", _docs + "/races/" + code, null, true)
+
+
+## A racer's progress record; with no sim, the one for a battle not begun.
+static func race_progress(sim: GameSim = null, done := false) -> Dictionary:
+	if sim == null:
+		return {"wave": 0, "gems": 0, "kills": 0, "score": 0, "done": false, "won": false}
+	return {"wave": sim.wave, "gems": sim.gems_left(), "kills": sim.kills, "score": sim.score(1) if sim.won else 0,
+		"done": done or sim.over, "won": sim.won}
+
+
+## Who won between two finished racers' progress: 1 if a, -1 if b, 0 for a draw. Surviving beats
+## falling; between survivors the higher score wins, between the fallen whoever lasted more waves,
+## then more kills.
+static func race_compare(a: Dictionary, b: Dictionary) -> int:
+	if a.get("won", false) != b.get("won", false):
+		return 1 if a.get("won", false) else -1
+	var keys := ["score", "gems", "kills"] if a.get("won", false) else ["wave", "kills"]
+	for k in keys:
+		if int(a.get(k, 0)) != int(b.get(k, 0)):
+			return 1 if int(a.get(k, 0)) > int(b.get(k, 0)) else -1
+	return 0
+
+
+## Plain values as Firestore typed fields (strings, ints, floats, bools and nested dictionaries).
+static func _typed_fields(d: Dictionary) -> Dictionary:
+	var out := {}
+	for k in d:
+		out[k] = _typed(d[k])
+	return out
+
+
+static func _typed(v: Variant) -> Dictionary:
+	match typeof(v):
+		TYPE_BOOL:
+			return {"booleanValue": v}
+		TYPE_INT:
+			return {"integerValue": str(v)}
+		TYPE_FLOAT:
+			return {"doubleValue": v}
+		TYPE_DICTIONARY:
+			return {"mapValue": {"fields": _typed_fields(v)}}
+	return {"stringValue": str(v)}
 
 
 # ---------------------------------------------------------------- plumbing

@@ -756,7 +756,10 @@ func _roll_loot(e: Enemy) -> void:
 	else:
 		l.kind = "potion"
 		l.amount = Defs.LOOT_POTION_MANA
-	loot.append(l)
+	if wave >= level.waves.size():
+		_take_loot(l)   # no wave comes after the last to gather it, so it is taken at once
+	else:
+		loot.append(l)
 
 
 ## Picks up the loot nearest to pos (in tiles), if any is within reach. Returns true if something was taken.

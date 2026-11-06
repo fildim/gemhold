@@ -35,6 +35,9 @@ var _arts_intro := false      # the Dark Arts intro tip is up
 var online: Online            # the optional account and leaderboard
 var hall: Control             # Hall of Fame: leaderboard, achievements, account
 var _ids: Array = []          # every lair's level id, campaign order
+var race := {}                # the online race being played (Online.race_get + "side"), or {}
+var _race_t := 0.0            # seconds to the next progress report
+var _race_busy := false
 
 @onready var frame: Control = $MapFrame
 @onready var ground: Node2D = $MapFrame/Ground
@@ -84,6 +87,7 @@ func _ready() -> void:
 	hall.setup(hud, save, online, infos)
 	select.hall_pressed.connect(hall.open)
 	hall.closed.connect(func() -> void: hall.visible = false)
+	hall.race_ready.connect(_start_race)
 	guide.closed.connect(func() -> void: guide.visible = false)
 	select.skills_pressed.connect(func() -> void:
 		skill_tree.refresh()
@@ -103,6 +107,7 @@ func _ready() -> void:
 
 
 func _show_map() -> void:
+	_leave_race()
 	on_map = true
 	started = false
 	_deselect()
@@ -146,11 +151,11 @@ func _load_level(i: int) -> void:
 
 
 func _new_battle() -> void:
-	sim = GameSim.new(level, save.skills)
+	sim = GameSim.new(level, save.skills if race.is_empty() else {})   # races are fair: no Dark Arts
 	sim.toast.connect(hud.toast)
 	sim.ended.connect(_on_ended)
 	sim.sound.connect(Sfx.play)
-	tutorial = Tutorial.new() if Tutorial.wanted(level_index, night) else null
+	tutorial = Tutorial.new() if Tutorial.wanted(level_index, night) and race.is_empty() else null
 	hud.reset_rating()
 	ground.setup(level, sim)
 	board.setup(level, sim, hud.bold_font)
@@ -167,6 +172,10 @@ func _restart() -> void:
 
 
 func _process(delta: float) -> void:
+	if not race.is_empty():
+		_race_t -= delta
+		if _race_t <= 0.0 and not _race_busy:
+			_race_tick()
 	if on_map:
 		_arts_tip()
 		return
@@ -451,6 +460,10 @@ func _on_ended(won: bool) -> void:
 		tutorial = null
 	spot.hide_tip()
 	_deselect()
+	if not race.is_empty():
+		_race_t = 0.0   # report the finish now; the race card shows when the rival's answer is in
+		hud.show_race_end(Online.race_progress(sim), race.get("rival", Online.race_progress()), _rival_name())
+		return
 	var had_night := save.night_unlocked(level.id)
 	var mission := SaveData.mission_id(level.id, night)
 	var stars_before := save.stars(mission)
@@ -507,3 +520,67 @@ func _announce(ids: Array[String]) -> void:
 	var names := ids.map(func(id: String) -> String: return Achievements.find(id)["name"])
 	hud.toast("Achievement: " + ", ".join(names))
 	Sfx.play("rank")
+
+
+# ---------------------------------------------------------------- online race
+
+## A race has begun (from the Hall of Fame): play its lair at once, by day, without Dark Arts.
+func _start_race(r: Dictionary, side: String) -> void:
+	var i := _ids.find(r["level"])
+	if i < 0:
+		hud.toast("That lair is not in this version of the game: update it")
+		return
+	race = r.duplicate()
+	race["side"] = side
+	race["rival"] = r["g" if side == "h" else "h"]
+	_race_t = 0.0
+	hall.visible = false
+	on_map = false
+	select.visible = false
+	frame.visible = true
+	hud.set_battle_visible(true)
+	night = false
+	_load_level(i)
+	_layout()
+	started = true
+	hud.set_rival(_rival_name(), race["rival"])
+	hud.toast("Race against %s: go!" % _rival_name())
+	Sfx.play("horn")
+
+
+func _rival_name() -> String:
+	return str(race.get("guest_name" if race.get("side") == "h" else "host_name", "Rival"))
+
+
+## Every couple of seconds: send this player's progress (when it changed) and fetch the rival's.
+func _race_tick() -> void:
+	_race_busy = true
+	_race_t = 2.5
+	var code: String = race["code"]
+	var side: String = race["side"]
+	var me := Online.race_progress(sim)
+	if me != race.get("sent", {}):
+		if await online.race_report(code, side, me) == "" and race.get("code") == code:
+			race["sent"] = me
+	var r := await online.race_get(code)
+	_race_busy = false
+	if race.get("code") != code or r.has("error"):
+		return
+	var rival: Dictionary = r["g" if side == "h" else "h"]
+	race["rival"] = rival
+	hud.set_rival(_rival_name(), rival)
+	if sim.over:
+		hud.show_race_end(me, rival, _rival_name())
+		if rival.get("done", false) and race.get("sent", {}) == me:
+			_race_t = INF   # both finished and told: nothing more to send or fetch
+
+
+## Leaving a race before it is over gives it up: the rival is told this player fell.
+func _leave_race() -> void:
+	if race.is_empty():
+		return
+	var p := Online.race_progress(sim, true)   # unfinished counts as fallen (sim.won is false)
+	if p != race.get("sent", {}):
+		online.race_report(race["code"], race["side"], p)
+	race = {}
+	hud.set_rival("")

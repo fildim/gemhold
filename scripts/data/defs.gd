@@ -104,7 +104,7 @@ const HOARD_REGEN := 0.15   # Mana Spring: +0.15 mana per second per point
 
 const DEN := {"charges": 1, "range": 2.6, "dmg": 70, "refill": 8.0, "rate": 0.5}
 
-const METEOR := {"cost": 60, "radius": 1.3, "dmg": 280, "delay": 0.55}
+const METEOR := {"cost": 50, "radius": 1.3, "dmg": 650, "delay": 0.55}   # dmg: half of lair 3's last-wave Knight
 const HOARD_METEOR := 0.25   # Starfall (The Hoard): +25% meteor damage per point
 
 ## Tower veterancy: towers earn 1 XP per point of damage dealt and rank up at these totals.

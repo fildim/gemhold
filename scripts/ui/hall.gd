@@ -3,6 +3,7 @@ extends Control
 ## optional account (see Online). Builds its own nodes in code, like the HUD.
 
 signal closed
+signal race_ready(race: Dictionary, side: String)   # a race has begun: play it (side "h" host, "g" guest)
 
 const Hud := preload("res://scripts/ui/hud.gd")
 
@@ -15,7 +16,8 @@ var _board := 0
 var _ask := 0                    # bumps with every leaderboard request, so a late answer is dropped
 var _tabs: Array[Button] = []
 var _pages: Array[Control] = []
-var _board_label: Label
+var _board_label: Button          # the board's name; opens _board_menu
+var _board_menu: PopupMenu
 var _board_note: Label
 var _rows: VBoxContainer
 var _ach_count: Label
@@ -25,6 +27,13 @@ var _status: Label
 var _fields := {}                # LineEdits on the account page, by name
 var _delete_armed := false
 var _del_button: Button
+var _race: VBoxContainer
+var _race_status: Label
+var _race_pick: OptionButton
+var _race_entry: LineEdit
+var _race_code := ""             # the race this player hosts and waits on, or ""
+var _race_poll := 0.0
+var _race_asking := false
 
 
 func setup(hud: Control, save: SaveData, online: Online, levels: Array) -> void:
@@ -64,7 +73,7 @@ func setup(hud: Control, save: SaveData, online: Online, levels: Array) -> void:
 	title.add_theme_color_override("font_color", Hud.GOLD)
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	head.add_child(title)
-	for t in ["Leaderboard", "Achievements", "Account"]:
+	for t in ["Leaderboard", "Achievements", "Account", "Race"]:
 		var b := _big_button(head, t)
 		b.pressed.connect(_show_tab.bind(_tabs.size()))
 		_tabs.append(b)
@@ -75,10 +84,14 @@ func setup(hud: Control, save: SaveData, online: Online, levels: Array) -> void:
 	page_box.add_theme_stylebox_override("panel", hud._box(Hud.PANEL, Hud.EDGE, 1, 14, 22))
 	page_box.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	box.add_child(page_box)
-	_pages = [_build_board(), _build_achievements(), _build_account()]
+	_pages = [_build_board(), _build_achievements(), _build_account(), _build_race()]
 	for p in _pages:
 		page_box.add_child(p)
 	_online.changed.connect(_refresh_account)
+	_online.changed.connect(_refresh_race)
+	visibility_changed.connect(func() -> void:
+		if not visible:
+			_cancel_race())
 
 
 func _big_button(parent: Control, text: String) -> Button:
@@ -124,6 +137,8 @@ func _show_tab(i: int) -> void:
 			_tabs[k].remove_theme_stylebox_override("hover")
 	if i == 0:
 		_load_board()
+	elif i == 3:
+		_refresh_race()
 
 
 # ---------------------------------------------------------------- leaderboard
@@ -137,10 +152,23 @@ func _build_board() -> Control:
 	var prev := _big_button(row, "«")
 	prev.custom_minimum_size.x = 72
 	prev.pressed.connect(_step_board.bind(-1))
-	_board_label = _label(row, "", 30, Hud.GOLD, _hud.bold_font)
+	# The board's name is a button: it opens a list of every board, so any lair is one tap away.
+	_board_label = _big_button(row, "")
 	_board_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_board_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_board_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_board_label.add_theme_font_override("font", _hud.bold_font)
+	_board_label.add_theme_font_size_override("font_size", 30)
+	_board_label.add_theme_color_override("font_color", Hud.GOLD)
+	_board_label.clip_text = true
+	_board_label.pressed.connect(_pick_board)
+	_board_menu = PopupMenu.new()
+	_board_menu.add_theme_font_size_override("font_size", 28)
+	_board_menu.add_theme_constant_override("v_separation", 14)
+	for b in _boards:
+		_board_menu.add_item(b["label"])
+	_board_menu.index_pressed.connect(func(i: int) -> void:
+		_board = i
+		_load_board())
+	page.add_child(_board_menu)
 	var next := _big_button(row, "»")
 	next.custom_minimum_size.x = 72
 	next.pressed.connect(_step_board.bind(1))
@@ -156,6 +184,14 @@ func _build_board() -> Control:
 	_rows.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.add_child(_rows)
 	return page
+
+
+func _pick_board() -> void:
+	Sfx.play("click")
+	var rect := _board_label.get_global_rect()
+	_board_menu.min_size = Vector2i(int(rect.size.x), 0)
+	_board_menu.max_size = Vector2i(int(rect.size.x), int(get_viewport_rect().size.y * 0.8))
+	_board_menu.popup(Rect2i(Vector2i(rect.position) + Vector2i(0, int(rect.size.y)), Vector2i(int(rect.size.x), 0)))
 
 
 func _step_board(step: int) -> void:
@@ -202,9 +238,25 @@ func _add_row(place: int, r: Dictionary) -> void:
 	var bg := Color("3d2a12") if me else (Hud.PANEL_2 if place % 2 == 1 else Color(0, 0, 0, 0))
 	panel.add_theme_stylebox_override("panel", _hud._box(bg, Hud.GOLD if me else Color(0, 0, 0, 0), 1, 8, 12))
 	_rows.add_child(panel)
+	var col := VBoxContainer.new()
+	col.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	panel.add_child(col)
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 16)
-	panel.add_child(row)
+	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	col.add_child(row)
+	# Tapping a player shows their best score on every lair.
+	var detail := _label(col, _lair_scores(r["scores"]), 24, Hud.DIM)
+	detail.visible = false
+	panel.mouse_filter = Control.MOUSE_FILTER_PASS   # lets the list still scroll by dragging
+	var down := [Vector2.ZERO]
+	panel.gui_input.connect(func(ev: InputEvent) -> void:
+		if ev is InputEventMouseButton and ev.button_index == MOUSE_BUTTON_LEFT:
+			if ev.pressed:
+				down[0] = ev.position
+			elif ev.position.distance_to(down[0]) < 20.0:
+				Sfx.play("click")
+				detail.visible = not detail.visible)
 	var medal: Color = [Hud.GOLD, Color("cfd6e0"), Color("d08a4a")][place - 1] if place <= 3 else Hud.DIM
 	var p := _label(row, str(place), 30, medal, _hud.display_font)
 	p.custom_minimum_size.x = 56
@@ -220,6 +272,19 @@ func _add_row(place: int, r: Dictionary) -> void:
 	v.custom_minimum_size.x = 150
 	v.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	v.autowrap_mode = TextServer.AUTOWRAP_OFF
+
+
+## One player's per-lair bests (score_key → points) as a line per lair, campaign order.
+func _lair_scores(scores: Dictionary) -> String:
+	var lines := []
+	for i in _levels.size():
+		var id: String = _levels[i]["id"]
+		var day := int(scores.get(Online.score_key(id), 0))
+		var night := int(scores.get(Online.score_key(SaveData.mission_id(id, true)), 0))
+		if day > 0 or night > 0:
+			lines.append("Lair %d: %s   —   day %s  ·  night %s" % [i + 1, _levels[i]["title"],
+				Hud._thousands(day) if day > 0 else "–", Hud._thousands(night) if night > 0 else "–"])
+	return "\n".join(lines) if lines else "No lair won yet."
 
 
 # ---------------------------------------------------------------- achievements
@@ -406,6 +471,137 @@ func _delete() -> void:
 		_say("This removes you from the leaderboard and deletes the account. Progress on this device stays.", true)
 		return
 	await _busy(func() -> String: return await _online.delete_account(), "")
+
+
+# ---------------------------------------------------------------- race
+# One player hosts a race on a lair and gets a code; the rival types it in to join, and the race
+# begins for both: same lair, same heroes, no Dark Arts. See Online (races) and main.gd.
+
+func _build_race() -> Control:
+	var scroll := ScrollContainer.new()
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	var center := CenterContainer.new()
+	center.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.add_child(center)
+	_race = VBoxContainer.new()
+	_race.add_theme_constant_override("separation", 12)
+	_race.custom_minimum_size = Vector2(760, 0)
+	center.add_child(_race)
+	return scroll
+
+
+func _refresh_race() -> void:
+	if _race == null:
+		return
+	_clear(_race)
+	_label(_race, "Race a rival", 36, Hud.GOLD, _hud.display_font)
+	if not _online.signed_in():
+		_label(_race, "Races are played online, so both of you need an account. Sign in or create one on the Account page.", 24, Hud.DIM)
+		_action(_race, "Go to Account", _show_tab.bind(2))
+		return
+	if _race_code != "":
+		_label(_race, "Give your rival this code. The race starts the moment they join.", 24, Hud.DIM)
+		var code := _label(_race, _race_code, 96, Hud.GOLD, _hud.display_font)
+		code.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		_race_status = _label(_race, "Waiting for a rival…", 26, Hud.DIM)
+		_action(_race, "Call off the race", func() -> void:
+			_cancel_race()
+			_refresh_race())
+		return
+	_label(_race, "You both play the same lair at the same time, with the same heroes and no Dark Arts skills, so it is fair. You see each other's wave, gems and kills as you go. Whoever survives wins; if you both survive, the higher score wins; if you both fall, whoever lasted more waves.", 24, Hud.DIM)
+	var host := HBoxContainer.new()
+	host.add_theme_constant_override("separation", 10)
+	_race.add_child(host)
+	_race_pick = OptionButton.new()
+	_race_pick.focus_mode = Control.FOCUS_NONE
+	_race_pick.custom_minimum_size = Vector2(0, 62)
+	_race_pick.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_race_pick.add_theme_font_size_override("font_size", 26)
+	_race_pick.get_popup().add_theme_font_size_override("font_size", 28)
+	for i in _levels.size():
+		if _save.is_unlocked(i):
+			_race_pick.add_item("Lair %d: %s" % [i + 1, _levels[i]["title"]], i)
+	_race_pick.select(_race_pick.item_count - 1)
+	host.add_child(_race_pick)
+	_action(host, "Host a race", _host_race)
+	var join := HBoxContainer.new()
+	join.add_theme_constant_override("separation", 10)
+	_race.add_child(join)
+	_race_entry = _field(join, "race_code", "Rival's race code", false)
+	_race_entry.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_race_entry.max_length = Online.RACE_CODE_LEN
+	_action(join, "Join", _join_race)
+	_race_status = _label(_race, "", 24, Hud.DIM)
+
+
+func _race_say(msg: String, bad := false) -> void:
+	if _race_status and is_instance_valid(_race_status):
+		_race_status.text = msg
+		_race_status.add_theme_color_override("font_color", Hud.POOR if bad else Hud.DIM)
+
+
+func _race_lock(on: bool) -> void:
+	for b in _race.find_children("*", "Button", true, false):
+		(b as Button).disabled = on
+
+
+func _host_race() -> void:
+	var i := _race_pick.get_selected_id()
+	_race_say("Please wait…")
+	_race_lock(true)
+	var r: Dictionary = await _online.race_host(_levels[i]["id"])
+	if not is_inside_tree():
+		return
+	_race_lock(false)
+	if r.has("error"):
+		_race_say(r["error"], true)
+		return
+	_race_code = r["code"]
+	_race_poll = 2.0
+	_refresh_race()
+
+
+func _join_race() -> void:
+	_race_say("Please wait…")
+	_race_lock(true)
+	var r: Dictionary = await _online.race_join(_race_entry.text)
+	if not is_inside_tree():
+		return
+	_race_lock(false)
+	if r.has("error"):
+		_race_say(r["error"], true)
+		return
+	race_ready.emit(r, "g")
+
+
+func _cancel_race() -> void:
+	if _race_code == "":
+		return
+	_online.race_cancel(_race_code)
+	_race_code = ""
+
+
+## While hosting, looks every couple of seconds whether a rival has joined.
+func _process(delta: float) -> void:
+	if _race_code == "" or _race_asking:
+		return
+	_race_poll -= delta
+	if _race_poll > 0.0:
+		return
+	_race_poll = 2.0
+	_race_asking = true
+	var code := _race_code
+	var r: Dictionary = await _online.race_get(code)
+	_race_asking = false
+	if code != _race_code:
+		return   # called off meanwhile
+	if r.has("error"):
+		_race_say(r["error"], true)
+		return
+	if r["state"] == "on":
+		_race_code = ""   # it is no longer waiting, so closing the hall must not call it off
+		_refresh_race()
+		race_ready.emit(r, "h")
 
 
 # ---------------------------------------------------------------- helpers

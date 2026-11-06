@@ -124,7 +124,7 @@ static func topics() -> Array:
 	t.append(_t("Your powers", "Hero barracks",
 		"A barracks keeps sending extra heroes onto its road while the waves are still coming.\n\n[b]Raze it[/b] (%d mana) to stop it for good, and take %d gold from the ruins.\n\nFrom lair 5 on, buildings are sturdier: mines, wells and barracks take [b]2 cuts[/b], and [b]3[/b] from lair 7 (the dots under them). Each cut costs less, but the whole job costs more. Every cut on a barracks also slows its musters." % [Defs.SITES["camp"]["cut"], Defs.SITES["camp"]["bounty"]]))
 	t.append(_t("Your powers", "Loot",
-		"Slain heroes sometimes drop a [b]coin[/b] (gold, more from tougher kinds of hero) or a [b]mana potion[/b] (+%d mana).\n\nTap loot to take it at once. Anything still lying around is gathered by itself when the next wave starts." % Defs.LOOT_POTION_MANA))
+		"Slain heroes sometimes drop a [b]coin[/b] (gold, more from tougher kinds of hero) or a [b]mana potion[/b] (+%d mana).\n\nTap loot to take it at once. Anything still lying around is gathered by itself when the next wave starts, and in the last wave every drop is taken at once." % Defs.LOOT_POTION_MANA))
 
 	# ------------------------------------------------------------ progress
 	t.append(_t("Progress", "Dark Arts",
@@ -141,7 +141,11 @@ static func topics() -> Array:
 		+ "• [b]5[/b] for every second you skip by calling waves early\n"
 		+ "• [b]1[/b] for every gold coin left at the end (but hoarding gold makes heroes stronger)\n\n"
 		+ "Each lair further along the campaign is worth [b]10% more[/b], and night missions [b]half as much again[/b]. Your best score on each mission adds up to your total.\n\n"
-		+ "The [b]Hall of Fame[/b] on the map has the online leaderboard (the total and every lair, day and night), your [b]achievements[/b], and an optional account. Sign in to put your name on the board and to keep your scores and achievements on any device. Resetting progress keeps achievements and best scores."))
+		+ "The [b]Hall of Fame[/b] on the map has the online leaderboard (the total and every lair, day and night: tap the board's name to pick one, tap a player to see their lairs), your [b]achievements[/b], and an optional account. Sign in to put your name on the board and to keep your scores and achievements on any device. Resetting progress keeps achievements and best scores."))
+	t.append(_t("Progress", "Online races",
+		"In the Hall of Fame, [b]Race[/b] pits you against a friend. One of you hosts a race on a lair and gets a code; the other types the code in, and the race begins for both at once.\n\n"
+		+ "You play the same lair with the same heroes and [b]no Dark Arts skills[/b], so it is fair. A badge on the map shows your rival's wave and gems.\n\n"
+		+ "Whoever survives wins. If you both survive, the higher score wins; if you both fall, whoever lasted more waves. Leaving a race counts as falling. Races need an account and don't change your campaign or leaderboard scores."))
 	t.append(_t("Progress", "Tips",
 		"• Build your first towers near where the roads come close to the cave, so the den helps.\n"
 		+ "• Mix towers: Crypts to slow, Huts for crowds, Shrines for Knights.\n"
