@@ -29,6 +29,7 @@ var _delete_armed := false
 var _del_button: Button
 var _race: VBoxContainer
 var _race_status: Label
+var _race_rows := {}             # "host" and "join" rows of the Race page, for the race walkthrough
 var _race_pick: OptionButton
 var _race_entry: LineEdit
 var _race_code := ""             # the race this player hosts and waits on, or ""
@@ -41,7 +42,7 @@ func setup(hud: Control, save: SaveData, online: Online, levels: Array) -> void:
 	_save = save
 	_online = online
 	_levels = levels
-	_boards = [{"label": "All lairs: total score", "field": "total"}]
+	_boards = [{"label": "All lairs: total score", "field": "total"}, {"label": "Races: most wins", "field": "rw"}]
 	for i in levels.size():
 		var id: String = levels[i]["id"]
 		_boards.append({"label": "Lair %d: %s" % [i + 1, levels[i]["title"]], "field": "scores." + Online.score_key(id)})
@@ -204,8 +205,14 @@ func _load_board() -> void:
 	var b: Dictionary = _boards[_board]
 	_board_label.text = b["label"]
 	_clear(_rows)
-	var mine := _save.total_score() if _board == 0 else int(_save.scores.get(_mission(_board), 0))
-	var note := "Your best: %s" % Hud._thousands(mine) if mine > 0 else "No score of yours here yet."
+	var note := ""
+	if _board == 1:
+		var w := int(_save.stats.get("race_wins", 0))
+		var l := int(_save.stats.get("race_losses", 0))
+		note = "Your races: %d won, %d lost%s." % [w, l, ", %d drawn" % int(_save.stats["race_draws"]) if _save.stats.has("race_draws") else ""] if w + l > 0 else "No races of yours yet: race a friend from the Race page."
+	else:
+		var mine := _save.total_score() if _board == 0 else int(_save.scores.get(_mission(_board), 0))
+		note = "Your best: %s" % Hud._thousands(mine) if mine > 0 else "No score of yours here yet."
 	if not _online.signed_in():
 		note += "  Sign in (Account) to put your name on the board."
 	_board_note.text = note
@@ -220,16 +227,16 @@ func _load_board() -> void:
 		_label(_rows, res["error"], 26, Hud.POOR)
 		return
 	if (res as Array).is_empty():
-		_label(_rows, "Nobody has a score here yet. Be the first!", 26, Hud.DIM)
+		_label(_rows, "Nobody has won a race yet. Be the first!" if _board == 1 else "Nobody has a score here yet. Be the first!", 26, Hud.DIM)
 		return
 	for i in res.size():
 		_add_row(i + 1, res[i])
 
 
-## Mission id of leaderboard number n (1 and up: each lair's day, then night).
+## Mission id of leaderboard number n (2 and up: each lair's day, then night).
 func _mission(n: int) -> String:
-	var id: String = _levels[(n - 1) / 2]["id"]
-	return SaveData.mission_id(id, (n - 1) % 2 == 1)
+	var id: String = _levels[(n - 2) / 2]["id"]
+	return SaveData.mission_id(id, (n - 2) % 2 == 1)
 
 
 func _add_row(place: int, r: Dictionary) -> void:
@@ -265,10 +272,14 @@ func _add_row(place: int, r: Dictionary) -> void:
 	n.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	n.autowrap_mode = TextServer.AUTOWRAP_OFF
 	n.clip_text = true
-	var extra := _label(row, "★ %d  ·  %d/%d badges" % [r["stars"], r["ach"], Achievements.LIST.size()], 22, Hud.DIM)
+	var info := "★ %d  ·  %d/%d badges" % [r["stars"], r["ach"], Achievements.LIST.size()]
+	if _board == 1:   # races: the record, and the share won
+		var games: int = r["rw"] + r["rl"]
+		info = "%d lost  ·  %d%% won" % [r["rl"], roundi(100.0 * r["rw"] / games) if games > 0 else 0]
+	var extra := _label(row, info, 22, Hud.DIM)
 	extra.autowrap_mode = TextServer.AUTOWRAP_OFF
 	extra.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	var v := _label(row, Hud._thousands(r["value"]), 30, Hud.GOLD, _hud.bold_font)
+	var v := _label(row, ("%d wins" % r["value"]) if _board == 1 else Hud._thousands(r["value"]), 30, Hud.GOLD, _hud.bold_font)
 	v.custom_minimum_size.x = 150
 	v.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	v.autowrap_mode = TextServer.AUTOWRAP_OFF
@@ -494,6 +505,7 @@ func _refresh_race() -> void:
 	if _race == null:
 		return
 	_clear(_race)
+	_race_rows.clear()
 	_label(_race, "Race a rival", 36, Hud.GOLD, _hud.display_font)
 	if not _online.signed_in():
 		_label(_race, "Races are played online, so both of you need an account. Sign in or create one on the Account page.", 24, Hud.DIM)
@@ -508,8 +520,9 @@ func _refresh_race() -> void:
 			_cancel_race()
 			_refresh_race())
 		return
-	_label(_race, "You both play the same lair at the same time, with the same heroes and no Dark Arts skills, so it is fair. You see each other's wave, gems and kills as you go. Whoever survives wins; if you both survive, the higher score wins; if you both fall, whoever lasted more waves.", 24, Hud.DIM)
+	_label(_race, "You both play the same lair at the same time (by day, or at night once you have opened it), with the same heroes and no Dark Arts skills. Slaying heroes and spending gold sends heroes onto your rival's road. The race ends for both the moment one of you clears the last wave or falls: clear it first to win. Every race counts on the Races leaderboard.", 24, Hud.DIM)
 	var host := HBoxContainer.new()
+	_race_rows["host"] = host
 	host.add_theme_constant_override("separation", 10)
 	_race.add_child(host)
 	_race_pick = OptionButton.new()
@@ -518,13 +531,19 @@ func _refresh_race() -> void:
 	_race_pick.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_race_pick.add_theme_font_size_override("font_size", 26)
 	_race_pick.get_popup().add_theme_font_size_override("font_size", 28)
+	# Item id = lair index × 2, +1 for its night mission (offered once the host has opened it).
+	var newest := 0
 	for i in _levels.size():
 		if _save.is_unlocked(i):
-			_race_pick.add_item("Lair %d: %s" % [i + 1, _levels[i]["title"]], i)
-	_race_pick.select(_race_pick.item_count - 1)
+			_race_pick.add_item("Lair %d: %s" % [i + 1, _levels[i]["title"]], i * 2)
+			newest = _race_pick.item_count - 1
+			if _save.night_unlocked(_levels[i]["id"]):
+				_race_pick.add_item("Lair %d: %s · Night" % [i + 1, _levels[i]["title"]], i * 2 + 1)
+	_race_pick.select(newest)
 	host.add_child(_race_pick)
 	_action(host, "Host a race", _host_race)
 	var join := HBoxContainer.new()
+	_race_rows["join"] = join
 	join.add_theme_constant_override("separation", 10)
 	_race.add_child(join)
 	_race_entry = _field(join, "race_code", "Rival's race code", false)
@@ -546,10 +565,10 @@ func _race_lock(on: bool) -> void:
 
 
 func _host_race() -> void:
-	var i := _race_pick.get_selected_id()
+	var pick := _race_pick.get_selected_id()
 	_race_say("Please wait…")
 	_race_lock(true)
-	var r: Dictionary = await _online.race_host(_levels[i]["id"])
+	var r: Dictionary = await _online.race_host(_levels[pick / 2]["id"], pick % 2 == 1)
 	if not is_inside_tree():
 		return
 	_race_lock(false)
@@ -612,3 +631,14 @@ func _clear(node: Node) -> void:
 		c.queue_free()
 
 
+
+
+## The Race page is showing its host and join choices (signed in, not waiting on a rival).
+func race_page_open() -> bool:
+	return visible and _pages[3].visible and _race_code == "" and _race_rows.has("host") and is_instance_valid(_race_rows["host"])
+
+
+## Where a Race page row ("host" or "join") is on screen, for the walkthrough.
+func race_rect(row: String) -> Rect2:
+	var c: Control = _race_rows.get(row)
+	return c.get_global_rect() if c and is_instance_valid(c) and c.is_visible_in_tree() else Rect2()

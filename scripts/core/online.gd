@@ -2,7 +2,7 @@ class_name Online
 extends Node
 ## The optional online account: Firebase email/password sign-in and the leaderboard in Firestore,
 ## both over their REST APIs so it works the same on every platform, the web included.
-## A signed-in player has one document, players/<uid>: {name, total, stars, scores, ach, updated}
+## A signed-in player has one document, players/<uid>: {name, total, stars, rw, rl, scores, ach, updated}
 ## (rules in firestore.rules). Anyone may read the leaderboard; only signed-in players appear on it.
 ## Calls are coroutines: `var err := await online.sign_in(...)`, "" on success.
 
@@ -100,7 +100,7 @@ func sign_in(mail: String, password: String, save: SaveData) -> String:
 		var scores := {}
 		for k: String in sc:
 			scores[k.replace("_night", ":night")] = sc[k]
-		save.merge_online(scores, ach)
+		save.merge_online(scores, ach, {"race_wins": _value(f.get("rw", {})), "race_losses": _value(f.get("rl", {}))})
 		save.save()
 	if player_name == "":
 		player_name = email.get_slice("@", 0).left(NAME_MAX)
@@ -192,6 +192,8 @@ func upload(save: SaveData) -> String:
 			"name": {"stringValue": player_name},
 			"total": {"integerValue": str(save.total_score())},
 			"stars": {"integerValue": str(save.points_total())},
+			"rw": {"integerValue": str(save.stats.get("race_wins", 0))},
+			"rl": {"integerValue": str(save.stats.get("race_losses", 0))},
 			"scores": {"mapValue": {"fields": scores}},
 			"ach": {"arrayValue": {"values": ach}},
 		},
@@ -201,8 +203,8 @@ func upload(save: SaveData) -> String:
 	return "" if r["ok"] else r["error"]
 
 
-## The top players by `field` ("total", or "scores.<score_key>" for one mission), best first:
-## [{"uid", "name", "value", "stars", "ach", "scores"}]. Returns {"error": String} on failure.
+## The top players by `field` ("total", "rw" for race wins, or "scores.<score_key>" for one mission), best first:
+## [{"uid", "name", "value", "stars", "ach", "rw", "rl", "scores"}]. Returns {"error": String} on failure.
 func top(field: String, limit := 50) -> Variant:
 	var q := {"structuredQuery": {
 		"from": [{"collectionId": "players"}],
@@ -218,7 +220,7 @@ func top(field: String, limit := 50) -> Variant:
 			continue
 		var f: Dictionary = item["document"].get("fields", {})
 		var sc := _map(f.get("scores", {}))
-		var value: Variant = _value(f.get("total", {})) if field == "total" else sc.get(field.get_slice(".", 1), 0)
+		var value: Variant = sc.get(field.get_slice(".", 1), 0) if field.begins_with("scores.") else _value(f.get(field, {}))
 		var scores := {}
 		for k: String in sc:
 			scores[k] = int(sc[k])
@@ -229,6 +231,8 @@ func top(field: String, limit := 50) -> Variant:
 			"value": int(value),
 			"stars": int(_value(f.get("stars", {}))),
 			"ach": _list(f.get("ach", {})).size(),
+			"rw": int(_value(f.get("rw", {}))),
+			"rl": int(_value(f.get("rl", {}))),
 		})
 	return rows
 
@@ -242,8 +246,8 @@ const RACE_LETTERS := "ABCDEFGHJKMNPQRSTUVWXYZ23456789"   # no I, L, O, 0 or 1 t
 const RACE_CODE_LEN := 5
 
 
-## Opens a race on level_id. Returns {"code": String}, or {"error": String}.
-func race_host(level_id: String) -> Dictionary:
+## Opens a race on level_id (its night mission if night). Returns {"code": String}, or {"error": String}.
+func race_host(level_id: String, night := false) -> Dictionary:
 	if not signed_in():
 		return {"error": "Sign in first"}
 	for attempt in 4:   # a code already taken: try another
@@ -252,7 +256,7 @@ func race_host(level_id: String) -> Dictionary:
 			code += RACE_LETTERS[randi() % RACE_LETTERS.length()]
 		var doc := {
 			"name": "projects/%s/databases/(default)/documents/races/%s" % [PROJECT, code],
-			"fields": _typed_fields({"host": uid, "host_name": player_name, "level": level_id, "state": "open", "h": race_progress()}),
+			"fields": _typed_fields({"host": uid, "host_name": player_name, "level": level_id, "night": night, "state": "open", "h": race_progress()}),
 		}
 		var body := {"writes": [{"update": doc, "currentDocument": {"exists": false},
 			"updateTransforms": [{"fieldPath": "created", "setToServerValue": "REQUEST_TIME"}]}]}
@@ -320,9 +324,9 @@ func race_cancel(code: String) -> void:
 ## race began (frozen at the finish); out: the heroes sent to the rival so far (GameSim.race_sends).
 static func race_progress(sim: GameSim = null, done := false, secs := 0) -> Dictionary:
 	if sim == null:
-		return {"wave": 0, "gems": 0, "kills": 0, "score": 0, "done": false, "won": false, "time": 0, "out": ""}
+		return {"wave": 0, "gems": 0, "kills": 0, "score": 0, "done": false, "won": false, "stopped": false, "time": 0, "out": ""}
 	return {"wave": sim.wave, "gems": sim.gems_left(), "kills": sim.kills, "score": sim.score(1) if sim.won else 0,
-		"done": done or sim.over, "won": sim.won, "time": secs, "out": sim.race_sends}
+		"done": done or sim.over, "won": sim.won, "stopped": sim.stopped, "time": secs, "out": sim.race_sends}
 
 
 ## Race points of a finished survivor: the score, plus Defs.RACE_TIME_BONUS for every second they
@@ -334,12 +338,16 @@ static func race_points(me: Dictionary, rival: Dictionary) -> int:
 	return pts
 
 
-## Who won between two finished racers' progress: 1 if a, -1 if b, 0 for a draw. Surviving beats
-## falling; between survivors the most race points (score plus the time bonus) win, between the
-## fallen whoever lasted more waves, then more kills.
+## Who won between two finished racers' progress: 1 if a, -1 if b, 0 for a draw. The race ends for
+## both as soon as one finishes or falls, so: surviving beats everything; one left standing when
+## the rival fell (stopped) beats the fallen; two who survived almost together (each finished
+## before hearing of the other) go by race points (score plus the time bonus), then gems and kills;
+## otherwise more waves, then more kills.
 static func race_compare(a: Dictionary, b: Dictionary) -> int:
 	if a.get("won", false) != b.get("won", false):
 		return 1 if a.get("won", false) else -1
+	if not a.get("won", false) and a.get("stopped", false) != b.get("stopped", false):
+		return 1 if a.get("stopped", false) else -1
 	var pa := [race_points(a, b), int(a.get("gems", 0)), int(a.get("kills", 0))] if a.get("won", false) else [int(a.get("wave", 0)), int(a.get("kills", 0))]
 	var pb := [race_points(b, a), int(b.get("gems", 0)), int(b.get("kills", 0))] if a.get("won", false) else [int(b.get("wave", 0)), int(b.get("kills", 0))]
 	for i in pa.size():

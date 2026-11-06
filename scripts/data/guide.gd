@@ -143,10 +143,11 @@ static func topics() -> Array:
 		+ "Each lair further along the campaign is worth [b]10% more[/b], and night missions [b]half as much again[/b]. Your best score on each mission adds up to your total.\n\n"
 		+ "The [b]Hall of Fame[/b] on the map has the online leaderboard (the total and every lair, day and night: tap the board's name to pick one, tap a player to see their lairs), your [b]achievements[/b], and an optional account. Sign in to put your name on the board and to keep your scores and achievements on any device. Resetting progress keeps achievements and best scores."))
 	t.append(_t("Progress", "Online races",
-		"In the Hall of Fame, [b]Race[/b] pits you against a friend. One of you hosts a race on a lair and gets a code; the other types the code in, and the race begins for both at once.\n\n"
+		"In the Hall of Fame, [b]Race[/b] pits you against a friend. One of you hosts a race on a lair (or its night mission, once you have opened it) and gets a code; the other types the code in, and the race begins for both at once.\n\n"
 		+ "You play the same lair with the same heroes and [b]no Dark Arts skills[/b], so it is fair. A badge on the map shows your rival's wave and gems.\n\n"
 		+ "[b]Attack your rival:[/b] every [b]%d heroes[/b] you slay sends one like the last onto their road, and [b]Send heroes[/b] (in place of Pause) buys more with gold.\n\n" % Defs.RACE_KILL_SEND
-		+ "The clock runs from the start, so speed matters: call waves early. If you both survive, each second you finish before your rival is worth [b]%d points[/b] on top of your score, and the most points win. Whoever survives beats whoever falls; if you both fall, whoever lasted more waves wins. Leaving a race counts as falling. Races need an account and don't change your campaign or leaderboard scores." % Defs.RACE_TIME_BONUS))
+		+ "[b]The race ends for both[/b] the moment one of you clears the last wave or falls. Clear it first and you win; fall, and your rival wins. If you both clear it within a moment of each other, each second sooner is worth [b]%d points[/b] on top of the score, and the most points win. Leaving a race counts as a loss.\n\n" % Defs.RACE_TIME_BONUS
+		+ "Every race goes on your record: the [b]Races[/b] leaderboard ranks players by wins. Races need an account and don't change your campaign or lair scores."))
 	t.append(_t("Progress", "Tips",
 		"• Build your first towers near where the roads come close to the cave, so the den helps.\n"
 		+ "• Mix towers: Crypts to slow, Huts for crowds, Shrines for Knights.\n"

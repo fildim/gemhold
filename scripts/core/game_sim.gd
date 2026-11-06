@@ -170,6 +170,7 @@ var den_cd := 0.0         # seconds until the den may fire again
 var time := 0.0
 var race_on := false       # an online race: kills send heroes to the rival
 var race_sends := ""      # hero codes sent to the rival so far, oldest first
+var stopped := false      # an online race ended because the rival finished first
 var touched := false      # a hero has laid hands on a gem (grabbed from the hoard or picked up)
 var over := false
 var won := false
@@ -1134,6 +1135,14 @@ func race_buy(code: String) -> String:
 	race_sends += code
 	sound.emit("horn")
 	return ""
+
+
+## Online race: the rival finished or fell first, so this battle ends where it stands.
+func race_stop() -> void:
+	if over:
+		return
+	stopped = true
+	_end(false)
 
 
 ## Online race: a hero the rival sent marches in from the start of a road.

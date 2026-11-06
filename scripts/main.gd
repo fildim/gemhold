@@ -32,6 +32,7 @@ var _hero_tip := ""           # hero code the tip on screen introduces, or ""
 var guide: Control            # the player's guide, opened from the map
 var _arts_spent := -1         # skill points spent when the Dark Arts tip opened
 var _arts_intro := false      # the Dark Arts intro tip is up
+var _race_intro := false      # a race walkthrough tip is up (Prefs "race_tip": the next one to show)
 var online: Online            # the optional account and leaderboard
 var hall: Control             # Hall of Fame: leaderboard, achievements, account
 var _ids: Array = []          # every lair's level id, campaign order
@@ -88,6 +89,7 @@ func _ready() -> void:
 	select.hall_pressed.connect(hall.open)
 	hall.closed.connect(func() -> void: hall.visible = false)
 	hall.race_ready.connect(_start_race)
+	$UI.move_child(spot, -1)   # the spotlight stays over every screen, the Hall of Fame included
 	hud.send_pressed.connect(_on_send)
 	guide.closed.connect(func() -> void: guide.visible = false)
 	select.skills_pressed.connect(func() -> void:
@@ -189,7 +191,7 @@ func _process(delta: float) -> void:
 	var hero: GameSim.Enemy = null
 	_site_tip = ""
 	_hero_tip = ""
-	if tip == "" and started and not sim.over:
+	if tip == "" and started and not sim.over and race.is_empty():   # tips freeze the battle: never in a race
 		site_cell = _site_tip_cell()
 		if site_cell.x >= 0:
 			tip = _site_tip_text(sim.sites[site_cell])
@@ -297,6 +299,8 @@ func _on_tip_ok() -> void:
 		return
 	if not on_map and tutorial:
 		tutorial.dismiss()
+	elif _race_intro:
+		Prefs.set_value("race_tip", int(Prefs.get_value("race_tip", 0)) + 1)
 	elif _arts_intro:
 		Prefs.set_value("arts_intro", true)
 	else:
@@ -307,6 +311,10 @@ func _on_tip_ok() -> void:
 ## "Skip tutorial" ends the first lair's lessons and the Dark Arts tips; "No more tips" on a
 ## building or hero tip stops those. Each leaves the other kind alone.
 func _on_tip_skip() -> void:
+	if on_map and _race_intro:
+		Prefs.set_value("race_tip", RACE_TIPS.size())
+		spot.hide_tip()
+		return
 	if not on_map and (_site_tip != "" or _hero_tip != ""):
 		for k in Defs.SITES:
 			Prefs.set_value("building_tip_" + k, true)
@@ -322,6 +330,7 @@ func _on_tip_skip() -> void:
 	Prefs.set_value("tutorial_done", true)
 	Prefs.set_value("arts_tip", 2)
 	Prefs.set_value("arts_intro", true)
+	Prefs.set_value("race_tip", RACE_TIPS.size())
 	spot.hide_tip()
 
 
@@ -331,6 +340,8 @@ func _on_tip_skip() -> void:
 func _arts_tip() -> void:
 	var stage: int = Prefs.get_value("arts_tip", 0)
 	_arts_intro = false
+	if _race_tip():
+		return
 	if not select.visible or guide.visible or hall.visible:
 		spot.hide_tip()
 		return
@@ -526,7 +537,7 @@ func _announce(ids: Array[String]) -> void:
 
 # ---------------------------------------------------------------- online race
 
-## A race has begun (from the Hall of Fame): play its lair at once, by day, without Dark Arts.
+## A race has begun (from the Hall of Fame): play its lair (by day or night) at once, without Dark Arts.
 func _start_race(r: Dictionary, side: String) -> void:
 	var i := _ids.find(r["level"])
 	if i < 0:
@@ -543,7 +554,7 @@ func _start_race(r: Dictionary, side: String) -> void:
 	select.visible = false
 	frame.visible = true
 	hud.set_battle_visible(true)
-	night = false
+	night = bool(r.get("night", false))
 	_load_level(i)
 	sim.race_on = true
 	_layout()
@@ -582,23 +593,49 @@ func _race_tick() -> void:
 			if Defs.ENEMIES.has(c):
 				names.append(Defs.ENEMIES[c]["name"])
 		hud.toast("%s sent you: %s" % [_rival_name(), ", ".join(names)])
-	if rival.get("done", false) and not race["rival"].get("done", false) and not sim.over:
-		hud.toast("%s has %s!" % [_rival_name(), "finished in " + hud._clock(int(rival.get("time", 0))) if rival.get("won", false) else "fallen"])
+	if rival.get("done", false) and not sim.over:
+		# The race is over for both the moment one finishes or falls.
+		race["rival"] = rival
+		hud.set_rival(_rival_name(), rival)
+		hud.toast("%s %s: the race is over" % [_rival_name(), "finished first" if rival.get("won", false) else "fell"])
+		sim.race_stop()   # ends the battle here (_on_ended); the next tick tells the rival
+		return
 	race["rival"] = rival
 	hud.set_rival(_rival_name(), rival)
 	if sim.over:
 		hud.show_race_end(me, rival, _rival_name())
 		if rival.get("done", false) and race.get("sent", {}) == me:
+			_record_race(Online.race_compare(me, rival))
 			_race_t = INF   # both finished and told: nothing more to send or fetch
 
 
-## Leaving a race before it is over gives it up: the rival is told this player fell.
+## Counts a decided race once in the record (1 won, -1 lost, 0 drawn) and puts it online.
+func _record_race(result: int) -> void:
+	if race.get("recorded", false):
+		return
+	race["recorded"] = true
+	save.add_stat({1: "race_wins", -1: "race_losses"}.get(result, "race_draws"), 1)
+	save.save()
+	online.sync(save)
+
+
+## Leaving a race before it is over gives it up: the rival is told this player fell, and it counts
+## as lost. Leaving after finishing while the rival's answer is still on its way records the result
+## it must have: the rival is stopped where they stand.
 func _leave_race() -> void:
 	if race.is_empty():
 		return
 	var p := Online.race_progress(sim, true, _race_secs())   # unfinished counts as fallen (sim.won is false)
 	if p != race.get("sent", {}):
 		online.race_report(race["code"], race["side"], p)
+	if not sim.over:
+		_record_race(-1)
+	else:
+		var rival: Dictionary = race.get("rival", Online.race_progress()).duplicate()
+		if not rival.get("done", false):
+			rival["done"] = true
+			rival["stopped"] = true
+		_record_race(Online.race_compare(p, rival))
 	race = {}
 	hud.set_rival("")
 
@@ -618,3 +655,23 @@ func _on_send(code: String) -> void:
 		return
 	hud.toast("%s sent to %s" % [Defs.ENEMIES[code]["name"], _rival_name()])
 	_race_t = 0.0   # tell the rival now
+
+
+## The race walkthrough: the first time the Race page opens (signed in), three tips show how to host,
+## how to join and how a race goes. Each OK moves on (Prefs "race_tip"); "No more tips" ends it.
+const RACE_TIPS := [
+	["host", "[b]Race a friend![/b] Pick a lair (night missions you have opened are there too) and tap [b]Host a race[/b]. You get a 5-letter code to give your friend."],
+	["join", "Got a code from a friend? Type it here and tap [b]Join[/b]. The race starts for both of you at once."],
+	["", "[b]In the race[/b] you both play the same lair with no Dark Arts. Every %d heroes you slay sends one to your rival, and [b]Send heroes[/b] (where Pause was) buys more with gold. The moment one of you clears the last wave or falls, the race is over: clear it first to win. Leaving counts as a loss." % Defs.RACE_KILL_SEND],
+]
+
+
+func _race_tip() -> bool:
+	_race_intro = false
+	var stage: int = Prefs.get_value("race_tip", 0)
+	if stage >= RACE_TIPS.size() or not hall.race_page_open():
+		return false
+	var t: Array = RACE_TIPS[stage]
+	_race_intro = true
+	spot.show_tip(t[1], hall.race_rect(t[0]) if t[0] != "" else Rect2(), true, "No more tips")
+	return true

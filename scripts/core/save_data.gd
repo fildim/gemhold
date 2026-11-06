@@ -15,7 +15,7 @@ var unlocked := 1        # number of campaign levels the player may start
 var best := {}           # level id -> {"rank": String, "kept": int}
 var skills := {}         # skill id -> rank
 var scores := {}         # mission id -> best score (GameSim.score)
-var stats := {}          # lifetime counters: "kills", "battles", "wins"
+var stats := {}          # lifetime counters: "kills", "battles", "wins", "race_wins", "race_losses", "race_draws"
 var achievements := {}   # achievement id -> unix time it was earned
 
 
@@ -195,10 +195,14 @@ func earn(id: String) -> bool:
 	return true
 
 
-## Takes in what an online account remembers (best scores, achievements) without losing anything here.
-func merge_online(online_scores: Dictionary, online_achievements: Array) -> void:
+## Takes in what an online account remembers (best scores, achievements, the race record as
+## {"race_wins", "race_losses"}) without losing anything here.
+func merge_online(online_scores: Dictionary, online_achievements: Array, online_stats := {}) -> void:
 	for id in online_scores:
 		record_score(str(id), int(online_scores[id]))
+	for key in online_stats:
+		var n := int(str(online_stats[key])) if str(online_stats[key]).is_valid_int() else 0
+		stats[key] = maxi(int(stats.get(key, 0)), n)
 	for id in online_achievements:
 		if not achievements.has(str(id)):
 			achievements[str(id)] = int(Time.get_unix_time_from_system())

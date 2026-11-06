@@ -755,6 +755,8 @@ func show_race_end(me: Dictionary, rival: Dictionary, rival_name: String) -> voi
 		var n := str(p.get("out", "")).length()
 		var sent := "  ·  sent %d hero%s" % [n, "" if n == 1 else "es"] if n > 0 else ""
 		if not p.get("won", false):
+			if p.get("stopped", false):
+				return "%s: [color=#a8977c]stopped at wave %d[/color] with %d gems · %d kills%s" % [who, p.get("wave", 0), p.get("gems", 0), p.get("kills", 0), sent]
 			return "%s: [color=#e2683a]fell at wave %d[/color] · %d kills%s" % [who, p.get("wave", 0), p.get("kills", 0), sent]
 		var t := "%s: [b][color=#e8b84a]survived[/color][/b] in %s with %d gems · %d kills%s\n      score %s" % [who, _clock(int(p.get("time", 0))),
 			p.get("gems", 0), p.get("kills", 0), sent, _thousands(int(p.get("score", 0)))]
