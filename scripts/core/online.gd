@@ -236,7 +236,7 @@ func top(field: String, limit := 50) -> Variant:
 # ---------------------------------------------------------------- races
 # A race is one document, races/<code>: {host, host_name, level, state, created, h} from the host,
 # then {guest, guest_name, g} when a rival joins and state turns "on". h and g are each racer's
-# progress ({wave, gems, kills, score, done, won}), which only that racer may write (firestore.rules).
+# progress ({wave, gems, kills, score, done, won, time, out}), which only that racer may write (firestore.rules).
 
 const RACE_LETTERS := "ABCDEFGHJKMNPQRSTUVWXYZ23456789"   # no I, L, O, 0 or 1 to misread
 const RACE_CODE_LEN := 5
@@ -316,24 +316,35 @@ func race_cancel(code: String) -> void:
 	await _call("DELETE", _docs + "/races/" + code, null, true)
 
 
-## A racer's progress record; with no sim, the one for a battle not begun.
-static func race_progress(sim: GameSim = null, done := false) -> Dictionary:
+## A racer's progress record; with no sim, the one for a battle not begun. secs: seconds since the
+## race began (frozen at the finish); out: the heroes sent to the rival so far (GameSim.race_sends).
+static func race_progress(sim: GameSim = null, done := false, secs := 0) -> Dictionary:
 	if sim == null:
-		return {"wave": 0, "gems": 0, "kills": 0, "score": 0, "done": false, "won": false}
+		return {"wave": 0, "gems": 0, "kills": 0, "score": 0, "done": false, "won": false, "time": 0, "out": ""}
 	return {"wave": sim.wave, "gems": sim.gems_left(), "kills": sim.kills, "score": sim.score(1) if sim.won else 0,
-		"done": done or sim.over, "won": sim.won}
+		"done": done or sim.over, "won": sim.won, "time": secs, "out": sim.race_sends}
+
+
+## Race points of a finished survivor: the score, plus Defs.RACE_TIME_BONUS for every second they
+## finished before the rival (who may have fallen, or not be done yet: then there is no bonus).
+static func race_points(me: Dictionary, rival: Dictionary) -> int:
+	var pts := int(me.get("score", 0))
+	if rival.get("done", false) and rival.get("won", false):
+		pts += Defs.RACE_TIME_BONUS * maxi(0, int(rival.get("time", 0)) - int(me.get("time", 0)))
+	return pts
 
 
 ## Who won between two finished racers' progress: 1 if a, -1 if b, 0 for a draw. Surviving beats
-## falling; between survivors the higher score wins, between the fallen whoever lasted more waves,
-## then more kills.
+## falling; between survivors the most race points (score plus the time bonus) win, between the
+## fallen whoever lasted more waves, then more kills.
 static func race_compare(a: Dictionary, b: Dictionary) -> int:
 	if a.get("won", false) != b.get("won", false):
 		return 1 if a.get("won", false) else -1
-	var keys := ["score", "gems", "kills"] if a.get("won", false) else ["wave", "kills"]
-	for k in keys:
-		if int(a.get(k, 0)) != int(b.get(k, 0)):
-			return 1 if int(a.get(k, 0)) > int(b.get(k, 0)) else -1
+	var pa := [race_points(a, b), int(a.get("gems", 0)), int(a.get("kills", 0))] if a.get("won", false) else [int(a.get("wave", 0)), int(a.get("kills", 0))]
+	var pb := [race_points(b, a), int(b.get("gems", 0)), int(b.get("kills", 0))] if a.get("won", false) else [int(b.get("wave", 0)), int(b.get("kills", 0))]
+	for i in pa.size():
+		if pa[i] != pb[i]:
+			return 1 if pa[i] > pb[i] else -1
 	return 0
 
 

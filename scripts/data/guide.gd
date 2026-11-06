@@ -145,7 +145,8 @@ static func topics() -> Array:
 	t.append(_t("Progress", "Online races",
 		"In the Hall of Fame, [b]Race[/b] pits you against a friend. One of you hosts a race on a lair and gets a code; the other types the code in, and the race begins for both at once.\n\n"
 		+ "You play the same lair with the same heroes and [b]no Dark Arts skills[/b], so it is fair. A badge on the map shows your rival's wave and gems.\n\n"
-		+ "Whoever survives wins. If you both survive, the higher score wins; if you both fall, whoever lasted more waves. Leaving a race counts as falling. Races need an account and don't change your campaign or leaderboard scores."))
+		+ "[b]Attack your rival:[/b] every [b]%d heroes[/b] you slay sends one like the last onto their road, and [b]Send heroes[/b] (in place of Pause) buys more with gold.\n\n" % Defs.RACE_KILL_SEND
+		+ "The clock runs from the start, so speed matters: call waves early. If you both survive, each second you finish before your rival is worth [b]%d points[/b] on top of your score, and the most points win. Whoever survives beats whoever falls; if you both fall, whoever lasted more waves wins. Leaving a race counts as falling. Races need an account and don't change your campaign or leaderboard scores." % Defs.RACE_TIME_BONUS))
 	t.append(_t("Progress", "Tips",
 		"• Build your first towers near where the roads come close to the cave, so the den helps.\n"
 		+ "• Mix towers: Crypts to slow, Huts for crowds, Shrines for Knights.\n"

@@ -168,6 +168,8 @@ var den_charges := 0
 var den_refill := 0.0     # seconds toward the next charge
 var den_cd := 0.0         # seconds until the den may fire again
 var time := 0.0
+var race_on := false       # an online race: kills send heroes to the rival
+var race_sends := ""      # hero codes sent to the rival so far, oldest first
 var touched := false      # a hero has laid hands on a gem (grabbed from the hoard or picked up)
 var over := false
 var won := false
@@ -688,6 +690,8 @@ func hurt(e: Enemy, dmg: float, pierce := false, src: Tower = null) -> void:
 		gold += int(e.d["gold"])
 		kills += 1
 		kills_by[e.code] = int(kills_by.get(e.code, 0)) + 1
+		if race_on and kills % Defs.RACE_KILL_SEND == 0:
+			race_sends += "k" if e.code == "x" else e.code
 		_text(e.pos + Vector2(0, -0.3), "+%d" % int(e.d["gold"]), Color("e8b84a"))
 		sound.emit("die")
 		if e.carry > 0:
@@ -1103,6 +1107,40 @@ func do_action(id: String, c: Vector2i) -> String:
 
 
 # ---------------------------------------------------------------- scoring
+
+## Online race: the hero kinds that can be bought for the rival (those in this lair's waves, no
+## Champion), cheapest first.
+func race_shop() -> Array[String]:
+	var kinds: Array[String] = []
+	for w: Array in level.waves:
+		for code: String in w:
+			if code != "x" and not kinds.has(code):
+				kinds.append(code)
+	kinds.sort_custom(func(a: String, b: String) -> bool: return race_cost(a) < race_cost(b))
+	return kinds
+
+
+static func race_cost(code: String) -> int:
+	return int(Defs.ENEMIES[code]["gold"]) * Defs.RACE_SEND_COST
+
+
+## Online race: pays gold to send one hero to the rival. Returns an error, or "".
+func race_buy(code: String) -> String:
+	if over:
+		return "The battle is over"
+	if gold < race_cost(code):
+		return "Not enough gold"
+	gold -= race_cost(code)
+	race_sends += code
+	sound.emit("horn")
+	return ""
+
+
+## Online race: a hero the rival sent marches in from the start of a road.
+func race_receive(code: String) -> void:
+	if not over and Defs.ENEMIES.has(code):
+		_spawn(code)
+
 
 func gems_left() -> int:
 	var n := home

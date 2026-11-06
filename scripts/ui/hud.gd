@@ -14,6 +14,7 @@ signal restart_pressed
 signal next_level_pressed
 signal night_pressed
 signal map_pressed
+signal send_pressed(code: String)   # online race: buy this hero for the rival
 
 const NIGHT := Color("15110d")
 const PANEL := Color("231b14")
@@ -55,6 +56,10 @@ var _meteor: Button
 var _cut: Button
 var _speed: Button
 var _pause: Button
+var _send: Button           # online race only, in place of Pause: opens _send_menu
+var _send_menu: PopupMenu
+var _send_kinds: Array[String] = []
+var _sim: GameSim           # the battle shown, as of the last refresh
 var _popup: PanelContainer
 var _popup_box: VBoxContainer
 var _popup_actions: Array = []   # [{button, gold, mana}]
@@ -194,6 +199,19 @@ func _build_bars() -> void:
 	_cut = _button(brow, "Cut woods 15", cut_pressed)
 	_speed = _button(brow, "1×", speed_pressed)
 	_pause = _button(brow, "Pause", pause_pressed)
+	_send = Button.new()
+	_send.text = "Send heroes"
+	_send.custom_minimum_size = Vector2(0, 48)
+	_send.focus_mode = Control.FOCUS_NONE
+	_send.add_theme_color_override("font_color", Color("e2683a"))
+	_send.visible = false
+	_send.pressed.connect(_open_send)
+	brow.add_child(_send)
+	_send_menu = PopupMenu.new()
+	_send_menu.add_theme_font_size_override("font_size", 28)
+	_send_menu.add_theme_constant_override("v_separation", 14)
+	_send_menu.index_pressed.connect(func(i: int) -> void: send_pressed.emit(_send_kinds[i]))
+	add_child(_send_menu)
 	_sound = sound_button(brow)
 	_add_map_button(brow)
 	for b in [_meteor, _cut]:
@@ -365,6 +383,7 @@ func _safe_margins() -> Vector4:
 # ---------------------------------------------------------------- per frame
 
 func refresh(sim: GameSim, armed: bool, speed: int, paused: bool) -> void:
+	_sim = sim
 	_gold.text = str(sim.gold)
 	_mana.text = str(int(sim.mana))
 	_mana_bar.max_value = sim.mana_max
@@ -699,6 +718,8 @@ func show_end(sim: GameSim, has_next: bool, new_best: bool, new_stars := 0, free
 ## "" hides it.
 func set_rival(rival_name: String, p: Dictionary = {}) -> void:
 	_rival_box.visible = rival_name != ""
+	_send.visible = _rival_box.visible     # in a race, Send takes Pause's place: pausing would
+	_pause.visible = not _rival_box.visible   # only lose time on the race clock
 	if not _rival_box.visible:
 		return
 	if p.get("done", false):
@@ -709,16 +730,41 @@ func set_rival(rival_name: String, p: Dictionary = {}) -> void:
 	_rival_box.position = map_area.position + Vector2(8, 8)
 
 
+## The Send menu: every hero kind of this lair with its price; the ones you can't afford are greyed.
+func _open_send() -> void:
+	if _sim == null or _sim.over:
+		return
+	_send_menu.clear()
+	_send_kinds = _sim.race_shop()
+	for code in _send_kinds:
+		var cost := GameSim.race_cost(code)
+		_send_menu.add_item("%s  ·  %d gold" % [Defs.ENEMIES[code]["name"], cost])
+		_send_menu.set_item_disabled(_send_menu.item_count - 1, _sim.gold < cost)
+	var r := _send.get_global_rect()
+	_send_menu.reset_size()
+	var at := Vector2(r.position.x - _send_menu.size.x - 8, r.position.y) if side else Vector2(r.position.x, r.position.y - _send_menu.size.y - 8)
+	_send_menu.popup(Rect2i(Vector2i(at), Vector2i.ZERO))
+
+
 ## The end card of an online race. me and rival are Online.race_progress records; while the rival
 ## is still playing, the card says so and is shown again when they finish.
 func show_race_end(me: Dictionary, rival: Dictionary, rival_name: String) -> void:
-	var line := func(who: String, p: Dictionary) -> String:
+	var line := func(who: String, p: Dictionary, other: Dictionary) -> String:
 		if not p.get("done", false):
 			return "%s: [color=#a8977c]still playing, wave %d · %d gems · %d kills[/color]" % [who, p.get("wave", 0), p.get("gems", 0), p.get("kills", 0)]
-		if p.get("won", false):
-			return "%s: [b][color=#e8b84a]survived[/color][/b] with %d gems · %d kills · score [b]%s[/b]" % [who, p.get("gems", 0), p.get("kills", 0), _thousands(int(p.get("score", 0)))]
-		return "%s: [color=#e2683a]fell at wave %d[/color] · %d kills" % [who, p.get("wave", 0), p.get("kills", 0)]
-	var txt: String = line.call("You", me) + "\n" + line.call(rival_name, rival)
+		var n := str(p.get("out", "")).length()
+		var sent := "  ·  sent %d hero%s" % [n, "" if n == 1 else "es"] if n > 0 else ""
+		if not p.get("won", false):
+			return "%s: [color=#e2683a]fell at wave %d[/color] · %d kills%s" % [who, p.get("wave", 0), p.get("kills", 0), sent]
+		var t := "%s: [b][color=#e8b84a]survived[/color][/b] in %s with %d gems · %d kills%s\n      score %s" % [who, _clock(int(p.get("time", 0))),
+			p.get("gems", 0), p.get("kills", 0), sent, _thousands(int(p.get("score", 0)))]
+		var pts := Online.race_points(p, other)
+		if pts > int(p.get("score", 0)):
+			t += " + %s for finishing %s sooner" % [_thousands(pts - int(p.get("score", 0))), _clock(int(other.get("time", 0)) - int(p.get("time", 0)))]
+		if other.get("done", false) and other.get("won", false):
+			t += " = [b]%s[/b] race points" % _thousands(pts)
+		return t
+	var txt: String = line.call("You", me, rival) + "\n" + line.call(rival_name, rival, me)
 	var title := "Waiting for %s…" % rival_name
 	if rival.get("done", false):
 		match Online.race_compare(me, rival):
@@ -729,6 +775,11 @@ func show_race_end(me: Dictionary, rival: Dictionary, rival_name: String) -> voi
 			_:
 				title = "A draw!"
 	_show_card(title, txt, [["Map", map_pressed]])
+
+
+## 125 seconds as "2:05".
+static func _clock(s: int) -> String:
+	return "%d:%02d" % [s / 60, s % 60]
 
 
 ## Small drawn icons for the stats bar.

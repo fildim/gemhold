@@ -88,6 +88,7 @@ func _ready() -> void:
 	select.hall_pressed.connect(hall.open)
 	hall.closed.connect(func() -> void: hall.visible = false)
 	hall.race_ready.connect(_start_race)
+	hud.send_pressed.connect(_on_send)
 	guide.closed.connect(func() -> void: guide.visible = false)
 	select.skills_pressed.connect(func() -> void:
 		skill_tree.refresh()
@@ -461,8 +462,9 @@ func _on_ended(won: bool) -> void:
 	spot.hide_tip()
 	_deselect()
 	if not race.is_empty():
+		race["t_end"] = Time.get_ticks_msec()   # the race clock stops
 		_race_t = 0.0   # report the finish now; the race card shows when the rival's answer is in
-		hud.show_race_end(Online.race_progress(sim), race.get("rival", Online.race_progress()), _rival_name())
+		hud.show_race_end(Online.race_progress(sim, false, _race_secs()), race.get("rival", Online.race_progress()), _rival_name())
 		return
 	var had_night := save.night_unlocked(level.id)
 	var mission := SaveData.mission_id(level.id, night)
@@ -533,6 +535,8 @@ func _start_race(r: Dictionary, side: String) -> void:
 	race = r.duplicate()
 	race["side"] = side
 	race["rival"] = r["g" if side == "h" else "h"]
+	race["t0"] = Time.get_ticks_msec()
+	race["got"] = 0   # how many of the rival's sent heroes have marched in here
 	_race_t = 0.0
 	hall.visible = false
 	on_map = false
@@ -541,6 +545,7 @@ func _start_race(r: Dictionary, side: String) -> void:
 	hud.set_battle_visible(true)
 	night = false
 	_load_level(i)
+	sim.race_on = true
 	_layout()
 	started = true
 	hud.set_rival(_rival_name(), race["rival"])
@@ -558,7 +563,7 @@ func _race_tick() -> void:
 	_race_t = 2.5
 	var code: String = race["code"]
 	var side: String = race["side"]
-	var me := Online.race_progress(sim)
+	var me := Online.race_progress(sim, false, _race_secs())
 	if me != race.get("sent", {}):
 		if await online.race_report(code, side, me) == "" and race.get("code") == code:
 			race["sent"] = me
@@ -567,6 +572,18 @@ func _race_tick() -> void:
 	if race.get("code") != code or r.has("error"):
 		return
 	var rival: Dictionary = r["g" if side == "h" else "h"]
+	var out := str(rival.get("out", ""))
+	var fresh := out.substr(int(race["got"]))
+	race["got"] = out.length()
+	if fresh != "" and not sim.over:
+		var names := []
+		for c in fresh:
+			sim.race_receive(c)
+			if Defs.ENEMIES.has(c):
+				names.append(Defs.ENEMIES[c]["name"])
+		hud.toast("%s sent you: %s" % [_rival_name(), ", ".join(names)])
+	if rival.get("done", false) and not race["rival"].get("done", false) and not sim.over:
+		hud.toast("%s has %s!" % [_rival_name(), "finished in " + hud._clock(int(rival.get("time", 0))) if rival.get("won", false) else "fallen"])
 	race["rival"] = rival
 	hud.set_rival(_rival_name(), rival)
 	if sim.over:
@@ -579,8 +596,25 @@ func _race_tick() -> void:
 func _leave_race() -> void:
 	if race.is_empty():
 		return
-	var p := Online.race_progress(sim, true)   # unfinished counts as fallen (sim.won is false)
+	var p := Online.race_progress(sim, true, _race_secs())   # unfinished counts as fallen (sim.won is false)
 	if p != race.get("sent", {}):
 		online.race_report(race["code"], race["side"], p)
 	race = {}
 	hud.set_rival("")
+
+
+## Seconds on the race clock: from the start until this player finished (or now).
+func _race_secs() -> int:
+	return int((int(race.get("t_end", Time.get_ticks_msec())) - int(race.get("t0", 0))) / 1000)
+
+
+func _on_send(code: String) -> void:
+	if race.is_empty() or not started:
+		return
+	var err := sim.race_buy(code)
+	if err != "":
+		hud.toast(err)
+		Sfx.play("error")
+		return
+	hud.toast("%s sent to %s" % [Defs.ENEMIES[code]["name"], _rival_name()])
+	_race_t = 0.0   # tell the rival now

@@ -133,6 +133,13 @@ const SITES := {
 const LOOT_COIN_CHANCE := 0.32
 const LOOT_POTION_CHANCE := 0.15
 const LOOT_POTION_MANA := 15
+
+## Online races (see main.gd): every RACE_KILL_SEND heroes you slay sends one like the last onto your
+## rival's road (a Champion sends a Knight); Send buys more for RACE_SEND_COST × the hero's bounty.
+## Between two survivors, finishing sooner is worth RACE_TIME_BONUS points per second.
+const RACE_KILL_SEND := 10
+const RACE_SEND_COST := 5
+const RACE_TIME_BONUS := 20
 const LOOT_COIN_MUL := 1.4    # a coin is worth this times the hero's bounty, grown by wave (not threat),
 const LOOT_COIN_BONUS := 4    # plus this flat amount, so even small heroes drop a worthwhile coin
 

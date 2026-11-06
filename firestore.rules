@@ -23,7 +23,8 @@ service cloud.firestore {
     // writes only their own progress (h for the host, g for the guest).
     match /races/{code} {
       function progress(p) {
-        return p is map && p.keys().hasOnly(['wave', 'gems', 'kills', 'score', 'done', 'won']);
+        return p is map && p.keys().hasOnly(['wave', 'gems', 'kills', 'score', 'done', 'won', 'time', 'out'])
+          && (!('out' in p) || (p.out is string && p.out.size() <= 4000));
       }
       allow read: if request.auth != null;
       allow delete: if request.auth != null && request.auth.uid == resource.data.host;
