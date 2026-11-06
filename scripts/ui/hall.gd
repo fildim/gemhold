@@ -513,7 +513,17 @@ func _refresh_race() -> void:
 		return
 	if _race_code != "":
 		_label(_race, "Give your rival this code. The race starts the moment they join.", 24, Hud.DIM)
-		var code := _label(_race, _race_code, 96, Hud.GOLD, _hud.display_font)
+		# The code in the plain bold face, widely spaced, on a dark plate: easy to read out and type.
+		var plate := PanelContainer.new()
+		plate.add_theme_stylebox_override("panel", _hud._box(Color(0, 0, 0, 0.45), Hud.GOLD, 2, 12, 18))
+		plate.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		_race.add_child(plate)
+		var spaced := FontVariation.new()
+		spaced.base_font = _hud.bold_font
+		spaced.spacing_glyph = 24
+		spaced.opentype_features = {TextServerManager.get_primary_interface().name_to_tag("lnum"): 1}   # full-height digits
+		var code := _label(plate, _race_code, 88, Hud.GOLD, spaced)
+		code.autowrap_mode = TextServer.AUTOWRAP_OFF
 		code.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		_race_status = _label(_race, "Waiting for a rival…", 26, Hud.DIM)
 		_action(_race, "Call off the race", func() -> void:
