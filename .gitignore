@@ -3,7 +3,7 @@
 *.import.bak
 
 # Android build template and outputs (reinstall from the editor)
-android/build/
+android/
 *.apk
 *.aab
 *.idsig

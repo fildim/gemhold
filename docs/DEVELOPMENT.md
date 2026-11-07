@@ -146,15 +146,23 @@ Install it on your phone:
 Or, with the phone plugged in, press the small Android button in the editor's top-right bar.
 Debug builds are signed with Godot's debug keystore and are only for testing.
 
-## Getting ready for Google Play
+## Google Play
 
-- **Use a Gradle build:** in the Android export preset, enable **Gradle Build > Use Gradle Build**, then **Project > Install Android Build Template**.
-- **Target Android 16 (API 36):** the quick debug build above targets API 35, which is fine for testing on your phone. Since August 31, 2026, Google Play requires new apps and updates to target API 36. Set **Target SDK** to 36 in the export preset's Gradle Build section. If Play Console still warns, check the Godot forum thread on targeting the latest SDK.
-- **Export an `.aab` file** (Google Play only accepts App Bundles for new apps).
-- **Make a release keystore** with `keytool` (comes with the JDK) and enter it under **Keystore > Release**. Back it up with its passwords somewhere safe. Without it you can never update the app.
-- **Developer account:** a one-time $25 fee at play.google.com/console.
-- **Closed test first:** new personal accounts must run a closed test with at least 12 testers opted in for 14 days in a row before the app can go public.
-- **Keep the art and name original.** Mechanics like Cursed Treasure's are fine; its name, characters and graphics are not.
+The **Android Play** export preset builds the store file: a Gradle build, `.aab` format, target SDK 36 (Play has required API 36 since August 31, 2026). The plain **Android** preset stays a quick debug APK for Firebase testers and CI.
+
+- **Build template:** `android/build/` is not in git. Godot installs it on the first Play export with `--install-android-build-template`.
+- **Upload key:** `Desktop\Gemhold Play key\gemhold-upload.jks` (alias `upload`; the password is in the README next to it). Keep backups. Never commit it. Godot reads it from environment variables, so no password goes in `export_presets.cfg`:
+
+  ```bash
+  export GODOT_ANDROID_KEYSTORE_RELEASE_PATH="C:/Users/fil/Desktop/Gemhold Play key/gemhold-upload.jks"
+  export GODOT_ANDROID_KEYSTORE_RELEASE_USER=upload
+  export GODOT_ANDROID_KEYSTORE_RELEASE_PASSWORD=...   # from the README
+  godot --headless --path . --install-android-build-template --export-release "Android Play" build/gemhold-X.Y.Z.aab
+  ```
+  The first build downloads Gradle (about 10 minutes). Bump `version/code` in **both** Android presets each release. Play rejects a code it has already seen.
+- **Store pages:** `site/privacy.html` and `site/delete-account.html` are copied into the GitHub Pages build by `web.yml`. They are live at `fildim.github.io/gemhold/privacy.html` and `/delete-account.html`. Play requires both: Gemhold has accounts, so players must be able to delete them outside the game too.
+- **Listing text, graphics and Play Console answers:** `Desktop\Gemhold Play store\`.
+- **Rules:** new personal accounts must run a closed test with 12+ testers for 14 days before going public. Keep the art and name original.
 
 ## Roadmap toward Cursed Treasure 2–level depth
 

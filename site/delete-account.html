@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gemhold – Delete Account</title>
+<style>
+  body { background:#14111a; color:#e8e2d6; font:17px/1.6 Georgia, serif; margin:0; padding:24px 16px; }
+  main { max-width:520px; margin:0 auto; }
+  h1 { color:#e0b84c; }
+  label { display:block; margin-top:14px; }
+  input { width:100%; box-sizing:border-box; padding:10px; font-size:17px; background:#221d2b; color:#e8e2d6;
+          border:1px solid #5a4d6b; border-radius:6px; }
+  button { margin-top:20px; padding:12px 20px; font-size:17px; background:#8f2b2b; color:#fff; border:0;
+           border-radius:6px; cursor:pointer; } button:disabled { opacity:.5; cursor:default; }
+  #msg { margin-top:18px; min-height:1.6em; } .ok { color:#8fd18f; } .bad { color:#f08a7a; }
+  a { color:#f0c75e; }
+</style>
+</head>
+<body><main>
+<h1>Delete your Gemhold account</h1>
+<p>This permanently deletes your Gemhold account: your email sign-in, player name, scores, achievements
+and race record are removed from the leaderboard and from our servers. It cannot be undone.
+Progress saved on your own device stays.</p>
+<p>You can also do this in the game: <b>Hall of Fame → Delete account</b>.</p>
+
+<form id="f">
+  <label>Email<input id="mail" type="email" autocomplete="email" required></label>
+  <label>Password<input id="pw" type="password" autocomplete="current-password" required></label>
+  <button id="go" type="submit">Delete my account</button>
+</form>
+<div id="msg"></div>
+<p>Forgot your password? Use “Forgot password” in the game's Hall of Fame to get a reset email first.
+Problems? Write to <a href="mailto:fildimitriadis1998@gmail.com">fildimitriadis1998@gmail.com</a>.
+See also the <a href="privacy.html">privacy policy</a>.</p>
+
+<script>
+const KEY = "AIzaSyAdWN9fBo3FQ0xfY6Z_YHnuAb9VSG5G42E";
+const AUTH = "https://identitytoolkit.googleapis.com/v1/accounts:";
+const DOCS = "https://firestore.googleapis.com/v1/projects/gemhold/databases/(default)/documents/players/";
+const msg = document.getElementById("msg"), go = document.getElementById("go");
+function say(t, cls) { msg.textContent = t; msg.className = cls || ""; }
+function friendly(e) {
+  if (/INVALID_LOGIN_CREDENTIALS|INVALID_PASSWORD|EMAIL_NOT_FOUND|INVALID_EMAIL/.test(e)) return "Wrong email or password.";
+  if (/TOO_MANY_ATTEMPTS/.test(e)) return "Too many tries. Please wait a few minutes.";
+  return "Something went wrong (" + e + "). Please try again.";
+}
+document.getElementById("f").addEventListener("submit", async (ev) => {
+  ev.preventDefault();
+  if (!confirm("Really delete your Gemhold account? This cannot be undone.")) return;
+  go.disabled = true; say("Deleting…");
+  try {
+    let r = await fetch(AUTH + "signInWithPassword?key=" + KEY, { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: document.getElementById("mail").value.trim(), password: document.getElementById("pw").value, returnSecureToken: true }) });
+    let d = await r.json();
+    if (!r.ok) throw new Error(d.error && d.error.message || r.status);
+    const token = d.idToken, uid = d.localId;
+    r = await fetch(DOCS + uid, { method: "DELETE", headers: { Authorization: "Bearer " + token } });
+    if (!r.ok && r.status !== 404) throw new Error("leaderboard " + r.status);
+    r = await fetch(AUTH + "delete?key=" + KEY, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ idToken: token }) });
+    if (!r.ok) { d = await r.json(); throw new Error(d.error && d.error.message || r.status); }
+    document.getElementById("f").remove();
+    say("Your account has been deleted.", "ok");
+  } catch (e) {
+    say(friendly(String(e.message || e)), "bad"); go.disabled = false;
+  }
+});
+</script>
+</main></body>
+</html>
