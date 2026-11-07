@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 512 512">
+  <g transform="translate(256 262) scale(0.64) translate(-256 -283)">
+    <path d="M136 470 V318 Q136 186 256 182 Q376 186 376 318 V470" fill="none" stroke="#fff" stroke-width="22" stroke-linecap="round"/>
+    <g stroke="#fff" stroke-width="10" stroke-linejoin="round">
+      <path d="M146 290 L196 232 L232 290 Z" fill="#fff" fill-opacity="0.75"/>
+      <path d="M196 232 L316 232 L280 290 L232 290 Z" fill="#fff"/>
+      <path d="M316 232 L366 290 L280 290 Z" fill="#fff" fill-opacity="0.55"/>
+      <path d="M146 290 L232 290 L256 428 Z" fill="#fff" fill-opacity="0.65"/>
+      <path d="M232 290 L280 290 L256 428 Z" fill="#fff" fill-opacity="0.9"/>
+      <path d="M280 290 L366 290 L256 428 Z" fill="#fff" fill-opacity="0.45"/>
+    </g>
+    <ellipse cx="256" cy="446" rx="118" ry="20" fill="#fff"/>
+  </g>
+</svg>

@@ -161,6 +161,7 @@ The **Android Play** export preset builds the store file: a Gradle build, `.aab`
   ```
   The first build downloads Gradle (about 10 minutes). Bump `version/code` in **both** Android presets each release. Play rejects a code it has already seen.
 - **Store pages:** `site/privacy.html` and `site/delete-account.html` are copied into the GitHub Pages build by `web.yml`. They are live at `fildim.github.io/gemhold/privacy.html` and `/delete-account.html`. Play requires both: Gemhold has accounts, so players must be able to delete them outside the game too.
+- **Icon:** `icon.svg` is the main icon. Android uses separate layers in `assets/icons/` (background, foreground scaled into the safe circle, monochrome, legacy 192). Re-render them when the icon changes.
 - **Listing text, graphics and Play Console answers:** `Desktop\Gemhold Play store\`.
 - **Rules:** new personal accounts must run a closed test with 12+ testers for 14 days before going public. Keep the art and name original.
 
