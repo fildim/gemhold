@@ -5,7 +5,9 @@
 #   Windows  Gemhold.exe                 Linux  Gemhold-Linux.zip
 #   macOS    Gemhold-macOS.zip
 #   Android  Gemhold.apk (only if the ANDROID_DEBUG_KEYSTORE secret is set, see README)
-#   iPhone   Gemhold-iOS-unsigned.ipa (sideload with AltStore or Sideloadly)
+#
+# All of these are the free demo (the "... Demo" export presets, see Edition). The iOS job only
+# checks that the project still builds for iPhone; nothing from it is published.
 name: Release
 
 on:
@@ -51,9 +53,9 @@ jobs:
       - name: Export Windows, Linux and macOS
         run: |
           mkdir -p build/windows build/linux build/macos out
-          ./godot --headless --export-release "Windows Desktop" build/windows/Gemhold.exe
-          ./godot --headless --export-release "Linux" build/linux/Gemhold.x86_64
-          ./godot --headless --export-release "macOS" build/macos/Gemhold-macOS.zip
+          ./godot --headless --export-release "Windows Demo" build/windows/Gemhold.exe
+          ./godot --headless --export-release "Linux Demo" build/linux/Gemhold.x86_64
+          ./godot --headless --export-release "macOS Demo" build/macos/Gemhold-macOS.zip
           cp build/windows/Gemhold.exe out/
           (cd build/linux && chmod +x Gemhold.x86_64 && zip -q ../../out/Gemhold-Linux.zip Gemhold.x86_64)
           cp build/macos/Gemhold-macOS.zip out/
@@ -76,7 +78,7 @@ jobs:
           export GODOT_ANDROID_KEYSTORE_DEBUG_PATH="$PWD/debug.keystore"
           export GODOT_ANDROID_KEYSTORE_DEBUG_USER=androiddebugkey
           export GODOT_ANDROID_KEYSTORE_DEBUG_PASSWORD=android
-          ./godot --headless --export-debug "Android" out/Gemhold.apk
+          ./godot --headless --export-debug "Android Demo" out/Gemhold.apk
           rm -f debug.keystore out/*.idsig
           test -s out/Gemhold.apk
 
@@ -125,7 +127,7 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: ios-files
+          name: ios-check   # not "*-files", so it stays out of the release
           path: out/*
 
   release:
@@ -146,7 +148,7 @@ jobs:
           name: Gemhold ${{ github.ref_name }}
           generate_release_notes: true
           body: |
-            **Pick your system and download the file below.** See the README for help installing.
+            **Free demo with the first five lairs. Pick your system and download the file below.** See the README for help installing.
 
             | System | File | |
             |---|---|---|
@@ -154,5 +156,5 @@ jobs:
             | macOS | `Gemhold-macOS.zip` | Unzip, then right-click **Gemhold**, **Open**, **Open** (first time only). |
             | Linux | `Gemhold-Linux.zip` | Unzip and run `Gemhold.x86_64`. |
             | Android | `Gemhold.apk` | Open it on the phone and allow installing from this source. |
-            | iPhone / iPad | [Play in Safari](https://fildim.github.io/gemhold/) | Share, **Add to Home Screen** for full screen. Or sideload `Gemhold-iOS-unsigned.ipa`. |
+            | iPhone / iPad | [Play in Safari](https://fildim.github.io/gemhold/) | Share, **Add to Home Screen** for full screen. |
             | Any browser | [fildim.github.io/gemhold](https://fildim.github.io/gemhold/) | Nothing to install. |

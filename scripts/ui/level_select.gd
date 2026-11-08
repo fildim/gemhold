@@ -26,6 +26,7 @@ var _heading: Label
 var _sub: Label
 var _reset: Button
 var _confirm: Control       # "Erase all progress?" dialog
+var _offer: Control         # demo builds: "get the full game" dialog
 var _skills: Button
 var _sound: Button
 var _guide: Button
@@ -121,7 +122,7 @@ func _show_page(p: int) -> void:
 		m.visible = m.index / PER_PAGE == _page
 	_prev.visible = _page > 0
 	_next.visible = _page < _pages() - 1
-	_sub.text = "%s  ·  %d of %d lairs defended" % [CHAPTERS[mini(_page, CHAPTERS.size() - 1)], _beaten, _levels.size()]
+	_sub.text = "%s  ·  %d of %d lairs defended%s" % [CHAPTERS[mini(_page, CHAPTERS.size() - 1)], _beaten, _levels.size(), "  ·  Free demo" if Edition.demo else ""]
 	_layout()
 
 
@@ -130,7 +131,7 @@ func refresh() -> void:
 	_beaten = 0
 	for m: Marker in _markers:
 		var id: String = _levels[m.index]["id"]
-		m.locked = not _save.is_unlocked(m.index)
+		m.locked = not _save.is_unlocked(m.index) or Edition.locked(m.index)
 		m.stars = _save.stars(id)
 		m.night = -1 if not _save.night_unlocked(id) else _save.stars(SaveData.mission_id(id, true))
 		m.current = not m.locked and m.stars == 0
@@ -142,8 +143,11 @@ func refresh() -> void:
 	_reset.text = "Reset progress"
 	if _confirm:
 		_confirm.visible = false
+	if _offer:
+		_offer.visible = false
 	# Open on the chapter of the newest lair the player may play.
-	_show_page((mini(_save.unlocked, _levels.size()) - 1) / PER_PAGE)
+	var newest := mini(_save.unlocked, Edition.DEMO_LAIRS if Edition.demo else _levels.size())
+	_show_page((mini(newest, _levels.size()) - 1) / PER_PAGE)
 
 
 func _layout() -> void:
@@ -172,6 +176,8 @@ func _layout() -> void:
 	_next.position = Vector2(size.x - _next.size.x - 14, _heading.position.y + 8)
 	if _confirm:
 		_confirm.size = size
+	if _offer:
+		_offer.size = size
 	queue_redraw()
 
 
@@ -184,7 +190,9 @@ func _spot(i: int) -> Vector2:
 
 func _on_marker(i: int) -> void:
 	Sfx.play("click")
-	if _save.is_unlocked(i):
+	if Edition.locked(i):
+		offer_full_game()
+	elif _save.is_unlocked(i):
 		level_chosen.emit(i)
 	else:
 		_hud.toast("Defend the previous lair first")
@@ -249,6 +257,66 @@ Achievements and best scores are kept."
 	cancel.pressed.connect(func() -> void: _confirm.visible = false)
 	row.add_child(cancel)
 	_confirm.visible = false
+
+
+## Demo builds: shown on a locked lair and after the last free one.
+func offer_full_game() -> void:
+	if _offer == null:
+		_build_offer()
+	_offer.size = size
+	_offer.visible = true
+
+
+func _build_offer() -> void:
+	var store := Edition.store()
+	var url: String = store["url"]
+	_offer = Control.new()
+	_offer.mouse_filter = Control.MOUSE_FILTER_STOP
+	add_child(_offer)
+	var dim := ColorRect.new()
+	dim.color = Color(0.05, 0.04, 0.03, 0.85)
+	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_offer.add_child(dim)
+	var center := CenterContainer.new()
+	center.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_offer.add_child(center)
+	var card := PanelContainer.new()
+	card.add_theme_stylebox_override("panel", _hud._box(Hud.PANEL, Hud.GOLD, 2, 12, 24))
+	center.add_child(card)
+	var box := VBoxContainer.new()
+	box.add_theme_constant_override("separation", 16)
+	card.add_child(box)
+	var h := Label.new()
+	h.text = "The hoard goes deeper"
+	h.add_theme_font_override("font", _hud.display_font)
+	h.add_theme_font_size_override("font_size", 44)
+	h.add_theme_color_override("font_color", Hud.GOLD)
+	box.add_child(h)
+	var t := Label.new()
+	var more := _levels.size() - Edition.DEMO_LAIRS
+	t.text = "This free demo has the first %d lairs.\n%d more wait in the full game%s" % [Edition.DEMO_LAIRS, more,
+		" on %s." % store["name"] if url != "" else ", coming soon to %s." % store["name"]]
+	t.add_theme_font_size_override("font_size", 26)
+	box.add_child(t)
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 14)
+	box.add_child(row)
+	if url != "":
+		var get_it := Button.new()
+		get_it.text = "Get the full game"
+		get_it.focus_mode = Control.FOCUS_NONE
+		get_it.custom_minimum_size = Vector2(0, 60)
+		get_it.add_theme_font_size_override("font_size", 26)
+		get_it.pressed.connect(func() -> void: OS.shell_open(url))
+		row.add_child(get_it)
+	var back := Button.new()
+	back.text = "Later" if url != "" else "OK"
+	back.focus_mode = Control.FOCUS_NONE
+	back.custom_minimum_size = Vector2(160, 60)
+	back.add_theme_font_size_override("font_size", 26)
+	back.pressed.connect(func() -> void: _offer.visible = false)
+	row.add_child(back)
+	_offer.visible = false
 
 
 func _erase() -> void:

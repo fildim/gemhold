@@ -544,7 +544,7 @@ func _refresh_race() -> void:
 	# Item id = lair index × 2, +1 for its night mission (offered once the host has opened it).
 	var newest := 0
 	for i in _levels.size():
-		if _save.is_unlocked(i):
+		if _save.is_unlocked(i) and not Edition.locked(i):
 			_race_pick.add_item("Lair %d: %s" % [i + 1, _levels[i]["title"]], i * 2)
 			newest = _race_pick.item_count - 1
 			if _save.night_unlocked(_levels[i]["id"]):

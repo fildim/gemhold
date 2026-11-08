@@ -125,6 +125,10 @@ func _show_map() -> void:
 func _choose(i: int) -> void:
 	if i < 0 or i >= LEVELS.size() or not save.is_unlocked(i):
 		return
+	if Edition.locked(i):   # "Next" on the last demo lair
+		_show_map()
+		select.offer_full_game()
+		return
 	on_map = false
 	started = false
 	select.visible = false
@@ -542,6 +546,9 @@ func _start_race(r: Dictionary, side: String) -> void:
 	var i := _ids.find(r["level"])
 	if i < 0:
 		hud.toast("That lair is not in this version of the game: update it")
+		return
+	if Edition.locked(i):
+		hud.toast("That lair is only in the full game")
 		return
 	race = r.duplicate()
 	race["side"] = side

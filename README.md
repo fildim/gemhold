@@ -8,6 +8,8 @@ Twenty lairs in two chapters, growing harder one step at a time, a night mission
 
 ## Play
 
+These are the free demo, with the first five lairs.
+
 <p align="center">
   <a href="https://fildim.github.io/gemhold/"><img src="https://img.shields.io/badge/Browser-Play_now-e2683a?style=for-the-badge&logo=googlechrome&logoColor=white" alt="Play in your browser" height="40"></a>
   <br>
@@ -15,14 +17,15 @@ Twenty lairs in two chapters, growing harder one step at a time, a night mission
   <br>
   <a href="https://github.com/fildim/gemhold/releases/latest/download/Gemhold-macOS.zip"><img src="https://img.shields.io/badge/macOS-Gemhold--macOS.zip-e8b84a?style=for-the-badge&logo=apple&logoColor=white" alt="Download for macOS" height="40"></a>
   <br>
-  <a href="https://github.com/fildim/gemhold/releases/latest/download/Gemhold-Linux.zip"><img src="https://img.shields.io/badge/Linux-Gemhold--Linux.zip-e8b84a?style=for-the-badge&logo=linux&logoColor=white" alt="Download for Linux" height="40"></a>
+  <a href="https://github.com/fildim/gemhold/releases/latest/download/Gemhold-Linux.zip"><img src="https://img.shields.io/badge/Linux-Gemhold--Linux.zip-e8b84a?style=for-the-badge&logo=linux&logoColor=white&v=2" alt="Download for Linux" height="40"></a>
   <br>
   <a href="https://github.com/fildim/gemhold/releases/latest/download/Gemhold.apk"><img src="https://img.shields.io/badge/Android-Gemhold.apk-e8b84a?style=for-the-badge&logo=android&logoColor=white" alt="Download for Android" height="40"></a>
 </p>
 
 ## How to start
 
-- **Browser, iPhone or iPad:** tap **Play now**. Nothing to install. On an iPhone or iPad, tap **Share**, then **Add to Home Screen**, and it opens full screen like an app.
+- **Browser:** tap **Play now**. Nothing to install.
+- **iPhone or iPad:** there is no app to download yet. Open **Play now** in Safari, tap **Share**, then **Add to Home Screen**, and it opens full screen like an app.
 - **Windows:** download and double-click `Gemhold.exe`. If Windows says "Windows protected your PC", click **More info**, then **Run anyway**.
 - **macOS:** download and unzip, then right-click **Gemhold** and choose **Open**, then **Open** again (only the first time).
 - **Linux:** download, unzip and run `Gemhold.x86_64`.
