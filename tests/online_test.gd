@@ -101,6 +101,15 @@ func _run() -> void:
 		await create_timer(0.05).timeout
 	_check(await reopened.delete_account() == "", "clean up the first account")
 
+	# Firebase refuses to delete after an old sign-in, so the game asks first and removes nothing.
+	var signed_in_at := a._password_at
+	a._password_at = 0.0
+	_check(await a.delete_account() == Online.SIGN_IN_AGAIN and a.signed_in(), "an old sign-in is asked to sign in again")
+	total = await b.top("total")
+	_check(total.any(func(row: Dictionary) -> bool: return row["name"] == "Alpha Prime"), "and stays on the board: %s" % [total])
+	_check(Online.friendly("CREDENTIAL_TOO_OLD_LOGIN_AGAIN") == Online.SIGN_IN_AGAIN, "Firebase's refusal is put in words")
+	a._password_at = signed_in_at
+
 	_check(await a.delete_account() == "", "delete account")
 	total = await b.top("total")
 	_check(total.size() == 1 and total[0]["name"] == "Beta", "a deleted player leaves the board: %s" % [total])

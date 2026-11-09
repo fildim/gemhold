@@ -23,6 +23,9 @@ const AUTH_HOST := "https://identitytoolkit.googleapis.com"
 const TOKEN_HOST := "https://securetoken.googleapis.com"
 const DOCS_HOST := "https://firestore.googleapis.com"
 
+## Firebase only deletes an account soon after a password sign-in (about five minutes).
+const DELETE_WINDOW := 240.0
+const SIGN_IN_AGAIN := "For your safety, sign out and sign in again, then delete straight away"
 const NAME_MIN := 2
 const NAME_MAX := 16
 
@@ -32,6 +35,7 @@ var email := ""
 var path := PATH        # tests point this elsewhere
 var sync_progress := SYNC_PROGRESS   # tests turn this on
 var _owner := ""        # the account this device's save belongs to, kept after signing out ("" = nobody's yet)
+var _password_at := 0.0 # unix time of this session's last password sign-in (0 after a restart)
 var _refresh := ""
 var _token := ""
 var _token_until := 0.0   # unix time the id token runs out
@@ -91,6 +95,7 @@ func sign_up(mail: String, password: String, name: String, save: SaveData) -> St
 	if not r["ok"]:
 		return r["error"]
 	_take_tokens(r["data"])
+	_password_at = Time.get_unix_time_from_system()
 	_claim_save(save)
 	email = mail.strip_edges()
 	player_name = name.strip_edges()
@@ -106,6 +111,7 @@ func sign_in(mail: String, password: String, save: SaveData) -> String:
 	if not r["ok"]:
 		return r["error"]
 	_take_tokens(r["data"])
+	_password_at = Time.get_unix_time_from_system()
 	_claim_save(save)
 	email = mail.strip_edges()
 	await pull(save)
@@ -143,6 +149,8 @@ func sign_out() -> void:
 
 ## Takes the player off the leaderboard and deletes the account. Progress on this device stays.
 func delete_account() -> String:
+	if Time.get_unix_time_from_system() - _password_at > DELETE_WINDOW:
+		return SIGN_IN_AGAIN   # asked before anything is removed, so a refusal can't leave it half done
 	if not await _fresh_token():
 		return "Could not reach the server"
 	var r := await _call("DELETE", _docs + "/players/" + uid, null, true)
@@ -533,6 +541,8 @@ static func friendly(msg: String, code := 0) -> String:
 			return "Too many tries: wait a little and try again"
 		"OPERATION_NOT_ALLOWED", "CONFIGURATION_NOT_FOUND":
 			return "Accounts aren't switched on yet"
+		"CREDENTIAL_TOO_OLD_LOGIN_AGAIN":
+			return SIGN_IN_AGAIN
 	if code == 403 or code == 401:
 		return "Not allowed: try signing in again"
 	return msg if msg != "" else "Something went wrong (%d)" % code
