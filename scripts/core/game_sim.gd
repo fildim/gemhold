@@ -184,6 +184,22 @@ var most_towers := 0      # most towers standing at once
 var early_calls := 0
 var skipped := 0          # seconds of wave countdown skipped by calling early
 var abilities := 0        # times a tower learned its ability
+var learned := {}         # tower type -> true once one of that type learned its ability
+var kills_tower := {}     # tower type -> heroes it slew (the rest fell to the den and meteors)
+var meteors := 0          # meteors cast
+var meteor_kills := 0     # heroes meteors slew
+var towers_built := 0
+var built_count := {}     # tower type -> how many were built
+var high_built := 0       # of those, how many on raised ground
+var upgrades := 0
+var sold := 0
+var gold_spent := 0       # on towers and upgrades
+var woods_cut := 0
+var coins := 0            # coins picked up
+var potions := 0          # potions picked up
+var gems_saved := 0       # gems knocked out of the hands of heroes that were slain carrying them
+var dreads := 0           # heroes terrified by Dread
+var lavas := 0            # pools of Lava left behind
 
 
 func _init(lv: Level, skill_ranks := {}) -> void:
@@ -643,6 +659,7 @@ func _update_shots(dt: float) -> void:
 					s.target.slow = Defs.SLOW_TIME
 				if s.fear > 0.0 and s.target.hp > 0.0 and rng.randf() < s.fear:
 					s.target.fear = Defs.ABILITIES["frost"]["dur"]
+					dreads += 1
 		else:
 			s.pos += to.normalized() * step
 	shots = shots.filter(func(s: Shot) -> bool: return not s.done)
@@ -674,6 +691,7 @@ func _update_fx(dt: float) -> void:
 				if e.pos.distance_to(f.pos) <= Defs.METEOR["radius"]:
 					hurt(e, meteor_damage(), true)
 			best_meteor = maxi(best_meteor, kills - before)
+			meteor_kills += kills - before
 	fx = fx.filter(func(f: Fx) -> bool: return f.t < f.dur)
 
 
@@ -691,6 +709,8 @@ func hurt(e: Enemy, dmg: float, pierce := false, src: Tower = null) -> void:
 		gold += int(e.d["gold"])
 		kills += 1
 		kills_by[e.code] = int(kills_by.get(e.code, 0)) + 1
+		if src != null:
+			kills_tower[src.type] = int(kills_tower.get(src.type, 0)) + 1
 		if race_on and kills % Defs.RACE_KILL_SEND == 0:
 			race_sends += "k" if e.code == "x" else e.code
 		_text(e.pos + Vector2(0, -0.3), "+%d" % int(e.d["gold"]), Color("e8b84a"))
@@ -699,6 +719,7 @@ func hurt(e: Enemy, dmg: float, pierce := false, src: Tower = null) -> void:
 			var g := Drop.new()
 			g.pos = e.pos
 			g.n = e.carry
+			gems_saved += e.carry
 			g.path = e.path
 			g.dist = e.dist
 			drops.append(g)
@@ -720,6 +741,7 @@ func _lava(tw: Tower, at: Vector2) -> void:
 	pl.dur = Defs.ABILITIES["ash"]["dur"]
 	pl.dps = tw.stat("dmg") * Defs.HEAT_MAX * tw.ability_power()
 	pl.src = tw
+	lavas += 1
 	pools.append(pl)
 
 
@@ -741,6 +763,7 @@ func _tower_xp(tw: Tower, amount: float) -> void:
 		if tw.has_ability() and tw.rank == Defs.ABILITY_RANK:
 			_text(tw.pos + Vector2(0, -0.9), Defs.ABILITIES[tw.type]["name"] + "!", Color("c9c0ff"))
 			abilities += 1
+			learned[tw.type] = true
 			sound.emit("rank")
 
 
@@ -795,9 +818,11 @@ func gather_loot() -> int:
 func _take_loot(l: Loot) -> void:
 	sound.emit(l.kind)
 	if l.kind == "coin":
+		coins += 1
 		gold += l.amount
 		_text(l.pos + Vector2(0, -0.3), "+%d" % l.amount, Color("e8b84a"))
 	else:
+		potions += 1
 		mana = minf(mana_max, mana + l.amount)
 		_text(l.pos + Vector2(0, -0.3), "+%d mana" % l.amount, Color("c9c0ff"))
 
@@ -852,6 +877,7 @@ func cast_meteor(pos: Vector2) -> bool:
 	if not can_meteor():
 		return false
 	mana -= Defs.METEOR["cost"]
+	meteors += 1
 	var f := Fx.new()
 	f.kind = "meteor"
 	f.pos = pos
@@ -1034,6 +1060,11 @@ func do_action(id: String, c: Vector2i) -> String:
 		tw.ability_rank = skill(type + "_ability")
 		towers[c] = tw
 		built[type] = true
+		towers_built += 1
+		built_count[type] = int(built_count.get(type, 0)) + 1
+		gold_spent += cost
+		if level.high.has(c):
+			high_built += 1
 		most_towers = maxi(most_towers, towers.size())
 		_relight()
 		sound.emit("build")
@@ -1045,6 +1076,7 @@ func do_action(id: String, c: Vector2i) -> String:
 			if mana < Defs.CLEAR_MANA:
 				return "Not enough mana"
 			mana -= Defs.CLEAR_MANA
+			woods_cut += 1
 			gold += Defs.CLEAR_GOLD
 			trees.erase(c)
 			_text(Vector2(c) + Vector2(0.5, 0.3), "+%d" % Defs.CLEAR_GOLD, Color("e8b84a"))
@@ -1088,17 +1120,21 @@ func do_action(id: String, c: Vector2i) -> String:
 				return "Not enough gold"
 			gold -= cost
 			tw.spent += cost
+			upgrades += 1
+			gold_spent += cost
 			tw.lvl += 1
 			_cover.clear()   # range grew
 			sound.emit("upgrade")
 			if tw.has_ability() and tw.lvl == Defs.ABILITY_LEVEL:
 				_text(tw.pos + Vector2(0, -0.9), Defs.ABILITIES[tw.type]["name"] + "!", Color("c9c0ff"))
 				abilities += 1
+				learned[tw.type] = true
 		"sell":
 			if not towers.has(c):
 				return "No tower here"
 			var tw: Tower = towers[c]
 			gold += int(tw.spent * Defs.SELL_REFUND)
+			sold += 1
 			towers.erase(c)
 			_relight()
 			sound.emit("sell")

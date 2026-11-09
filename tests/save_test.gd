@@ -346,8 +346,12 @@ func _init() -> void:
 	var got := Achievements.check_battle(fresh, won, 1)
 	_check(got.has("first_win") and got.has("brilliant") and got.has("rich") and not got.has("last_gem"), "battle achievements")
 	_check(Achievements.check_battle(fresh, won, 1).is_empty(), "nothing is earned twice")
+	var names := {}
 	for x: Dictionary in Achievements.LIST:
 		_check(Achievements.find(x["id"]) == x, "achievement ids are unique: " + x["id"])
+		_check(not names.has(x["name"]), "achievement names are unique: " + x["name"])
+		names[x["name"]] = true
+	_check_every_achievement_can_be_earned()
 
 	# Heroes go for gems lying out on their road, even back the way they came.
 	var gs := GameSim.new(Level.load_from("res://levels/level_01.json"))
@@ -371,6 +375,102 @@ func _init() -> void:
 	print("save_test: %s" % ("all passed" if fails == 0 else "%d failed" % fails))
 	quit(0 if fails == 0 else 1)
 
+
+
+## Every achievement must be reachable: gives a save everything, then plays out each kind of ending.
+func _check_every_achievement_can_be_earned() -> void:
+	var s := SaveData.load_from(FILE + ".none")
+	var ids := []
+	for i in 20:
+		ids.append("level_%02d" % (i + 1))
+		for m in [ids[i], SaveData.mission_id(ids[i], true)]:
+			s.best[m] = {"rank": "Brilliant", "kept": 5}
+	s.scores["level_01"] = 300000
+	for tree: String in Defs.SKILLS:
+		for sk: Dictionary in Defs.SKILLS[tree]:
+			s.skills[sk["id"]] = sk["max"]
+	for a: Dictionary in Achievements.LIST:
+		if a.has("stat"):
+			s.stats[a["stat"]] = 10000000
+	Achievements.check_progress(s, ids)
+
+	var big := _ending("level_20", true)
+	big.gold = 2000
+	big.kills = 300
+	big.best_meteor = 12
+	big.meteors = 10
+	big.woods_cut = 25
+	big.gems_saved = 5
+	big.early_calls = 20
+	big.skipped = 300
+	big.most_towers = 20
+	big.sold = 5
+	big.abilities = 5
+	big.upgrades = 1
+	big.built = {"moss": true, "frost": true, "ash": true}
+	big.learned = big.built.duplicate()
+	big.kills_by = {"x": 1}
+	for site: GameSim.Site in big.sites.values():
+		site.owned = true
+	var cells: Array = big.level.high.keys()
+	for i in 10:
+		var tw := GameSim.Tower.new()
+		tw.lvl = 3
+		tw.cell = cells[i] if i < cells.size() else Vector2i(100 + i, 0)
+		big.towers[tw.cell] = tw
+	Achievements.check_battle(s, big, 20)
+
+	# One kind of tower by night, down to the last gem, as cheaply as can be.
+	var lean := _ending("level_20", true)
+	lean.gold = 3
+	lean.lost = 4
+	lean.most_towers = 3
+	lean.built = {"moss": true}
+	Achievements.check_battle(s, lean, 20)
+	for type: String in ["frost", "ash"]:
+		var pure := _ending("level_03", false)
+		pure.built = {type: true}
+		Achievements.check_battle(s, pure, 3)
+	var touched := _ending("level_03", false)
+	touched.touched = true
+	Achievements.check_battle(s, touched, 3)
+	var mid := _ending("level_03", false)
+	mid.lost = 2
+	Achievements.check_battle(s, mid, 3)
+	for at_wave in [99, 3]:
+		var fallen := _ending("level_03", false)
+		fallen.won = false
+		fallen.wave = at_wave
+		Achievements.check_battle(s, fallen, 3)
+
+	var never := []
+	for a: Dictionary in Achievements.LIST:
+		if not s.has_achievement(a["id"]):
+			never.append(a["id"])
+	_check(never.is_empty(), "every achievement can be earned; not these: %s" % str(never))
+	for id: String in s.achievements:
+		_check(not Achievements.find(id).is_empty(), "earned achievements are in the list: " + id)
+
+	# record() files a battle under the right lifetime stats.
+	var r := SaveData.load_from(FILE + ".none")
+	var b := _ending("level_03", false)
+	b.kills = 12
+	b.kills_by = {"p": 12}
+	b.kills_tower = {"moss": 7}
+	b.meteor_kills = 2
+	b.built_count = {"ash": 4}
+	Achievements.record(r, b)
+	_check(int(r.stats["slain_p"]) == 12 and int(r.stats["by_moss"]) == 7 and int(r.stats["den_kills"]) == 3 and int(r.stats["built_ash"]) == 4, "a battle is added to the lifetime stats")
+	_check(int(r.stats["wins"]) == 1 and int(r.stats["losses"]) == 0, "wins and losses are counted")
+
+
+func _ending(level_id: String, night: bool) -> GameSim:
+	var lv := Level.load_from("res://levels/%s.json" % level_id)
+	lv.night = night
+	var sim := GameSim.new(lv)
+	sim.won = true
+	sim.over = true
+	return sim
 
 func _check(cond: bool, what: String) -> void:
 	if not cond:

@@ -18,7 +18,7 @@ service cloud.firestore {
         && request.resource.data.stars is int
         && request.resource.data.stars >= 0 && request.resource.data.stars <= 200
         && request.resource.data.scores is map && request.resource.data.scores.size() <= 100
-        && request.resource.data.ach is list && request.resource.data.ach.size() <= 64
+        && request.resource.data.ach is list && request.resource.data.ach.size() <= 500
         && request.resource.data.updated == request.time;
     }
     // Online races: the host opens one, a rival joins it once, then each racer

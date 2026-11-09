@@ -488,9 +488,7 @@ func _on_ended(won: bool) -> void:
 	var score := sim.score(level_index + 1)
 	var old_score := int(save.scores.get(mission, 0))
 	save.record_score(mission, score)
-	save.add_stat("kills", sim.kills)
-	save.add_stat("battles", 1)
-	save.add_stat("wins", 1 if won else 0)
+	Achievements.record(save, sim)
 	var got := Achievements.check_battle(save, sim, level_index + 1)
 	got.append_array(Achievements.check_progress(save, _ids))
 	save.save()
@@ -622,6 +620,8 @@ func _record_race(result: int) -> void:
 		return
 	race["recorded"] = true
 	save.add_stat({1: "race_wins", -1: "race_losses"}.get(result, "race_draws"), 1)
+	save.add_stat("races", 1)
+	_announce(Achievements.check_progress(save, _ids))
 	save.save()
 	online.sync(save)
 

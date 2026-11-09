@@ -22,6 +22,7 @@ var _board_note: Label
 var _rows: VBoxContainer
 var _ach_count: Label
 var _ach_grid: GridContainer
+var _ach_stale := true           # the cards are rebuilt only when their tab is next shown: there are many
 var _account: VBoxContainer
 var _status: Label
 var _fields := {}                # LineEdits on the account page, by name
@@ -121,7 +122,7 @@ func _label(parent: Control, text: String, size: int, color := Hud.BONE, font: F
 func open() -> void:
 	visible = true
 	_refresh_account()
-	_refresh_achievements()
+	_ach_stale = true
 	_show_tab(0 if Prefs.get_value("hall_seen", false) or _online.signed_in() else 2)
 	Prefs.set_value("hall_seen", true)
 
@@ -138,6 +139,8 @@ func _show_tab(i: int) -> void:
 			_tabs[k].remove_theme_stylebox_override("hover")
 	if i == 0:
 		_load_board()
+	elif i == 1 and _ach_stale:
+		_refresh_achievements()
 	elif i == 3:
 		_refresh_race()
 
@@ -318,12 +321,15 @@ func _build_achievements() -> Control:
 
 
 func _refresh_achievements() -> void:
+	_ach_stale = false
 	_clear(_ach_grid)
+	var have := Achievements.values(_save, _levels.map(func(l: Dictionary) -> String: return l["id"]))
 	_ach_count.text = "%d of %d earned  ·  %s heroes slain in all" % [_save.achievements.size(), Achievements.LIST.size(), Hud._thousands(int(_save.stats.get("kills", 0)))]
 	for a: Dictionary in Achievements.LIST:
 		var got := _save.has_achievement(a["id"])
 		var card := PanelContainer.new()
 		card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		card.mouse_filter = Control.MOUSE_FILTER_PASS   # dragging on a card still scrolls the list
 		card.add_theme_stylebox_override("panel", _hud._box(Color("3d2a12") if got else Color(0, 0, 0, 0.3), Hud.GOLD if got else Color("3a2e22"), 3 if got else 1, 10, 16))
 		_ach_grid.add_child(card)
 		var row := HBoxContainer.new()
@@ -341,6 +347,8 @@ func _refresh_achievements() -> void:
 		if got:
 			var when := Time.get_date_string_from_unix_time(int(_save.achievements[a["id"]]))
 			_label(col, "Earned " + when, 19, Hud.DIM)
+		elif a.has("stat"):
+			_label(col, "%s / %s" % [Hud._thousands(int(have.get(a["stat"], 0))), Hud._thousands(int(a["goal"]))], 19, Hud.DIM)
 
 
 # ---------------------------------------------------------------- account
@@ -463,7 +471,7 @@ func _sign_up() -> void:
 
 func _sign_in() -> void:
 	await _busy(func() -> String: return await _online.sign_in(_text("email"), _text("password"), _save), "")
-	_refresh_achievements()
+	_ach_stale = true
 
 
 func _forgot() -> void:

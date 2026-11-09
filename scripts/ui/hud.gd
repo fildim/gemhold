@@ -16,6 +16,7 @@ signal night_pressed
 signal map_pressed
 signal send_pressed(code: String)   # online race: buy this hero for the rival
 
+const ACH_ON_CARD := 3   # achievements listed on the end card; the rest are counted
 const NIGHT := Color("15110d")
 const PANEL := Color("231b14")
 const PANEL_2 := Color("2f251b")
@@ -703,9 +704,11 @@ func show_end(sim: GameSim, has_next: bool, new_best: bool, new_stars := 0, free
 		txt += "\n[color=#e2683a]New best for this lair. Progress saved.[/color]"
 	if new_stars > 0:
 		txt += "\n[b][color=#e8b84a]+%d star%s! You have %d skill point%s to spend in Dark Arts on the map.[/color][/b]" % [new_stars, "" if new_stars == 1 else "s", free_points, "" if free_points == 1 else "s"]
-	for id in earned_ach:
+	for id in earned_ach.slice(0, ACH_ON_CARD):
 		var a := Achievements.find(id)
 		txt += "\n[b][color=#c9c0ff]★ Achievement: %s[/color][/b] [color=#a8977c]%s[/color]" % [a["name"], a["text"]]
+	if earned_ach.size() > ACH_ON_CARD:
+		txt += "\n[b][color=#c9c0ff]★ +%d more in the Hall of Fame[/color][/b]" % (earned_ach.size() - ACH_ON_CARD)
 	var buttons := []
 	if sim.won and has_next:
 		buttons.append(["Next lair", next_level_pressed])
