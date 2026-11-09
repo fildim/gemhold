@@ -31,6 +31,7 @@ var player_name := ""
 var email := ""
 var path := PATH        # tests point this elsewhere
 var sync_progress := SYNC_PROGRESS   # tests turn this on
+var _owner := ""        # the account this device's save belongs to, kept after signing out ("" = nobody's yet)
 var _refresh := ""
 var _token := ""
 var _token_until := 0.0   # unix time the id token runs out
@@ -48,6 +49,7 @@ func _ready() -> void:
 		player_name = cfg.get_value("account", "name", "")
 		email = cfg.get_value("account", "email", "")
 		_refresh = cfg.get_value("account", "refresh", "")
+		_owner = cfg.get_value("account", "owner", uid)
 	if _refresh == "":
 		uid = ""
 
@@ -89,6 +91,7 @@ func sign_up(mail: String, password: String, name: String, save: SaveData) -> St
 	if not r["ok"]:
 		return r["error"]
 	_take_tokens(r["data"])
+	_claim_save(save)
 	email = mail.strip_edges()
 	player_name = name.strip_edges()
 	_store()
@@ -103,6 +106,7 @@ func sign_in(mail: String, password: String, save: SaveData) -> String:
 	if not r["ok"]:
 		return r["error"]
 	_take_tokens(r["data"])
+	_claim_save(save)
 	email = mail.strip_edges()
 	await pull(save)
 	if player_name == "":
@@ -111,6 +115,15 @@ func sign_in(mail: String, password: String, save: SaveData) -> String:
 	changed.emit()
 	sync(save)
 	return ""
+
+
+## Progress played on this device goes to the first account that signs in here, and only that one:
+## another account must neither copy it to the leaderboard nor mix its own progress into it.
+func _claim_save(save: SaveData) -> void:
+	if _owner != "" and _owner != uid:
+		save.switch_owner(_owner, uid)
+		merged.emit()
+	_owner = uid
 
 
 func reset_password(mail: String) -> String:
@@ -138,6 +151,7 @@ func delete_account() -> String:
 	r = await _call("POST", _auth + "delete?key=" + API_KEY, {"idToken": _token})
 	if not r["ok"]:
 		return r["error"]
+	_owner = ""   # the progress stays and is free for the next account
 	sign_out()
 	return ""
 
@@ -564,4 +578,5 @@ func _store() -> void:
 	cfg.set_value("account", "name", player_name)
 	cfg.set_value("account", "email", email)
 	cfg.set_value("account", "refresh", _refresh)
+	cfg.set_value("account", "owner", _owner)
 	cfg.save(path)

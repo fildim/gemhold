@@ -119,6 +119,32 @@ func reset() -> void:
 	reset_t = _stamp(reset_t)
 
 
+## A different account signs in on this device: this progress is set aside for its owner, and the
+## new account gets what it left here earlier or a clean slate. Not an Erase: nothing spreads online.
+func switch_owner(old_owner: String, new_owner: String) -> void:
+	var live := path
+	path = _owner_file(old_owner)
+	save()
+	path = live
+	var kept := _owner_file(new_owner)
+	var s := SaveData.load_from(kept)
+	unlocked = s.unlocked
+	best = s.best
+	skills = s.skills
+	skills_t = s.skills_t
+	reset_t = s.reset_t
+	scores = s.scores
+	stats = s.stats
+	achievements = s.achievements
+	save()
+	if FileAccess.file_exists(kept):
+		DirAccess.remove_absolute(kept)
+
+
+func _owner_file(owner: String) -> String:
+	return "%s_%s.json" % [path.get_basename(), owner]
+
+
 ## The time now, always later than `previous` even if this device's clock is behind.
 static func _stamp(previous: int) -> int:
 	return maxi(int(Time.get_unix_time_from_system()), previous + 1)

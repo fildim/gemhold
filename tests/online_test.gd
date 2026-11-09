@@ -69,13 +69,45 @@ func _run() -> void:
 	_check(device_two.unlocked == 3 and device_two.best_rank("level_01:night") == "Survived" and device_two.skill_rank("moss_dmg") == 1, "the campaign reaches the second device")
 	_check(await reload.pull(other) == "" and other.best_rank("level_02") == "Wicked", "and the first device gets the second's results")
 
+	# A second account on the same device neither inherits the first one's progress nor adds to it.
+	var shared := _client("e")
+	var device := SaveData.load_from("user://online_test_e.json")
+	device.record_score("level_01", 9000)
+	device.record(0, "level_01", "Brilliant", 5, true)
+	_check(await shared.sign_up("e" + mail, "secret123", "Gamma", device) == "", "the device's first account")
+	_check(await shared.upload(device) == "", "it takes the device's progress online")
+	shared.sign_out()
+	_check(int(device.scores.get("level_01", 0)) == 9000, "signing out keeps the progress")
+	_check(await shared.sign_up("f" + mail, "secret123", "Delta", device) == "", "another account on the device")
+	_check(device.scores.is_empty() and device.unlocked == 1 and device.best.is_empty(), "it starts clean")
+	_check(await shared.upload(device) == "", "the clean account uploads")
+	device.record_score("level_02", 111)
+	_check(await shared.upload(device) == "", "the second account plays")
+	var delta: Array = (await shared.top("total")).filter(func(row: Dictionary) -> bool: return row["name"] == "Delta")
+	_check(delta.size() == 1 and delta[0]["value"] == 111, "only its own score reaches the board: %s" % [delta])
+	var reopened := _client("e")   # a restart must remember who the save belongs to
+	reopened.sign_out()
+	_check(await reopened.sign_in("e" + mail, "secret123", device) == "", "the first account comes back")
+	_check(int(device.scores.get("level_01", 0)) == 9000 and device.best_rank("level_01") == "Brilliant" and not device.scores.has("level_02"), "with its own progress only")
+	reopened.sign_out()
+	_check(await reopened.sign_in("f" + mail, "secret123", device) == "", "and the second account again")
+	_check(int(device.scores.get("level_02", 0)) == 111 and not device.scores.has("level_01"), "with its own progress only too")
+	while reopened._syncing:   # the upload that follows a sign-in
+		await create_timer(0.05).timeout
+	_check(await reopened.delete_account() == "", "deleting frees the device's progress")
+	_check(await reopened.sign_in("e" + mail, "secret123", device) == "", "sign in after a delete")
+	_check(int(device.scores.get("level_01", 0)) == 9000 and int(device.scores.get("level_02", 0)) == 111, "the next account takes the freed progress")
+	while reopened._syncing:   # the upload that follows a sign-in
+		await create_timer(0.05).timeout
+	_check(await reopened.delete_account() == "", "clean up the first account")
+
 	_check(await a.delete_account() == "", "delete account")
 	total = await b.top("total")
-	_check(total.size() == 1 and total[0]["name"] == "Beta", "a deleted player leaves the board")
+	_check(total.size() == 1 and total[0]["name"] == "Beta", "a deleted player leaves the board: %s" % [total])
 	_check(await b.delete_account() == "", "delete second account")
-	for f in ["a", "b", "c", "d"]:
-		DirAccess.remove_absolute(ProjectSettings.globalize_path("user://online_test_%s.json" % f))
-		DirAccess.remove_absolute(ProjectSettings.globalize_path("user://online_test_%s.cfg" % f))
+	for f in DirAccess.get_files_at("user://"):
+		if f.begins_with("online_test_"):
+			DirAccess.remove_absolute("user://" + f)
 	print("online_test: %s" % ("all passed" if fails == 0 else "%d failed" % fails))
 	quit(0 if fails == 0 else 1)
 
