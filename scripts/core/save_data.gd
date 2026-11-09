@@ -14,6 +14,8 @@ var path := PATH
 var unlocked := 1        # number of campaign levels the player may start
 var best := {}           # level id -> {"rank": String, "kept": int}
 var skills := {}         # skill id -> rank
+var skills_t := 0        # unix time the ranks last changed: the newest set wins when devices merge
+var reset_t := 0         # unix time the campaign was last erased (0 if never): it spreads to the player's other devices
 var scores := {}         # mission id -> best score (GameSim.score)
 var stats := {}          # lifetime counters: "kills", "battles", "wins", "race_wins", "race_losses", "race_draws"
 var achievements := {}   # achievement id -> unix time it was earned
@@ -31,6 +33,8 @@ static func load_from(file_path := PATH) -> SaveData:
 		push_warning("Save file unreadable, starting fresh: " + file_path)
 		return s
 	s.unlocked = maxi(1, int(d.get("unlocked", 1)))
+	s.skills_t = maxi(0, int(d.get("skills_t", 0)))
+	s.reset_t = maxi(0, int(d.get("reset_t", 0)))
 	var b = d.get("best", {})
 	if typeof(b) == TYPE_DICTIONARY:
 		for id in b:
@@ -62,7 +66,7 @@ func save() -> bool:
 		push_warning("Could not write save: %s" % error_string(FileAccess.get_open_error()))
 		return false
 	f.store_string(JSON.stringify({"version": VERSION, "unlocked": unlocked, "best": best, "skills": skills,
-		"scores": scores, "stats": stats, "achievements": achievements}, "\t"))
+		"skills_t": skills_t, "reset_t": reset_t, "scores": scores, "stats": stats, "achievements": achievements}, "\t"))
 	f.close()
 	var err := DirAccess.rename_absolute(tmp, path)
 	if err != OK:
@@ -111,6 +115,13 @@ func reset() -> void:
 	unlocked = 1
 	best.clear()
 	skills.clear()
+	skills_t = _stamp(skills_t)
+	reset_t = _stamp(reset_t)
+
+
+## The time now, always later than `previous` even if this device's clock is behind.
+static func _stamp(previous: int) -> int:
+	return maxi(int(Time.get_unix_time_from_system()), previous + 1)
 
 
 # ---------------------------------------------------------------- stars and skills
@@ -146,11 +157,13 @@ func buy(id: String) -> bool:
 	if not can_buy(id):
 		return false
 	skills[id] = skill_rank(id) + 1
+	skills_t = _stamp(skills_t)
 	return true
 
 
 func reset_skills() -> void:
 	skills.clear()
+	skills_t = _stamp(skills_t)
 
 
 func _skill_max(id: String) -> int:
@@ -195,9 +208,11 @@ func earn(id: String) -> bool:
 	return true
 
 
-## Takes in what an online account remembers (best scores, achievements, the race record as
-## {"race_wins", "race_losses"}) without losing anything here.
-func merge_online(online_scores: Dictionary, online_achievements: Array, online_stats := {}) -> void:
+## Takes in what an online account remembers without losing anything here: best scores,
+## achievements, lifetime stats (the higher of each counter) and, if the account holds it, the
+## campaign `progress` (see Online.progress_of). Returns true if anything here changed.
+func merge_online(online_scores: Dictionary, online_achievements: Array, online_stats := {}, progress := {}) -> bool:
+	var before := _fingerprint()
 	for id in online_scores:
 		record_score(str(id), int(online_scores[id]))
 	for key in online_stats:
@@ -206,3 +221,57 @@ func merge_online(online_scores: Dictionary, online_achievements: Array, online_
 	for id in online_achievements:
 		if not achievements.has(str(id)):
 			achievements[str(id)] = int(Time.get_unix_time_from_system())
+	if not progress.is_empty():
+		_merge_campaign(progress)
+	return _fingerprint() != before
+
+
+func _fingerprint() -> String:
+	return JSON.stringify([unlocked, best, skills, skills_t, reset_t, scores, stats, achievements.keys()])
+
+
+## The highest unlocked level and the better result on each mission. The one thing that may lower
+## them is the player's own Erase progress, which spreads: the side with the older reset_t is the
+## one that was erased, so its campaign is not taken in again.
+func _merge_campaign(p: Dictionary) -> void:
+	var their_reset := int(p.get("reset_t", 0))
+	if their_reset < reset_t:
+		return   # the account still holds the campaign this device erased
+	if their_reset > reset_t:
+		reset_t = their_reset
+		unlocked = 1
+		best.clear()
+		skills.clear()
+		skills_t = 0
+	unlocked = maxi(unlocked, int(p.get("unlocked", 1)))
+	var theirs: Dictionary = p.get("best", {})
+	for id in theirs:
+		var r = theirs[id]
+		if typeof(r) != TYPE_DICTIONARY or not RANKS.has(str(r.get("rank", ""))):
+			continue
+		var old := RANKS.find(best_rank(str(id)))
+		var now := RANKS.find(str(r["rank"]))
+		if now > old or (now == old and int(r.get("kept", 0)) > int(best[str(id)]["kept"])):
+			best[str(id)] = {"rank": str(r["rank"]), "kept": int(r.get("kept", 0))}
+	_merge_skills(p.get("skills", {}), int(p.get("skills_t", 0)))
+
+
+## Skill ranks are a build the player chose, not a record to beat, so they are never mixed: the
+## set changed most recently wins whole (equal times: the one with more points spent, then the
+## account's). Taking the highest rank of each skill would add two builds together past the
+## player's stars and bring refunded ranks back. A whole set always fits, because stars only rise
+## in a merge; only a damaged account could break that, and then it is ignored.
+func _merge_skills(theirs: Dictionary, t: int) -> void:
+	var clean := {}
+	var spent := 0
+	for id in theirs:
+		var rank := clampi(int(theirs[id]), 0, _skill_max(str(id)))
+		if rank > 0:
+			clean[str(id)] = rank
+			spent += rank
+	var wins := t > skills_t or (t == skills_t and spent >= points_spent())
+	if wins and spent <= points_total():
+		skills = clean
+		skills_t = t
+	if points_free() < 0:
+		skills.clear()

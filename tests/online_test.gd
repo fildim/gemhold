@@ -57,11 +57,23 @@ func _run() -> void:
 	reload._token = ""
 	_check(await reload.upload(other) == "", "a fresh token from the refresh token")
 
+	# The campaign crosses devices, and the rules accept its fields.
+	reload.sync_progress = true
+	other.record(0, "level_01", "Brilliant", 5, true)
+	other.record(0, "level_01:night", "Survived", 2, true)
+	other.buy("moss_dmg")
+	_check(await reload.upload(other) == "", "the rules accept campaign progress")
+	var device_two := SaveData.load_from("user://online_test_d.json")
+	device_two.record(1, "level_02", "Wicked", 4, true)
+	_check(await reload.upload(device_two) == "", "a second device pulls before it uploads")
+	_check(device_two.unlocked == 3 and device_two.best_rank("level_01:night") == "Survived" and device_two.skill_rank("moss_dmg") == 1, "the campaign reaches the second device")
+	_check(await reload.pull(other) == "" and other.best_rank("level_02") == "Wicked", "and the first device gets the second's results")
+
 	_check(await a.delete_account() == "", "delete account")
 	total = await b.top("total")
 	_check(total.size() == 1 and total[0]["name"] == "Beta", "a deleted player leaves the board")
 	_check(await b.delete_account() == "", "delete second account")
-	for f in ["a", "b", "c"]:
+	for f in ["a", "b", "c", "d"]:
 		DirAccess.remove_absolute(ProjectSettings.globalize_path("user://online_test_%s.json" % f))
 		DirAccess.remove_absolute(ProjectSettings.globalize_path("user://online_test_%s.cfg" % f))
 	print("online_test: %s" % ("all passed" if fails == 0 else "%d failed" % fails))

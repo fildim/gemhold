@@ -3,10 +3,18 @@ extends Node
 ## The optional online account: Firebase email/password sign-in and the leaderboard in Firestore,
 ## both over their REST APIs so it works the same on every platform, the web included.
 ## A signed-in player has one document, players/<uid>: {name, total, stars, rw, rl, scores, ach, updated}
-## (rules in firestore.rules). Anyone may read the leaderboard; only signed-in players appear on it.
+## plus the campaign, {unlocked, best, skills, skills_t, reset_t, stats} (rules in firestore.rules).
+## Anyone may read the leaderboard; only signed-in players appear on it. Every upload first pulls
+## the document and merges it into the save (SaveData.merge_online), so devices add up instead of
+## overwriting each other.
 ## Calls are coroutines: `var err := await online.sign_in(...)`, "" on success.
 
-signal changed   # signed in or out
+signal changed   # signed in or out, or the player's name changed on another device
+signal merged    # the account brought new progress into the save
+
+## Upload the campaign fields too. Needs firestore.rules deployed: rules without these fields
+## refuse the upload, which would stop the leaderboard updating as well.
+const SYNC_PROGRESS := true
 
 const API_KEY := "AIzaSyAdWN9fBo3FQ0xfY6Z_YHnuAb9VSG5G42E"   # public web key; Firestore rules guard the data
 const PROJECT := "gemhold"
@@ -22,6 +30,7 @@ var uid := ""
 var player_name := ""
 var email := ""
 var path := PATH        # tests point this elsewhere
+var sync_progress := SYNC_PROGRESS   # tests turn this on
 var _refresh := ""
 var _token := ""
 var _token_until := 0.0   # unix time the id token runs out
@@ -59,6 +68,10 @@ static func score_key(mission: String) -> String:
 	return mission.replace(":", "_")
 
 
+static func mission_of_key(key: String) -> String:
+	return key.replace("_night", ":night")
+
+
 static func check_name(n: String) -> String:
 	n = n.strip_edges()
 	if n.length() < NAME_MIN or n.length() > NAME_MAX:
@@ -91,17 +104,7 @@ func sign_in(mail: String, password: String, save: SaveData) -> String:
 		return r["error"]
 	_take_tokens(r["data"])
 	email = mail.strip_edges()
-	var me := await _call("GET", _docs + "/players/" + uid, null, true)
-	if me["ok"]:
-		var f: Dictionary = me["data"].get("fields", {})
-		player_name = _value(f.get("name", {}))
-		var ach := _list(f.get("ach", {}))
-		var sc := _map(f.get("scores", {}))
-		var scores := {}
-		for k: String in sc:
-			scores[k.replace("_night", ":night")] = sc[k]
-		save.merge_online(scores, ach, {"race_wins": _value(f.get("rw", {})), "race_losses": _value(f.get("rl", {}))})
-		save.save()
+	await pull(save)
 	if player_name == "":
 		player_name = email.get_slice("@", 0).left(NAME_MAX)
 	_store()
@@ -143,12 +146,10 @@ func rename(name: String, save: SaveData) -> String:
 	var bad := check_name(name)
 	if bad != "":
 		return bad
-	var old := player_name
-	player_name = name.strip_edges()
-	var err := await upload(save)
+	var err := await upload(save, name.strip_edges())
 	if err != "":
-		player_name = old
 		return err
+	player_name = name.strip_edges()
 	_store()
 	changed.emit()
 	return ""
@@ -156,7 +157,34 @@ func rename(name: String, save: SaveData) -> String:
 
 # ---------------------------------------------------------------- leaderboard
 
-## Puts the player's scores, stars and achievements on the leaderboard (does nothing when signed out).
+## Merges the account's document into save (and writes the save if that changed it). "" on success,
+## which includes an account with no document yet. On any failure save is left alone.
+func pull(save: SaveData, take_name := true) -> String:
+	var who := uid
+	var me := await _call("GET", _docs + "/players/" + who, null, true)
+	if uid != who:
+		return "Not signed in"
+	if not me["ok"]:
+		return "" if me.get("code", 0) == 404 else str(me["error"])
+	var f: Dictionary = me["data"].get("fields", {})
+	if take_name and str(_value(f.get("name", {}))) not in ["", player_name]:
+		player_name = str(_value(f["name"]))
+		_store()
+		changed.emit()
+	var sc := _map(f.get("scores", {}))
+	var scores := {}
+	for k: String in sc:
+		scores[mission_of_key(k)] = sc[k]
+	var stats := _map(f.get("stats", {}))
+	for pair in [["race_wins", "rw"], ["race_losses", "rl"]]:
+		stats[pair[0]] = maxi(int(stats.get(pair[0], 0)), int(_value(f.get(pair[1], {}))))
+	if save.merge_online(scores, _list(f.get("ach", {})), stats, progress_of(f)):
+		save.save()
+		merged.emit()
+	return ""
+
+
+## Merges the account into the save, then puts the result online (does nothing when signed out).
 ## Overlapping calls collapse into one more upload once the current one finishes.
 func sync(save: SaveData) -> void:
 	if not signed_in():
@@ -175,32 +203,61 @@ func sync(save: SaveData) -> void:
 		sync(s)
 
 
-func upload(save: SaveData) -> String:
+## Never writes without pulling first: if the pull fails, this device's copy stays here until the
+## next try. new_name: the name to store instead of the current one (a rename not yet confirmed).
+func upload(save: SaveData, new_name := "") -> String:
 	if not signed_in():
 		return "Not signed in"
 	if not await _fresh_token():
 		return "Could not reach the server"
+	var pulled := await pull(save, new_name == "")
+	if pulled != "":
+		return pulled
+	if not signed_in():
+		return "Not signed in"
 	var scores := {}
 	for id: String in save.scores:
 		scores[score_key(id)] = {"integerValue": str(save.scores[id])}
 	var ach := []
 	for id: String in save.achievements:
 		ach.append({"stringValue": id})
-	var doc := {
-		"name": "projects/%s/databases/(default)/documents/players/%s" % [PROJECT, uid],
-		"fields": {
-			"name": {"stringValue": player_name},
-			"total": {"integerValue": str(save.total_score())},
-			"stars": {"integerValue": str(save.points_total())},
-			"rw": {"integerValue": str(save.stats.get("race_wins", 0))},
-			"rl": {"integerValue": str(save.stats.get("race_losses", 0))},
-			"scores": {"mapValue": {"fields": scores}},
-			"ach": {"arrayValue": {"values": ach}},
-		},
+	var fields := {
+		"name": {"stringValue": new_name if new_name != "" else player_name},
+		"total": {"integerValue": str(save.total_score())},
+		"stars": {"integerValue": str(save.points_total())},
+		"rw": {"integerValue": str(save.stats.get("race_wins", 0))},
+		"rl": {"integerValue": str(save.stats.get("race_losses", 0))},
+		"scores": {"mapValue": {"fields": scores}},
+		"ach": {"arrayValue": {"values": ach}},
 	}
+	if sync_progress:
+		fields.merge(progress_fields(save))
+	var doc := {"name": "projects/%s/databases/(default)/documents/players/%s" % [PROJECT, uid], "fields": fields}
 	var body := {"writes": [{"update": doc, "updateTransforms": [{"fieldPath": "updated", "setToServerValue": "REQUEST_TIME"}]}]}
 	var r := await _call("POST", _docs + ":commit", body, true)
 	return "" if r["ok"] else r["error"]
+
+
+## The campaign part of the player's document, as Firestore typed fields.
+static func progress_fields(save: SaveData) -> Dictionary:
+	var best := {}
+	for id: String in save.best:
+		best[score_key(id)] = save.best[id]
+	return _typed_fields({"unlocked": save.unlocked, "best": best, "skills": save.skills,
+		"skills_t": save.skills_t, "reset_t": save.reset_t, "stats": save.stats})
+
+
+## The campaign held in a player's document (Firestore typed fields), for SaveData.merge_online;
+## {} for a document from before campaigns were kept online.
+static func progress_of(f: Dictionary) -> Dictionary:
+	if not f.has("unlocked"):
+		return {}
+	var theirs := _map(f.get("best", {}))
+	var best := {}
+	for k: String in theirs:
+		best[mission_of_key(k)] = theirs[k]
+	return {"unlocked": int(_value(f["unlocked"])), "best": best, "skills": _map(f.get("skills", {})),
+		"skills_t": int(_value(f.get("skills_t", {}))), "reset_t": int(_value(f.get("reset_t", {})))}
 
 
 ## The top players by `field` ("total", "rw" for race wins, or "scores.<score_key>" for one mission), best first:
@@ -391,6 +448,7 @@ func _fresh_token() -> bool:
 	if _token != "" and Time.get_unix_time_from_system() < _token_until:
 		return true
 	var http := HTTPRequest.new()
+	http.timeout = 15.0
 	add_child(http)
 	http.request(_token_url + "?key=" + API_KEY,
 		PackedStringArray(["Content-Type: application/x-www-form-urlencoded"]), HTTPClient.METHOD_POST,
@@ -438,7 +496,7 @@ func _call(method: String, url: String, body: Variant, auth := false) -> Diction
 		msg = str(data["error"].get("message", "")) if typeof(data["error"]) == TYPE_DICTIONARY else str(data["error"])
 	elif typeof(data) == TYPE_ARRAY and not data.is_empty() and typeof(data[0]) == TYPE_DICTIONARY and data[0].has("error"):
 		msg = str(data[0]["error"].get("message", ""))
-	return {"ok": false, "data": data, "error": friendly(msg, res[1])}
+	return {"ok": false, "data": data, "error": friendly(msg, res[1]), "code": res[1]}
 
 
 ## Firebase error codes in words a player understands.

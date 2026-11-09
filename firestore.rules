@@ -8,7 +8,13 @@ service cloud.firestore {
       allow read: if true;
       allow delete: if request.auth != null && request.auth.uid == uid;
       allow create, update: if request.auth != null && request.auth.uid == uid
-        && request.resource.data.keys().hasOnly(['name', 'total', 'stars', 'rw', 'rl', 'scores', 'ach', 'updated'])
+        && request.resource.data.keys().hasOnly(['name', 'total', 'stars', 'rw', 'rl', 'scores', 'ach', 'updated', 'unlocked', 'best', 'skills', 'skills_t', 'reset_t', 'stats'])
+        && (!('unlocked' in request.resource.data) || (request.resource.data.unlocked is int && request.resource.data.unlocked >= 1 && request.resource.data.unlocked <= 100))
+        && (!('best' in request.resource.data) || (request.resource.data.best is map && request.resource.data.best.size() <= 100))
+        && (!('skills' in request.resource.data) || (request.resource.data.skills is map && request.resource.data.skills.size() <= 100))
+        && (!('skills_t' in request.resource.data) || (request.resource.data.skills_t is int && request.resource.data.skills_t >= 0))
+        && (!('reset_t' in request.resource.data) || (request.resource.data.reset_t is int && request.resource.data.reset_t >= 0))
+        && (!('stats' in request.resource.data) || (request.resource.data.stats is map && request.resource.data.stats.size() <= 300))
         && (!('rw' in request.resource.data) || (request.resource.data.rw is int && request.resource.data.rw >= 0 && request.resource.data.rw <= 100000))
         && (!('rl' in request.resource.data) || (request.resource.data.rl is int && request.resource.data.rl >= 0 && request.resource.data.rl <= 100000))
         && request.resource.data.name is string

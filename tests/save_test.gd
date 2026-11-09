@@ -333,6 +333,7 @@ func _init() -> void:
 	a2.merge_online({"level_01": 1000, "level_02": 900}, ["brilliant"])
 	_check(int(a2.scores["level_01"]) == 1500 and int(a2.scores["level_02"]) == 900 and a2.has_achievement("brilliant"), "account merge keeps the best of both")
 	_check(Online.score_key("level_01:night") == "level_01_night", "night missions get a key Firestore accepts")
+	_check_campaign_merge()
 
 	# Achievements from a battle: a won lair, scored.
 	var won := GameSim.new(Level.load_from("res://levels/level_01.json"))
@@ -375,6 +376,144 @@ func _init() -> void:
 	print("save_test: %s" % ("all passed" if fails == 0 else "%d failed" % fails))
 	quit(0 if fails == 0 else 1)
 
+
+
+## What one device's save looks like arriving from the account: through the real typed fields.
+func _account_of(s: SaveData) -> Dictionary:
+	return JSON.parse_string(JSON.stringify(Online.progress_of(Online.progress_fields(s))))
+
+
+func _blank() -> SaveData:
+	return SaveData.load_from(FILE + ".none")
+
+
+## Two devices, one account: campaign progress travels and a merge never lowers anything.
+func _check_campaign_merge() -> void:
+	var pc := _blank()
+	pc.record(0, "level_01", "Brilliant", 5, true)
+	pc.record(0, "level_01:night", "Survived", 2, true)
+	pc.record(1, "level_02", "Survived", 3, true)
+	var phone := _blank()
+	phone.record(0, "level_01", "Wicked", 5, true)
+	phone.record(1, "level_02", "Brilliant", 4, true)
+	phone.record(2, "level_03", "Survived", 1, true)
+	_check(phone.merge_online({}, [], {"kills": 900}, _account_of(pc)), "a merge that brings something says so")
+	_check(phone.unlocked == 4, "unlocking: the phone's further level stays")
+	pc.merge_online({}, [], {}, _account_of(phone))
+	_check(pc.unlocked == 4, "unlocking: the PC catches up with the phone")
+	_check(phone.best_rank("level_01") == "Brilliant" and phone.best_rank("level_02") == "Brilliant" and phone.best_rank("level_03") == "Survived", "the better rating of each mission is kept")
+	_check(phone.best_rank("level_01:night") == "Survived", "a night rating survives the trip through Firestore's keys")
+	_check(phone.points_total() == 3 + 1 + 3 + 1, "stars add up over the merged missions")
+	_check(int(phone.stats["kills"]) == 900, "stats come across")
+
+	# Same rating: more gems kept wins. Worse or garbage data changes nothing.
+	var a := _blank()
+	a.record(0, "level_01", "Wicked", 3, true)
+	var b := _blank()
+	b.record(0, "level_01", "Wicked", 5, true)
+	a.merge_online({}, [], {}, _account_of(b))
+	_check(int(a.best["level_01"]["kept"]) == 5, "same rating: more gems kept wins")
+	b.best["level_01"]["kept"] = 1
+	a.unlocked = 9
+	a.stats["kills"] = 50
+	var before := JSON.stringify([a.unlocked, a.best, a.stats])
+	var changed := a.merge_online({}, [], {"kills": 10}, _account_of(b))
+	_check(not changed and JSON.stringify([a.unlocked, a.best, a.stats]) == before, "a worse account lowers nothing")
+	a.merge_online({}, [], {"kills": "x"}, {"unlocked": -4, "best": {"level_01": {"rank": "Nonsense", "kept": 99}, "level_09": "junk"}})
+	_check(JSON.stringify([a.unlocked, a.best, a.stats]) == before, "a damaged account lowers nothing")
+
+	# Skills: never mixed, and never past the stars.
+	var one := _blank()
+	one.record(0, "level_01", "Brilliant", 5, true)
+	_check(one.buy("moss_dmg") and one.buy("moss_dmg") and one.buy("moss_dmg"), "first device spends every star on one build")
+	var two := _blank()
+	two.record(0, "level_01", "Brilliant", 5, true)
+	two.buy("ash_dmg")
+	two.buy("ash_dmg")
+	one.skills_t = 100
+	two.skills_t = 200
+	one.merge_online({}, [], {}, _account_of(two))
+	_check(one.skill_rank("ash_dmg") == 2 and one.skill_rank("moss_dmg") == 0 and one.skills_t == 200, "the newest build wins whole, never added together")
+	_check(one.points_free() == 1, "points from the older build are free again")
+	var old_build := _blank()
+	old_build.best = two.best.duplicate(true)
+	old_build.skills = {"den_charge": 1}
+	old_build.skills_t = 50
+	two.merge_online({}, [], {}, _account_of(old_build))
+	_check(two.skill_rank("ash_dmg") == 2 and two.skill_rank("den_charge") == 0, "an older build is ignored")
+	var greedy := _blank()
+	greedy.record(0, "level_01", "Survived", 2, true)
+	greedy.buy("den_charge")
+	var cheat := {"unlocked": 1, "best": {"level_01": {"rank": "Survived", "kept": 2}}, "skills": {"moss_dmg": 3, "ash_dmg": 3, "made_up": 9}, "skills_t": 9999999999}
+	greedy.merge_online({}, [], {}, cheat)
+	_check(greedy.points_free() >= 0 and greedy.skill_rank("den_charge") == 1, "a build past the player's stars is refused")
+	greedy.merge_online({}, [], {}, {"unlocked": 1, "best": {}, "skills": {"made_up": 9, "den_charge": 99}, "skills_t": 9999999999})
+	_check(greedy.skill_rank("den_charge") <= 1 and not greedy.skills.has("made_up") and greedy.points_free() >= 0, "unknown skills and impossible ranks are dropped")
+	var tied := _blank()
+	tied.record(0, "level_01", "Brilliant", 5, true)
+	tied.skills = {"moss_dmg": 1}
+	var tie_other := _blank()
+	tie_other.record(0, "level_01", "Brilliant", 5, true)
+	tie_other.skills = {"ash_dmg": 2}
+	tied.merge_online({}, [], {}, _account_of(tie_other))
+	_check(tied.skill_rank("ash_dmg") == 2, "builds from before syncing: more points spent wins")
+	# The largest build merged with the most stars can never overspend, in either direction.
+	for x in 30:
+		var p := _random_save()
+		var q := _random_save()
+		p.merge_online({}, [], {}, _account_of(q))
+		_check(p.points_free() >= 0, "a merge never spends more points than there are stars")
+
+	# A refund and an erase are the player's choices: they must not come back from the account.
+	var refund := _blank()
+	refund.record(0, "level_01", "Brilliant", 5, true)
+	refund.buy("moss_dmg")
+	var account := _account_of(refund)
+	refund.reset_skills()
+	refund.merge_online({}, [], {}, account)
+	_check(refund.points_spent() == 0, "refunded ranks don't come back from the account")
+	var erased := _blank()
+	erased.record(1, "level_02", "Brilliant", 5, true)
+	erased.buy("moss_dmg")
+	erased.record_score("level_02", 700)
+	account = _account_of(erased)
+	var other_device := _blank()
+	other_device.merge_online({}, [], {}, account)
+	erased.reset()
+	erased.merge_online({}, [], {}, account)
+	_check(erased.unlocked == 1 and erased.best.is_empty() and erased.skills.is_empty(), "the account's older campaign doesn't undo Erase progress")
+	_check(int(erased.scores["level_02"]) == 700, "Erase progress still keeps scores")
+	other_device.merge_online({}, [], {}, _account_of(erased))
+	_check(other_device.unlocked == 1 and other_device.best.is_empty() and other_device.points_spent() == 0, "Erase progress on one device reaches the other")
+	_check(other_device.reset_t == erased.reset_t, "and is only applied once")
+	other_device.record(0, "level_01", "Wicked", 5, true)
+	other_device.merge_online({}, [], {}, _account_of(erased))
+	_check(other_device.best_rank("level_01") == "Wicked", "progress earned after the erase stays")
+	var legacy := _blank()
+	legacy.record(0, "level_01", "Wicked", 5, true)
+	_check(not legacy.merge_online({}, [], {}, {}) and legacy.unlocked == 2, "an account from before campaigns were online changes nothing")
+
+	# The merge clocks survive the save file.
+	var disk := _blank()
+	disk.path = FILE
+	disk.record(0, "level_01", "Brilliant", 5, true)
+	disk.buy("moss_dmg")
+	disk.reset_t = 77
+	disk.save()
+	var loaded := SaveData.load_from(FILE)
+	_check(loaded.skills_t == disk.skills_t and loaded.reset_t == 77, "merge clocks round trip")
+
+
+func _random_save() -> SaveData:
+	var s := _blank()
+	for i in 6:
+		if randf() < 0.6:
+			s.record(i, "level_%02d" % (i + 1), SaveData.RANKS[1 + randi() % 3], 1 + randi() % 5, true)
+	var ids := ["moss_dmg", "ash_dmg", "den_charge", "hoard_gold", "hoard_mana", "meteor_dmg"]
+	for i in 25:
+		s.buy(ids[randi() % ids.size()])
+	s.skills_t = randi() % 3
+	return s
 
 
 ## Every achievement must be reachable: gives a save everything, then plays out each kind of ending.

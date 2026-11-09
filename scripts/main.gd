@@ -71,6 +71,7 @@ func _ready() -> void:
 	save = SaveData.load_from()
 	online = Online.new()
 	add_child(online)
+	online.merged.connect(_on_account_merged)
 	var infos := []
 	for p in LEVELS:
 		var lv := Level.load_from(p)
@@ -107,6 +108,16 @@ func _ready() -> void:
 	Achievements.check_progress(save, _ids)
 	save.save()
 	online.sync(save)
+
+
+## Progress arrived from the player's other device: show it if the map is up.
+func _on_account_merged() -> void:
+	if not on_map:
+		return
+	_announce(Achievements.check_progress(save, _ids))
+	select.refresh()
+	if skill_tree.visible:
+		skill_tree.refresh()
 
 
 func _show_map() -> void:
