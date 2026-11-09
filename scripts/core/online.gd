@@ -449,6 +449,7 @@ func _fresh_token() -> bool:
 		return true
 	var http := HTTPRequest.new()
 	http.timeout = 15.0
+	http.accept_gzip = false   # on web the browser has already unpacked the reply; Godot would fail unpacking it again
 	add_child(http)
 	http.request(_token_url + "?key=" + API_KEY,
 		PackedStringArray(["Content-Type: application/x-www-form-urlencoded"]), HTTPClient.METHOD_POST,
@@ -476,6 +477,7 @@ func _call(method: String, url: String, body: Variant, auth := false) -> Diction
 		headers.append("Authorization: Bearer " + _token)
 	var http := HTTPRequest.new()
 	http.timeout = 15.0
+	http.accept_gzip = false   # see _fresh_token
 	add_child(http)
 	var m := {"GET": HTTPClient.METHOD_GET, "POST": HTTPClient.METHOD_POST, "DELETE": HTTPClient.METHOD_DELETE}
 	var err := http.request(url, headers, m[method], "" if body == null else JSON.stringify(body))
