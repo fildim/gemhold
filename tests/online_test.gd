@@ -101,16 +101,6 @@ func _run() -> void:
 		await create_timer(0.05).timeout
 	_check(await reopened.delete_account() == "", "clean up the first account")
 
-	# A demo build becomes the full game for an account the developer unlocked, and only then.
-	Prefs.path = "user://online_test_prefs.cfg"
-	Edition.demo = true
-	_check(await b.pull(save_b) == "" and Edition.demo, "an ordinary account keeps the demo")
-	var own := await a._call("POST", a._docs + ":commit", {"writes": [{"update": {"name": "projects/%s/databases/(default)/documents/unlocks/%s" % [Online.PROJECT, a.uid], "fields": {}}}]}, true)
-	_check(not own["ok"], "a player can't unlock themselves")
-	_check(await _admin_create("unlocks", a.uid), "the developer unlocks an account")
-	_check(await a.pull(other) == "" and not Edition.demo and Prefs.get_value("full", false), "the unlocked account opens the full game")
-	Edition.demo = false
-
 	# Firebase refuses to delete after an old sign-in, so the game asks first and removes nothing.
 	var signed_in_at := a._password_at
 	a._password_at = 0.0
@@ -137,17 +127,6 @@ func _client(tag: String) -> Online:
 	o.use_emulators()
 	root.add_child(o)
 	return o
-
-
-## Writes a document as the emulator's admin, past the rules (as the developer does in the console).
-func _admin_create(collection: String, id: String) -> bool:
-	var http := HTTPRequest.new()
-	root.add_child(http)
-	http.request("http://127.0.0.1:8080/v1/projects/%s/databases/(default)/documents/%s?documentId=%s" % [Online.PROJECT, collection, id],
-		PackedStringArray(["Content-Type: application/json", "Authorization: Bearer owner"]), HTTPClient.METHOD_POST, "{\"fields\": {}}")
-	var res: Array = await http.request_completed
-	http.queue_free()
-	return res[0] == HTTPRequest.RESULT_SUCCESS and res[1] == 200
 
 
 func _check(cond: bool, what: String) -> void:

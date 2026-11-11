@@ -146,6 +146,10 @@ Install it on your phone:
 Or, with the phone plugged in, press the small Android button in the editor's top-right bar.
 Debug builds are signed with Godot's debug keystore and are only for testing.
 
+## Full-game codes
+
+Demo builds (exports with the `demo` feature: GitHub, web, Steam demo) stop after `Edition.DEMO_LAIRS` lairs. A full-game code, typed under **Info** on the map, unlocks the rest for good on that device (`Prefs` key `full`). The game holds only SHA-256 hashes of the codes (`scripts/data/unlock_codes.gd`); the codes themselves are kept outside this public repository. Make more with `godot --headless --path . -s res://tools/make_codes.gd -- 50 "<private codes file>"`, which appends the codes to that file and their hashes to `unlock_codes.gd`; they work from the next published version. A code is not tied to a person, so a shared one keeps working until its hash is removed.
+
 ## Google Play
 
 The **Android Play** export preset builds the store file: a Gradle build, `.aab` format, target SDK 36 (Play has required API 36 since August 31, 2026). The plain **Android** preset stays a quick debug APK for Firebase testers and CI.

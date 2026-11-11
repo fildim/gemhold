@@ -29,7 +29,8 @@ var _confirm: Control       # "Erase all progress?" dialog
 var _offer: Control         # demo builds: "get the full game" dialog
 var _skills: Button
 var _sound: Button
-var _about: Button         # version and contact address, bottom centre
+var _info: Button          # opens _info_panel: version, contact, full-game code
+var _info_panel: Control
 const CONTACT := "contactgemhold@gmail.com"
 var _guide: Button
 var _hall: Button
@@ -95,16 +96,15 @@ func setup(hud: Control, levels: Array, save: SaveData) -> void:
 	_sound = hud.sound_button(self)
 	_sound.custom_minimum_size = Vector2(0, 60)
 	_sound.add_theme_font_size_override("font_size", 26)
-	_about = Button.new()
-	_about.flat = true
-	_about.focus_mode = Control.FOCUS_NONE
-	_about.text = "v%s  ·  %s" % [ProjectSettings.get_setting("application/config/version", ""), CONTACT]
-	_about.tooltip_text = "Write to us"
-	_about.add_theme_font_size_override("font_size", 20)
-	for state in ["font_color", "font_hover_color", "font_pressed_color"]:
-		_about.add_theme_color_override(state, Hud.DIM)
-	_about.pressed.connect(func() -> void: OS.shell_open("mailto:" + CONTACT))
-	add_child(_about)
+	_info = Button.new()
+	_info.text = "Info"
+	_info.focus_mode = Control.FOCUS_NONE
+	_info.custom_minimum_size = Vector2(0, 60)
+	_info.add_theme_font_size_override("font_size", 26)
+	_info.pressed.connect(func() -> void:
+		Sfx.play("click")
+		_show_info())
+	add_child(_info)
 	_prev = _page_button("« Chapter I", -1)
 	_next = _page_button("Chapter II »", 1)
 	resized.connect(_layout)
@@ -182,10 +182,10 @@ func _layout() -> void:
 	_guide.position = Vector2(_skills.position.x + _skills.size.x + 10, size.y - _guide.size.y - 12)
 	_hall.reset_size()
 	_hall.position = Vector2(_guide.position.x + _guide.size.x + 10, size.y - _hall.size.y - 12)
-	_about.reset_size()
-	_about.position = Vector2((size.x - _about.size.x) / 2.0, size.y - _about.size.y - 14)
-	if _about.position.x < _hall.position.x + _hall.size.x + 8 or _about.position.x + _about.size.x > _sound.position.x - 8:
-		_about.position.y = _hall.position.y - _about.size.y - 2   # narrow screen: just above the buttons
+	_info.reset_size()
+	_info.position = Vector2(_sound.position.x - _info.size.x - 10, size.y - _info.size.y - 12)
+	if _info_panel:
+		_info_panel.size = size
 	_prev.reset_size()
 	_prev.position = Vector2(14, _heading.position.y + 8)
 	_next.reset_size()
@@ -312,7 +312,7 @@ func _build_offer() -> void:
 	var more := _levels.size() - Edition.DEMO_LAIRS
 	t.text = "This free demo has the first %d lairs.\n%d more wait in the full game%s" % [Edition.DEMO_LAIRS, more,
 		" on %s." % store["name"] if url != "" else ", coming soon to %s." % store["name"]]
-	t.text += "\nHave an unlocked account? Sign in under Hall of Fame → Account."
+	t.text += "\nHave a full-game code? Enter it under Info."
 	t.add_theme_font_size_override("font_size", 26)
 	box.add_child(t)
 	var row := HBoxContainer.new()
@@ -334,6 +334,89 @@ func _build_offer() -> void:
 	back.pressed.connect(func() -> void: _offer.visible = false)
 	row.add_child(back)
 	_offer.visible = false
+
+
+## Version, how to reach us and, on demo builds, the box for a full-game code. Rebuilt on every
+## opening so it always shows whether the game is unlocked.
+func _show_info() -> void:
+	if _info_panel:
+		_info_panel.queue_free()
+	_info_panel = Control.new()
+	_info_panel.mouse_filter = Control.MOUSE_FILTER_STOP
+	_info_panel.size = size
+	add_child(_info_panel)
+	var dim := ColorRect.new()
+	dim.color = Color(0.05, 0.04, 0.03, 0.85)
+	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_info_panel.add_child(dim)
+	var center := CenterContainer.new()
+	center.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_info_panel.add_child(center)
+	var card := PanelContainer.new()
+	card.add_theme_stylebox_override("panel", _hud._box(Hud.PANEL, Hud.GOLD, 2, 12, 24))
+	center.add_child(card)
+	var box := VBoxContainer.new()
+	box.add_theme_constant_override("separation", 14)
+	card.add_child(box)
+	var h := Label.new()
+	h.text = "Gemhold"
+	h.add_theme_font_override("font", _hud.display_font)
+	h.add_theme_font_size_override("font_size", 44)
+	h.add_theme_color_override("font_color", Hud.GOLD)
+	box.add_child(h)
+	var about := Label.new()
+	about.text = "Version %s%s\nQuestions, bugs or ideas: %s" % [ProjectSettings.get_setting("application/config/version", ""),
+		("  ·  free demo" if Edition.demo else "  ·  full game") if Edition.demo_build else "", CONTACT]
+	about.add_theme_font_size_override("font_size", 26)
+	box.add_child(about)
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 14)
+	if Edition.demo_build and Edition.demo:
+		var code_row := HBoxContainer.new()
+		code_row.add_theme_constant_override("separation", 10)
+		box.add_child(code_row)
+		var code := LineEdit.new()
+		code.placeholder_text = "Full-game code"
+		code.custom_minimum_size = Vector2(340, 60)
+		code.add_theme_font_size_override("font_size", 26)
+		code_row.add_child(code)
+		var status := Label.new()
+		status.add_theme_font_size_override("font_size", 24)
+		var go := Button.new()
+		go.text = "Unlock"
+		go.focus_mode = Control.FOCUS_NONE
+		go.custom_minimum_size = Vector2(0, 60)
+		go.add_theme_font_size_override("font_size", 26)
+		var try := func() -> void:
+			if Edition.try_code(code.text):
+				Sfx.play("rank")
+				status.add_theme_color_override("font_color", Hud.GOLD)
+				status.text = "The full game is unlocked: all %d lairs are yours." % _levels.size()
+				code_row.visible = false
+				refresh()
+			else:
+				Sfx.play("error")
+				status.add_theme_color_override("font_color", Hud.POOR)
+				status.text = "That code doesn't work. Check it and try again."
+		go.pressed.connect(try)
+		code.text_submitted.connect(func(_t: String) -> void: try.call())
+		code_row.add_child(go)
+		box.add_child(status)
+	box.add_child(row)
+	var mail := Button.new()
+	mail.text = "Write to us"
+	mail.focus_mode = Control.FOCUS_NONE
+	mail.custom_minimum_size = Vector2(0, 60)
+	mail.add_theme_font_size_override("font_size", 26)
+	mail.pressed.connect(func() -> void: OS.shell_open("mailto:" + CONTACT))
+	row.add_child(mail)
+	var close := Button.new()
+	close.text = "Close"
+	close.focus_mode = Control.FOCUS_NONE
+	close.custom_minimum_size = Vector2(160, 60)
+	close.add_theme_font_size_override("font_size", 26)
+	close.pressed.connect(func() -> void: _info_panel.visible = false)
+	row.add_child(close)
 
 
 func _erase() -> void:
