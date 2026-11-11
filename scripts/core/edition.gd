@@ -10,7 +10,14 @@ const STEAM_URL := ""
 const PLAY_URL := ""
 const APP_STORE_URL := ""
 
-static var demo := OS.has_feature("demo")
+## A demo build plays as the full game on a device where an unlocked account once signed in
+## (Online checks `unlocks/<uid>`, which only the developer can write, in the Firebase console).
+static var demo: bool = OS.has_feature("demo") and not Prefs.get_value("full", false)
+
+
+static func unlock() -> void:
+	Prefs.set_value("full", true)
+	demo = false
 
 
 static func locked(index: int) -> bool:

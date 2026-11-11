@@ -29,6 +29,8 @@ var _confirm: Control       # "Erase all progress?" dialog
 var _offer: Control         # demo builds: "get the full game" dialog
 var _skills: Button
 var _sound: Button
+var _about: Button         # version and contact address, bottom centre
+const CONTACT := "contactgemhold@gmail.com"
 var _guide: Button
 var _hall: Button
 var _page := 0
@@ -93,6 +95,16 @@ func setup(hud: Control, levels: Array, save: SaveData) -> void:
 	_sound = hud.sound_button(self)
 	_sound.custom_minimum_size = Vector2(0, 60)
 	_sound.add_theme_font_size_override("font_size", 26)
+	_about = Button.new()
+	_about.flat = true
+	_about.focus_mode = Control.FOCUS_NONE
+	_about.text = "v%s  ·  %s" % [ProjectSettings.get_setting("application/config/version", ""), CONTACT]
+	_about.tooltip_text = "Write to us"
+	_about.add_theme_font_size_override("font_size", 20)
+	for state in ["font_color", "font_hover_color", "font_pressed_color"]:
+		_about.add_theme_color_override(state, Hud.DIM)
+	_about.pressed.connect(func() -> void: OS.shell_open("mailto:" + CONTACT))
+	add_child(_about)
 	_prev = _page_button("« Chapter I", -1)
 	_next = _page_button("Chapter II »", 1)
 	resized.connect(_layout)
@@ -170,6 +182,10 @@ func _layout() -> void:
 	_guide.position = Vector2(_skills.position.x + _skills.size.x + 10, size.y - _guide.size.y - 12)
 	_hall.reset_size()
 	_hall.position = Vector2(_guide.position.x + _guide.size.x + 10, size.y - _hall.size.y - 12)
+	_about.reset_size()
+	_about.position = Vector2((size.x - _about.size.x) / 2.0, size.y - _about.size.y - 14)
+	if _about.position.x < _hall.position.x + _hall.size.x + 8 or _about.position.x + _about.size.x > _sound.position.x - 8:
+		_about.position.y = _hall.position.y - _about.size.y - 2   # narrow screen: just above the buttons
 	_prev.reset_size()
 	_prev.position = Vector2(14, _heading.position.y + 8)
 	_next.reset_size()
@@ -296,6 +312,7 @@ func _build_offer() -> void:
 	var more := _levels.size() - Edition.DEMO_LAIRS
 	t.text = "This free demo has the first %d lairs.\n%d more wait in the full game%s" % [Edition.DEMO_LAIRS, more,
 		" on %s." % store["name"] if url != "" else ", coming soon to %s." % store["name"]]
+	t.text += "\nHave an unlocked account? Sign in under Hall of Fame → Account."
 	t.add_theme_font_size_override("font_size", 26)
 	box.add_child(t)
 	var row := HBoxContainer.new()
@@ -418,7 +435,9 @@ class Marker extends Control:
 		# Best rating as three stars: gold ones earned, dark ones still to win.
 		for k in 3:
 			var p := Vector2(size.x / 2.0 + (k - 1) * 22.0, R * 2.0 + 44)
-			if k < stars:
+			if locked:
+				pass   # a result from before the lair moved later in the campaign shows once it opens
+			elif k < stars:
 				_draw_star(p, 10.0, Color("e8b84a"))
 			elif not locked:
 				_draw_star(p, 10.0, Color(0, 0, 0, 0.45))

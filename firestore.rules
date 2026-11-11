@@ -4,6 +4,11 @@ rules_version = '2';
 // player could fake them; the limits below just keep documents sane.
 service cloud.firestore {
   match /databases/{database}/documents {
+    // Accounts the developer gave the full game (created by hand in the Firebase console).
+    match /unlocks/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow write: if false;
+    }
     match /players/{uid} {
       allow read: if true;
       allow delete: if request.auth != null && request.auth.uid == uid;

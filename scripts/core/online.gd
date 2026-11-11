@@ -187,7 +187,10 @@ func pull(save: SaveData, take_name := true) -> String:
 	if uid != who:
 		return "Not signed in"
 	if not me["ok"]:
-		return "" if me.get("code", 0) == 404 else str(me["error"])
+		if me.get("code", 0) != 404:
+			return str(me["error"])
+		await _check_unlock(who)   # an account with nothing online yet
+		return ""
 	var f: Dictionary = me["data"].get("fields", {})
 	if take_name and str(_value(f.get("name", {}))) not in ["", player_name]:
 		player_name = str(_value(f["name"]))
@@ -203,7 +206,19 @@ func pull(save: SaveData, take_name := true) -> String:
 	if save.merge_online(scores, _list(f.get("ach", {})), stats, progress_of(f)):
 		save.save()
 		merged.emit()
+	await _check_unlock(who)
 	return ""
+
+
+## On a demo build, an account the developer unlocked (a document unlocks/<uid>) turns this
+## device into the full game for good.
+func _check_unlock(who: String) -> void:
+	if not Edition.demo:
+		return
+	var r := await _call("GET", _docs + "/unlocks/" + who, null, true)
+	if r["ok"] and uid == who:
+		Edition.unlock()
+		merged.emit()
 
 
 ## Merges the account into the save, then puts the result online (does nothing when signed out).

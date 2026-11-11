@@ -149,6 +149,7 @@ var queue_wave: Array[int] = []   # the wave each queued hero belongs to
 var threat := 1.0         # dynamic difficulty: multiplies hero health, see _judge_wave
 var wave_left := {}       # wave -> its heroes still queued or on the map
 var wave_peak := {}       # wave -> most of the defended road any of its heroes got through
+var wave_live := {}       # wave -> threat already added by its heroes falling early (_judge_kill)
 var _cover := {}          # road -> defended length up to each COVER_STEP along it; empty = rebuild
 var spawn_t := 0.0
 var lane := 0
@@ -474,6 +475,8 @@ func _update_enemies(dt: float) -> void:
 					sound.emit("grab")
 	for e: Enemy in enemies:
 		if e.wave > 0 and (e.gone or e.hp <= 0.0):
+			if not e.gone:
+				_judge_kill(e.wave)
 			wave_left[e.wave] -= 1
 			if wave_left[e.wave] == 0:
 				_judge_wave(e.wave)
@@ -544,6 +547,20 @@ func _judge_wave(w: int) -> void:
 	threat = minf(threat, t["max"])
 	wave_left.erase(w)
 	wave_peak.erase(w)
+	wave_live.erase(w)
+
+
+## A hero of wave w fell. While the wave is going easily, the threat rises a little at once, so
+## the heroes still to come in it (and the next wave, which may start before this one ends) are
+## already tougher instead of waiting for the wave to be judged.
+func _judge_kill(w: int) -> void:
+	var t: Dictionary = Defs.THREAT
+	var live: float = wave_live.get(w, 0.0)
+	if wave_peak.get(w, 0.0) >= t["easy"] or live >= t["kill_max"]:
+		return
+	var step := minf(t["up_kill"], t["kill_max"] - live)
+	wave_live[w] = live + step
+	threat = minf(threat + step, t["max"])
 
 
 func _update_drops(dt: float) -> void:

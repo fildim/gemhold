@@ -97,7 +97,7 @@ static func topics() -> Array:
 		"Arrives from the fifteenth lair, at the head of the final waves. A crowned giant with [b]%d health[/b], heavy armour (%d), and he carries [b]3 gems[/b].\n\n" % [e["x"]["hp"], e["x"]["armor"]]
 		+ "When he falls, [b]three Footmen rise[/b] where he lay and march on. Bring him down far from the cave, with Shrines, the Meteor and the den's bolts."))
 	t.append(_t("Heroes", "Heroes get stronger",
-		"Each wave's heroes are tougher than the last. The game also watches how you play: when you crush a wave far from the cave, the next heroes come back much tougher; when a wave gets close, only a little.\n\n"
+		"Each wave's heroes are tougher than the last. The game also watches how you play: when you crush a wave far from the cave, the next heroes come back much tougher; when a wave gets close, only a little. Heroes falling quickly toughen the rest of their own wave too.\n\n"
 		+ "[b]Riches draw heroes too.[/b] Gold you leave unspent above %d makes every following wave stronger. Spend it on towers and upgrades instead of saving it.\n\n" % roundi(Defs.THREAT["rich"])
 		+ "It never gets easier during a battle, but it never runs away either."))
 

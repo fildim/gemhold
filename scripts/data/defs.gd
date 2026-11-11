@@ -90,7 +90,10 @@ const WAVE_HP_SCALE := 0.13  # +13% hero health per wave
 ## Up to `hard`: up_mid. Past `hard`: up_close. A hero reaching the hoard or a dropped gem: up_touched.
 ## Riches draw heroes too: gold left unspent above `rich` adds per_gold threat per coin, up to
 ## rich_max a wave, so hoarding gold is never the safe choice.
+## Within a wave too: while none of its heroes has got past `easy`, each one slain adds up_kill
+## at once (up to kill_max a wave), so the rest of that wave and the next already come tougher.
 const THREAT := {"easy": 0.45, "hard": 0.7, "up_max": 0.4, "up_easy": 0.1, "up_mid": 0.06,
+	"up_kill": 0.006, "kill_max": 0.1,
 	"up_close": 0.03, "up_touched": 0.01, "max": 4.0,
 	"rich": 250, "per_gold": 0.0005, "rich_max": 0.25}
 const DROP_SPEED := 0.7      # dropped gems roll home along the road at this many tiles/s

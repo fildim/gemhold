@@ -170,7 +170,7 @@ func _cycle() -> String:
 
 static func label() -> String:
 	var on: bool = Prefs.get_value("sound", true) and Prefs.get_value("music", true)
-	return "Sound on" if on else "Sound off"
+	return "Sound: on" if on else "Sound: off"   # the state, not an order to switch
 
 
 ## A music track by name ("map", or a lair's piece), loaded the first time it plays.
