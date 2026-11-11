@@ -18,7 +18,7 @@ const SFX := {
 	"chop": [-6.0, 0.05, 0.05], "raze": [-5.0, 0.1, 0.0], "whoosh": [-6.0, 0.05, 0.05],
 	"boom": [-3.0, 0.05, 0.08], "rank": [-9.0, 0.2, 0.0], "win": [-4.0, 1.0, 0.0], "lose": [-4.0, 1.0, 0.0],
 }
-const SFX_BUS_DB := -14.0     # all effects at once, under the music (the SFX values are relative)
+const SFX_BUS_DB := -14.0     # added to every effect, keeping them under the music (the SFX values are relative)
 const MUSIC_DB := 0.0   # recordings are quiet; full volume over the effects
 const BEAM_DB := -20.0       # one Shrine burning; a little louder with more (up to 3)
 const VOICES := 16
@@ -45,30 +45,24 @@ func _ready() -> void:
 	sound_on = Prefs.get_value("sound", true)
 	music_on = Prefs.get_value("music", true) and sound_on
 	sound_on = music_on   # one switch for both
-	for bus in ["Sfx", "Music"]:
-		if AudioServer.get_bus_index(bus) < 0:
-			AudioServer.add_bus()
-			AudioServer.set_bus_name(AudioServer.bus_count - 1, bus)
-			AudioServer.set_bus_send(AudioServer.bus_count - 1, "Master")
-	AudioServer.set_bus_volume_db(AudioServer.get_bus_index("Sfx"), SFX_BUS_DB)
+	# Everything plays on the Master bus, with the effects turned down by SFX_BUS_DB on each
+	# player: on the web build, extra buses get wired in a loop that never reaches the speakers.
 	for n in SFX.keys() + ["beam"]:   # music loads when first played
 		var p: String = DIR + n + ".wav"
 		if ResourceLoader.exists(p):
 			_streams[n] = load(p)
 	for i in VOICES:
 		var v := AudioStreamPlayer.new()
-		v.bus = "Sfx"
 		add_child(v)
 		_voices.append(v)
-	_beam = _player("Sfx")
+	_beam = _player()
 	_beam.stream = _streams.get("beam")
-	_music = _player("Music")
+	_music = _player()
 	get_tree().node_added.connect(_on_node_added)
 
 
-func _player(bus: String) -> AudioStreamPlayer:
+func _player() -> AudioStreamPlayer:
 	var p := AudioStreamPlayer.new()
-	p.bus = bus
 	add_child(p)
 	return p
 
@@ -101,7 +95,7 @@ func _play(sound: String) -> void:
 			break
 	_next = (_next + 1) % VOICES
 	v.stream = _streams[sound]
-	v.volume_db = cfg[0]
+	v.volume_db = cfg[0] + SFX_BUS_DB
 	v.pitch_scale = 1.0 + randf_range(-cfg[2], cfg[2])
 	v.play()
 
@@ -120,7 +114,7 @@ func _set_beams(n: int) -> void:
 	elif not on and _beam.playing:
 		_beam.stop()
 	if on:
-		_beam.volume_db = BEAM_DB + 2.5 * (mini(n, 3) - 1)
+		_beam.volume_db = BEAM_DB + SFX_BUS_DB + 2.5 * (mini(n, 3) - 1)
 
 
 ## "map", a lair's piece (see main.gd MUSIC), or "" for silence. Fades from one to the other.
@@ -135,6 +129,14 @@ func _play_music(track: String) -> void:
 	_music_name = track
 	if _music_tween:
 		_music_tween.kill()
+	if OS.has_feature("web"):
+		# The web build keeps the volume a sound started with, so a fade would stay near silent.
+		_music.stop()
+		if music_on and _music_stream(track):
+			_music.stream = _music_stream(track)
+			_music.volume_db = MUSIC_DB
+			_music.play()
+		return
 	_music_tween = create_tween()
 	if _music.playing:
 		_music_tween.tween_property(_music, "volume_db", -40.0, 0.5)
