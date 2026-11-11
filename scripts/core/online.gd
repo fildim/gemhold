@@ -203,6 +203,11 @@ func pull(save: SaveData, take_name := true) -> String:
 	if save.merge_online(scores, _list(f.get("ach", {})), stats, progress_of(f)):
 		save.save()
 		merged.emit()
+	# A full-game code entered on any device of this account unlocks the demo builds here too.
+	var full: Variant = _value(f.get("full", {}))
+	if full is bool and full and not Prefs.get_value("full", false):
+		Edition.unlock()
+		merged.emit()
 	return ""
 
 
@@ -252,6 +257,8 @@ func upload(save: SaveData, new_name := "") -> String:
 		"scores": {"mapValue": {"fields": scores}},
 		"ach": {"arrayValue": {"values": ach}},
 	}
+	if Prefs.get_value("full", false):
+		fields["full"] = {"booleanValue": true}
 	if sync_progress:
 		fields.merge(progress_fields(save))
 	var doc := {"name": "projects/%s/databases/(default)/documents/players/%s" % [PROJECT, uid], "fields": fields}

@@ -88,6 +88,7 @@ func _ready() -> void:
 	$UI.add_child(hall)
 	hall.setup(hud, save, online, infos)
 	select.hall_pressed.connect(hall.open)
+	select.full_unlocked.connect(func() -> void: online.sync(save))   # remember it on the account
 	hall.closed.connect(func() -> void: hall.visible = false)
 	hall.race_ready.connect(_start_race)
 	$UI.move_child(spot, -1)   # the spotlight stays over every screen, the Hall of Fame included

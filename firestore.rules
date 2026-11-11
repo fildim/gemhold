@@ -8,7 +8,8 @@ service cloud.firestore {
       allow read: if true;
       allow delete: if request.auth != null && request.auth.uid == uid;
       allow create, update: if request.auth != null && request.auth.uid == uid
-        && request.resource.data.keys().hasOnly(['name', 'total', 'stars', 'rw', 'rl', 'scores', 'ach', 'updated', 'unlocked', 'best', 'skills', 'skills_t', 'reset_t', 'stats'])
+        && request.resource.data.keys().hasOnly(['name', 'total', 'stars', 'rw', 'rl', 'scores', 'ach', 'updated', 'unlocked', 'best', 'skills', 'skills_t', 'reset_t', 'stats', 'full'])
+        && (!('full' in request.resource.data) || request.resource.data.full is bool)
         && (!('unlocked' in request.resource.data) || (request.resource.data.unlocked is int && request.resource.data.unlocked >= 1 && request.resource.data.unlocked <= 100))
         && (!('best' in request.resource.data) || (request.resource.data.best is map && request.resource.data.best.size() <= 100))
         && (!('skills' in request.resource.data) || (request.resource.data.skills is map && request.resource.data.skills.size() <= 100))

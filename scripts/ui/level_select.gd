@@ -7,6 +7,7 @@ signal level_chosen(index: int)
 signal skills_pressed
 signal guide_pressed
 signal hall_pressed
+signal full_unlocked   # a full-game code was accepted (main puts it on the account)
 
 const Hud := preload("res://scripts/ui/hud.gd")
 
@@ -391,9 +392,10 @@ func _show_info() -> void:
 			if Edition.try_code(code.text):
 				Sfx.play("rank")
 				status.add_theme_color_override("font_color", Hud.GOLD)
-				status.text = "The full game is unlocked: all %d lairs are yours." % _levels.size()
+				status.text = "The full game is unlocked: all %d lairs are yours.\nSigned in? Your account now unlocks it on your other devices too." % _levels.size()
 				code_row.visible = false
 				refresh()
+				full_unlocked.emit()
 			else:
 				Sfx.play("error")
 				status.add_theme_color_override("font_color", Hud.POOR)

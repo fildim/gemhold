@@ -101,6 +101,17 @@ func _run() -> void:
 		await create_timer(0.05).timeout
 	_check(await reopened.delete_account() == "", "clean up the first account")
 
+	# A full-game code entered on one device follows the account to the others.
+	Prefs.path = "user://online_test_prefs.cfg"
+	Prefs.set_value("full", true)
+	_check(await a.upload(other) == "", "the rules accept the unlock")
+	Prefs.set_value("full", false)   # another device, still a demo
+	Edition.demo = true
+	_check(await a.pull(other) == "" and not Edition.demo and Prefs.get_value("full", false), "the account unlocks the other device")
+	Prefs.set_value("full", false)
+	_check(await b.pull(save_b) == "" and not Prefs.get_value("full", false), "an account without a code unlocks nothing")
+	Edition.demo = false
+
 	# Firebase refuses to delete after an old sign-in, so the game asks first and removes nothing.
 	var signed_in_at := a._password_at
 	a._password_at = 0.0
