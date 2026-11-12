@@ -12,11 +12,13 @@ signal full_unlocked   # a full-game code was accepted (main puts it on the acco
 const Hud := preload("res://scripts/ui/hud.gd")
 
 ## The campaign comes in chapters of PER_PAGE lairs, one chapter on screen at a time. SPOTS is
-## where each stop of a chapter sits, as a fraction of the screen: a trail along the top row and
-## back along the bottom. Spots past the last level file are drawn as unexplored ground.
+## where each stop of a chapter sits, as a fraction of the screen. Every chapter reads the same
+## way: the road zigzags left to right between a top and a bottom row, comes in at the left edge
+## from the previous chapter and leaves at the right edge for the next, where the chapter buttons
+## sit. Spots past the last level file are drawn as unexplored ground.
 const PER_PAGE := 10
-const SPOTS: Array[Vector2] = [Vector2(0.10, 0.10), Vector2(0.30, 0.16), Vector2(0.50, 0.08), Vector2(0.70, 0.16), Vector2(0.90, 0.10),
-	Vector2(0.90, 0.68), Vector2(0.70, 0.74), Vector2(0.50, 0.66), Vector2(0.30, 0.74), Vector2(0.10, 0.68)]
+const SPOTS: Array[Vector2] = [Vector2(0.095, 0.10), Vector2(0.185, 0.70), Vector2(0.275, 0.10), Vector2(0.365, 0.70), Vector2(0.455, 0.10),
+	Vector2(0.545, 0.70), Vector2(0.635, 0.10), Vector2(0.725, 0.70), Vector2(0.815, 0.10), Vector2(0.905, 0.70)]
 const CHAPTERS: Array[String] = ["Chapter I: The Lowland Roads", "Chapter II: The Crusade"]
 
 var _hud: Control
@@ -94,7 +96,7 @@ func setup(hud: Control, levels: Array, save: SaveData) -> void:
 	_reset.add_theme_color_override("font_color", Hud.DIM)
 	_reset.pressed.connect(_on_reset)
 	add_child(_reset)
-	_sound = hud.sound_button(self)
+	_sound = hud.sound_button(self, self)
 	_sound.custom_minimum_size = Vector2(0, 60)
 	_sound.add_theme_font_size_override("font_size", 26)
 	_info = Button.new()
@@ -106,8 +108,8 @@ func setup(hud: Control, levels: Array, save: SaveData) -> void:
 		Sfx.play("click")
 		_show_info())
 	add_child(_info)
-	_prev = _page_button("« Chapter I", -1)
-	_next = _page_button("Chapter II »", 1)
+	_prev = _page_button("«", -1)
+	_next = _page_button("»", 1)
 	resized.connect(_layout)
 	refresh()
 
@@ -116,8 +118,9 @@ func _page_button(text: String, step: int) -> Button:
 	var b := Button.new()
 	b.text = text
 	b.focus_mode = Control.FOCUS_NONE
-	b.custom_minimum_size = Vector2(0, 60)
-	b.add_theme_font_size_override("font_size", 26)
+	b.custom_minimum_size = Vector2(64, 96)
+	b.add_theme_font_size_override("font_size", 24)
+	b.tooltip_text = "Previous chapter" if step < 0 else "Next chapter"
 	b.pressed.connect(func() -> void:
 		Sfx.play("click")
 		_show_page(_page + step))
@@ -135,6 +138,9 @@ func _show_page(p: int) -> void:
 		m.visible = m.index / PER_PAGE == _page
 	_prev.visible = _page > 0
 	_next.visible = _page < _pages() - 1
+	# Compact, so the road's ends stay clear: an arrow over the chapter's numeral.
+	_prev.text = "«\nCh. " + _chapter_name(_page - 1).get_slice(" ", 1)
+	_next.text = "»\nCh. " + _chapter_name(_page + 1).get_slice(" ", 1)
 	_sub.text = "%s  ·  %d of %d lairs defended%s" % [CHAPTERS[mini(_page, CHAPTERS.size() - 1)], _beaten, _levels.size(), "  ·  Free demo" if Edition.demo else ""]
 	_layout()
 
@@ -187,10 +193,11 @@ func _layout() -> void:
 	_info.position = Vector2(_sound.position.x - _info.size.x - 10, size.y - _info.size.y - 12)
 	if _info_panel:
 		_info_panel.size = size
+	# The chapter buttons sit where the road leaves the screen, between the two rows.
 	_prev.reset_size()
-	_prev.position = Vector2(14, _heading.position.y + 8)
+	_prev.position = Vector2(14, _exit_y() - _prev.size.y / 2.0)
 	_next.reset_size()
-	_next.position = Vector2(size.x - _next.size.x - 14, _heading.position.y + 8)
+	_next.position = Vector2(size.x - _next.size.x - 14, _exit_y() - _next.size.y / 2.0)
 	if _confirm:
 		_confirm.size = size
 	if _offer:
@@ -203,6 +210,18 @@ func _spot(i: int) -> Vector2:
 	var top := 130.0
 	var s := SPOTS[i % PER_PAGE]
 	return Vector2(s.x * size.x, top + s.y * (size.y - top - 60.0))
+
+
+## "Chapter II" for page 1, from CHAPTERS ("Chapter II: The Crusade").
+func _chapter_name(p: int) -> String:
+	var full: String = CHAPTERS[clampi(p, 0, CHAPTERS.size() - 1)] if p < CHAPTERS.size() else "Chapter %d" % (p + 1)
+	return full.get_slice(":", 0)
+
+
+## Height where the road meets the screen's edges: midway between the top row's lair (title,
+## stars and moon included) and the bottom row's circle.
+func _exit_y() -> float:
+	return (_spot(0).y - Marker.R + Marker.SIZE.y + _spot(1).y - Marker.R) / 2.0
 
 
 func _on_marker(i: int) -> void:
@@ -450,19 +469,32 @@ func _draw() -> void:
 		var a := _spot(i)
 		var b := _spot(i + 1)
 		var bend := (b - a).orthogonal().normalized() * (40.0 if i % 2 == 0 else -40.0)
-		var pts := PackedVector2Array([a])
-		pts.append_array(Paint.quad(a, (a + b) / 2.0 + bend, b, 24))
-		var walked := i + 1 < _levels.size() and _save.is_unlocked(i + 1)
-		var col: Color = Color(Hud.GOLD, 0.75) if walked else Color(Hud.DIM, 0.3)
-		for j in range(1, pts.size() - 1):
-			if walked or j % 2 == 0:
-				draw_circle(pts[j], 3.0 if walked else 2.5, col)
+		_trail(a, (a + b) / 2.0 + bend, b, i + 1 < _levels.size() and _save.is_unlocked(i + 1))
+	# The road in from the previous chapter (left edge) and on to the next (right edge).
+	if _page > 0:
+		var a := Vector2(0, _exit_y())
+		var b := _spot(first)
+		_trail(a, Vector2(b.x * 0.5, a.y), b, _save.is_unlocked(first))
+	if _page < _pages() - 1:
+		var a := _spot(first + PER_PAGE - 1)
+		var b := Vector2(size.x, _exit_y())
+		_trail(a, Vector2((a.x + b.x) / 2.0, b.y), b, first + PER_PAGE < _levels.size() and _save.is_unlocked(first + PER_PAGE))
 	# Planned stops with no level yet.
 	for i in range(maxi(first, _levels.size()), first + PER_PAGE):
 		var c := _spot(i)
 		Paint.ellipse(self, c, Marker.R * 0.8, Marker.R * 0.8, Color(0, 0, 0, 0.35))
 		Paint.ellipse_outline(self, c, Marker.R * 0.8, Marker.R * 0.8, Color(Hud.DIM, 0.25), 2.0)
 		draw_string(_hud.bold_font, c + Vector2(-40, Marker.R + 26), "Uncharted", HORIZONTAL_ALIGNMENT_CENTER, 80, 19, Color(Hud.DIM, 0.4))
+
+
+## One stretch of trail from a to b bending through c: bright where it has been walked, dim and dotted beyond.
+func _trail(a: Vector2, c: Vector2, b: Vector2, walked: bool) -> void:
+	var pts := PackedVector2Array([a])
+	pts.append_array(Paint.quad(a, c, b, 24))
+	var col: Color = Color(Hud.GOLD, 0.75) if walked else Color(Hud.DIM, 0.3)
+	for j in range(1, pts.size() - 1):
+		if walked or j % 2 == 0:
+			draw_circle(pts[j], 3.0 if walked else 2.5, col)
 
 
 ## One tappable lair on the map.

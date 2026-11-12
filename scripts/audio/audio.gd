@@ -4,7 +4,7 @@ extends Node
 ## (Sfx.play("coin")), which do nothing when it is not running, as in headless tests.
 ## The sounds are WAV files in assets/audio, rendered by tools/make_audio.gd.
 ## Every button in the game clicks when pressed.
-## Sound and music can each be switched off; the choice is kept in Prefs.
+## Effects and music each have a volume from 0 (off) to 1, set in the Sound window and kept in Prefs.
 
 const DIR := "res://assets/audio/"
 const MUSIC_DIR := "res://assets/music/"   # public-domain recordings, see CREDITS.md there
@@ -25,8 +25,8 @@ const VOICES := 16
 
 static var _me: Sfx
 
-var sound_on := true
-var music_on := true
+var sfx_vol := 1.0     # 0..1, 0 = silent
+var music_vol := 1.0
 
 var _streams := {}
 var _last := {}              # name -> time last played (s)
@@ -42,9 +42,10 @@ var _beams := 0
 func _ready() -> void:
 	_me = self
 	process_mode = Node.PROCESS_MODE_ALWAYS
-	sound_on = Prefs.get_value("sound", true)
-	music_on = Prefs.get_value("music", true) and sound_on
-	sound_on = music_on   # one switch for both
+	# Older saves kept one on/off switch ("sound"/"music"); off becomes volume 0.
+	var was_on: bool = Prefs.get_value("sound", true) and Prefs.get_value("music", true)
+	sfx_vol = clampf(float(Prefs.get_value("sfx_volume", 1.0 if was_on else 0.0)), 0.0, 1.0)
+	music_vol = clampf(float(Prefs.get_value("music_volume", 1.0 if was_on else 0.0)), 0.0, 1.0)
 	# Everything plays on the Master bus, with the effects turned down by SFX_BUS_DB on each
 	# player: on the web build, extra buses get wired in a loop that never reaches the speakers.
 	for n in SFX.keys() + ["beam"]:   # music loads when first played
@@ -78,7 +79,7 @@ static func play(sound: String) -> void:
 
 
 func _play(sound: String) -> void:
-	if not sound_on or not _streams.has(sound):
+	if sfx_vol <= 0.0 or not _streams.has(sound):
 		return
 	var cfg: Array = SFX.get(sound, [-10.0, 0.05, 0.0])
 	var now := Time.get_ticks_msec() / 1000.0
@@ -95,7 +96,7 @@ func _play(sound: String) -> void:
 			break
 	_next = (_next + 1) % VOICES
 	v.stream = _streams[sound]
-	v.volume_db = cfg[0] + SFX_BUS_DB
+	v.volume_db = cfg[0] + SFX_BUS_DB + linear_to_db(sfx_vol)
 	v.pitch_scale = 1.0 + randf_range(-cfg[2], cfg[2])
 	v.play()
 
@@ -108,13 +109,13 @@ static func set_beams(n: int) -> void:
 
 func _set_beams(n: int) -> void:
 	_beams = n
-	var on := sound_on and n > 0
+	var on := sfx_vol > 0.0 and n > 0
+	if on:
+		_beam.volume_db = BEAM_DB + SFX_BUS_DB + 2.5 * (mini(n, 3) - 1) + linear_to_db(sfx_vol)
 	if on and not _beam.playing:
 		_beam.play()
 	elif not on and _beam.playing:
 		_beam.stop()
-	if on:
-		_beam.volume_db = BEAM_DB + SFX_BUS_DB + 2.5 * (mini(n, 3) - 1)
 
 
 ## "map", a lair's piece (see main.gd MUSIC), or "" for silence. Fades from one to the other.
@@ -124,55 +125,84 @@ static func play_music(track: String) -> void:
 
 
 func _play_music(track: String) -> void:
-	if track == _music_name and (_music.playing or not music_on):
+	if track == _music_name and (_music.playing or music_vol <= 0.0):
 		return
 	_music_name = track
 	if _music_tween:
 		_music_tween.kill()
+	var full := _music_db()
 	if OS.has_feature("web"):
 		# The web build keeps the volume a sound started with, so a fade would stay near silent.
 		_music.stop()
-		if music_on and _music_stream(track):
+		if music_vol > 0.0 and _music_stream(track):
 			_music.stream = _music_stream(track)
-			_music.volume_db = MUSIC_DB
+			_music.volume_db = full
 			_music.play()
 		return
 	_music_tween = create_tween()
 	if _music.playing:
-		_music_tween.tween_property(_music, "volume_db", -40.0, 0.5)
+		_music_tween.tween_property(_music, "volume_db", -40.0 + minf(full, 0.0), 0.5)
 	_music_tween.tween_callback(func() -> void:
 		_music.stop()
-		if music_on and _music_stream(track):
+		if music_vol > 0.0 and _music_stream(track):
 			_music.stream = _music_stream(track)
-			_music.volume_db = -40.0
+			_music.volume_db = -40.0 + minf(full, 0.0)
 			_music.play())
-	_music_tween.tween_property(_music, "volume_db", MUSIC_DB, 1.0)
+	_music_tween.tween_property(_music, "volume_db", full, 1.0)
 
 
-## Switches all sound and music on or off together. Returns the new label.
-static func cycle() -> String:
-	return _me._cycle() if _me else label()
+func _music_db() -> float:
+	return MUSIC_DB + linear_to_db(maxf(music_vol, 0.0001))
 
 
-func _cycle() -> String:
-	sound_on = not (sound_on and music_on)
-	music_on = sound_on
-	Prefs.set_value("sound", sound_on)
-	Prefs.set_value("music", music_on)
-	_set_beams(_beams)
-	var track := _music_name
-	_music_name = ""
-	if music_on:
-		_play_music(track)
-	else:
+static func sfx_volume() -> float:
+	return _me.sfx_vol if _me else float(Prefs.get_value("sfx_volume", 1.0))
+
+
+static func music_volume() -> float:
+	return _me.music_vol if _me else float(Prefs.get_value("music_volume", 1.0))
+
+
+## Effects volume, 0..1, from the Sound window's slider. Saved straight away.
+static func set_sfx_volume(v: float) -> void:
+	Prefs.set_value("sfx_volume", clampf(v, 0.0, 1.0))
+	if _me:
+		_me.sfx_vol = clampf(v, 0.0, 1.0)
+		_me._set_beams(_me._beams)
+
+
+## Music volume, 0..1. `done` is true when the slider is let go: the web build only takes a
+## new volume when a track starts, so there the music restarts then.
+static func set_music_volume(v: float, done := true) -> void:
+	Prefs.set_value("music_volume", clampf(v, 0.0, 1.0))
+	if _me:
+		_me._set_music_volume(clampf(v, 0.0, 1.0), done)
+
+
+func _set_music_volume(v: float, done: bool) -> void:
+	var was := music_vol
+	music_vol = v
+	if v <= 0.0:
+		if _music_tween:
+			_music_tween.kill()
 		_music.stop()
-		_music_name = track
-	return label()
-
-
-static func label() -> String:
-	var on: bool = Prefs.get_value("sound", true) and Prefs.get_value("music", true)
-	return "Sound: on" if on else "Sound: off"   # the state, not an order to switch
+		return
+	if was <= 0.0 or not _music.playing:
+		# Switched back on: start the track that should be playing.
+		var track := _music_name
+		_music_name = ""
+		_play_music(track)
+		return
+	if OS.has_feature("web"):
+		if done:
+			var pos := _music.get_playback_position()
+			_music.stop()
+			_music.volume_db = _music_db()
+			_music.play(pos)
+		return
+	if _music_tween:
+		_music_tween.kill()
+	_music.volume_db = _music_db()
 
 
 ## A music track by name ("map", or a lair's piece), loaded the first time it plays.

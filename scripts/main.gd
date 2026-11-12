@@ -514,7 +514,9 @@ func _on_ended(won: bool) -> void:
 ## Guide or Dark Arts, or quits.
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_WM_GO_BACK_REQUEST:
-		if on_map and hall.visible:
+		if SoundWindow.close_any(get_tree()):
+			pass
+		elif on_map and hall.visible:
 			hall.visible = false
 		elif on_map and guide.visible:
 			guide.visible = false

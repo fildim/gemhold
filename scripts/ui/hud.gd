@@ -238,23 +238,16 @@ func _icon(kind: String) -> Control:
 	return ic
 
 
-## Sound on / Sound off (music and effects together). Also used on the level map.
-func sound_button(parent: Control) -> Button:
+## Opens the Sound window (effects and music sliders) over `host`, or over the HUD when
+## none is given. Also used on the level map.
+func sound_button(parent: Control, host: Control = null) -> Button:
 	var b := Button.new()
-	b.text = Sfx.label()
+	b.text = "Sound"
 	b.custom_minimum_size = Vector2(0, 48)
 	b.focus_mode = Control.FOCUS_NONE
-	b.add_to_group("sound_buttons")
-	b.pressed.connect(func() -> void:
-		Sfx.cycle()
-		refresh_sound())
+	b.pressed.connect(func() -> void: SoundWindow.open(self, host if host else self))
 	parent.add_child(b)
 	return b
-
-
-## Updates every sound button's label (the map has one too).
-func refresh_sound() -> void:
-	get_tree().call_group("sound_buttons", "set_text", Sfx.label())
 
 
 ## Leaving mid-battle throws the battle away, so the bar's Map button needs a second tap
