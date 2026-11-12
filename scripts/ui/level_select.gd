@@ -118,8 +118,8 @@ func _page_button(text: String, step: int) -> Button:
 	var b := Button.new()
 	b.text = text
 	b.focus_mode = Control.FOCUS_NONE
-	b.custom_minimum_size = Vector2(64, 96)
-	b.add_theme_font_size_override("font_size", 24)
+	b.custom_minimum_size = Vector2(0, 60)
+	b.add_theme_font_size_override("font_size", 26)
 	b.tooltip_text = "Previous chapter" if step < 0 else "Next chapter"
 	b.pressed.connect(func() -> void:
 		Sfx.play("click")
@@ -138,9 +138,8 @@ func _show_page(p: int) -> void:
 		m.visible = m.index / PER_PAGE == _page
 	_prev.visible = _page > 0
 	_next.visible = _page < _pages() - 1
-	# Compact, so the road's ends stay clear: an arrow over the chapter's numeral.
-	_prev.text = "«\nCh. " + _chapter_name(_page - 1).get_slice(" ", 1)
-	_next.text = "»\nCh. " + _chapter_name(_page + 1).get_slice(" ", 1)
+	_prev.text = "« " + _chapter_name(_page - 1)
+	_next.text = _chapter_name(_page + 1) + " »"
 	_sub.text = "%s  ·  %d of %d lairs defended%s" % [CHAPTERS[mini(_page, CHAPTERS.size() - 1)], _beaten, _levels.size(), "  ·  Free demo" if Edition.demo else ""]
 	_layout()
 
@@ -193,11 +192,10 @@ func _layout() -> void:
 	_info.position = Vector2(_sound.position.x - _info.size.x - 10, size.y - _info.size.y - 12)
 	if _info_panel:
 		_info_panel.size = size
-	# The chapter buttons sit where the road leaves the screen, between the two rows.
 	_prev.reset_size()
-	_prev.position = Vector2(14, _exit_y() - _prev.size.y / 2.0)
+	_prev.position = Vector2(14, _heading.position.y + 8)
 	_next.reset_size()
-	_next.position = Vector2(size.x - _next.size.x - 14, _exit_y() - _next.size.y / 2.0)
+	_next.position = Vector2(size.x - _next.size.x - 14, _heading.position.y + 8)
 	if _confirm:
 		_confirm.size = size
 	if _offer:
@@ -218,10 +216,12 @@ func _chapter_name(p: int) -> String:
 	return full.get_slice(":", 0)
 
 
-## Height where the road meets the screen's edges: midway between the top row's lair (title,
-## stars and moon included) and the bottom row's circle.
-func _exit_y() -> float:
-	return (_spot(0).y - Marker.R + Marker.SIZE.y + _spot(1).y - Marker.R) / 2.0
+## Where the road touches lair i: under a top-row lair's name, stars and moon (so it never runs
+## through them), and on the top of a bottom-row lair's circle.
+func _foot(i: int) -> Vector2:
+	if i % 2 == 0:
+		return _spot(i) + Vector2(0, Marker.R + 98.0)
+	return _spot(i) - Vector2(0, Marker.R + 8.0)
 
 
 func _on_marker(i: int) -> void:
@@ -466,19 +466,20 @@ func _draw() -> void:
 	# The trail between stops: bright where it has been walked, dim and dotted beyond.
 	var first := _page * PER_PAGE
 	for i in range(first, first + PER_PAGE - 1):
-		var a := _spot(i)
-		var b := _spot(i + 1)
-		var bend := (b - a).orthogonal().normalized() * (40.0 if i % 2 == 0 else -40.0)
+		var a := _foot(i)
+		var b := _foot(i + 1)
+		var bend := (b - a).orthogonal().normalized() * (14.0 if i % 2 == 0 else -14.0)
 		_trail(a, (a + b) / 2.0 + bend, b, i + 1 < _levels.size() and _save.is_unlocked(i + 1))
-	# The road in from the previous chapter (left edge) and on to the next (right edge).
+	# The road in from the previous chapter (left edge, beside the first circle) and on to the
+	# next (right edge, beside the last).
 	if _page > 0:
-		var a := Vector2(0, _exit_y())
-		var b := _spot(first)
-		_trail(a, Vector2(b.x * 0.5, a.y), b, _save.is_unlocked(first))
+		var b := _spot(first) - Vector2(Marker.R + 8.0, 0)
+		var a := Vector2(0, b.y)
+		_trail(a, (a + b) / 2.0, b, _save.is_unlocked(first))
 	if _page < _pages() - 1:
-		var a := _spot(first + PER_PAGE - 1)
-		var b := Vector2(size.x, _exit_y())
-		_trail(a, Vector2((a.x + b.x) / 2.0, b.y), b, first + PER_PAGE < _levels.size() and _save.is_unlocked(first + PER_PAGE))
+		var a := _spot(first + PER_PAGE - 1) + Vector2(Marker.R + 8.0, 0)
+		var b := Vector2(size.x, a.y)
+		_trail(a, (a + b) / 2.0, b, first + PER_PAGE < _levels.size() and _save.is_unlocked(first + PER_PAGE))
 	# Planned stops with no level yet.
 	for i in range(maxi(first, _levels.size()), first + PER_PAGE):
 		var c := _spot(i)
