@@ -17,8 +17,8 @@ const Hud := preload("res://scripts/ui/hud.gd")
 ## from the previous chapter and leaves at the right edge for the next, where the chapter buttons
 ## sit. Spots past the last level file are drawn as unexplored ground.
 const PER_PAGE := 10
-const SPOTS: Array[Vector2] = [Vector2(0.095, 0.10), Vector2(0.185, 0.70), Vector2(0.275, 0.10), Vector2(0.365, 0.70), Vector2(0.455, 0.10),
-	Vector2(0.545, 0.70), Vector2(0.635, 0.10), Vector2(0.725, 0.70), Vector2(0.815, 0.10), Vector2(0.905, 0.70)]
+const SPOTS: Array[Vector2] = [Vector2(0.095, 0.27), Vector2(0.185, 0.70), Vector2(0.275, 0.27), Vector2(0.365, 0.70), Vector2(0.455, 0.27),
+	Vector2(0.545, 0.70), Vector2(0.635, 0.27), Vector2(0.725, 0.70), Vector2(0.815, 0.27), Vector2(0.905, 0.70)]
 const CHAPTERS: Array[String] = ["Chapter I: The Lowland Roads", "Chapter II: The Crusade"]
 
 var _hud: Control
@@ -62,6 +62,7 @@ func setup(hud: Control, levels: Array, save: SaveData) -> void:
 	for i in levels.size():
 		var m := Marker.new()
 		m.index = i
+		m.above = i % 2 == 0   # top row
 		m.title = levels[i]["title"]
 		m.font = hud.bold_font
 		m.number_font = hud.display_font
@@ -177,7 +178,7 @@ func _layout() -> void:
 	_sub.position = Vector2((size.x - _sub.size.x) / 2.0, _heading.position.y + _heading.size.y)
 	for m: Marker in _markers:
 		m.size = Marker.SIZE
-		m.position = _spot(m.index) - Vector2(Marker.SIZE.x / 2.0, Marker.R)
+		m.position = _spot(m.index) - Vector2(Marker.SIZE.x / 2.0, m.cy())
 	_reset.reset_size()
 	_reset.position = size - _reset.size - Vector2(14, 12)
 	_sound.reset_size()
@@ -216,12 +217,23 @@ func _chapter_name(p: int) -> String:
 	return full.get_slice(":", 0)
 
 
-## Where the road touches lair i: under a top-row lair's name, stars and moon (so it never runs
-## through them), and on the top of a bottom-row lair's circle.
+## Where the road touches lair i: the bottom of a top-row circle, the top of a bottom-row one.
+## Names, stars and moons sit on the far side of each row, so the road never crosses them.
 func _foot(i: int) -> Vector2:
 	if i % 2 == 0:
-		return _spot(i) + Vector2(0, Marker.R + 98.0)
-	return _spot(i) - Vector2(0, Marker.R + 8.0)
+		return _spot(i) + Vector2(0, Marker.R + 6.0)
+	return _spot(i) - Vector2(0, Marker.R + 6.0)
+
+
+## Height where the road meets the screen's edges on its way to another chapter: midway
+## between the two rows.
+func _exit_y() -> float:
+	return (_spot(0).y + _spot(1).y) / 2.0
+
+
+## A point on lair i's circle edge, facing p.
+func _rim(i: int, p: Vector2) -> Vector2:
+	return _spot(i) + (p - _spot(i)).normalized() * (Marker.R + 6.0)
 
 
 func _on_marker(i: int) -> void:
@@ -468,24 +480,25 @@ func _draw() -> void:
 	for i in range(first, first + PER_PAGE - 1):
 		var a := _foot(i)
 		var b := _foot(i + 1)
-		var bend := (b - a).orthogonal().normalized() * (14.0 if i % 2 == 0 else -14.0)
+		var bend := (b - a).orthogonal().normalized() * (30.0 if i % 2 == 0 else -30.0)
 		_trail(a, (a + b) / 2.0 + bend, b, i + 1 < _levels.size() and _save.is_unlocked(i + 1))
-	# The road in from the previous chapter (left edge, beside the first circle) and on to the
-	# next (right edge, beside the last).
+	# The road in from the previous chapter (left edge) and on to the next (right edge), meeting
+	# the edges midway between the rows.
 	if _page > 0:
-		var b := _spot(first) - Vector2(Marker.R + 8.0, 0)
-		var a := Vector2(0, b.y)
-		_trail(a, (a + b) / 2.0, b, _save.is_unlocked(first))
+		var a := Vector2(0, _exit_y())
+		var c := Vector2(_spot(first).x * 0.5, a.y)
+		_trail(a, c, _rim(first, c), _save.is_unlocked(first))
 	if _page < _pages() - 1:
-		var a := _spot(first + PER_PAGE - 1) + Vector2(Marker.R + 8.0, 0)
-		var b := Vector2(size.x, a.y)
-		_trail(a, (a + b) / 2.0, b, first + PER_PAGE < _levels.size() and _save.is_unlocked(first + PER_PAGE))
+		var last := first + PER_PAGE - 1
+		var b := Vector2(size.x, _exit_y())
+		var c := Vector2((_spot(last).x + b.x) / 2.0, b.y)
+		_trail(_rim(last, c), c, b, first + PER_PAGE < _levels.size() and _save.is_unlocked(first + PER_PAGE))
 	# Planned stops with no level yet.
 	for i in range(maxi(first, _levels.size()), first + PER_PAGE):
 		var c := _spot(i)
 		Paint.ellipse(self, c, Marker.R * 0.8, Marker.R * 0.8, Color(0, 0, 0, 0.35))
 		Paint.ellipse_outline(self, c, Marker.R * 0.8, Marker.R * 0.8, Color(Hud.DIM, 0.25), 2.0)
-		draw_string(_hud.bold_font, c + Vector2(-40, Marker.R + 26), "Uncharted", HORIZONTAL_ALIGNMENT_CENTER, 80, 19, Color(Hud.DIM, 0.4))
+		draw_string(_hud.bold_font, c + Vector2(-40, -Marker.R - 12 if i % 2 == 0 else Marker.R + 26), "Uncharted", HORIZONTAL_ALIGNMENT_CENTER, 80, 19, Color(Hud.DIM, 0.4))
 
 
 ## One stretch of trail from a to b bending through c: bright where it has been walked, dim and dotted beyond.
@@ -503,7 +516,7 @@ class Marker extends Control:
 	signal pressed(index: int)
 
 	const R := 34.0
-	const SIZE := Vector2(240, 160)
+	const SIZE := Vector2(240, 166)
 
 	var index := 0
 	var title := ""
@@ -513,7 +526,16 @@ class Marker extends Control:
 	var night := -1       # -1 locked, 0 open but unbeaten, 1-3 night rating
 	var font: Font
 	var number_font: Font
+	var above := false    # top row: name, stars and moon above the circle, so the road below stays clear
 	var _t := 0.0
+
+	## Circle centre in local coordinates.
+	func cy() -> float:
+		return SIZE.y - R - 2.0 if above else R
+
+	## Top of the name/stars/moon block.
+	func _base() -> float:
+		return 0.0 if above else R * 2.0
 
 	func _ready() -> void:
 		mouse_filter = Control.MOUSE_FILTER_STOP
@@ -526,12 +548,13 @@ class Marker extends Control:
 
 	func _gui_input(event: InputEvent) -> void:
 		if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
-			if event.position.distance_to(Vector2(size.x / 2.0, R)) <= R + 14.0 or event.position.y > R * 2.0:
+			var on_text: bool = event.position.y < cy() - R if above else event.position.y > R * 2.0
+			if event.position.distance_to(Vector2(size.x / 2.0, cy())) <= R + 14.0 or on_text:
 				pressed.emit(index)
 				accept_event()
 
 	func _draw() -> void:
-		var c := Vector2(size.x / 2.0, R)
+		var c := Vector2(size.x / 2.0, cy())
 		if current:
 			Paint.glow(self, c, R * 2.2 + sin(_t * 3.0) * 6.0, Color("e2683a", 0.55))
 		var fill := Color("2f251b") if not locked else Color("1c160f")
@@ -547,12 +570,12 @@ class Marker extends Control:
 			var w := number_font.get_string_size(num, HORIZONTAL_ALIGNMENT_LEFT, -1, 34).x
 			draw_string(number_font, c + Vector2(-w / 2.0, 12), num, HORIZONTAL_ALIGNMENT_LEFT, -1, 34, Color("efe4cc"))
 		if not locked:
-			_draw_moon(Vector2(size.x / 2.0 - 36.0, R * 2.0 + 72))
+			_draw_moon(Vector2(size.x / 2.0 - 36.0, _base() + 72))
 		var tc := Color("efe4cc") if not locked else Color("a8977c", 0.6)
-		draw_string(font, Vector2(0, R * 2.0 + 24), title, HORIZONTAL_ALIGNMENT_CENTER, size.x, 25, tc)
+		draw_string(font, Vector2(0, _base() + 24), title, HORIZONTAL_ALIGNMENT_CENTER, size.x, 25, tc)
 		# Best rating as three stars: gold ones earned, dark ones still to win.
 		for k in 3:
-			var p := Vector2(size.x / 2.0 + (k - 1) * 22.0, R * 2.0 + 44)
+			var p := Vector2(size.x / 2.0 + (k - 1) * 22.0, _base() + 44)
 			if locked:
 				pass   # a result from before the lair moved later in the campaign shows once it opens
 			elif k < stars:
