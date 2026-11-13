@@ -479,6 +479,24 @@ func show_popup(info: Dictionary, anchor: Rect2, avoid := Rect2()) -> void:
 	text.add_theme_color_override("font_color", DIM)
 	text.add_theme_font_override("font", body_font)
 	_popup_box.add_child(text)
+	if info.has("cuts"):   # a building that takes several cuts: how many are left, big and plain
+		var left: int = info["cuts"][0]
+		var all: int = info["cuts"][1]
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 12)
+		var bar := CutBar.new()
+		bar.left = left
+		bar.total = all
+		bar.custom_minimum_size = Vector2(all * 34 + (all - 1) * 6, 30)
+		bar.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		row.add_child(bar)
+		var cl := Label.new()
+		cl.text = "%d of %d cuts left" % [left, all] if left > 1 else "Last cut!"
+		cl.add_theme_font_override("font", bold_font)
+		cl.add_theme_font_size_override("font_size", 28)
+		cl.add_theme_color_override("font_color", Color("c9c0ff"))
+		row.add_child(cl)
+		_popup_box.add_child(row)
 	for a in info["actions"]:
 		var b := Button.new()
 		if a["id"] == "sell":
@@ -823,3 +841,22 @@ static func _thousands(n: int) -> String:
 		out = "," + s.right(3) + out
 		s = s.left(s.length() - 3)
 	return ("-" if n < 0 else "") + s + out
+
+
+## A building's cuts as a row of blocks: the ones already made filled gold, the ones still to
+## make dark with a violet rim.
+class CutBar extends Control:
+	var left := 0
+	var total := 1
+
+	func _draw() -> void:
+		var w := (size.x - (total - 1) * 6.0) / total
+		for i in total:
+			var r := Rect2(i * (w + 6.0), 0, w, size.y)
+			var done := i < total - left
+			var sb := StyleBoxFlat.new()
+			sb.set_corner_radius_all(6)
+			sb.bg_color = Color("e8b84a") if done else Color("1c160f")
+			sb.border_color = Color("8a6420") if done else Color("c9c0ff")
+			sb.set_border_width_all(3)
+			draw_style_box(sb, r)

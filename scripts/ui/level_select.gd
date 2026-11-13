@@ -179,6 +179,10 @@ func _layout() -> void:
 	for m: Marker in _markers:
 		m.size = Marker.SIZE
 		m.position = _spot(m.index) - Vector2(Marker.SIZE.x / 2.0, m.cy())
+		# Room for its name: half-way to the next lair on the same row each side, and the screen edge.
+		var sx := _spot(m.index).x
+		m.room = minf(Marker.SIZE.x, minf(size.x * (SPOTS[2].x - SPOTS[0].x) - 16.0, 2.0 * minf(sx, size.x - sx) - 8.0))
+		m.queue_redraw()
 	_reset.reset_size()
 	_reset.position = size - _reset.size - Vector2(14, 12)
 	_sound.reset_size()
@@ -521,6 +525,7 @@ class Marker extends Control:
 	var font: Font
 	var number_font: Font
 	var above := false    # top row: name, stars and moon above the circle, so the road below stays clear
+	var room := 240.0     # widest its name may be (set by the map's layout so neighbours never touch)
 	var _t := 0.0
 
 	## Circle centre in local coordinates.
@@ -563,19 +568,47 @@ class Marker extends Control:
 			var num := str(index + 1)
 			var w := number_font.get_string_size(num, HORIZONTAL_ALIGNMENT_LEFT, -1, 34).x
 			draw_string(number_font, c + Vector2(-w / 2.0, 12), num, HORIZONTAL_ALIGNMENT_LEFT, -1, 34, Color("efe4cc"))
+		var fit := _fit_title()
+		var lines: Array = fit[0]
+		var fs: int = fit[1]
+		# A second line goes above the first on the top row (the circle is below) and pushes the
+		# stars and moon down on the bottom row.
+		var extra := 0.0 if lines.size() == 1 or above else float(fs)
 		if not locked:
-			_draw_moon(Vector2(size.x / 2.0 - 36.0, _base() + 72))
+			_draw_moon(Vector2(size.x / 2.0 - 36.0, _base() + 72 + extra))
 		var tc := Color("efe4cc") if not locked else Color("a8977c", 0.6)
-		draw_string(font, Vector2(0, _base() + 24), title, HORIZONTAL_ALIGNMENT_CENTER, size.x, 25, tc)
+		for j in lines.size():
+			var ty := _base() + 24 + (j - (lines.size() - 1 if above else 0)) * fs
+			draw_string(font, Vector2(0, ty), lines[j], HORIZONTAL_ALIGNMENT_CENTER, size.x, fs, tc)
 		# Best rating as three stars: gold ones earned, dark ones still to win.
 		for k in 3:
-			var p := Vector2(size.x / 2.0 + (k - 1) * 22.0, _base() + 44)
+			var p := Vector2(size.x / 2.0 + (k - 1) * 22.0, _base() + 44 + extra)
 			if locked:
 				pass   # a result from before the lair moved later in the campaign shows once it opens
 			elif k < stars:
 				_draw_star(p, 10.0, Color("e8b84a"))
 			elif not locked:
 				_draw_star(p, 10.0, Color(0, 0, 0, 0.45))
+
+	## The name in at most two lines that fit `room`: one line if it fits at 20–25, else split at
+	## the space nearest the middle, shrinking the font (down to 18) only if a line is still too wide.
+	## Returns [lines, font size].
+	func _fit_title() -> Array:
+		var fs := 25
+		var wide := func(t: String, s: int) -> float: return font.get_string_size(t, HORIZONTAL_ALIGNMENT_LEFT, -1, s).x
+		for s in range(25, 19, -1):   # one line, a little smaller if need be
+			if wide.call(title, s) <= room:
+				return [[title], s]
+		var lines: Array = [title]
+		var best := -1
+		for i in title.length():
+			if title[i] == " " and (best < 0 or absi(i - title.length() / 2) < absi(best - title.length() / 2)):
+				best = i
+		if best > 0:
+			lines = [title.substr(0, best), title.substr(best + 1)]
+		while fs > 18 and lines.any(func(l: String) -> bool: return wide.call(l, fs) > room):
+			fs -= 1
+		return [lines, fs]
 
 	## Night mission badge: a faint crescent until unlocked, pale and glowing when open,
 	## gold once won, with its own three-star rating beside it, on a row under the day stars.

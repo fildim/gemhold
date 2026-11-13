@@ -1080,10 +1080,19 @@ func cut_cost(s: Site) -> int:
 	return ceili(float(Defs.SITES[s.kind]["cut"]) * (1.0 + 0.5 * (n - 1)) / n)
 
 
+## A building's tile panel. One that takes several cuts also gets "cuts": [cuts left, cuts in all],
+## which the panel shows as a bar.
 func _site_info(s: Site) -> Dictionary:
+	var info := _site_panel(s)
+	if not s.owned and s.cuts > 1:
+		info["cuts"] = [s.cuts_left, s.cuts]
+	return info
+
+
+func _site_panel(s: Site) -> Dictionary:
 	var d: Dictionary = Defs.SITES[s.kind]
 	var cut := {"id": "cut", "price": "%d mana" % cut_cost(s), "mana": cut_cost(s)}
-	var more := "" if s.cuts_left <= 1 else "\n%d cuts left, %d mana each." % [s.cuts_left, cut_cost(s)]
+	var more := ""   # cuts left are shown by the panel's bar (see _site_info)
 	match s.kind:
 		"mine":
 			if s.owned:
