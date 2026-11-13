@@ -110,7 +110,7 @@ func _parse(d: Dictionary) -> void:
 			site["cuts"] = maxi(1, int(s["cuts"]))
 		if site["kind"] == "sluice":
 			site["path"] = int(s.get("path", 0))
-		if site["kind"] == "camp":
+		if Defs.MUSTER_SITES.has(site["kind"]):
 			site["path"] = int(s.get("path", 0))
 			site["spawn"] = _parse_wave(String(s.get("spawn", "1p")))
 			site["every"] = float(s.get("every", 25.0))

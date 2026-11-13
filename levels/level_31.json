@@ -1,0 +1,63 @@
+{
+ "id": "level_31",
+ "title": "Powder Road",
+ "cols": 16,
+ "rows": 10,
+ "hp_mul": 3.83,
+ "legend": {"A":"high ash","F":"high frost","L":"lair","M":"high moss","a":"ash","f":"frost","m":"moss"},
+ "terrain": [
+  "mmmmmmmmmmmaaaaa",
+  "mmmmMmmmmmmaaaaa",
+  "mmmmmmmmmmmaaaaa",
+  "ffffffmFmmmmmmmm",
+  "ffffffmmmmmmmLLm",
+  "ffffffmmmmmmmLLm",
+  "ffffffmmmmmMmmmm",
+  "mmmmmAmmmmmmmmmm",
+  "mmmmmmmmmmmmmmmm",
+  "mmmmmmmmmmmmmmmm"
+ ],
+ "trees": [
+  ".TTT.TT..TT..T..",
+  "..TT..T..T.....T",
+  "............T...",
+  "...TT...TT.T....",
+  "..TTT.T..T......",
+  "T..TT.TT........",
+  "TT.......TT.....",
+  "..T.T.T...TT.TTT",
+  "..........T.T..T",
+  ".........TTT.TTT"
+ ],
+ "paths": [
+  [[-1,2],[10,2],[10,4],[12,4]],
+  [[-1,8],[8,8],[8,5],[12,5]]
+ ],
+ "lair": {"cell":[13,4],"center":[14,5],"size":[2,2]},
+ "sites": [
+  {"cell":[1,5],"kind":"mine"},
+  {"cell":[14,8],"kind":"well"}
+ ],
+ "start": {"gems":5,"gold":230,"mana":60},
+ "first_wave_delay": 30,
+ "wave_gap": 24,
+ "site_cuts": 3,
+ "waves": [
+  "8p",
+  "6f,2a",
+  "6p,4a",
+  "4f,2c,3a",
+  "2k,4a",
+  "6t,4a",
+  "4f,2b,4a",
+  "3k,2c,4a",
+  "8p,6a,2h",
+  "4k,2w,4a",
+  "6t,6a,2c",
+  "4k,2b,6a",
+  "8f,6a,2h",
+  "5k,4a,2c",
+  "6k,8a,2b",
+  "6k,8a,4f,2h"
+ ]
+}

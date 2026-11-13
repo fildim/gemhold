@@ -8,9 +8,11 @@ const T := 64.0
 const OUTLINE := Color("1a120c")
 
 const TUNIC := {"p": "9a7446", "f": "4e6584", "s": "4d7638", "c": "efe9da", "k": "c9a43c", "b": "6e7682", "t": "4a3a5a", "w": "5a4630",
-	"h": "a8343e", "r": "c08a60", "x": "d8dce0", "m": "5a6a3a", "e": "a0602a", "q": "6a7a8a", "l": "6a4628", "d": "2e5a5e", "T": "2a4a7a"}
+	"h": "a8343e", "r": "c08a60", "x": "d8dce0", "m": "5a6a3a", "e": "a0602a", "q": "6a7a8a", "l": "6a4628", "d": "2e5a5e", "T": "2a4a7a",
+	"a": "7a3a2a", "v": "8a7a5a", "i": "6a1e2a", "u": "7a5432", "I": "4a4440"}
 const TUNIC_DARK := {"p": "6a4a26", "f": "2e3e54", "s": "2e4a20", "c": "b8ae96", "k": "7a5e18", "b": "3e444c", "t": "2a2036", "w": "362818",
-	"h": "5e1a22", "r": "7a4e30", "x": "7e8690", "m": "3a4624", "e": "6a3e18", "q": "46525e", "l": "3a2414", "d": "1a3638", "T": "182c4a"}
+	"h": "5e1a22", "r": "7a4e30", "x": "7e8690", "m": "3a4624", "e": "6a3e18", "q": "46525e", "l": "3a2414", "d": "1a3638", "T": "182c4a",
+	"a": "4a2016", "v": "5a4e34", "i": "3a0e16", "u": "3a2414", "I": "26221e"}
 
 
 ## A hero's figure, standing at x (feet at yb, body at y) with body unit u, facing f (1 or -1),
@@ -18,6 +20,10 @@ const TUNIC_DARK := {"p": "6a4a26", "f": "2e3e54", "s": "2e4a20", "c": "b8ae96",
 static func hero(ci: CanvasItem, code: String, x: float, y: float, yb: float, u: float, f: float, walk: float, tm: float) -> PackedVector2Array:
 	if code == "l":
 		return boat(ci, x, yb, u, f, tm)
+	if code == "u":
+		return trebuchet(ci, x, yb, u, f, tm, 0.0)
+	if code == "I":
+		return belfry(ci, x, yb, u, f, tm)
 	var lw := maxf(1.0, u * 0.09)
 	var tun := Color(TUNIC[code])
 	var dark := Color(TUNIC_DARK[code])
@@ -29,12 +35,19 @@ static func hero(ci: CanvasItem, code: String, x: float, y: float, yb: float, u:
 	if code == "s":  # bow on the back
 		var a0 := PI * 0.6 if f > 0 else -PI * 0.4
 		ci.draw_arc(Vector2(x - f * u * 0.3, y - u * 0.05), u * 0.5, a0, a0 + PI * 0.8, 12, Color("6a4a22"), maxf(1.5, u * 0.12), true)
-	if not code in ["c", "q", "T"]:  # legs
+	if code == "a":  # a powder keg on his back
+		var kc := Vector2(x - f * u * 0.42, y - u * 0.05)
+		ci.draw_rect(Rect2(kc - Vector2(0.26, 0.34) * u, Vector2(0.52, 0.68) * u), Color("6a4422"))
+		for k in [-0.2, 0.2]:
+			ci.draw_line(kc + Vector2(-0.26, k) * u, kc + Vector2(0.26, k) * u, Color("2a2a2a"), maxf(1.0, u * 0.08))
+	if code == "v":  # a sack of cobbles on his back
+		Paint.ellipse(ci, Vector2(x - f * u * 0.45, y + u * 0.05), u * 0.3, u * 0.36, Color("9a8a68"))
+	if not code in ["c", "q", "T", "i"]:  # legs
 		var lwid := maxf(2.0, u * 0.22)
 		ci.draw_line(Vector2(x - u * 0.15, y + u * 0.35), Vector2(x - u * 0.15 + walk * u * 0.28, yb + u * 0.85), dark, lwid)
 		ci.draw_line(Vector2(x + u * 0.15, y + u * 0.35), Vector2(x + u * 0.15 - walk * u * 0.28, yb + u * 0.85), dark, lwid)
 	var body: PackedVector2Array
-	if code == "c" or code == "q" or code == "T":   # robes to the ground
+	if code in ["c", "q", "T", "i"]:   # robes to the ground
 		body = PackedVector2Array([Vector2(x - u * 0.3, y - u * 0.35), Vector2(x + u * 0.3, y - u * 0.35), Vector2(x + u * 0.5, yb + u * 0.85), Vector2(x - u * 0.5, yb + u * 0.85)])
 	else:
 		body = PackedVector2Array([Vector2(x - u * 0.34, y - u * 0.35), Vector2(x + u * 0.34, y - u * 0.35), Vector2(x + u * 0.4, y + u * 0.45), Vector2(x - u * 0.4, y + u * 0.45)])
@@ -47,7 +60,7 @@ static func hero(ci: CanvasItem, code: String, x: float, y: float, yb: float, u:
 		Paint.glow(ci, Vector2(x, y - u * 0.7), u * 0.9, Color(1, 0.95, 0.7, 0.6))
 	if code == "f":
 		ci.draw_rect(Rect2(x - u * 0.34, y - u * 0.35, u * 0.68, u * 0.22), Color("9aa8b5"))
-	if not code in ["c", "q", "T"]:
+	if not code in ["c", "q", "T", "i"]:
 		ci.draw_rect(Rect2(x - u * 0.38, y + u * 0.12, u * 0.76, u * 0.09), Color("3a2414"))
 	# head
 	ci.draw_circle(Vector2(x, y - u * 0.68), u * 0.38, Color("f0c9a0"))
@@ -56,6 +69,7 @@ static func hero(ci: CanvasItem, code: String, x: float, y: float, yb: float, u:
 	_headgear(ci, code, x, y, u, f, lw)
 	_held(ci, code, x, y, yb, u, f, tm)
 	_marsh(ci, code, x, y, yb, u, f, tm)
+	_siege_gear(ci, code, x, y, yb, u, f, tm)
 	return body
 
 
@@ -267,6 +281,9 @@ static func _held(ci: CanvasItem, code: String, x: float, y: float, yb: float, u
 ## A map building at c (pixels, tile centre): "mine", "well" or "camp" (barracks). A razed
 ## barracks is ruins; cell seeds where its charred beams lie.
 static func site(ci: CanvasItem, kind: String, c: Vector2, owned: bool, tm: float, cell: Vector2i) -> void:
+	if kind == "beacon" or kind == "workshop":
+		siege_site(ci, kind, c, owned, tm, cell)
+		return
 	match kind:
 		"altar":   # a dark stone altar; a violet flame once freed, choked with vines until then
 			ci.draw_colored_polygon(PackedVector2Array([c + Vector2(-0.34, 0.3) * T, c + Vector2(-0.26, -0.05) * T, c + Vector2(0.26, -0.05) * T, c + Vector2(0.34, 0.3) * T]), Color("3a3440"))
@@ -406,3 +423,138 @@ static func boat(ci: CanvasItem, x: float, yb: float, u: float, f: float, tm: fl
 		ci.draw_circle(Vector2(sx, y - u * 0.05), u * 0.2, Color("2f4f8a") if k % 2 else Color("c9a43c"))
 		ci.draw_arc(Vector2(sx, y - u * 0.05), u * 0.2, 0, TAU, 12, OUTLINE, maxf(1.0, u * 0.05), true)
 	return hull
+
+
+## Chapter IV heroes' hats and gear.
+static func _siege_gear(ci: CanvasItem, code: String, x: float, y: float, yb: float, u: float, f: float, tm: float) -> void:
+	var w := maxf(1.5, u * 0.11)
+	match code:
+		"a":   # Sapper: a red head scarf and a lit match cord
+			var cap := PackedVector2Array()
+			for i in 9:
+				var a := PI + PI * i / 8.0
+				cap.append(Vector2(x, y - u * 0.74) + Vector2(cos(a), sin(a)) * u * 0.4)
+			ci.draw_colored_polygon(cap, Color("b0302a"))
+			ci.draw_line(Vector2(x - f * u * 0.35, y - u * 0.78), Vector2(x - f * u * 0.62, y - u * 0.6), Color("b0302a"), maxf(1.0, u * 0.12))
+			var tip := Vector2(x + f * u * 0.62, y - u * 0.5)
+			ci.draw_line(Vector2(x + f * u * 0.4, y + u * 0.2), tip, Color("4a3220"), w)
+			Paint.glow(ci, tip, u * (0.35 + 0.08 * sin(tm * 20.0)), Color(1, 0.6, 0.2, 0.8))
+		"v":   # Pavior: a flat cap, an apron and a paving maul
+			Paint.ellipse(ci, Vector2(x, y - u * 0.95), u * 0.46, u * 0.14, Color("5a4e34"))
+			ci.draw_rect(Rect2(x - u * 0.3, y - u * 0.15, u * 0.6, u * 0.55), Color("c8bc9a"))
+			var top := Vector2(x + f * u * 0.6, y - u * 0.9)
+			ci.draw_line(Vector2(x + f * u * 0.45, y + u * 0.35), top, Color("6a4422"), w)
+			ci.draw_rect(Rect2(top - Vector2(u * 0.22, u * 0.14), Vector2(u * 0.44, u * 0.26)), Color("8a8478"))
+		"i":   # Inquisitor: a tall mitre and a swinging censer trailing smoke
+			var mitre := PackedVector2Array([Vector2(x - u * 0.34, y - u * 0.88), Vector2(x - u * 0.2, y - u * 1.55), Vector2(x, y - u * 1.75),
+				Vector2(x + u * 0.2, y - u * 1.55), Vector2(x + u * 0.34, y - u * 0.88)])
+			ci.draw_colored_polygon(mitre, Color("3a0e16"))
+			ci.draw_line(Vector2(x, y - u * 1.7), Vector2(x, y - u * 0.95), Color("e8b84a"), maxf(1.0, u * 0.08))
+			ci.draw_line(Vector2(x - u * 0.14, y - u * 1.3), Vector2(x + u * 0.14, y - u * 1.3), Color("e8b84a"), maxf(1.0, u * 0.08))
+			var hand := Vector2(x + f * u * 0.45, y - u * 0.1)
+			var sw := sin(tm * 3.0) * 0.5
+			var pot := hand + Vector2(sin(sw) * f, cos(sw)) * u * 0.8
+			ci.draw_line(hand, pot, Color("8a8478"), maxf(1.0, u * 0.05))
+			ci.draw_circle(pot, u * 0.16, Color("c9a43c"))
+			for k in 3:
+				var q := fmod(tm * 0.7 + k / 3.0, 1.0)
+				ci.draw_circle(pot + Vector2(sin(tm + k) * u * 0.2, -q * u * 1.1), u * (0.1 + 0.15 * q), Color(0.85, 0.82, 0.9, 0.5 * (1.0 - q)))
+
+
+## A Trebuchet: a timber frame on four wheels with a long throwing arm and a counterweight. `arm`
+## is 0 cocked (long end down behind) to 1 just loosed. Returns the frame, for the hit flash.
+static func trebuchet(ci: CanvasItem, x: float, yb: float, u: float, f: float, tm: float, arm: float) -> PackedVector2Array:
+	var y := yb + u * 0.35
+	var base := Paint.rect_pts(Rect2(x - u * 1.5, y - u * 0.3, u * 3.0, u * 0.3))
+	Paint.vgrad_poly(ci, base, Color("8a6038"), Color("4a2e18"))
+	for wx in [-1.1, 1.1]:   # wheels
+		var c := Vector2(x + wx * u, y + u * 0.05)
+		ci.draw_circle(c, u * 0.34, Color("3a2414"))
+		ci.draw_arc(c, u * 0.34, 0, TAU, 14, Color("8a8478"), maxf(1.0, u * 0.08), true)
+		var a := tm * 2.0
+		ci.draw_line(c - Vector2(cos(a), sin(a)) * u * 0.3, c + Vector2(cos(a), sin(a)) * u * 0.3, Color("6a4422"), maxf(1.0, u * 0.07))
+	var pivot := Vector2(x, y - u * 2.0)
+	for d in [-0.7, 0.7]:   # the A-frame
+		ci.draw_line(Vector2(x + d * u, y - u * 0.3), pivot, Color("6a4628"), maxf(2.0, u * 0.16))
+	# the arm swings from cocked (long end down behind) to loosed (long end up ahead)
+	var ang := lerpf(2.5, -1.0, clampf(arm, 0.0, 1.0))
+	var dir := Vector2(cos(ang) * f, -sin(ang))
+	var long_end := pivot + dir * u * 2.0
+	var short_end := pivot - dir * u * 0.75
+	ci.draw_line(short_end, long_end, Color("7a5432"), maxf(2.0, u * 0.14))
+	ci.draw_rect(Rect2(short_end - Vector2(0.3, 0.1) * u, Vector2(0.6, 0.55) * u), Color("4a4440"))   # counterweight
+	ci.draw_line(long_end, long_end + Vector2(0, u * 0.45), Color("c8bc9a"), maxf(1.0, u * 0.05))   # sling
+	if arm < 0.5:
+		ci.draw_circle(long_end + Vector2(0, u * 0.5), u * 0.14, Color("8a8478"))
+	ci.draw_circle(pivot, u * 0.12, Color("2a2a2a"))
+	return base
+
+
+## The Iron Belfry: a tall timber siege tower sheathed in iron bands, on three wheels a side, a bell
+## under its roof. Returns its body, for the hit flash.
+static func belfry(ci: CanvasItem, x: float, yb: float, u: float, f: float, tm: float) -> PackedVector2Array:
+	var y := yb + u * 0.45
+	var top := y - u * 4.0
+	var body := PackedVector2Array([Vector2(x - u * 1.05, y - u * 0.2), Vector2(x - u * 0.8, top), Vector2(x + u * 0.8, top), Vector2(x + u * 1.05, y - u * 0.2)])
+	Paint.hgrad_poly(ci, body, Color("7a5432"), Color("3a2414"))
+	for k in 5:   # iron bands
+		var yy := y - u * 0.4 - k * u * 0.75
+		var half := lerpf(1.02, 0.82, (y - yy) / (y - top))
+		ci.draw_line(Vector2(x - half * u, yy), Vector2(x + half * u, yy), Color("5a5a5a"), maxf(2.0, u * 0.14))
+		for rv in [-0.6, 0.0, 0.6]:
+			ci.draw_circle(Vector2(x + rv * u, yy), u * 0.05, Color("9a9a9a"))
+	ci.draw_rect(Rect2(x - u * 0.35, y - u * 1.3, u * 0.7, u * 1.05), Color("1c120c"))   # the door
+	ci.draw_line(Vector2(x - u * 0.35, y - u * 1.3), Vector2(x + u * 0.35, y - u * 0.25), Color("5a5a5a"), maxf(1.0, u * 0.06))
+	var roof := PackedVector2Array([Vector2(x - u * 1.0, top + u * 0.1), Vector2(x, top - u * 0.7), Vector2(x + u * 1.0, top + u * 0.1)])
+	Paint.vgrad_poly(ci, roof, Color("6a6a6a"), Color("3a3a3a"))
+	var bell := Vector2(x + sin(tm * 2.0) * u * 0.05, top + u * 0.35)
+	ci.draw_colored_polygon(PackedVector2Array([bell + Vector2(-0.22, 0.2) * u, bell + Vector2(-0.14, -0.15) * u, bell + Vector2(0.14, -0.15) * u, bell + Vector2(0.22, 0.2) * u]), Color("c9a43c"))
+	for wx in [-0.75, 0.0, 0.75]:
+		var c := Vector2(x + wx * u, y)
+		ci.draw_circle(c, u * 0.26, Color("2a2a2a"))
+		ci.draw_arc(c, u * 0.26, 0, TAU, 12, Color("7a7a7a"), maxf(1.0, u * 0.07), true)
+	var bo := body.duplicate()
+	bo.append(body[0])
+	ci.draw_polyline(bo, OUTLINE, maxf(1.0, u * 0.08), true)
+	return body
+
+
+## Chapter IV buildings: the Signal Fire and the Siege Workshop (standing, or razed when owned).
+static func siege_site(ci: CanvasItem, kind: String, c: Vector2, owned: bool, tm: float, cell: Vector2i) -> void:
+	match kind:
+		"beacon":   # a stone tower with a fire on top; razed, a heap of cold ash
+			if owned:
+				Paint.ellipse(ci, c + Vector2(0, 0.18) * T, T * 0.32, T * 0.12, Color("2a2420"))
+				for i in 4:
+					ci.draw_circle(c + Vector2(-0.18 + i * 0.12, 0.12 + 0.04 * (i % 2)) * T, T * 0.05, Color("5a5450"))
+				return
+			Paint.vgrad_poly(ci, PackedVector2Array([c + Vector2(-0.24, 0.3) * T, c + Vector2(-0.18, -0.25) * T, c + Vector2(0.18, -0.25) * T, c + Vector2(0.24, 0.3) * T]), Color("9a9284"), Color("4e4840"))
+			for i in 3:
+				var yy := c.y + (-0.12 + i * 0.14) * T
+				ci.draw_line(Vector2(c.x - 0.2 * T, yy), Vector2(c.x + 0.2 * T, yy), Color(0.2, 0.18, 0.15, 0.5), 1.0)
+			ci.draw_rect(Rect2(c + Vector2(-0.24, -0.32) * T, Vector2(0.48, 0.08) * T), Color("3a3430"))
+			var fl := sin(tm * 11.0 + cell.x) * 0.03
+			Paint.glow(ci, c + Vector2(0, -0.45) * T, T * (0.55 + 0.05 * sin(tm * 7.0)), Color(1, 0.5, 0.15, 0.6))
+			ci.draw_colored_polygon(PackedVector2Array([c + Vector2(-0.18, -0.32) * T, c + Vector2(fl, -0.85) * T, c + Vector2(0.18, -0.32) * T]), Color("ff6a20"))
+			ci.draw_colored_polygon(PackedVector2Array([c + Vector2(-0.09, -0.32) * T, c + Vector2(-fl * 0.5, -0.62) * T, c + Vector2(0.09, -0.32) * T]), Color("ffd25a"))
+			for k in 3:   # smoke
+				var q := fmod(tm * 0.4 + k / 3.0, 1.0)
+				ci.draw_circle(c + Vector2(0.1 * sin(tm + k), -0.9 - q * 0.7) * T, T * (0.08 + 0.1 * q), Color(0.3, 0.3, 0.32, 0.4 * (1.0 - q)))
+		"workshop":   # a timber shed with a crane and a big gear; razed, charred beams
+			if owned:
+				for i in 6:
+					var q := c + Vector2(Paint.hash01(cell.x, cell.y, i) - 0.5, Paint.hash01(cell.x, cell.y, i + 9) * 0.4) * T * 0.8
+					ci.draw_line(q, q + Vector2(0.2, -0.06) * T, Color("1c1210"), 4.0)
+				ci.draw_arc(c + Vector2(0.15, 0.1) * T, T * 0.14, 0, TAU, 12, Color("3a3430"), 3.0)
+				return
+			Paint.hgrad_poly(ci, Paint.rect_pts(Rect2(c + Vector2(-0.38, -0.1) * T, Vector2(0.76, 0.4) * T)), Color("8a5a32"), Color("4a2e18"))
+			ci.draw_colored_polygon(PackedVector2Array([c + Vector2(-0.44, -0.08) * T, c + Vector2(-0.1, -0.42) * T, c + Vector2(0.44, -0.42) * T, c + Vector2(0.44, -0.08) * T]), Color("5a3a1e"))
+			ci.draw_rect(Rect2(c + Vector2(-0.12, 0.05) * T, Vector2(0.24, 0.25) * T), Color("120a05"))
+			var g := c + Vector2(-0.3, -0.42) * T   # the gear
+			ci.draw_arc(g, T * 0.13, 0, TAU, 16, Color("8a8478"), 3.0, true)
+			for k in 4:
+				var a := k * PI / 4.0 + tm * 0.8
+				ci.draw_line(g - Vector2(cos(a), sin(a)) * T * 0.17, g + Vector2(cos(a), sin(a)) * T * 0.17, Color("8a8478"), 2.0)
+			ci.draw_line(c + Vector2(0.3, -0.42) * T, c + Vector2(0.3, -0.75) * T, Color("4a3220"), 3.0)   # crane
+			ci.draw_line(c + Vector2(0.3, -0.75) * T, c + Vector2(0.62, -0.62) * T, Color("4a3220"), 2.5)
+			ci.draw_line(c + Vector2(0.6, -0.62) * T, c + Vector2(0.6, -0.4) * T, Color("c8bc9a"), 1.0)

@@ -64,6 +64,13 @@ const ENEMIES := {
 	"l": {"name": "Longboat", "hp": 520, "spd": 1.25, "gold": 20, "r": 0.36, "armor": 2, "cap": 0, "boat": true, "crew": "4f", "steady": true, "no_send": true},
 	"d": {"name": "Diver", "hp": 60, "spd": 1.0, "gold": 10, "r": 0.2, "armor": 0, "cap": 1, "diver": true},
 	"T": {"name": "the Tidecaller", "hp": 2400, "spd": 0.5, "gold": 150, "r": 0.4, "armor": 2, "cap": 3, "rain": 1.0, "surge": true, "rally": "3m,2d", "boss": true, "no_send": true, "send_as": "k"},
+	# Chapter IV: the Siegeworks
+	"a": {"name": "Sapper", "hp": 55, "spd": 1.35, "gold": 9, "r": 0.2, "armor": 0, "cap": 0, "sapper": true, "special": true},
+	"v": {"name": "Pavior", "hp": 120, "spd": 0.8, "gold": 12, "r": 0.23, "armor": 1, "cap": 1, "pave": true, "special": true},
+	"i": {"name": "Inquisitor", "hp": 260, "spd": 0.6, "gold": 22, "r": 0.25, "armor": 3, "cap": 1, "censer": 1.8},
+	"u": {"name": "Trebuchet", "hp": 700, "spd": 0.45, "gold": 45, "r": 0.4, "armor": 5, "cap": 0, "siege": true, "steady": true, "no_send": true},
+	"I": {"name": "the Iron Belfry", "hp": 4200, "spd": 0.38, "gold": 250, "r": 0.48, "armor": 8, "cap": 0, "belfry": true, "steady": true,
+		"spill": "4f,2k,1i", "boss": true, "no_send": true, "send_as": "k"},
 }
 
 ## Shown the first time each hero walks onto the map (see main.gd).
@@ -85,6 +92,11 @@ const HERO_TIPS := {
 	"l": "A boat full of heroes on the river. Chill and Dread don't touch it. Sink it before it lands and its crew drowns; let it land and they march on.",
 	"d": "Swims under the water: towers and the den can't see him while he is in a ford or a flooded crossing. Meteors still hit him.",
 	"T": "The Tidecaller, a boss. Her surge washes chill and Dread off the heroes around her and lets them wade freely. Where she falls, Fenwalkers and Divers rise.",
+	"a": "Runs for a tower near the road, lights a keg and [b]stuns it for 7 s[/b]. Towers on raised tiles are out of his reach. Slay him while the fuse burns and the keg hurts the heroes around him.",
+	"v": "Paves the road behind him: [b]heroes walk faster on it[/b] until the paving fades, 30 s after he falls. Towers aim for him first.",
+	"i": "His censer smoke [b]silences towers[/b] near him: no ability, no battle-hardened bonus, slower fire. Out-range him from raised tiles; the den is never silenced.",
+	"u": "A siege engine. It stops when a tower comes in reach and [b]buries towers under rubble[/b], the strongest first. Tap a buried tower to clear it. It never takes gems.",
+	"I": "The Iron Belfry, a boss. Heroes walking in its shadow, just behind it, can't be targeted by towers (the Meteor still hits). Sappers jump out of it, and it unloads Footmen at your den.",
 }
 
 const GUARD_RANGE := 1.2
@@ -158,7 +170,15 @@ const SITES := {
 		"text": "Overgrown. Cut it free: towers within %.1f tiles deal %d%% more damage and rank up faster."},
 	"sluice": {"name": "Sluice Gate", "cut": 0, "mana": 35, "recharge": 45.0, "push": 2.0, "dmg": 120, "boat_mul": 3.0, "light": 1.6,
 		"text": "Open it to send a flood surge down its road: heroes in the water are swept back and take %d damage, boats triple."},
+	"beacon": {"name": "Signal Fire", "cut": 50, "bounty": 30, "sooner": 4.0, "muster": 1.25,
+		"text": "While it burns, waves come %d s sooner and barracks muster faster. Raze it for %d gold."},
+	"workshop": {"name": "Siege Workshop", "cut": 50, "bounty": 40,
+		"text": "Builds Trebuchets and rolls them onto the road while waves are coming. Raze it for %d gold."},
 }
+## Map buildings that belong to the heroes: razed (not freed) by cutting, and pay a bounty.
+const HERO_SITES := ["camp", "workshop", "beacon"]
+## Buildings that send troops onto a road (a "path", "spawn" and "every" in the level file).
+const MUSTER_SITES := ["camp", "workshop"]
 
 ## Loot dropped by slain heroes. It stays where it fell until you tap it.
 const LOOT_COIN_CHANCE := 0.32
@@ -330,4 +350,30 @@ const LONGHOUSE_SHARE := 0.85   # each extra Longhouse arrow, as a share of a fu
 const SUNLANCE := {"share": 0.18, "keep": 0.35}
 ## Plunder: a level IV Hut pays +1 gold on its first kill as level IV, +2 on the next, ... up to this.
 const PLUNDER_MAX := 5
+
+
+# ---------------------------------------------------------------- Chapter IV: siege
+
+## Tower statuses. Stunned (Sapper, Iron Belfry) and buried under Rubble (Trebuchet): no firing, a
+## beam cools. Silenced (Inquisitor): no ability, no battle-hardened bonus, SILENCE_SLOW slower fire
+## or heating. Sturdy Foundations takes STURDY per rank off each (shorter, or less slowdown).
+## Rubble can be cleared at once from the tile panel for RUBBLE_CLEAR gold.
+const STUN_TIME := 7.0
+const RUBBLE_TIME := 9.0
+const RUBBLE_CLEAR := 15
+const SILENCE_SLOW := 0.3
+const STURDY := 0.15
+## Sapper: runs for the nearest tower within `reach` tiles that is not on a raised tile, lights a
+## fuse for `fuse` s and stuns it; slain while the fuse burns, the keg hurts heroes within `r` for `dmg`.
+const SAPPER := {"reach": 1.3, "fuse": 1.2, "dmg": 150, "r": 1.0}
+## Pavior: the road behind him is paved (ZONE_SPEED paved) until PAVE_FADE s after he falls or leaves.
+const PAVE_FADE := 30.0
+## Trebuchet: rolls until a tower is within `reach` (or `stop` of the road is behind it), sets up for
+## `setup` s, then every `every` s buries the strongest tower in reach; the stone flies `flight` s.
+const TREBUCHET := {"reach": 3.6, "stop": 0.55, "setup": 1.5, "every": 5.0, "flight": 0.8}
+## The Iron Belfry: heroes within `cover` tiles behind it can't be targeted; a Sapper jumps out every
+## `sapper` s; at the den it unloads `unload` and rolls away.
+const BELFRY := {"cover": 1.5, "sapper": 12.0, "unload": "6f"}
+## Dusk: the light fades in over this many seconds when night falls mid-battle.
+const DUSK_FADE := 3.0
 

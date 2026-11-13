@@ -43,6 +43,16 @@ class Enemy:
 	var hidden := false   # Diver under water: towers and the den can't see him
 	var zone := ""        # the road zone it stood in last frame
 	var crossing := -1    # which crossing that was (Level.crossings), or -1
+	var sap: Tower        # Sapper: the tower he is running at, or null
+	var fuse := -1.0      # Sapper: seconds the fuse has burned, or -1 while it is not lit
+	var back := false     # Sapper: walking back to the road (his tower was sold)
+	var pave: Dictionary  # Pavior: the stretch of road he is paving (an entry of GameSim.paved)
+	var deployed := false # Trebuchet: set up and slinging stones
+	var sling := 0.0      # Trebuchet: seconds to the next stone (or to set up); Belfry: to the next Sapper
+	var stones := 0       # Trebuchet: stones thrown
+	var retreat := false  # an engine rolling away: it never comes back, nor counts as escaped
+	var unloaded := false # Iron Belfry: has unloaded its Footmen at the den
+	var covered := false  # walking in an Iron Belfry's shadow: towers and the den can't see him
 	var hit := 0.0        # seconds of hit flash left (view only)
 	var knock := Vector2.ZERO   # small knock-back offset in tiles from the last hit (view only)
 
@@ -68,6 +78,10 @@ class Tower:
 	var beam2: Enemy      # Twin Flame: the second beam's hero
 	var heat2 := 0.0
 	var born := -10.0     # battle time it was built or last upgraded (view only: squash and settle)
+	var stun := 0.0       # seconds stunned (Sapper, Iron Belfry): no firing
+	var rubble := 0.0     # seconds buried under Rubble (Trebuchet): no firing
+	var silence := 0.0    # silenced by an Inquisitor this frame: how much slower it fires (0 = not)
+	var sapped: Enemy     # a Sapper is on his way to it
 	# Permanent bonuses from the skill tree, filled in when the tower is built.
 	var dmg_mul := 1.0
 	var rate_mul := 1.0
@@ -80,9 +94,9 @@ class Tower:
 		var v := float(Defs.TOWERS[type][key][lvl - 1])
 		match key:
 			"dmg":
-				return v * dmg_mul * (1.0 + Defs.RANK_DMG * rank) * (altar_mul if altars > 0 else 1.0)
+				return v * dmg_mul * (1.0 + (Defs.RANK_DMG * rank if silence <= 0.0 else 0.0)) * (altar_mul if altars > 0 else 1.0)
 			"rate":
-				var r := v / rate_mul
+				var r := v / rate_mul * (1.0 + silence)
 				if mastery == "lodge":
 					r *= Defs.LODGE["rate"]
 				return r
@@ -91,7 +105,11 @@ class Tower:
 		return v
 
 	func has_ability() -> bool:
-		return rank >= Defs.ABILITY_RANK and lvl >= Defs.ABILITY_LEVEL
+		return rank >= Defs.ABILITY_RANK and lvl >= Defs.ABILITY_LEVEL and silence <= 0.0
+
+	## Stunned or buried: it can't fire.
+	func blocked() -> bool:
+		return stun > 0.0 or rubble > 0.0
 
 	## Ability strength: Volley damage share, Dread chance, or Lava damage per second as a share of
 	## the beam at full heat.
@@ -164,6 +182,8 @@ class Fx:
 	var text := ""
 	var color := Color.WHITE
 	var hit := false
+	var to := Vector2.ZERO   # "stone": where the Trebuchet's stone lands
+	var cell := Vector2i.ZERO   # "stone": the tower it buries
 
 
 var level: Level
@@ -197,6 +217,7 @@ var sites := {}           # Vector2i -> Site
 var fx: Array = []
 var trees := {}           # Vector2i -> true (woods still standing)
 var lit := {}             # Vector2i -> true, night levels only
+var lights: Array = []    # [Vector2 centre, radius] of every light while it is dark (the view draws them)
 var den_max := 0          # den charges when full: base plus one per Den skill point
 var den_charges := 0
 var den_refill := 0.0     # seconds toward the next charge
@@ -255,8 +276,20 @@ var twin_kills := 0       # a Twin Flame slew two heroes within a second
 var best_ossuary := 0     # most heroes slain by one Ossuary volley
 var lodge_champion := 0   # a Hunter's Lodge landed the killing blow on a Champion
 var sunlance_best := 0    # most heroes burning on one Sunlance at once
-var paved: Array = []     # per road: [{"from", "to"}] stretches a Pavior has paved
+var paved: Array = []     # per road: [{"from", "to", "until"}] stretches Paviors have paved (until: battle time it fades)
 var tide_up := false      # the tide is in: fords are deep
+# Chapter IV: siege.
+var dark := false         # darkness is on: the night mission, or after Dusk (see dusk_wave)
+var dusk_wave := 0        # the Dusk rule: night falls as this wave starts (0 = never)
+var dusk_t := -100.0      # battle time night fell at Dusk (the view fades the light in)
+var stuns := 0            # towers stunned by Sappers and the Belfry
+var rubbles := 0          # towers buried under Rubble
+var rubble_cleared := 0   # Rubble cleared from the tile panel
+var keg_best := 0         # most heroes one Sapper's keg slew
+var treb_fast := 0        # Trebuchets destroyed before their first stone
+var silence_proof := 0    # Inquisitors slain by a tower they were silencing
+var pavior_early := 0     # Paviors slain before they paved three tiles
+var engines_built := 0    # Trebuchets that rolled out of Siege Workshops
 
 
 func _init(lv: Level, skill_ranks := {}) -> void:
@@ -282,16 +315,19 @@ func _init(lv: Level, skill_ranks := {}) -> void:
 			s.owned = true
 			s.path = sd["path"]
 			s.t = 0.0
-		if s.kind == "camp":
+		if Defs.MUSTER_SITES.has(s.kind):
 			s.path = sd["path"]
 			s.spawn = sd["spawn"]
 			s.every = sd["every"]
 			s.t = s.every * 0.5
 			s.dist = lv.nearest_dist(s.path, s.pos)
 		sites[s.cell] = s
+	dark = lv.night
 	for rule: Dictionary in lv.rules:
 		if rule.get("kind", "") == "tide":
 			tide = Vector2(float(rule.get("period", 40)), float(rule.get("up", 14)))
+		if rule.get("kind", "") == "dusk" and not lv.night:   # the night mission is dark from the start
+			dusk_wave = int(rule.get("wave", 1))
 	den_max = int(Defs.DEN["charges"]) + skill("den_charge")
 	den_charges = den_max
 	_relight()
@@ -364,10 +400,23 @@ func start_wave() -> void:
 	wave_left[wave + 1] = list.size()
 	wave_peak[wave + 1] = 0.0
 	wave += 1
-	timer = level.wave_gap if wave < level.waves.size() else 0.0
+	timer = level.wave_gap - (Defs.SITES["beacon"]["sooner"] if beacon_lit() else 0.0) if wave < level.waves.size() else 0.0
 	spawn_t = 0.0
 	toast.emit("Wave %d: heroes approach" % wave)
 	sound.emit("horn")
+	if wave == dusk_wave and not dark:
+		dark = true
+		dusk_t = time
+		_relight()
+		toast.emit("Night falls")
+
+
+## A Signal Fire still burns: waves come sooner and barracks muster faster.
+func beacon_lit() -> bool:
+	for s: Site in sites.values():
+		if s.kind == "beacon" and not s.owned:
+			return true
+	return false
 
 
 ## Call the next wave now (which, like every wave start, gathers the loot lying on the map).
@@ -412,6 +461,11 @@ func _spawn(code: String, path := -1, dist := 0.0, w := 0) -> void:
 		e.path = path
 	if d.has("surge"):
 		e.surge_t = Defs.SURGE["every"]
+	if d.has("belfry"):
+		e.sling = Defs.BELFRY["sapper"]
+	if d.has("pave") and level.path_kind[e.path] == "land":
+		e.pave = {"from": dist, "to": dist, "until": INF}
+		paved[e.path].append(e.pave)
 	e.dist = dist
 	e.pos = level.path_pos(e.path, dist)
 	e.bob = randf() * 6.0
@@ -419,16 +473,19 @@ func _spawn(code: String, path := -1, dist := 0.0, w := 0) -> void:
 
 
 func _update_sites(dt: float) -> void:
+	var muster := float(Defs.SITES["beacon"]["muster"]) if beacon_lit() else 1.0
 	for s: Site in sites.values():
-		if not s.owned and s.kind == "camp":
-			# Barracks muster troops only while the hero army is still marching in.
+		if not s.owned and Defs.MUSTER_SITES.has(s.kind):
+			# Barracks and workshops muster only while the hero army is still marching in.
 			if wave >= 1 and wave < level.waves.size():
-				s.t -= dt
+				s.t -= dt * muster
 				if s.t <= 0.0:
 					s.t = s.every
 					for code in s.spawn:
 						_spawn(code, s.path, s.dist)
-					_text(s.pos + Vector2(0, -0.6), "Reinforcements!", Color("ff9a7a"))
+					if s.kind == "workshop":
+						engines_built += s.spawn.size()
+					_text(s.pos + Vector2(0, -0.6), "A siege engine!" if s.kind == "workshop" else "Reinforcements!", Color("ff9a7a"))
 		elif s.kind == "sluice" and s.t > 0.0:
 			s.t = maxf(0.0, s.t - dt)
 		elif s.owned and s.kind == "mine":
@@ -455,7 +512,7 @@ func _update_den(dt: float) -> void:
 	var best_score := -INF
 	for e: Enemy in enemies:
 		var d := e.pos.distance_to(level.lair_center)
-		if e.hp <= 0.0 or e.hidden or d > Defs.DEN["range"]:
+		if e.hp <= 0.0 or e.hidden or e.covered or d > Defs.DEN["range"]:
 			continue
 		var score := (100.0 if e.carry > 0 else 0.0) - d
 		if score > best_score:
@@ -486,9 +543,18 @@ func _update_enemies(dt: float) -> void:
 	_rally.clear()
 	var heralds := enemies.filter(func(o: Enemy) -> bool: return o.hp > 0.0 and o.d.has("haste"))
 	rains.clear()
+	var belfries: Array = []
 	for o: Enemy in enemies:
 		if o.hp > 0.0 and o.d.has("rain"):
 			rains.append([o.pos, float(o.d["rain"])])
+		if o.hp > 0.0 and o.d.has("belfry") and o.dir == 1:
+			belfries.append(o)
+	for e: Enemy in enemies:
+		e.covered = false   # in an Iron Belfry's shadow: walking just behind it on its road
+		for b: Enemy in belfries:
+			var gap := b.dist - e.dist
+			if b != e and b.path == e.path and e.dir == 1 and gap > 0.0 and gap <= Defs.BELFRY["cover"]:
+				e.covered = true
 	for e: Enemy in enemies:
 		if e.hp <= 0.0:
 			continue   # slain this frame; removed below
@@ -505,7 +571,16 @@ func _update_enemies(dt: float) -> void:
 			e.surge_t -= dt
 			if e.surge_t <= 0.0:
 				_surge(e)
+		if e.d.has("sapper") and _sapper(e, dt):
+			continue   # off the road, running at a tower or lighting his keg
+		if e.d.has("belfry") and not e.retreat:
+			e.sling -= dt
+			if e.sling <= 0.0:   # a Sapper jumps out
+				e.sling = Defs.BELFRY["sapper"]
+				_rally.append({"codes": ["a"], "path": e.path, "dist": maxf(0.0, e.dist - 0.4), "wave": e.wave})
 		var sp: float = e.d["spd"] * ((1.0 - e.slow_amt) if e.slow > 0.0 else 1.0)
+		if e.d.has("siege") and _siege(e, dt):
+			sp = 0.0
 		if e.d.has("engineer") and _repairing(e, dt):
 			sp = 0.0
 		if e.d.has("rage") and e.hp < e.max_hp * 0.5:
@@ -534,6 +609,8 @@ func _update_enemies(dt: float) -> void:
 		if e.d.has("boat") and e.dist >= float(level.landings[e.path]) and float(level.landings[e.path]) >= 0.0:
 			_land(e)
 			continue
+		if e.dir == 1 and e.dist >= total and e.d.has("belfry"):
+			_unload(e)
 		if e.dir == 1 and e.dist >= total:
 			var take := mini(int(e.d["cap"]), home)
 			e.carry += take
@@ -549,7 +626,13 @@ func _update_enemies(dt: float) -> void:
 				lost += e.carry
 				toast.emit("%s escaped with %s" % [e.d["name"], "a gem" if e.carry == 1 else "%d gems" % e.carry])
 				sound.emit("lost")
-		if e.wave > 0:
+		if not e.pave.is_empty():
+			if e.dir == 1:
+				e.pave["to"] = maxf(float(e.pave["to"]), e.dist)
+			else:   # turned back for a gem: the paving stops here
+				e.pave["until"] = time + Defs.PAVE_FADE
+				e.pave = {}
+		if e.wave > 0 and not e.retreat:
 			# How much of the defence it has walked through. Running away means it reached the
 			# hoard or grabbed a dropped gem: as far as it gets.
 			var reach := _cover_share(e.path, e.dist) if e.dir == 1 else 1.0
@@ -577,6 +660,8 @@ func _update_enemies(dt: float) -> void:
 					e.dir = -1
 					sound.emit("grab")
 	for e: Enemy in enemies:
+		if e.gone or e.hp <= 0.0:
+			_leave(e)
 		if e.wave > 0 and (e.gone or e.hp <= 0.0):
 			if not e.gone:
 				_judge_kill(e.wave)
@@ -584,6 +669,160 @@ func _update_enemies(dt: float) -> void:
 			if wave_left[e.wave] == 0:
 				_judge_wave(e.wave)
 	enemies = enemies.filter(func(e: Enemy) -> bool: return not e.gone and e.hp > 0.0)
+	for i in paved.size():
+		if not paved[i].is_empty():
+			paved[i] = paved[i].filter(func(p: Dictionary) -> bool: return time < float(p["until"]))
+
+
+## A hero leaves the map (slain, escaped, landed or blown up): let go of his tower, and his paving
+## starts to fade.
+func _leave(e: Enemy) -> void:
+	if e.sap != null:
+		e.sap.sapped = null
+		e.sap = null
+	if not e.pave.is_empty():
+		e.pave["until"] = time + Defs.PAVE_FADE
+		e.pave = {}
+
+
+## Stun, Rubble and Silence weigh this much (Sturdy Foundations lightens them).
+func sturdy_mul() -> float:
+	return 1.0 - Defs.STURDY * skill("sturdy")
+
+
+## Moves e off the road toward `to` at its own speed; true once it is within `stop` tiles of it.
+func _walk_to(e: Enemy, to: Vector2, stop: float, dt: float) -> bool:
+	var gap := to - e.pos
+	var sp: float = e.d["spd"] * ((1.0 - e.slow_amt) if e.slow > 0.0 else 1.0) * dt
+	if gap.length() <= stop + sp:
+		if stop <= 0.0:
+			e.pos = to
+		return true
+	if absf(gap.x) > 0.01:
+		e.face = 1 if gap.x > 0.0 else -1
+	e.pos += gap.normalized() * sp
+	return false
+
+
+## A Sapper runs off the road at the nearest tower within reach that is not on a raised tile (and
+## no other Sapper is after), lights a fuse beside it and stuns it, dying in the blast (no bounty).
+## True while he is off the road: he moves himself.
+func _sapper(e: Enemy, dt: float) -> bool:
+	if e.sap != null and towers.get(e.sap.cell) != e.sap:
+		e.sap = null   # his tower was sold: back to the road
+		e.fuse = -1.0
+		e.back = true
+	if e.back:
+		if _walk_to(e, level.path_pos(e.path, e.dist), 0.0, dt):
+			e.back = false
+		return e.back
+	if e.sap == null:
+		if e.dir != 1 or e.fear > 0.0:
+			return false
+		var best: Tower = null
+		var bd := INF
+		for tw: Tower in towers.values():
+			if level.high.has(tw.cell) or tw.sapped != null or tw.stun > 0.0:
+				continue
+			var dd := tw.pos.distance_to(e.pos)
+			if dd <= Defs.SAPPER["reach"] and dd < bd:
+				bd = dd
+				best = tw
+		if best == null:
+			return false
+		e.sap = best
+		best.sapped = e
+	if e.fuse < 0.0:
+		if _walk_to(e, e.sap.pos, 0.42, dt):
+			e.fuse = 0.0
+			sound.emit("chop")
+		return true
+	e.fuse += dt
+	if e.fuse >= Defs.SAPPER["fuse"]:
+		var tw := e.sap
+		tw.stun = maxf(tw.stun, Defs.STUN_TIME * sturdy_mul())
+		stuns += 1
+		_boom(e.pos, 0.6, 0.4)
+		_fx("smoke", tw.pos, 0.6, 1.2)
+		_text(tw.pos + Vector2(0, -0.9), "Stunned!", Color("ff9a7a"))
+		sound.emit("boom")
+		tw.sapped = null
+		e.sap = null
+		e.fuse = -1.0
+		e.gone = true   # he dies in his own blast: neither slain nor escaped
+	return true
+
+
+## A Sapper slain with his fuse lit: the keg goes off among the heroes around him.
+func _keg(e: Enemy) -> void:
+	e.fuse = -1.0
+	var before := kills
+	for o: Enemy in enemies.duplicate():
+		if o != e and o.hp > 0.0 and o.pos.distance_to(e.pos) <= Defs.SAPPER["r"]:
+			hurt(o, Defs.SAPPER["dmg"], true)
+	keg_best = maxi(keg_best, kills - before)
+	_boom(e.pos, Defs.SAPPER["r"], 0.5)
+	sound.emit("boom")
+
+
+## A Trebuchet rolls until a tower is in reach (or it is far enough down the road), sets up, then
+## buries the strongest tower in reach under Rubble every few seconds. When the last wave is out and
+## only engines are left, it packs up and rolls away. True while it stands still.
+func _siege(e: Enemy, dt: float) -> bool:
+	if e.retreat:
+		return false
+	if wave >= level.waves.size() and queue.is_empty() and enemies.all(func(o: Enemy) -> bool: return o.hp <= 0.0 or o.d.has("siege")):
+		_retreat(e)
+		return false
+	var tb: Dictionary = Defs.TREBUCHET
+	if not e.deployed:
+		if e.dir != 1:
+			return false
+		var near := towers.values().any(func(tw: Tower) -> bool: return tw.pos.distance_to(e.pos) <= tb["reach"])
+		if not near and e.dist < float(level.paths[e.path]["total"]) * tb["stop"]:
+			return false
+		e.deployed = true
+		e.sling = tb["setup"]
+		_text(e.pos + Vector2(0, -0.9), "Siege!", Color("ff9a7a"))
+	e.sling -= dt
+	if e.sling <= 0.0:
+		var best: Tower = null
+		for tw: Tower in towers.values():
+			if tw.rubble > 0.0 or tw.pos.distance_to(e.pos) > tb["reach"]:
+				continue
+			if best == null or tw.spent > best.spent or (tw.spent == best.spent and tw.lvl > best.lvl):
+				best = tw
+		if best == null:
+			e.sling = 0.5   # nothing to hit: look again soon
+		else:
+			e.sling = tb["every"]
+			e.stones += 1
+			var f := Fx.new()
+			f.kind = "stone"
+			f.pos = e.pos + Vector2(0, -0.6)
+			f.to = best.pos
+			f.cell = best.cell
+			f.dur = tb["flight"]
+			fx.append(f)
+			sound.emit("whoosh")
+	return true
+
+
+## An engine turns for home: it never comes back, and leaving does not count as escaping.
+func _retreat(e: Enemy) -> void:
+	e.retreat = true
+	e.deployed = false
+	e.dir = -1
+	_text(e.pos + Vector2(0, -0.9), "Retreat!", Color("c9c0ff"))
+
+
+## The Iron Belfry reached the den: its Footmen pour out and it rolls away.
+func _unload(e: Enemy) -> void:
+	e.unloaded = true
+	_rally.append({"codes": Level._parse_wave(String(Defs.BELFRY["unload"])), "path": e.path, "dist": maxf(0.0, e.dist - 0.3), "wave": e.wave})
+	_text(e.pos + Vector2(0, -1.0), "The doors open!", Color("ff9a7a"))
+	sound.emit("horn")
+	_retreat(e)
 
 
 ## Road zones are the one place hero speed changes with the ground: a ford (shallows) slows and
@@ -633,7 +872,7 @@ func _zone_mul(e: Enemy, dt: float) -> float:
 	if e.swim:
 		m = Defs.ZONE_SPEED["swim"]
 	for p: Dictionary in paved[e.path]:
-		if e.dist >= p["from"] and e.dist < p["to"]:
+		if e.dist >= p["from"] and e.dist < p["to"] and time < float(p["until"]):
 			m *= Defs.ZONE_SPEED["paved"]
 			break
 	return m
@@ -847,7 +1086,7 @@ func _pick_target(tw: Tower, skip: Enemy = null, skips: Array = [], healthiest :
 	var best: Enemy = null
 	var best_score := -INF
 	for e: Enemy in enemies:
-		if e == skip or e.hp <= 0.0 or e.hidden or e.pos.distance_to(tw.pos) > rg or (not skips.is_empty() and skips.has(e)):
+		if e == skip or e.hp <= 0.0 or e.hidden or e.covered or e.pos.distance_to(tw.pos) > rg or (not skips.is_empty() and skips.has(e)):
 			continue
 		var score := e.hp if healthiest else -e.hp
 		if e.d.get("special", false) and not healthiest:
@@ -861,9 +1100,25 @@ func _pick_target(tw: Tower, skip: Enemy = null, skips: Array = [], healthiest :
 
 
 func _update_towers(dt: float) -> void:
+	var censers: Array = enemies.filter(func(o: Enemy) -> bool: return o.hp > 0.0 and o.d.has("censer"))
 	for tw: Tower in towers.values():
 		if tw.flash > 0.0:
 			tw.flash -= dt
+		tw.silence = 0.0   # an Inquisitor's censer smoke reaches it
+		for o: Enemy in censers:
+			if o.pos.distance_to(tw.pos) <= float(o.d["censer"]):
+				tw.silence = Defs.SILENCE_SLOW * sturdy_mul()
+				break
+		if tw.stun > 0.0:
+			tw.stun -= dt
+		if tw.rubble > 0.0:
+			tw.rubble -= dt
+		if tw.blocked():   # stunned or buried: no firing, and a beam goes out and cools
+			tw.beam = null
+			tw.beam2 = null
+			tw.heat = maxf(0.0, tw.heat - dt / Defs.HEAT_TIME)
+			tw.heat2 = maxf(0.0, tw.heat2 - dt / Defs.HEAT_TIME)
+			continue
 		if Defs.TOWERS[tw.type]["kind"] == "beam":
 			_update_beam(tw, dt)
 			continue
@@ -910,7 +1165,7 @@ func _update_ossuary(tw: Tower, dt: float) -> void:
 	var best: Enemy = null
 	var best_score := -INF
 	for e: Enemy in enemies:
-		if e.hp <= 0.0 or e.hidden or e.pos.distance_to(tw.pos) > rg:
+		if e.hp <= 0.0 or e.hidden or e.covered or e.pos.distance_to(tw.pos) > rg:
 			continue
 		var score := -e.hp
 		if not tw.volley_hits.has(e):
@@ -949,7 +1204,7 @@ func _update_beam(tw: Tower, dt: float) -> void:
 func _beam(tw: Tower, dt: float, slot: int, share: float) -> void:
 	var b := tw.beam if slot == 0 else tw.beam2
 	var heat := tw.heat if slot == 0 else tw.heat2
-	var lost_hold := b == null or b.hp <= 0.0 or b.gone or b.hidden or b.pos.distance_to(tw.pos) > tw.stat("range")
+	var lost_hold := b == null or b.hp <= 0.0 or b.gone or b.hidden or b.covered or b.pos.distance_to(tw.pos) > tw.stat("range")
 	if lost_hold or b.carry == 0:
 		var best := _pick_target(tw, tw.beam if slot == 1 else null)
 		if best == null and slot == 1:
@@ -961,7 +1216,7 @@ func _beam(tw: Tower, dt: float, slot: int, share: float) -> void:
 				keep = maxf(keep, Defs.SUNLANCE["keep"])
 			heat *= keep
 			tw.cd = 0.0
-	var rate := dt * tw.rate_mul / Defs.HEAT_TIME
+	var rate := dt * tw.rate_mul / Defs.HEAT_TIME / (1.0 + tw.silence)   # an Inquisitor slows the heating
 	if b == null:
 		heat = maxf(0.0, heat - rate)
 	else:
@@ -1078,6 +1333,15 @@ func _update_loot(dt: float) -> void:
 func _update_fx(dt: float) -> void:
 	for f: Fx in fx:
 		f.t += dt
+		if f.kind == "stone" and not f.hit and f.t >= f.dur:
+			f.hit = true
+			var tw: Tower = towers.get(f.cell)
+			if tw != null:
+				tw.rubble = maxf(tw.rubble, Defs.RUBBLE_TIME * sturdy_mul())
+				rubbles += 1
+				_fx("smoke", tw.pos, 0.7, 1.0)
+				_text(tw.pos + Vector2(0, -0.9), "Buried!", Color("ff9a7a"))
+				sound.emit("boom")
 		if f.kind == "meteor" and not f.hit and f.t >= Defs.METEOR["delay"]:
 			f.hit = true
 			_boom(f.pos, Defs.METEOR["radius"], 0.5)
@@ -1162,6 +1426,18 @@ func hurt(e: Enemy, dmg: float, pierce := false, src: Tower = null, ap := 0) -> 
 			drops.append(g)
 			e.carry = 0
 		_roll_loot(e)
+		if e.d.has("sapper") and e.fuse >= 0.0:
+			_keg(e)
+		if e.d.has("pave") and not e.pave.is_empty() and float(e.pave["to"]) - float(e.pave["from"]) < 3.0:
+			pavior_early += 1
+		if e.d.has("censer") and src != null and src.silence > 0.0 and src.pos.distance_to(e.pos) <= float(e.d["censer"]):
+			silence_proof += 1
+		if e.d.has("siege") and e.stones == 0:
+			treb_fast += 1
+		if e.d.has("spill") and not e.unloaded:
+			# Broken open before it reached the den: its garrison spills out where it fell.
+			_rally.append({"codes": Level._parse_wave(String(e.d["spill"])), "path": e.path, "dist": e.dist, "wave": e.wave})
+			_text(e.pos + Vector2(0, -0.8), "It breaks open!", Color("ff9a7a"))
 		if e.d.has("rally"):
 			# His escort rises where he fell (spawned next frame, outside any loop over heroes).
 			_rally.append({"codes": Level._parse_wave(String(e.d["rally"])), "path": e.path, "dist": e.dist, "wave": e.wave})
@@ -1344,13 +1620,14 @@ func _relight() -> void:
 	_cover.clear()   # towers changed, so did the defended stretch of each road
 	_attune()
 	lit.clear()
-	if not level.night:
+	lights = []
+	if not dark:
 		return
-	var lights: Array = [[level.lair_center, Defs.LIGHT["lair"] + 0.3 * skill("land_lantern")]]
+	lights = [[level.lair_center, Defs.LIGHT["lair"] + 0.3 * skill("land_lantern")]]
 	for tw: Tower in towers.values():
 		lights.append([tw.pos, Defs.LIGHT["tower"] + 0.3 * skill("land_lantern")])
 	for s: Site in sites.values():
-		if s.owned and s.kind != "camp":
+		if s.owned and not Defs.HERO_SITES.has(s.kind):
 			lights.append([s.pos, float(Defs.SITES[s.kind]["light"]) + 0.3 * skill("land_lantern")])
 	for c in level.cols:
 		for r in level.rows:
@@ -1374,7 +1651,7 @@ func _attune() -> void:
 
 
 func is_lit(c: Vector2i) -> bool:
-	return not level.night or lit.has(c)
+	return not dark or lit.has(c)
 
 
 # ---------------------------------------------------------------- tiles
@@ -1414,6 +1691,8 @@ func cell_info(c: Vector2i) -> Dictionary:
 		var tw: Tower = towers[c]
 		var d: Dictionary = Defs.TOWERS[tw.type]
 		var acts := []
+		if tw.rubble > 0.0:
+			acts.append({"id": "rubble", "label": "Clear rubble", "price": "%dg" % Defs.RUBBLE_CLEAR, "gold": Defs.RUBBLE_CLEAR})
 		if tw.lvl < 3:
 			acts.append({"id": "upgrade", "label": "Upgrade", "price": "%dg" % d["cost"][tw.lvl], "gold": d["cost"][tw.lvl]})
 		var offers := masteries_for(tw)
@@ -1440,6 +1719,9 @@ func cell_info(c: Vector2i) -> Dictionary:
 		if tw.type == "moss" and tw.lvl >= 4:
 			txt += "
 Plunder: +%d gold a kill" % mini(tw.plunder + 1, Defs.PLUNDER_MAX)
+		var status := tower_status(tw)
+		if status != "":
+			txt = status + "\n" + txt
 		return {"title": title, "text": txt, "actions": acts}
 	if level.is_water(c):
 		return {"title": "Deep water" if t == "water" else "Shallows", "text": "Nothing can be built on water.", "actions": []}
@@ -1460,6 +1742,18 @@ Plunder: +%d gold a kill" % mini(tw.plunder + 1, Defs.PLUNDER_MAX)
 
 func _ground_name(t: String) -> String:
 	return t
+
+
+## What is hindering a tower, and what caused it, for its tile panel ("" if nothing).
+func tower_status(tw: Tower) -> String:
+	var out: Array[String] = []
+	if tw.rubble > 0.0:
+		out.append("BURIED under rubble by a Trebuchet: it can't fire for %d s, or clear it now." % ceili(tw.rubble))
+	if tw.stun > 0.0:
+		out.append("STUNNED by a Sapper's keg: it can't fire for %d s." % ceili(tw.stun))
+	if tw.silence > 0.0:
+		out.append("SILENCED by an Inquisitor's censer: no ability, no battle-hardened bonus, %d%% slower." % roundi(tw.silence * 100.0))
+	return "\n".join(out)
 
 
 ## A bridge's tile panel: collapse it (heroes must swim the gap) or see it is broken.
@@ -1517,10 +1811,13 @@ Refilling: ready in %d s." % ceili(s.t), "actions": []}
 			cut["label"] = "Cut free"
 			return {"title": d["name"], "text": d["text"] % d["regen"] + more, "actions": [cut]}
 	if s.owned:
-		return {"title": "Ruined barracks", "text": "Nothing left but ash.", "actions": []}
+		var ruin: String = {"camp": "Ruined barracks", "workshop": "Ruined workshop", "beacon": "Cold ashes"}.get(s.kind, "Ruins")
+		return {"title": ruin, "text": "Nothing left but ash.", "actions": []}
 	cut["label"] = "Raze"
-	cut["price"] = "%d mana  +%dg" % [cut_cost(s), d["bounty"]]
-	return {"title": d["name"], "text": d["text"] % d["bounty"] + more, "actions": [cut]}
+	var bounty: int = d["bounty"] + 15 * skill("land_spoils")
+	cut["price"] = "%d mana  +%dg" % [cut_cost(s), bounty]
+	var txt: String = d["text"] % ([int(d["sooner"]), bounty] if s.kind == "beacon" else bounty)
+	return {"title": d["name"], "text": txt + more, "actions": [cut]}
 
 
 ## Range (in tiles) to preview when a tile is selected, or 0.
@@ -1624,19 +1921,19 @@ func do_action(id: String, c: Vector2i) -> String:
 			if s.cuts_left > 0:
 				sound.emit("chop")
 				_text(s.pos + Vector2(0, -0.4), "%d more" % s.cuts_left, Color("c9c0ff"))
-				if s.kind == "camp":   # a damaged barracks musters more slowly
+				if Defs.MUSTER_SITES.has(s.kind):   # a damaged barracks musters more slowly
 					s.every *= 1.3
 					s.t = maxf(s.t, s.every * 0.5)
 				return ""
 			s.owned = true
 			s.t = 0.0
 			sound.emit("raze")
-			if s.kind == "camp":
+			if Defs.HERO_SITES.has(s.kind):
 				var bounty: int = d["bounty"] + 15 * skill("land_spoils")
 				gold += bounty
 				_boom(s.pos, 0.9, 0.5)
 				_text(s.pos + Vector2(0, -0.4), "+%d" % bounty, Color("e8b84a"))
-				toast.emit("Barracks razed")
+				toast.emit("%s razed" % d["name"])
 			else:
 				toast.emit("%s is yours" % d["name"])
 				_relight()
@@ -1659,6 +1956,15 @@ func do_action(id: String, c: Vector2i) -> String:
 				return "Not enough mana"
 			mana -= Defs.SITES["sluice"]["mana"]
 			_flood(s)
+		"rubble":
+			if not towers.has(c) or (towers[c] as Tower).rubble <= 0.0:
+				return "No rubble here"
+			if gold < Defs.RUBBLE_CLEAR:
+				return "Not enough gold"
+			gold -= Defs.RUBBLE_CLEAR
+			(towers[c] as Tower).rubble = 0.0
+			rubble_cleared += 1
+			sound.emit("chop")
 		"upgrade":
 			if not towers.has(c):
 				return "No tower here"

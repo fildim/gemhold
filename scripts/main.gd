@@ -8,7 +8,9 @@ const T := 64.0
 ## level ids (and the saved progress keyed by them) stay put when the campaign is reordered.
 const LEVELS: Array[String] = ["res://levels/level_01.json", "res://levels/level_02.json", "res://levels/level_03.json", "res://levels/level_09.json", "res://levels/level_04.json", "res://levels/level_06.json", "res://levels/level_10.json", "res://levels/level_07.json", "res://levels/level_11.json", "res://levels/level_08.json", "res://levels/level_12.json", "res://levels/level_13.json", "res://levels/level_14.json", "res://levels/level_15.json", "res://levels/level_16.json", "res://levels/level_17.json", "res://levels/level_18.json", "res://levels/level_19.json", "res://levels/level_20.json", "res://levels/level_05.json",
 	"res://levels/level_21.json", "res://levels/level_22.json", "res://levels/level_23.json", "res://levels/level_24.json", "res://levels/level_25.json",
-	"res://levels/level_26.json", "res://levels/level_27.json", "res://levels/level_28.json", "res://levels/level_29.json", "res://levels/level_30.json"]
+	"res://levels/level_26.json", "res://levels/level_27.json", "res://levels/level_28.json", "res://levels/level_29.json", "res://levels/level_30.json",
+	"res://levels/level_31.json", "res://levels/level_32.json", "res://levels/level_33.json", "res://levels/level_34.json", "res://levels/level_35.json",
+	"res://levels/level_36.json", "res://levels/level_37.json", "res://levels/level_38.json", "res://levels/level_39.json", "res://levels/level_40.json"]
 ## Each lair's battle music, by level id (tracks in assets/music, credits in CREDITS.md there).
 const MUSIC := {"level_01": "mountain", "level_02": "heroicage", "level_03": "curseofthescarab", "level_09": "preludeandaction",
 	"level_04": "volatilereaction", "level_06": "crusade", "level_10": "firebrand", "level_07": "fate", "level_11": "killers",
@@ -185,7 +187,7 @@ func _new_battle() -> void:
 	_shake = 0.0
 	tutorial = Tutorial.new() if Tutorial.wanted(level_index, night) and race.is_empty() else null
 	hud.reset_rating()
-	ground.biome = mini(level_index / 10, 2)
+	ground.biome = mini(level_index / 10, 3)
 	ground.setup(level, sim)
 	board.setup(level, sim, hud.bold_font)
 	frame.size = Vector2(level.cols, level.rows) * T
@@ -266,7 +268,7 @@ func _process(delta: float) -> void:
 
 
 ## Tips for the rules of Chapter III, each shown once (Prefs "rule_tip_<key>").
-const RULE_TIPS := ["ford", "bridge", "tide", "routes", "mastery"]
+const RULE_TIPS := ["ford", "bridge", "tide", "routes", "mastery", "dusk", "rubble", "stun", "silence"]
 var _rule_key := ""
 
 
@@ -302,6 +304,17 @@ func _rule_tip_for(k: String) -> Array:
 			for tw: GameSim.Tower in sim.towers.values():
 				if not sim.masteries_for(tw).is_empty():
 					return ["[b]Level IV![/b] This tower is battle-hardened and level III, so it can become one of its masteries. Tap it to choose; the choice is final.", _cell_rect(Vector2(tw.cell))]
+		"dusk":
+			if sim.dusk_wave > 0 and sim.wave >= 1 and not sim.dark:
+				return ["[b]Night falls at wave %d.[/b] After dark you can only build where your den, towers, mines and wells give light, so build now where you will need towers later." % sim.dusk_wave, hud.button_rect("next")]
+		"rubble", "stun", "silence":
+			for tw: GameSim.Tower in sim.towers.values():
+				if k == "rubble" and tw.rubble > 0.0:
+					return ["[b]Buried![/b] A Trebuchet's stone has buried this tower under rubble: it can't fire for a while. [b]Tap it and Clear rubble[/b] (%d gold) to free it at once." % Defs.RUBBLE_CLEAR, _cell_rect(Vector2(tw.cell))]
+				if k == "stun" and tw.stun > 0.0:
+					return ["[b]Stunned![/b] A Sapper's keg has stunned this tower for a few seconds. Sappers can't reach towers on raised tiles.", _cell_rect(Vector2(tw.cell))]
+				if k == "silence" and tw.silence > 0.0:
+					return ["[b]Silenced![/b] An Inquisitor's censer smoke (the pale ring around him) silences towers inside it: no ability, no battle-hardened bonus, slower fire. Out-range him.", _cell_rect(Vector2(tw.cell))]
 	return []
 
 
@@ -342,6 +355,10 @@ func _site_tip_text(s: GameSim.Site) -> String:
 			t = "[b]A Dark Altar[/b], overgrown. [b]Cut it free[/b] with mana and towers within %.1f tiles deal %d%% more damage and grow battle-hardened faster." % [d["range"], int(d["dmg"] * 100)]
 		"sluice":
 			t = "[b]A Sluice Gate[/b]. [b]Tap it and Open the sluice[/b] (%d mana) to send a flood down its waterway: heroes in the water are swept back and hurt, boats worst of all. It takes %d s to fill again." % [d["mana"], int(d["recharge"])]
+		"beacon":
+			t = "[b]A Signal Fire![/b] While it burns, every wave comes %d s sooner and barracks muster faster. [b]Tap it and Raze it[/b] with mana for %d gold." % [int(d["sooner"]), d["bounty"]]
+		"workshop":
+			t = "[b]A Siege Workshop![/b] It builds Trebuchets and rolls them onto the road while waves are coming. [b]Tap it and Raze it[/b] with mana to stop it and win %d gold." % d["bounty"]
 	if s.cuts > 1:
 		t += " This one takes [b]%d cuts[/b]; tap it to see how many are left." % s.cuts
 	return t

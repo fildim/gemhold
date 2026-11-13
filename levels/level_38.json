@@ -1,0 +1,66 @@
+{
+ "id": "level_38",
+ "title": "Hollow Gate",
+ "cols": 16,
+ "rows": 10,
+ "hp_mul": 3.80,
+ "legend": {"A":"high ash","F":"high frost","L":"lair","M":"high moss","a":"ash","f":"frost","m":"moss"},
+ "terrain": [
+  "fffffmmmmmwmmmmm",
+  "fffffmmmmmwmmmmm",
+  "fffffmmmmmwmmmmm",
+  "fffffmmFmmwmmmmm",
+  "fffffmmmmmwmLLmm",
+  "mmmmmmmmmmwmLLmm",
+  "mmmmmaaAaawmmmmm",
+  "mmmmmaaaaawmMmmm",
+  "mmmmmaaaaawmmmmm",
+  "mmmmmaaaaawmmmmm"
+ ],
+ "trees": [
+  "..T..TT.T..T.TT.",
+  "..T....T......T.",
+  "............TTTT",
+  "...T..T.........",
+  "TT.......T.....T",
+  "TT.T...T.......T",
+  "........T......T",
+  "................",
+  "...T.....T....T.",
+  "..T...TTTT..TTT."
+ ],
+ "paths": [
+  [[-1,2],[11,2],[11,4]],
+  [[-1,7],[11,7],[11,5]]
+ ],
+ "lair": {"cell":[12,4],"center":[13,5],"size":[2,2]},
+ "sites": [
+  {"cell":[15,9],"kind":"mine"},
+  {"cell":[0,9],"kind":"well"}
+ ],
+ "start": {"gems":5,"gold":230,"mana":60},
+ "first_wave_delay": 30,
+ "wave_gap": 24,
+ "site_cuts": 3,
+ "waves": [
+  "8p",
+  "6f,2e",
+  "6p,2a,2b",
+  "4f,2e,2a",
+  "2k,2b,4a",
+  "6t,2e,2c",
+  "4f,2i,4a",
+  "3k,2e,2b",
+  "8p,6a,4b",
+  "4k,2e,2i",
+  "6t,4a,2b,2c",
+  "4k,2b,3e,2i",
+  "8f,6a,2b,2v",
+  "5k,4i,2e",
+  "6k,8a,4b",
+  "6k,8f,4e,4a",
+  "1x,6k,4i,4b",
+  "6k,8a,4f,4e,2h",
+  "2x,6k,6a,4b,4i"
+ ]
+}

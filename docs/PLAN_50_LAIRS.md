@@ -127,6 +127,8 @@ Twelve heroes and three bosses. Each has one rule, one counter, and a silhouette
 
 **Boss, lair 40: the Iron Belfry** `I`: 4200 / 0.38 / 8 / 0 gems / 250. A siege tower. Heroes walking in the 1.5 tiles behind it cannot be targeted by towers (Meteor still hits). Every 12 s a Sapper jumps out. At the den it stops and unloads 6 Footmen; destroyed earlier, it spills 4 Footmen, 2 Knights and an Inquisitor.
 
+**As built (Phase 3):** the Trebuchet and the Iron Belfry are `steady` (chill and Dread do not work on engines, like the Longboat). The Belfry, once it has unloaded its Footmen at the den, rolls away like a retreating Trebuchet, so the win check never waits on a 4,200-health tower parked at the cave. The Trebuchet's "strongest tower" is the one with the most gold in it (`Tower.spent`). The Workshop is its own site kind, `"workshop"` (same keys as a camp), rather than a camp with `"look": "workshop"`, so it gets its own tip, Guide entry and achievement count.
+
 ### Chapter V: the Radiant Host
 
 | Code | Hero | Health / speed / armour / gems / bounty | Rule | Counter |
@@ -241,6 +243,8 @@ Update `Bot.SKILL_ORDER` and `Bot.points_before` in `tests/bot.gd` to buy tier I
 - **G3 Sprites, light and status looks.** Bake each hero kind's walk cycle and each tower level into a texture atlas once at load (draw the existing code into a `SubViewport`), then draw sprites. That cuts per-frame draw calls (needed for the larger waves of later lairs on phones) and lets one small shader do hit-flash, outline for the selected tower, dissolve on death and a soft drop shadow. Draw heroes about 20% larger. At night, replace the flat fog with `PointLight2D` lights and a `CanvasModulate`, keeping the build rule exactly as it is. Looks for Stun (smoke), Silence (pale motes, halo off), Rubble (stones), Soaked (drips), hidden Diver (ripple and reed), level IV towers and each mastery.
 - **G4 Icons and frames.** An icon for every skill, spell, achievement, hero and building: the Hall of Fame and Dark Arts become pictures, not lists. Carved-frame nine-patch panels and buttons; a painted parchment map per chapter behind the lair markers.
 - **G5 Pre-rendered 3D: not chosen.** The owner decided on 2026-11-13 to keep the drawn style; do not start this pass. Kept here for reference only. Model towers and props in Blender, render them to sprites with one fixed light and matching normal maps. Gives the most "premium" look and consistent lighting, costs the hand-drawn identity, a larger download and a real art pipeline. Only worth starting if G1–G4 are not enough.
+
+**As built (Phase 3, G3):** heroes are baked (`HeroSprites`), drawn 20% larger, with the hit flash and Belfry cover as tints of the same picture; towers are still drawn shape by shape (few on the map, animated by state). Night is a soft light map (4 px a tile, a warm glow per light) instead of `PointLight2D` + `CanvasModulate`: Compatibility caps the lights per canvas item and the ground is one item, and the light map shows the build rule tile for tile. Dissolve on death and the selected-tower outline were left out: the death burst and the selection frame already do those jobs.
 
 Check glow before relying on it: the game runs on the Compatibility renderer everywhere. Test any `WorldEnvironment` glow on an Android phone and in the web build first; the fallback is the additive glow sprites `Paint.glow` already draws.
 

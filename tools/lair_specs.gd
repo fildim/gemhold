@@ -1,5 +1,6 @@
 extends RefCounted
-## Chapter III, the Drowned Marches: lairs 21-30, built by tools/make_lairs.gd. Rectangles are
+## Chapter III, the Drowned Marches (lairs 21-30), and Chapter IV, the Siegeworks (31-40), built by
+## tools/make_lairs.gd. Rectangles are
 ## [letter, x0, y0, x1, y1] (inclusive). Water letters: w deep, o shallows. Roads cross water as
 ## fords (shallows) or bridges (deep); a river road starts on water and lands its boats where the
 ## water ends. hp_mul is only a first guess; tests/difficulty.gd tunes it.
@@ -108,4 +109,92 @@ const LAIRS := [
 			{"heroes": "8m,4d,2l", "roads": [0, 2]}, {"heroes": "4k,2e,2w", "roads": [1]}, {"heroes": "8d,6t,2q"}, {"heroes": "4k,4m,2l", "roads": [1, 2], "cargo": {"2": "2k"}},
 			{"heroes": "10m,6d,2c", "roads": [0]}, {"heroes": "5k,4f,2e,2h", "roads": [1]}, {"heroes": "6k,8d,2l", "cargo": {"2": "2k,1c"}}, {"heroes": "6k,8m,4q,2e"},
 			{"heroes": "1x,6k,8d,4h", "roads": [0, 1]}, {"heroes": "1T,5k,4q,4e,6m,6d,2l", "cargo": {"2": "2k,2c"}}]},
+
+	# ------------------------------------------------------------ Chapter IV: the Siegeworks
+	{"n": 31, "title": "Powder Road", "lair": [13, 4], "seed": 3101, "site_cuts": 3, "hp_mul": 2.6,
+		"ground": [["f", 0, 3, 5, 6], ["a", 11, 0, 15, 2]],
+		"high": [[4, 1, "M"], [7, 3, "F"], [5, 7, "A"], [11, 6, "M"]],
+		"paths": [[[-1, 2], [10, 2], [10, 4], [12, 4]], [[-1, 8], [8, 8], [8, 5], [12, 5]]],
+		"sites": [{"kind": "mine", "cell": [1, 5]}, {"kind": "well", "cell": [14, 8]}],
+		"waves": ["8p", "6f,2a", "6p,4a", "4f,2c,3a", "2k,4a", "6t,4a", "4f,2b,4a", "3k,2c,4a", "8p,6a,2h", "4k,2w,4a",
+			"6t,6a,2c", "4k,2b,6a", "8f,6a,2h", "5k,4a,2c", "6k,8a,2b", "6k,8a,4f,2h"]},
+
+	{"n": 32, "title": "The King's Highway", "cols": 18, "lair": [15, 1], "seed": 3202, "site_cuts": 3, "hp_mul": 2.6,
+		"ground": [["f", 0, 3, 17, 4], ["a", 0, 9, 17, 9], ["f", 0, 0, 13, 0]],
+		"high": [[9, 4, "F"], [9, 7, "M"], [4, 7, "A"], [13, 4, "M"]],
+		"paths": [[[-1, 8], [16, 8], [16, 5], [2, 5], [2, 2], [14, 2]]],
+		"sites": [{"kind": "camp", "cell": [0, 3], "path": 0, "spawn": "1v,2p", "every": 34}, {"kind": "mine", "cell": [17, 4]}, {"kind": "well", "cell": [0, 0]}],
+		"waves": ["8p", "6f,1v", "6p,2h,1v", "4r,2v", "6f,2h,2v", "2k,4r,1v", "8p,2h,2v", "3k,2v,2c", "6r,2h,2v", "4k,2h,2v",
+			"8f,4r,2v", "4k,2b,2h,2v", "6r,4f,3v,2h", "5k,4r,3v", "6k,6r,4h,3v", "6k,8f,4r,4h,4v", "1x,6k,6r,4h,4v"]},
+
+	{"n": 33, "title": "Censer Vale", "lair": [13, 4], "base": "a", "seed": 3303, "site_cuts": 3, "hp_mul": 2.7, "woods": 0.6,
+		"ground": [["m", 0, 0, 5, 3], ["f", 7, 7, 15, 9]],
+		"high": [[3, 4, "F"], [9, 3, "M"], [9, 7, "A"]],
+		"paths": [[[-1, 2], [6, 2], [6, 5], [12, 5]], [[-1, 8], [6, 8], [6, 5], [12, 5]]],
+		"sites": [{"kind": "well", "cell": [1, 5]}, {"kind": "mine", "cell": [14, 8]}],
+		"waves": ["8p", "6f,1i", "6p,2c,1i", "4f,2a,1i", "2k,2i", "6t,2i,2c", "4f,4a,2i", "3k,2i,2b", "8p,4v,2i", "4k,3i",
+			"6t,4a,3i", "4k,2w,3i", "8f,4v,3i", "5k,4i,2c", "6k,4i,6a", "6k,8f,5i", "1x,6k,6i,4a"]},
+
+	{"n": 34, "title": "Beacon Hill", "lair": [7, 6], "seed": 3404, "site_cuts": 3, "hp_mul": 2.7,
+		"ground": [["f", 0, 0, 5, 2], ["a", 10, 8, 15, 9]],
+		"high": [[5, 4, "F"], [10, 5, "M"], [9, 2, "A"], [3, 5, "M"]],
+		"paths": [[[-1, 3], [4, 3], [4, 6], [6, 6]], [[16, 3], [11, 3], [11, 7], [9, 7]], [[7, -1], [7, 2], [8, 2], [8, 5]]],
+		"sites": [{"kind": "beacon", "cell": [15, 0], "cuts": 3}, {"kind": "mine", "cell": [0, 9]}, {"kind": "well", "cell": [15, 9]}],
+		"waves": ["8p", "6f,2a", "6p,2v", "4f,2i", "2k,4a", "6t,2v,2c", "4f,2i,4a", "3k,2v,2b", "8p,6a,2i", "4k,2w,2v",
+			"6t,4a,2i,2c", "4k,2b,3i", "8f,6a,3v", "5k,4i,2h", "6k,8a,2v,2c", "6k,8f,4i,4a", "1x,6k,4i,4v,6a"]},
+
+	{"n": 35, "title": "Stonefall Quarry", "lair": [13, 4], "base": "a", "seed": 3505, "site_cuts": 3, "hp_mul": 2.8, "woods": 0.6,
+		"ground": [["f", 0, 0, 4, 3], ["m", 5, 6, 10, 9]],
+		"high": [[6, 3, "F"], [11, 7, "M"], [2, 6, "M"]],
+		"paths": [[[-1, 1], [9, 1], [9, 4], [12, 4]], [[-1, 8], [4, 8], [4, 5], [12, 5]]],
+		"sites": [{"kind": "mine", "cell": [15, 9]}, {"kind": "well", "cell": [0, 4]}],
+		"waves": ["8p", "6f,2a", "6p,1u", "4f,2c,1u", "2k,4a", "6t,1u,2i", "4f,4a,1u", "3k,2b,1u", "8p,4v,2u", "4k,2i,1u",
+			"6t,6a,2u", "4k,2w,2u", "8f,4a,2u,2i", "5k,2u,2c", "6k,6a,2u,2v", "6k,8f,3u", "1x,6k,4i,2u", "6k,8a,4f,3u,2h"]},
+
+	{"n": 36, "title": "The Workshops", "lair": [1, 4], "seed": 3606, "site_cuts": 3, "hp_mul": 2.8,
+		"ground": [["f", 0, 0, 6, 1], ["a", 7, 8, 15, 9]],
+		"high": [[8, 3, "M"], [8, 6, "F"], [4, 1, "A"]],
+		"paths": [[[16, 2], [5, 2], [5, 4], [3, 4]], [[16, 7], [5, 7], [5, 5], [3, 5]]],
+		"sites": [{"kind": "workshop", "cell": [14, 0], "path": 0, "spawn": "1u", "every": 60, "cuts": 4},
+			{"kind": "workshop", "cell": [14, 9], "path": 1, "spawn": "1u", "every": 60, "cuts": 4},
+			{"kind": "camp", "cell": [10, 4], "path": 0, "spawn": "2f,1a", "every": 30}, {"kind": "mine", "cell": [0, 9]}],
+		"waves": ["8p", "6f,2a", "6p,2v", "4f,2i,2a", "2k,1u", "6t,4a,2c", "4f,2i,1u", "3k,2v,2b", "8p,6a,1u", "4k,2w,2i",
+			"6t,4a,2u", "4k,2b,3i", "8f,6a,3v", "5k,4i,1u", "6k,8a,2u", "6k,8f,4i,2u", "1x,6k,4v,6a", "6k,8a,4i,3u"]},
+
+	{"n": 37, "title": "Duskwall", "lair": [7, 4], "seed": 3707, "site_cuts": 3, "hp_mul": 2.9,
+		"ground": [["f", 0, 6, 5, 9], ["a", 10, 0, 15, 3]],
+		"high": [[5, 3, "F"], [10, 6, "A"], [2, 3, "M"]],
+		"paths": [[[-1, 1], [3, 1], [3, 5], [6, 5]], [[16, 8], [12, 8], [12, 4], [9, 4]]],
+		"rules": [{"kind": "dusk", "wave": 9}],
+		"sites": [{"kind": "mine", "cell": [0, 9]}, {"kind": "well", "cell": [15, 0]}],
+		"waves": ["8p", "6f,2a", "6p,2v", "4f,2i", "2k,4a", "6t,2v,2c", "4f,2i,4a", "3k,2v,2b", "8p,6a,2h", "4k,2w,2i",
+			"6t,4a,2i,2c", "4k,2b,3i", "8f,6a,3v", "5k,4i,2h", "6k,8a,2v,2c", "6k,8f,4i,4a", "1x,6k,4i,4v", "6k,8a,4f,4i,2h"]},
+
+	{"n": 38, "title": "Hollow Gate", "lair": [12, 4], "seed": 3808, "site_cuts": 3, "hp_mul": 2.9,
+		"ground": [["f", 0, 0, 4, 4], ["a", 5, 6, 9, 9]],
+		"water": [["w", 10, 0, 10, 9]],
+		"high": [[7, 3, "F"], [7, 6, "A"], [12, 7, "M"]],
+		"paths": [[[-1, 2], [11, 2], [11, 4]], [[-1, 7], [11, 7], [11, 5]]],
+		"sites": [{"kind": "mine", "cell": [15, 9]}, {"kind": "well", "cell": [0, 9]}],
+		"waves": ["8p", "6f,2e", "6p,2a,2b", "4f,2e,2a", "2k,2b,4a", "6t,2e,2c", "4f,2i,4a", "3k,2e,2b", "8p,6a,4b", "4k,2e,2i",
+			"6t,4a,2b,2c", "4k,2b,3e,2i", "8f,6a,2b,2v", "5k,4i,2e", "6k,8a,4b", "6k,8f,4e,4a", "1x,6k,4i,4b", "6k,8a,4f,4e,2h", "2x,6k,6a,4b,4i"]},
+
+	{"n": 39, "title": "The Long Siege", "lair": [7, 4], "seed": 3909, "site_cuts": 3, "hp_mul": 3.0, "gap": 18,
+		"ground": [["f", 0, 6, 5, 9], ["a", 10, 6, 15, 9]],
+		"high": [[3, 3, "F"], [12, 3, "A"], [6, 7, "M"], [9, 8, "M"]],
+		"paths": [[[-1, 2], [5, 2], [5, 4], [6, 4]], [[16, 2], [10, 2], [10, 5], [9, 5]], [[8, 10], [8, 6]]],
+		"sites": [{"kind": "mine", "cell": [0, 9]}, {"kind": "mine", "cell": [15, 9]}, {"kind": "well", "cell": [15, 0]}],
+		"waves": ["8p", "6f,2a", "6p,2v", "4f,2i", "2k,4a", "6t,2v,2c", "4f,2i,4a", "1u,3k,2b", "8p,6a,2h", "4k,2w,2i",
+			"6t,4a,2i,2c", "2u,4k,2b", "8f,6a,3v", "5k,4i,2h", "6k,8a,2v,2c", "2u,6k,8f,4i", "1x,6k,4i,4v", "6k,8a,4f,4i,2h",
+			"8r,6k,4a,2c", "2u,6k,6i,4b", "1x,8k,8a,4v", "2x,8k,6i,8a,2u"]},
+
+	{"n": 40, "title": "The Iron Belfry", "lair": [13, 4], "seed": 4010, "site_cuts": 3, "hp_mul": 3.0,
+		"ground": [["f", 0, 0, 15, 1], ["a", 0, 9, 15, 9]],
+		"high": [[7, 4, "F"], [11, 4, "M"], [15, 7, "A"], [1, 7, "M"]],
+		"paths": [[[-1, 8], [10, 8], [10, 6], [3, 6], [3, 2], [12, 2], [12, 4]], [[16, 8], [14, 8], [14, 6]]],
+		"sites": [{"kind": "mine", "cell": [0, 4]}, {"kind": "well", "cell": [15, 0]}],
+		"waves": ["8p", "6f,2a", {"heroes": "1u,4p", "roads": [1]}, "4f,2i,2a", {"heroes": "2k,4a", "roads": [0]}, {"heroes": "1u,4f", "roads": [1]},
+			"6t,2v,2c", "4f,2i,4a", {"heroes": "2u,3k", "roads": [1]}, "8p,6a,2h", {"heroes": "4k,2w,2i", "roads": [0]}, {"heroes": "2u,4f,2b", "roads": [1]},
+			"6t,4a,2i,2c", "4k,2b,3i", {"heroes": "2u,4k", "roads": [1]}, "8f,6a,3v", "5k,4i,2h", {"heroes": "3u,4k,2b", "roads": [1]},
+			{"heroes": "3u,2k", "roads": [1]}, {"heroes": "1I,6k,4i,8a,4f", "roads": [0]}]},
 ]

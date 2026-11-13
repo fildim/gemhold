@@ -1,7 +1,8 @@
 class_name Bot
 extends RefCounted
 ## A simple player for headless tests: builds on every free tile next to a road, closest to the
-## lair first, then upgrades; razes barracks before spending mana on anything else; casts the
+## lair first, then upgrades (clearing rubble first); razes barracks, workshops and Signal Fires before
+## spending mana on anything else; casts the
 ## Meteor whenever it can and picks up all loot. It plays much better than a person (it never
 ## hesitates), so a win only shows a level is winnable.
 
@@ -18,7 +19,10 @@ const SKILL_ORDER := ["moss_dmg", "ash_dmg", "ash_dmg", "moss_dmg", "ash_ability
 	"frost_freeze", "ash_memory", "mastery_lodge", "mastery_mausoleum", "mastery_sunlance",
 	"land_veins", "ash_core", "frost_cold", "moss_keen", "land_springs", "land_flood", "land_rites", "gem_magnet",
 	"land_axes", "moss_bodkin", "frost_freeze", "ash_memory", "land_heights", "land_spoils",
-	"ash_core", "frost_cold", "moss_keen", "land_veins", "land_springs", "frost_dread", "ash_cooling", "land_lantern"]
+	"ash_core", "frost_cold", "moss_keen", "land_veins", "land_springs", "frost_dread", "ash_cooling", "land_lantern",
+	# Chapter IV onward:
+	"sturdy", "sturdy", "land_heights", "sturdy", "moss_keen", "ash_memory", "frost_freeze", "land_veins", "land_springs",
+	"land_axes", "gem_magnet", "land_spoils", "land_lantern", "land_flood", "land_rites", "frost_dread", "ash_cooling", "gem_magnet", "land_lantern"]
 
 
 ## Skill points a player has banked before campaign lair `index` (0-based): about 2.4 stars a lair
@@ -66,7 +70,7 @@ static func play(lv: Level, skill_ranks: Dictionary, seed := 0) -> GameSim:
 	var dt := 0.05
 	while not sim.over and t < 1200.0:
 		# Take the first thing each tile offers (cut, build, upgrade); never sell.
-		var uncut := sim.sites.values().any(func(s: GameSim.Site) -> bool: return not s.owned and s.kind == "camp")
+		var uncut := sim.sites.values().any(func(s: GameSim.Site) -> bool: return not s.owned and Defs.HERO_SITES.has(s.kind))
 		for v in sim.sites.keys() + spots:
 			var acts: Array = sim.cell_info(v)["actions"]
 			for a: Dictionary in acts:

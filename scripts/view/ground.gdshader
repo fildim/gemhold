@@ -112,6 +112,9 @@ void fragment() {
 		ground = mix(ground, ground * vec3(1.12, 0.98, 0.78), 0.55);
 	} else if (biome == 2) {   // the drowned marches: dark, wet, peaty
 		ground = mix(ground, ground * vec3(0.78, 0.9, 0.86), 0.6) * 0.92;
+	} else if (biome == 3) {   // the siegeworks: churned brown mud and trampled earth
+		float churn = fbm(p * 3.1 + 17.0);
+		ground = mix(ground, vec3(0.33, 0.26, 0.18) * (0.75 + 0.5 * churn), 0.5) * vec3(1.02, 0.95, 0.86);
 	}
 	// Water: deep pools dark and still, shallows murky over sand, a pale rim where it meets land.
 	vec2 w = water(p);

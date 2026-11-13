@@ -16,6 +16,11 @@ var armed := false
 var _fog: ImageTexture
 var _bursts: Node2D      # particle bursts (bursts.gd), drawn over the board
 var _plates: Array = []   # level badge backgrounds: levels I-II, level III
+## Heroes as baked pictures (HeroSprites): drawn behind the board's own drawing (so their health
+## bars, chill and carried gems go on top), with premultiplied blending to match the atlas.
+var _layer: Node2D
+const HERO_SCALE := 1.2   # heroes are drawn this much larger than their body radius
+const FOG_PX := 4         # night fog pixels per tile
 
 
 func setup(lv: Level, s: GameSim, f: Font) -> void:
@@ -28,29 +33,65 @@ func setup(lv: Level, s: GameSim, f: Font) -> void:
 	if _bursts == null:
 		_bursts = preload("res://scripts/view/bursts.gd").new()
 		add_child(_bursts)
+	if _layer == null:
+		_layer = Node2D.new()
+		_layer.show_behind_parent = true
+		_layer.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+		var m := CanvasItemMaterial.new()
+		m.blend_mode = CanvasItemMaterial.BLEND_MODE_PREMULT_ALPHA
+		_layer.material = m
+		_layer.draw.connect(_draw_layer)
+		add_child(_layer)
+		HeroSprites.bake(self)
 	var tunic := {}
 	for k: String in Art.TUNIC:
 		tunic[k] = Color(Art.TUNIC[k])
 	_bursts.setup(sim, tunic)
 
 
-## Night darkness: one pixel per tile, stretched with smoothing so the light has soft edges.
+## Night darkness: FOG_PX pixels per tile, stretched with smoothing. Each light (GameSim.lights)
+## clears a soft-edged circle, so the light pools read as lamplight; a tile whose centre is inside a
+## light is lit for building (GameSim.is_lit), which is where the pool is brightest.
 func _build_fog() -> void:
 	_fog = null
-	if not level.night:
+	if not sim.dark:
 		return
-	var img := Image.create(level.cols + 2, level.rows + 2, false, Image.FORMAT_RGBA8)
-	for c in range(-1, level.cols + 1):
-		for r in range(-1, level.rows + 1):
-			var cell := Vector2i(clampi(c, 0, level.cols - 1), clampi(r, 0, level.rows - 1))
-			img.set_pixel(c + 1, r + 1, Color(0.02, 0.02, 0.06, 0.0 if sim.is_lit(cell) else 0.8))
+	var w := (level.cols + 2) * FOG_PX
+	var h := (level.rows + 2) * FOG_PX
+	var light := PackedFloat32Array()
+	light.resize(w * h)
+	for l: Array in sim.lights:
+		var at: Vector2 = l[0]
+		var rr: float = l[1]
+		var x0 := maxi(0, floori((at.x - rr) * FOG_PX))
+		var x1 := mini(w - 1, ceili((at.x + rr + 2.0) * FOG_PX))
+		var y0 := maxi(0, floori((at.y - rr) * FOG_PX))
+		var y1 := mini(h - 1, ceili((at.y + rr + 2.0) * FOG_PX))
+		for py in range(y0, y1 + 1):
+			for px in range(x0, x1 + 1):
+				var p := Vector2((px + 0.5) / FOG_PX - 1.0, (py + 0.5) / FOG_PX - 1.0)
+				var v := clampf((rr + 0.45 - p.distance_to(at)) / 0.6, 0.0, 1.0)
+				var i := py * w + px
+				if v > light[i]:
+					light[i] = v
+	var img := Image.create(w, h, false, Image.FORMAT_RGBA8)
+	for py in h:
+		for px in w:
+			img.set_pixel(px, py, Color(0.02, 0.02, 0.07, 0.82 * (1.0 - light[py * w + px])))
 	_fog = ImageTexture.create_from_image(img)
+
+
+## How far night has come in: 1 on a night mission, fading in over a few seconds after Dusk.
+func _night_k() -> float:
+	return clampf((sim.time - sim.dusk_t) / Defs.DUSK_FADE, 0.0, 1.0)
 
 
 func _draw() -> void:
 	if sim == null:
 		return
 	var tm := sim.time
+	if _layer != null:
+		_layer.queue_redraw()
 	# The hoard: one place per gem on a ring in the cave mouth, so taken gems leave a gap.
 	var slots := maxi(1, level.gems)
 	var ring := []
@@ -66,6 +107,7 @@ func _draw() -> void:
 			_draw_scorch(f)
 	for pl: GameSim.Pool in sim.pools:
 		_draw_pool(pl, tm)
+	_draw_paving()
 	for c: Vector2i in level.high:
 		_draw_high_shine(c, tm)
 	_draw_routes(tm)
@@ -77,6 +119,7 @@ func _draw() -> void:
 	tws.sort_custom(func(a: GameSim.Tower, b: GameSim.Tower) -> bool: return a.pos.y < b.pos.y)
 	for tw: GameSim.Tower in tws:
 		_draw_tower(tw, tm)
+		_draw_status(tw, tm)
 	for g: GameSim.Drop in sim.drops:
 		_draw_gems(g.pos * T + Vector2(0, (-0.1 + sin(tm * 5.0) * 0.05) * T), g.n, 0.3)
 	var es: Array = sim.enemies.duplicate()
@@ -92,8 +135,11 @@ func _draw() -> void:
 			_draw_beam(tw, tm, tw.beam2, tw.heat2)
 	var full := Rect2(0, 0, level.cols * T, level.rows * T)
 	if _fog != null:
-		draw_rect(full, Color(0.05, 0.07, 0.2, 0.22))
-		draw_texture_rect_region(_fog, full, Rect2(1, 1, level.cols, level.rows))
+		var k := _night_k()
+		draw_rect(full, Color(0.05, 0.07, 0.2, 0.22 * k))
+		draw_texture_rect_region(_fog, full, Rect2(FOG_PX, FOG_PX, level.cols * FOG_PX, level.rows * FOG_PX), Color(1, 1, 1, k))
+		for l: Array in sim.lights:   # warm lamplight in each pool
+			Paint.glow(self, l[0] * T, l[1] * T * 0.9, Color(1, 0.72, 0.38, 0.13 * k))
 	for l: GameSim.Loot in sim.loot:
 		_draw_loot(l, tm)
 	for f: GameSim.Fx in sim.fx:
@@ -196,8 +242,59 @@ func _draw_level_badge(c: Vector2, lv: int) -> void:
 	draw_string(font, Vector2(r.position.x + 7.0, c.y + 9.0), txt, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color("ffd86a"))
 
 
+## The heroes' baked pictures (HeroSprites), with their shadows and ground rings, drawn behind the
+## board. Colours here are premultiplied (see _pm).
+func _draw_layer() -> void:
+	if sim == null or not HeroSprites.ready():
+		return
+	var tm := sim.time
+	var es: Array = sim.enemies.duplicate()
+	es.sort_custom(func(a: GameSim.Enemy, b: GameSim.Enemy) -> bool: return a.pos.y < b.pos.y)
+	for e: GameSim.Enemy in es:
+		if e.hidden or not HeroSprites.has(e.code):
+			continue
+		var u: float = e.d["r"] * T * HERO_SCALE
+		var hitk := clampf(e.hit / 0.12, 0.0, 1.0)
+		var x := (e.pos.x + e.knock.x * hitk) * T
+		var yb := (e.pos.y + e.knock.y * hitk) * T
+		_ground_marks(_layer, e, x, yb, u, true)
+		var fr := HeroSprites.frame(e.code, HeroSprites.frame_of(tm * 10.0 * e.d["spd"] + e.bob))
+		var src: Rect2 = fr[0]
+		var k: float = u / float(fr[2])   # baked size -> drawn size
+		var dst := Rect2(x - fr[1].x * k, yb - fr[1].y * k, src.size.x * k, src.size.y * k)
+		if e.face < 0:   # mirror about the hero's own x
+			_layer.draw_set_transform(Vector2(2.0 * x, 0.0), 0.0, Vector2(-1, 1))
+		var tint := Color(0.55, 0.55, 0.62, 1) if e.covered else Color.WHITE
+		_layer.draw_texture_rect_region(HeroSprites.atlas, dst, src, tint)
+		if hitk > 0.0:   # hit flash: the same picture again, pushed to white
+			var a := 0.6 * hitk
+			_layer.draw_texture_rect_region(HeroSprites.atlas, dst, src, Color(8.0 * a, 8.0 * a, 8.0 * a, a))
+		if e.face < 0:
+			_layer.draw_set_transform(Vector2.ZERO)
+
+
+## A colour as the premultiplied-alpha layer wants it.
+static func _pm(c: Color) -> Color:
+	return Color(c.r * c.a, c.g * c.a, c.b * c.a, c.a)
+
+
+## What a hero casts on the ground under him: his shadow, a Herald's ring, a rain cloud's reach and
+## an Inquisitor's censer smoke. pm: premultiplied colours (the sprite layer).
+func _ground_marks(ci: CanvasItem, e: GameSim.Enemy, x: float, yb: float, u: float, pm: bool) -> void:
+	var fix := func(c: Color) -> Color: return _pm(c) if pm else c
+	if e.d.has("rain"):   # the reach of its rain cloud
+		Paint.ellipse(ci, Vector2(x, yb + u * 0.95), float(e.d["rain"]) * T, float(e.d["rain"]) * T * 0.4, fix.call(Color(0.55, 0.7, 0.9, 0.12)))
+	if e.d.has("censer"):   # censer smoke: towers inside are silenced
+		var r := float(e.d["censer"]) * T
+		Paint.ellipse(ci, Vector2(x, yb + u * 0.95), r, r * 0.45, fix.call(Color(0.7, 0.62, 0.85, 0.13)))
+		Paint.ellipse_outline(ci, Vector2(x, yb + u * 0.95), r, r * 0.45, fix.call(Color(0.8, 0.72, 0.95, 0.35)), 1.5)
+	Paint.ellipse(ci, Vector2(x, yb + u * 0.95), u * 0.75, u * 0.22, fix.call(Color(0, 0, 0, 0.33)))
+	if e.d.has("haste"):  # the Herald's rallying ring on the ground
+		Paint.ellipse_outline(ci, Vector2(x, yb + u * 0.95), Defs.HASTE_RANGE * T * 0.5, Defs.HASTE_RANGE * T * 0.16, fix.call(Color(1, 0.8, 0.3, 0.35)), 2.0)
+
+
 func _draw_enemy(e: GameSim.Enemy, tm: float) -> void:
-	var u: float = e.d["r"] * T
+	var u: float = e.d["r"] * T * HERO_SCALE
 	var f := float(e.face)
 	var cyc: float = tm * 10.0 * e.d["spd"] + e.bob
 	var walk := sin(cyc)
@@ -207,6 +304,7 @@ func _draw_enemy(e: GameSim.Enemy, tm: float) -> void:
 	var yb := (e.pos.y + e.knock.y * hitk) * T
 	var y := yb - bob
 	var code := e.code
+	var baked := HeroSprites.has(code)
 	if e.hidden:   # a Diver under water: only a ripple and a reed give him away
 		for k in 2:
 			var rr := fmod(tm * 0.8 + k * 0.5, 1.0)
@@ -214,20 +312,34 @@ func _draw_enemy(e: GameSim.Enemy, tm: float) -> void:
 		draw_line(Vector2(x + u * 0.2, yb + u * 0.6), Vector2(x + u * 0.3, yb - u * 0.5), Color("6e7c3e"), 2.0, true)
 		_draw_gems(Vector2(e.pos.x, e.pos.y - 0.3) * T, e.carry, 0.0)
 		return
-	if e.d.has("rain"):   # the reach of its rain cloud
-		Paint.ellipse(self, Vector2(x, yb + u * 0.95), float(e.d["rain"]) * T, float(e.d["rain"]) * T * 0.4, Color(0.55, 0.7, 0.9, 0.12))
-	var lw := maxf(1.0, u * 0.09)
-	Paint.ellipse(self, Vector2(x, yb + u * 0.95), u * 0.75, u * 0.22, Color(0, 0, 0, 0.33))
-	if e.d.has("haste"):  # the Herald's rallying ring on the ground
-		Paint.ellipse_outline(self, Vector2(x, yb + u * 0.95), Defs.HASTE_RANGE * T * 0.5, Defs.HASTE_RANGE * T * 0.16, Color(1, 0.8, 0.3, 0.35), 2.0)
+	if not baked:
+		_ground_marks(self, e, x, yb, u, false)
 	if e.d.has("rage") and e.hp < e.max_hp * 0.5:  # raging
 		Paint.glow(self, Vector2(x, y - u * 0.3), u * 1.6, Color(1, 0.2, 0.1, 0.5))
-	var body := Art.hero(self, code, x, y, yb, u, f, walk, tm)
+	if not baked:
+		var body: PackedVector2Array
+		if code == "u":   # the throwing arm: cocked while it waits, swinging through as it looses
+			var arm := 0.0
+			if e.deployed:
+				var since: float = Defs.TREBUCHET["every"] - e.sling
+				arm = clampf(since / 0.35, 0.0, 1.0) if e.stones > 0 and since < 1.2 else 0.0
+			body = Art.trebuchet(self, x, yb, u, f, tm if not e.deployed else 0.0, arm)
+		else:
+			body = Art.hero(self, code, x, y, yb, u, f, walk, tm)
+		if hitk > 0.0:   # hit flash: the body (and head) blink white
+			draw_colored_polygon(body, Color(1, 1, 1, 0.6 * hitk))
+			if not code in ["u", "I", "l"]:
+				draw_circle(Vector2(x, y - u * 0.68), u * 0.38, Color(1, 1, 1, 0.6 * hitk))
+		if e.covered:
+			draw_colored_polygon(body, Color(0.05, 0.05, 0.1, 0.4))
+	if e.covered:   # in the Belfry's shadow: a small shield says towers can't see him
+		draw_arc(Vector2(x, y - u * 0.2), u * 1.0, PI * 1.1, PI * 1.9, 10, Color(0.75, 0.75, 0.85, 0.7), 2.0, true)
+	if e.d.has("sapper") and e.fuse >= 0.0:   # the fuse burns
+		var sp := Vector2(x - f * u * 0.42, y - u * 0.5 - e.fuse * u * 0.3)
+		Paint.glow(self, sp, u * (0.6 + 0.2 * sin(tm * 30.0)), Color(1, 0.7, 0.2, 0.9))
+		draw_circle(sp, u * 0.12, Color("fff2c0"))
 	if e.mark > 0.0:   # marked by a Hunter's Lodge
 		draw_arc(Vector2(x, y - u * 0.2), u * 1.1, 0, TAU, 20, Color(1, 0.3, 0.25, 0.8), 2.0, true)
-	if hitk > 0.0:   # hit flash: the body and head blink white
-		draw_colored_polygon(body, Color(1, 1, 1, 0.6 * hitk))
-		draw_circle(Vector2(x, y - u * 0.68), u * 0.38, Color(1, 1, 1, 0.6 * hitk))
 	if e.slow > 0.0:
 		Paint.ellipse(self, Vector2(x, y - u * 0.1), u * 0.75, u * 1.1, Color(0.62, 0.88, 1, 0.25))
 		for i in 3:
@@ -237,10 +349,10 @@ func _draw_enemy(e: GameSim.Enemy, tm: float) -> void:
 		var fy := y - u * 1.75 + sin(sim.time * 14.0) * 1.5
 		draw_string_outline(font, Vector2(x - 10, fy), "!!", HORIZONTAL_ALIGNMENT_CENTER, 20, 18, 4, OUTLINE)
 		draw_string(font, Vector2(x - 10, fy), "!!", HORIZONTAL_ALIGNMENT_CENTER, 20, 18, Color("c9c0ff"))
-	_draw_gems(Vector2(e.pos.x, e.pos.y - e.d["r"] * 2.3 - 0.08) * T, e.carry, 0.0)
+	_draw_gems(Vector2(e.pos.x, e.pos.y - e.d["r"] * 2.3 * HERO_SCALE - 0.08) * T, e.carry, 0.0)
 	if e.hp < e.max_hp:
 		var w := maxf(16.0, u * 2.6)
-		var hy := y - u * (1.8 if code == "k" or code == "x" else 2.6 if code == "q" or code == "T" else 2.1 if code == "l" else 1.65) - 6.0
+		var hy := y - u * float({"k": 1.8, "x": 1.8, "q": 2.6, "T": 2.6, "l": 2.1, "i": 2.0, "u": 2.9, "I": 5.0}.get(code, 1.65)) - 6.0
 		draw_rect(Rect2(x - w / 2 - 1, hy - 1, w + 2, 6), Color(0, 0, 0, 0.7))
 		draw_rect(Rect2(x - w / 2, hy, w * e.hp / e.max_hp, 4), Color("6fd36f") if e.hp / e.max_hp > 0.4 else Color("e0503a"))
 
@@ -332,6 +444,17 @@ func _draw_fx(f: GameSim.Fx) -> void:
 		"shock":   # a ring sweeping out from a meteor strike
 			var e := 1.0 - pow(1.0 - k, 3.0)
 			draw_arc(p, f.r * T * (0.2 + 0.8 * e), 0, TAU, 48, Color(1, 0.85, 0.55, 0.8 * (1.0 - k)), T * 0.08 * (1.0 - k) + 1.0, true)
+		"stone":   # a Trebuchet's stone arcing onto its tower
+			if not f.hit:
+				var q := f.pos.lerp(f.to, k) * T + Vector2(0, -sin(k * PI) * T * 1.6)
+				draw_circle(q + Vector2(2, 3), T * 0.11, Color(0, 0, 0, 0.3))
+				draw_circle(q, T * 0.11, Color("8a8478"))
+				draw_arc(q, T * 0.11, 0, TAU, 10, Color("3a3430"), 1.5, true)
+		"smoke":   # a burst of dust and smoke (a Sapper's blast, a stone landing)
+			for i in 5:
+				var a := i * TAU / 5.0 + f.pos.x
+				var q := p + Vector2(cos(a), sin(a) * 0.5) * f.r * T * (0.3 + 0.7 * k) + Vector2(0, -k * T * 0.4)
+				draw_circle(q, T * (0.12 + 0.18 * k), Color(0.45, 0.43, 0.4, 0.55 * (1.0 - k)))
 		"text":   # pops in, rises easing out, fades over its last 40%
 			var e := 1.0 - pow(1.0 - k, 3.0)
 			var fs := int(28.0 * (1.0 + 0.35 * maxf(0.0, 1.0 - k * 8.0)))
@@ -365,7 +488,7 @@ func _draw_site(s: GameSim.Site, tm: float) -> void:
 		else:
 			var kk: float = 1.0 - s.t / (float(Defs.SITES["sluice"]["recharge"]) * (1.0 - 0.2 * sim.skill("land_flood")))
 			draw_arc(c + Vector2(0, -0.1) * T, T * 0.5, -PI / 2, -PI / 2 + TAU * kk, 32, Color(0.5, 0.8, 1, 0.6), 2.5, true)
-	if s.kind == "camp" and not s.owned and sim.wave >= 1 and sim.wave < level.waves.size():
+	if Defs.MUSTER_SITES.has(s.kind) and not s.owned and sim.wave >= 1 and sim.wave < level.waves.size():
 		var k := 1.0 - s.t / s.every
 		draw_arc(c + Vector2(0, -0.1) * T, T * 0.5, -PI / 2, -PI / 2 + TAU * k, 32, Color(0.6, 0.75, 1, 0.6), 2.5, true)
 
@@ -507,3 +630,49 @@ func _draw_routes(tm: float) -> void:
 		var p := level.path_pos(r, 1.0) * T
 		Paint.glow(self, p, T * (0.6 + 0.15 * pulse), Color(1, 0.75, 0.3, 0.35 + 0.25 * pulse))
 		draw_arc(p, T * 0.4, 0, TAU, 24, Color(1, 0.85, 0.45, 0.8), 3.0, true)
+
+
+## How a hindered tower looks: buried under a heap of stones, stunned in smoke with circling sparks,
+## or silenced (pale motes drift down over it, and its ability ring is off).
+func _draw_status(tw: GameSim.Tower, tm: float) -> void:
+	var x := tw.pos.x * T
+	var y := tw.pos.y * T - (HIGH_LIFT * T if level.high.has(tw.cell) else 0.0)
+	if tw.rubble > 0.0:
+		for i in 9:
+			var p := Vector2(x + (Paint.hash01(tw.cell.x, tw.cell.y, i) - 0.5) * T * 0.7, y + T * (0.28 - 0.5 * Paint.hash01(tw.cell.y, tw.cell.x, i) * (1.0 - absf(Paint.hash01(tw.cell.x, tw.cell.y, i) - 0.5))))
+			draw_circle(p, T * (0.08 + 0.04 * Paint.hash01(i, tw.cell.x, 3)), Color("6e665c").lerp(Color("4a443c"), Paint.hash01(i, 2, tw.cell.y)))
+			draw_arc(p, T * 0.09, PI, TAU, 6, Color(0.1, 0.08, 0.06, 0.6), 1.0)
+		for k in 2:   # dust
+			var q := fmod(tm * 0.5 + k * 0.5, 1.0)
+			draw_circle(Vector2(x + (k - 0.5) * T * 0.4, y - q * T * 0.5), T * (0.1 + 0.1 * q), Color(0.6, 0.55, 0.48, 0.3 * (1.0 - q)))
+	if tw.stun > 0.0:
+		for k in 3:
+			var q := fmod(tm * 0.6 + k / 3.0, 1.0)
+			draw_circle(Vector2(x + sin(tm * 2.0 + k) * T * 0.15, y - T * (0.4 + q * 0.6)), T * (0.1 + 0.12 * q), Color(0.35, 0.35, 0.38, 0.5 * (1.0 - q)))
+		for k in 3:   # sparks circling the top
+			var a := tm * 4.0 + k * TAU / 3.0
+			var p := Vector2(x + cos(a) * T * 0.3, y - T * 0.75 + sin(a) * T * 0.08)
+			draw_line(p - Vector2(3, 0), p + Vector2(3, 0), Color("ffe08a"), 1.5)
+			draw_line(p - Vector2(0, 3), p + Vector2(0, 3), Color("ffe08a"), 1.5)
+	if tw.silence > 0.0:
+		for k in 5:
+			var q := fmod(tm * 0.35 + k / 5.0, 1.0)
+			var p := Vector2(x + (Paint.hash01(k, tw.cell.x, 7) - 0.5) * T * 0.7, y - T * (0.9 - q * 1.1))
+			draw_circle(p, T * 0.035, Color(0.9, 0.86, 1.0, 0.75 * sin(q * PI)))
+
+
+## Road paved by Paviors: cobbles along the stretch, fading out over its last seconds.
+func _draw_paving() -> void:
+	for i in sim.paved.size():
+		for p: Dictionary in sim.paved[i]:
+			var a := clampf((float(p["until"]) - sim.time) / 4.0, 0.0, 1.0)
+			var d := float(p["from"])
+			var n := 0
+			while d < float(p["to"]):
+				var q := level.path_pos(i, d) * T
+				var side := (Paint.hash01(i, n, 5) - 0.5) * T * 0.4
+				var r := Rect2(q + Vector2(side - T * 0.07, -T * 0.05), Vector2(T * 0.14, T * 0.1))
+				draw_rect(r, Color(0.62, 0.58, 0.52, 0.75 * a))
+				draw_rect(r, Color(0.25, 0.22, 0.2, 0.6 * a), false, 1.0)
+				d += 0.12
+				n += 1

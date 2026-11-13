@@ -6,7 +6,7 @@ extends SceneTree
 ## Run: godot --headless --script res://tests/level_check.gd
 
 const MAIN := preload("res://scripts/main.gd")
-const FIXTURES := ["res://tests/fixtures/level_v2.json"]
+const FIXTURES := ["res://tests/fixtures/level_v2.json", "res://tests/fixtures/level_siege.json"]
 const RULE_KINDS := ["tide", "dusk", "eclipse"]
 
 var fails := 0
@@ -40,7 +40,7 @@ func _check_file(path: String) -> void:
 		_check(not lv.road.has(s["cell"]), "%s: site at %s is on a road" % [lv.id, s["cell"]])
 		_check(not lv.is_lair(s["cell"]), "%s: site at %s is in the lair" % [lv.id, s["cell"]])
 		_check(not lv.is_water(s["cell"]), "%s: site at %s is on water" % [lv.id, s["cell"]])
-		if s["kind"] == "camp":
+		if Defs.MUSTER_SITES.has(s["kind"]):
 			_check(s["path"] < lv.paths.size(), "%s: camp at %s names a missing road" % [lv.id, s["cell"]])
 			if s["path"] < lv.paths.size():
 				_check(lv.path_kind[s["path"]] == "land", "%s: camp at %s sends troops down a road that is not land" % [lv.id, s["cell"]])
@@ -106,6 +106,9 @@ func _check_file(path: String) -> void:
 				_check(Defs.ENEMIES.has(code), "%s: unknown hero code %s in cargo" % [lv.id, code])
 	for rule in lv.rules:
 		_check(rule is Dictionary and String(rule.get("kind", "")) in RULE_KINDS, "%s: unknown lair rule %s" % [lv.id, rule])
+		if rule is Dictionary and rule.get("kind", "") == "dusk":
+			var dw := int(rule.get("wave", 0))
+			_check(dw >= 2 and dw <= lv.waves.size(), "%s: dusk falls at wave %d, which is not a later wave of the lair" % [lv.id, dw])
 	print("%s ok: %d roads, %d sites, %d waves" % [lv.id, lv.paths.size(), lv.sites.size(), lv.waves.size()])
 
 

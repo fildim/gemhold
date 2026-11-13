@@ -1,0 +1,64 @@
+{
+ "id": "level_33",
+ "title": "Censer Vale",
+ "cols": 16,
+ "rows": 10,
+ "hp_mul": 2.88,
+ "legend": {"A":"high ash","F":"high frost","L":"lair","M":"high moss","a":"ash","f":"frost","m":"moss"},
+ "terrain": [
+  "mmmmmmaaaaaaaaaa",
+  "mmmmmmaaaaaaaaaa",
+  "mmmmmmaaaaaaaaaa",
+  "mmmmmmaaaMaaaaaa",
+  "aaaFaaaaaaaaaLLa",
+  "aaaaaaaaaaaaaLLa",
+  "aaaaaaaaaaaaaaaa",
+  "aaaaaaaffAffffff",
+  "aaaaaaafffffffff",
+  "aaaaaaafffffffff"
+ ],
+ "trees": [
+  "T..T..TT.TTT.TTT",
+  "..T.T....TTTTT..",
+  "........TTT..TT.",
+  "..T........T....",
+  ".T..............",
+  "T.T.T...........",
+  "..T.TT.....T....",
+  "........T..T.T.T",
+  "........T.T.T..T",
+  "T....T.T..T.T.TT"
+ ],
+ "paths": [
+  [[-1,2],[6,2],[6,5],[12,5]],
+  [[-1,8],[6,8],[6,5],[12,5]]
+ ],
+ "lair": {"cell":[13,4],"center":[14,5],"size":[2,2]},
+ "sites": [
+  {"cell":[1,5],"kind":"well"},
+  {"cell":[14,8],"kind":"mine"}
+ ],
+ "start": {"gems":5,"gold":230,"mana":60},
+ "first_wave_delay": 30,
+ "wave_gap": 24,
+ "site_cuts": 3,
+ "waves": [
+  "8p",
+  "6f,1i",
+  "6p,2c,1i",
+  "4f,2a,1i",
+  "2k,2i",
+  "6t,2i,2c",
+  "4f,4a,2i",
+  "3k,2i,2b",
+  "8p,4v,2i",
+  "4k,3i",
+  "6t,4a,3i",
+  "4k,2w,3i",
+  "8f,4v,3i",
+  "5k,4i,2c",
+  "6k,4i,6a",
+  "6k,8f,5i",
+  "1x,6k,6i,4a"
+ ]
+}

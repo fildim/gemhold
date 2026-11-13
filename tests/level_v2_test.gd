@@ -102,7 +102,7 @@ func _zones() -> void:
 	sim.collapsed.clear()
 
 	var p := _hero(sim, "p", 1, 1.0)
-	sim.paved[1].append({"from": 0.5, "to": 2.0})
+	sim.paved[1].append({"from": 0.5, "to": 2.0, "until": INF})
 	_check(is_equal_approx(sim._zone_mul(p, 0.05), Defs.ZONE_SPEED["paved"]), "paved road is faster")
 	sim.paved[1].clear()
 

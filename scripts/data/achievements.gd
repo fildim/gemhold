@@ -20,6 +20,8 @@ const LIST: Array[Dictionary] = [
 	{"id": "beaten25", "name": "Halfway to Dominion", "text": "Defend the first 25 lairs.", "stat": "beaten", "goal": 25},
 	{"id": "chapter2", "name": "Crusade Crushed", "text": "Defend every lair of Chapter II."},
 	{"id": "chapter3", "name": "Lord of the Marches", "text": "Defend every lair of Chapter III."},
+	{"id": "beaten35", "name": "Past the Walls", "text": "Defend the first 35 lairs.", "stat": "beaten", "goal": 35},
+	{"id": "chapter4", "name": "Siegebreaker", "text": "Defend every lair of Chapter IV."},
 
 	# Ratings
 	{"id": "brilliant", "name": "Untouched", "text": "Win a lair Brilliant: no hero lays a hand on a gem."},
@@ -198,6 +200,15 @@ const LIST: Array[Dictionary] = [
 	{"id": "slain_l1", "name": "Shipbreaker", "text": "Sink 25 Longboats.", "stat": "slain_l", "goal": 25},
 	{"id": "slain_l2", "name": "Admiral of the Deep", "text": "Sink 250 Longboats.", "stat": "slain_l", "goal": 250},
 	{"id": "slain_T1", "name": "The Tide Turns", "text": "Slay the Tidecaller.", "stat": "slain_T", "goal": 1},
+	{"id": "slain_a1", "name": "Damp Powder", "text": "Slay 100 Sappers.", "stat": "slain_a", "goal": 100},
+	{"id": "slain_a2", "name": "Defused", "text": "Slay 1,000 Sappers.", "stat": "slain_a", "goal": 1000},
+	{"id": "slain_v1", "name": "Road Closed", "text": "Slay 100 Paviors.", "stat": "slain_v", "goal": 100},
+	{"id": "slain_v2", "name": "Potholes Forever", "text": "Slay 1,000 Paviors.", "stat": "slain_v", "goal": 1000},
+	{"id": "slain_i1", "name": "No One Expects It", "text": "Slay 100 Inquisitors.", "stat": "slain_i", "goal": 100},
+	{"id": "slain_i2", "name": "Heresy Unpunished", "text": "Slay 1,000 Inquisitors.", "stat": "slain_i", "goal": 1000},
+	{"id": "slain_u1", "name": "Kindling", "text": "Destroy 25 Trebuchets.", "stat": "slain_u", "goal": 25},
+	{"id": "slain_u2", "name": "Engine Graveyard", "text": "Destroy 250 Trebuchets.", "stat": "slain_u", "goal": 250},
+	{"id": "slain_I1", "name": "Belfry Breaker", "text": "Bring down the Iron Belfry.", "stat": "slain_I", "goal": 1},
 
 	# Your weapons, all battles together
 	{"id": "by_moss1", "name": "Arrow Storm", "text": "Slay 100 heroes with Warband Huts.", "stat": "by_moss", "goal": 100},
@@ -305,6 +316,17 @@ const LIST: Array[Dictionary] = [
 	{"id": "dry_feet", "name": "Dry Feet", "text": "Win Reedmere Ford with no hero slain in the water."},
 	{"id": "diver_meteor", "name": "Depth Charge", "text": "Slay a hidden Diver with a Meteor."},
 	{"id": "altars10", "name": "Altar Keeper", "text": "Free 10 Dark Altars in all.", "stat": "altars", "goal": 10},
+
+	# Chapter IV: siege
+	{"id": "sapper_keg", "name": "Own Goal", "text": "A Sapper's keg slays three heroes."},
+	{"id": "no_stun", "name": "Dry Powder", "text": "Win a lair with Sappers where not one tower was stunned."},
+	{"id": "rubble10", "name": "Stonemason", "text": "Clear rubble 10 times in one battle."},
+	{"id": "trebuchet_fast", "name": "Before the First Stone", "text": "Destroy a Trebuchet before it throws a stone."},
+	{"id": "silence_proof", "name": "Speak Up", "text": "Slay an Inquisitor with a tower he was silencing."},
+	{"id": "pavior_early", "name": "Unpaved", "text": "Slay a Pavior before he paves three tiles."},
+	{"id": "night_dusk", "name": "Into the Dark", "text": "Win a lair where night falls during the battle."},
+	{"id": "beacons10", "name": "Lights Out", "text": "Raze 10 Signal Fires in all.", "stat": "beacons", "goal": 10},
+	{"id": "workshops10", "name": "Shut Down", "text": "Raze 10 Siege Workshops in all.", "stat": "workshops", "goal": 10},
 ]
 
 const SCORE_GOAL := 6000
@@ -351,7 +373,7 @@ static func record(save: SaveData, sim: GameSim) -> void:
 		save.add_stat("built_" + type, sim.built_count[type])
 	for s: GameSim.Site in sim.sites.values():
 		if s.owned:
-			var key: String = {"mine": "mines", "well": "wells", "camp": "camps", "altar": "altars"}.get(s.kind, "")
+			var key: String = {"mine": "mines", "well": "wells", "camp": "camps", "altar": "altars", "beacon": "beacons", "workshop": "workshops"}.get(s.kind, "")
 			if key != "":   # Sluice Gates are yours from the start: not counted
 				save.add_stat(key, 1)
 	for m: String in sim.masteries_built:
@@ -359,6 +381,17 @@ static func record(save: SaveData, sim: GameSim) -> void:
 	save.add_stat("drowned", sim.drowned)
 	save.add_stat("collapses", sim.collapsed_n)
 	save.add_stat("floods", sim.floods)
+
+
+## Does any wave of the lair send this hero (Sappers also jump out of the Iron Belfry).
+static func _has_hero(lv: Level, code: String) -> bool:
+	for w: Array in lv.waves:
+		if w.has(code) or (code == "a" and w.has("I")):
+			return true
+	for s: Dictionary in lv.sites:
+		if (s.get("spawn", []) as Array).has(code):
+			return true
+	return false
 
 
 ## Slain by neither a tower nor a meteor: the den's bolts.
@@ -426,6 +459,11 @@ static func check_battle(save: SaveData, sim: GameSim, number: int) -> Array[Str
 	_try(save, got, "collapse_kill", sim.collapse_kills > 0)
 	_try(save, got, "sluice5", sim.best_flood >= 5)
 	_try(save, got, "diver_meteor", sim.diver_meteor > 0)
+	_try(save, got, "sapper_keg", sim.keg_best >= 3)
+	_try(save, got, "rubble10", sim.rubble_cleared >= 10)
+	_try(save, got, "trebuchet_fast", sim.treb_fast > 0)
+	_try(save, got, "silence_proof", sim.silence_proof > 0)
+	_try(save, got, "pavior_early", sim.pavior_early > 0)
 	if sim.won:
 		var rank := sim.rank()
 		var night := sim.level.night
@@ -455,6 +493,8 @@ static func check_battle(save: SaveData, sim: GameSim, number: int) -> Array[Str
 		_try(save, got, "early_all", sim.early_calls >= sim.level.waves.size() - 1)
 		_try(save, got, "sink_all", sim.boats_sunk > 0 and sim.boats_landed == 0)
 		_try(save, got, "dry_feet", sim.level.id == "level_21" and sim.water_kills == 0)
+		_try(save, got, "no_stun", _has_hero(sim.level, "a") and sim.stuns == 0)
+		_try(save, got, "night_dusk", sim.dusk_wave > 0 and sim.dark)
 		var score := sim.score(number)
 		_try(save, got, "score", score >= SCORE_GOAL)
 		for n in [3000, 10000, 15000, 20000, 30000]:
@@ -516,6 +556,8 @@ static func check_progress(save: SaveData, ids: Array, per_chapter := 10) -> Arr
 	_try(save, got, "chapter2", v["beaten"] >= mini(2 * per_chapter, ids.size()))
 	if ids.size() >= 3 * per_chapter:
 		_try(save, got, "chapter3", v["beaten"] >= 3 * per_chapter)
+	if ids.size() >= 4 * per_chapter:
+		_try(save, got, "chapter4", v["beaten"] >= 4 * per_chapter)
 	_try(save, got, "all_brilliant", v["brilliant"] >= ids.size())
 	_try(save, got, "all_night", v["nights"] >= ids.size())
 	_try(save, got, "arts20", v["spent"] >= 20)

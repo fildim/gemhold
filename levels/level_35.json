@@ -1,0 +1,65 @@
+{
+ "id": "level_35",
+ "title": "Stonefall Quarry",
+ "cols": 16,
+ "rows": 10,
+ "hp_mul": 1.41,
+ "legend": {"A":"high ash","F":"high frost","L":"lair","M":"high moss","a":"ash","f":"frost","m":"moss"},
+ "terrain": [
+  "fffffaaaaaaaaaaa",
+  "fffffaaaaaaaaaaa",
+  "fffffaaaaaaaaaaa",
+  "fffffaFaaaaaaaaa",
+  "aaaaaaaaaaaaaLLa",
+  "aaaaaaaaaaaaaLLa",
+  "aaMaammmmmmaaaaa",
+  "aaaaammmmmmMaaaa",
+  "aaaaammmmmmaaaaa",
+  "aaaaammmmmmaaaaa"
+ ],
+ "trees": [
+  "...TT.T...T..T..",
+  "...........TTTT.",
+  "....T......T.T.T",
+  ".T.TTT.T........",
+  ".T.T....T.......",
+  ".TT.............",
+  ".T.T......T.....",
+  "......T.T.T.T..T",
+  "......TTTT....T.",
+  "TT...TT.TT.TTTT."
+ ],
+ "paths": [
+  [[-1,1],[9,1],[9,4],[12,4]],
+  [[-1,8],[4,8],[4,5],[12,5]]
+ ],
+ "lair": {"cell":[13,4],"center":[14,5],"size":[2,2]},
+ "sites": [
+  {"cell":[15,9],"kind":"mine"},
+  {"cell":[0,4],"kind":"well"}
+ ],
+ "start": {"gems":5,"gold":230,"mana":60},
+ "first_wave_delay": 30,
+ "wave_gap": 24,
+ "site_cuts": 3,
+ "waves": [
+  "8p",
+  "6f,2a",
+  "6p,1u",
+  "4f,2c,1u",
+  "2k,4a",
+  "6t,1u,2i",
+  "4f,4a,1u",
+  "3k,2b,1u",
+  "8p,4v,2u",
+  "4k,2i,1u",
+  "6t,6a,2u",
+  "4k,2w,2u",
+  "8f,4a,2u,2i",
+  "5k,2u,2c",
+  "6k,6a,2u,2v",
+  "6k,8f,3u",
+  "1x,6k,4i,2u",
+  "6k,8a,4f,3u,2h"
+ ]
+}

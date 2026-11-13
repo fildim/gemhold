@@ -20,7 +20,7 @@ var sim: GameSim
 var _bake: SubViewport   # renders the ground shader once
 var _shaded: Sprite2D    # inside _bake: the terrain texture run through ground.gdshader
 var _base: Sprite2D      # the baked ground, drawn behind everything else here
-var biome := 0             # chapter look for the shader: 0 lowland, 1 crusade, 2 marsh (set by main)
+var biome := 0             # chapter look for the shader: 0 lowland, 1 crusade, 2 marsh, 3 siege mud (set by main)
 var _ripples: Sprite2D   # animated highlights over water (water_fx.gdshader), above the baked ground
 
 

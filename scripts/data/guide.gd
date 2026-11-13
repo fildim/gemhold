@@ -122,6 +122,21 @@ Guard the far bank, and don't collapse a bridge while Divers are coming."))
 		"The boss of the Drowned Marches (lair 30): [b]%d health[/b], a wide rain cloud and 3 gems. Every %d seconds her [b]surge[/b] washes chill and Dread off the heroes around her and lets them wade freely.
 
 Where she falls, Fenwalkers and Divers rise." % [e["T"]["hp"], roundi(Defs.SURGE["every"])]))
+	t.append(_t("Heroes", "Sapper",
+		"From the Siegeworks (lair 31). Fast, with a powder keg on his back. He runs off the road at the nearest tower within %.1f tiles, lights a fuse and [b]stuns it for %d seconds[/b], dying in the blast (no bounty).
+\nTowers on [b]raised tiles[/b] are out of his reach. Slay him while the fuse burns and the keg goes off among the heroes around him (%d damage). Towers aim for him first." % [Defs.SAPPER["reach"], roundi(Defs.STUN_TIME), Defs.SAPPER["dmg"]]))
+	t.append(_t("Heroes", "Pavior",
+		"From lair 32. The road behind him is [b]paved[/b]: other heroes walk %d%% faster on it. The paving fades %d seconds after he falls, so the earlier he dies, the shorter the fast stretch.
+\nTowers aim for him first." % [roundi((Defs.ZONE_SPEED["paved"] - 1.0) * 100), roundi(Defs.PAVE_FADE)]))
+	t.append(_t("Heroes", "Inquisitor",
+		"From lair 33. Tough and armoured. His censer smoke (the pale ring around him, %.1f tiles wide) [b]silences[/b] every tower inside it: no ability, no battle-hardened bonus, and %d%% slower fire or heating.
+\nOut-range him from raised tiles, or hit him with the Meteor. Your den is never silenced." % [e["i"]["censer"], roundi(Defs.SILENCE_SLOW * 100)]))
+	t.append(_t("Heroes", "Trebuchet",
+		"From lair 35. A siege engine: %d health and armour %d. It rolls until a tower is within %.1f tiles, sets up, then every %d seconds [b]buries the strongest tower in reach under rubble[/b]. It never takes gems.
+\nShrine beams and the Meteor break it. When the last wave is out and only engines are left, it packs up and rolls away." % [e["u"]["hp"], e["u"]["armor"], Defs.TREBUCHET["reach"], roundi(Defs.TREBUCHET["every"])]))
+	t.append(_t("Heroes", "The Iron Belfry",
+		"The boss of the Siegeworks (lair 40): a siege tower with [b]%d health[/b] and armour %d. Heroes walking in the %.1f tiles behind it [b]can't be targeted[/b] by towers or the den (the Meteor still hits them). Every %d seconds a Sapper jumps out.
+\nAt your den it unloads six Footmen and rolls away. Break it open earlier and its garrison spills out: Footmen, Knights and an Inquisitor." % [e["I"]["hp"], e["I"]["armor"], Defs.BELFRY["cover"], roundi(Defs.BELFRY["sapper"])]))
 	t.append(_t("Heroes", "Heroes get stronger",
 		"Each wave's heroes are tougher than the last. The game also watches how you play: when you crush a wave far from the cave, the next heroes come back much tougher; when a wave gets close, only a little. Heroes falling quickly toughen the rest of their own wave too.\n\n"
 		+ "[b]Riches draw heroes too.[/b] Gold you leave unspent above %d makes every following wave stronger. Spend it on towers and upgrades instead of saving it.\n\n" % roundi(Defs.THREAT["rich"])
@@ -142,6 +157,20 @@ The tide clock beside the wave counter shows it: the blue arc is high tide, the 
 		"A [b]Sluice Gate[/b] is yours from the start. Open it (%d mana) and a flood sweeps down its waterway: heroes in the water are pushed back and take %d damage through armour, boats triple. It takes %d seconds to fill again.
 
 A [b]Dark Altar[/b] is overgrown. Cut it free (%d mana) and towers within %.1f tiles deal %d%% more damage and grow battle-hardened faster." % [Defs.SITES["sluice"]["mana"], Defs.SITES["sluice"]["dmg"], roundi(Defs.SITES["sluice"]["recharge"]), Defs.SITES["altar"]["cut"], Defs.SITES["altar"]["range"], roundi(Defs.SITES["altar"]["dmg"] * 100)]))
+
+	# ------------------------------------------------------------ siege
+	t.append(_t("The Siegeworks", "Stunned, buried, silenced",
+		"Siege heroes can't destroy your towers, but they can stop them for a while. Tap a tower to see what is wrong with it:
+\n[b]Stunned[/b] (a Sapper's keg): no firing for %d seconds.
+[b]Buried[/b] (a Trebuchet's stone): no firing for %d seconds, or [b]Clear rubble[/b] at once for %d gold.
+[b]Silenced[/b] (an Inquisitor's censer): no ability, no battle-hardened bonus, slower, for as long as he is near.
+\nThe [b]Sturdy Foundations[/b] skill (The Hoard) makes all three weigh less." % [roundi(Defs.STUN_TIME), roundi(Defs.RUBBLE_TIME), Defs.RUBBLE_CLEAR]))
+	t.append(_t("The Siegeworks", "Signal Fires and Workshops",
+		"A [b]Signal Fire[/b] calls the heroes on: while it burns, every wave comes %d seconds sooner and barracks muster faster. Raze it (%d mana) for %d gold.
+\nA [b]Siege Workshop[/b] builds Trebuchets and rolls them onto its road while waves are coming. Raze it (%d mana) to stop it, for %d gold." % [roundi(Defs.SITES["beacon"]["sooner"]), Defs.SITES["beacon"]["cut"], Defs.SITES["beacon"]["bounty"], Defs.SITES["workshop"]["cut"], Defs.SITES["workshop"]["bounty"]]))
+	t.append(_t("The Siegeworks", "Dusk",
+		"On some lairs [b]night falls during the battle[/b], as a set wave begins. From then on you can only build where your den, towers, mines and wells give light, just as on a night mission.
+\nThe towers you build by day decide where you can build after dark. The lair's own night mission is dark from the start."))
 
 	# ------------------------------------------------------------ your powers
 	t.append(_t("Your powers", "Mana",
@@ -172,7 +201,7 @@ A [b]Dark Altar[/b] is overgrown. Cut it free (%d mana) and towers within %.1f t
 	t.append(_t("Progress", "Dark Arts",
 		"Your skills, opened from the map. [b]Every star is a skill point.[/b]\n\n"
 		+ "Each tower kind has its own tab: damage, attack speed, range, faster ranks and a stronger ability. [b]The Hoard[/b] tab gives your den more charges, every battle more starting gold, more mana or faster mana (Mana Spring), and the Meteor more damage.\n\n"
-		+ "More skills open as the campaign goes on: [b]The Land[/b] (mines, wells, cutting, raised tiles, Sluices and Altars) with Chapter II, and [b]tier II[/b] of every tree and the masteries with Chapter III. A tier that is still shut shows which chapter opens it.
+		+ "More skills open as the campaign goes on: [b]The Land[/b] (mines, wells, cutting, raised tiles, Sluices and Altars) with Chapter II, and [b]tier II[/b] of every tree and the masteries with Chapter III (Sturdy Foundations in The Hoard helps against siege heroes). A tier that is still shut shows which chapter opens it.
 
 "
 		+ "Tower skills apply to towers you build after buying them. [b]Refund all points[/b] any time to try a different plan."))
@@ -228,4 +257,6 @@ const ICONS := {
 	"Meteor": ["spell:meteor"], "Your den": ["orb"], "Woods": ["tree"], "Mines and wells": ["site:mine", "site:well"],
 	"Hero barracks": ["site:camp"], "Loot": ["coins", "potion"], "Dark Arts": ["book"], "Night missions": ["moon"],
 	"Score and Hall of Fame": ["trophy"], "Online races": ["flag"],
+	"Sapper": ["hero:a"], "Pavior": ["hero:v"], "Inquisitor": ["hero:i"], "Trebuchet": ["hero:u"], "The Iron Belfry": ["hero:I"],
+	"Stunned, buried, silenced": ["hero:u"], "Signal Fires and Workshops": ["site:beacon", "site:workshop"], "Dusk": ["moon"],
 }

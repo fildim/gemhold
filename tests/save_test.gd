@@ -520,7 +520,7 @@ func _random_save() -> SaveData:
 func _check_every_achievement_can_be_earned() -> void:
 	var s := SaveData.load_from(FILE + ".none")
 	var ids := []
-	for i in 30:
+	for i in 40:
 		ids.append("level_%02d" % (i + 1))
 		for m in [ids[i], SaveData.mission_id(ids[i], true)]:
 			s.best[m] = {"rank": "Brilliant", "kept": 5}
@@ -544,6 +544,18 @@ func _check_every_achievement_can_be_earned() -> void:
 	wet.best_flood = 5
 	wet.diver_meteor = 1
 	Achievements.check_battle(s, wet, 30)
+
+	# Chapter IV: siege, on Powder Road (Sappers) with no tower stunned, and Duskwall after nightfall.
+	var siege := _ending("level_31", false)
+	siege.keg_best = 3
+	siege.rubble_cleared = 10
+	siege.treb_fast = 1
+	siege.silence_proof = 1
+	siege.pavior_early = 1
+	Achievements.check_battle(s, siege, 31)
+	var dusk := _ending("level_37", false)
+	dusk.dark = true
+	Achievements.check_battle(s, dusk, 37)
 
 	var big := _ending("level_20", true)
 	big.gold = 2000

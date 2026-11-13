@@ -28,6 +28,8 @@ const ACH := {
 	"sink1": "hero:l", "sink_all": "hero:l", "drowned100": "hero:l",
 	"collapse_kill": "hero:e", "collapses25": "hero:e", "sluice5": "site:sluice", "sluices50": "site:sluice", "dry_feet": "hero:m",
 	"diver_meteor": "meteor", "altars10": "site:altar",
+	"chapter4": "banner", "sapper_keg": "hero:a", "no_stun": "hero:a", "rubble10": "hero:u", "trebuchet_fast": "hero:u",
+	"silence_proof": "hero:i", "pavior_early": "hero:v", "beacons10": "site:beacon", "workshops10": "site:workshop", "night_dusk": "moon",
 }
 ## Prefixes, checked in order: the first one an id starts with gives its glyph.
 const ACH_PREFIX := [
@@ -105,7 +107,7 @@ static func paint(ci: CanvasItem, k: String, xf := Transform2D.IDENTITY) -> void
 		k = for_achievement(k.trim_prefix("ach:"))
 	if k.begins_with("hero:"):
 		var code := k.trim_prefix("hero:")
-		var u: float = 33.0 if code != "x" else 28.0
+		var u: float = {"x": 28.0, "u": 22.0, "I": 14.0}.get(code, 33.0)
 		Paint.ellipse(ci, Vector2(0, 14 + u * 0.95), u * 0.8, u * 0.24, Color(0, 0, 0, 0.35))
 		Art.hero(ci, code, 0.0, 14.0, 14.0, u, 1.0, 0.35, tm)
 	elif k.begins_with("tower:"):
@@ -114,7 +116,7 @@ static func paint(ci: CanvasItem, k: String, xf := Transform2D.IDENTITY) -> void
 		var kind := k.trim_prefix("site:")
 		ci.draw_set_transform_matrix(xf * Transform2D(0.0, Vector2(1.4, 1.4), 0.0, Vector2.ZERO))
 		Paint.ellipse(ci, Vector2(2, 20), 30, 9, Color(0, 0, 0, 0.35))
-		Art.site(ci, kind, Vector2(0, 2), kind != "camp", tm, Vector2i.ZERO)
+		Art.site(ci, kind, Vector2(0, 2), not Defs.HERO_SITES.has(kind), tm, Vector2i.ZERO)
 		ci.draw_set_transform_matrix(xf)
 	elif k.begins_with("skill:"):
 		_skill(ci, k.trim_prefix("skill:"), xf)
