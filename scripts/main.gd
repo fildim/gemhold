@@ -20,6 +20,9 @@ var save: SaveData
 var on_map := true
 var level: Level
 var sim: GameSim
+const SHAKE_TIME := 0.35
+const SHAKE_PX := 7.0
+var _shake := 0.0         # seconds of screen shake left
 var speed := 1
 var paused := false
 var started := false
@@ -174,6 +177,10 @@ func _new_battle() -> void:
 	sim.toast.connect(hud.toast)
 	sim.ended.connect(_on_ended)
 	sim.sound.connect(Sfx.play)
+	sim.burst.connect(func(kind: String, _p: Vector2, _c: String) -> void:
+		if kind == "meteor" and Prefs.get_value("shake", true):
+			_shake = SHAKE_TIME)
+	_shake = 0.0
 	tutorial = Tutorial.new() if Tutorial.wanted(level_index, night) and race.is_empty() else null
 	hud.reset_rating()
 	ground.setup(level, sim)
@@ -235,6 +242,12 @@ func _process(delta: float) -> void:
 				beams += 1
 	Sfx.set_beams(beams)
 	Sfx.play_music("" if sim.over else (MUSIC.get(level.id, "mountain") if started else "map"))
+	_shake = maxf(0.0, _shake - delta)
+	var jolt := Vector2.ZERO   # a short screen shake when a meteor lands (off in Settings)
+	if _shake > 0.0:
+		jolt = Vector2(randf_range(-1.0, 1.0), randf_range(-1.0, 1.0)) * SHAKE_PX * _shake / SHAKE_TIME
+	ground.position = jolt
+	board.position = jolt
 	board.armed = armed
 	board.queue_redraw()
 	hud.refresh(sim, armed, speed, paused)

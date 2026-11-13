@@ -170,3 +170,17 @@ static func topics() -> Array:
 
 static func _t(group: String, name: String, text: String) -> Dictionary:
 	return {"group": group, "name": name, "text": text}
+
+
+## Pictures shown beside a topic's title (GameIcon keys), by topic name.
+const ICONS := {
+	"Your goal": ["gem"], "Waves": ["banner"], "Ratings and stars": ["star"], "Speed and pause": ["hourglass"],
+	"Building": ["towers"], "Warband Hut": ["tower:moss"], "Bone Crypt": ["tower:frost"], "Cinder Shrine": ["tower:ash"],
+	"High ground": ["hill"], "Ranks and abilities": ["skill:moss_ability", "skill:frost_ability", "skill:ash_ability"],
+	"Gem carriers": ["hero:k"], "Peasant, Footman, Scout": ["hero:p", "hero:f", "hero:s"], "Cleric": ["hero:c"],
+	"Knight": ["hero:k"], "Shieldbearer": ["hero:b"], "Cutpurse": ["hero:t"], "Warden": ["hero:w"], "Herald": ["hero:h"],
+	"Berserker": ["hero:r"], "Champion": ["hero:x"], "Heroes get stronger": ["up"], "Mana": ["potion"],
+	"Meteor": ["spell:meteor"], "Your den": ["orb"], "Woods": ["tree"], "Mines and wells": ["site:mine", "site:well"],
+	"Hero barracks": ["site:camp"], "Loot": ["coins", "potion"], "Dark Arts": ["book"], "Night missions": ["moon"],
+	"Score and Hall of Fame": ["trophy"], "Online races": ["flag"],
+}

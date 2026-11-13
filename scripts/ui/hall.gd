@@ -335,9 +335,7 @@ func _refresh_achievements() -> void:
 		var row := HBoxContainer.new()
 		row.add_theme_constant_override("separation", 14)
 		card.add_child(row)
-		var icon := _label(row, "★" if got else "☆", 40, Hud.GOLD if got else Color(Hud.DIM, 0.4))
-		icon.autowrap_mode = TextServer.AUTOWRAP_OFF
-		icon.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		row.add_child(GameIcon.make("ach:" + a["id"], 84, got))
 		var col := VBoxContainer.new()
 		col.add_theme_constant_override("separation", 0)
 		col.size_flags_horizontal = Control.SIZE_EXPAND_FILL

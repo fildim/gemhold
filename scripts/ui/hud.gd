@@ -125,14 +125,15 @@ func _make_theme() -> Theme:
 	for c in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color", "font_hover_pressed_color"]:
 		t.set_color(c, "Button", BONE)
 	t.set_color("font_disabled_color", "Button", Color(BONE, 0.4))
-	t.set_stylebox("normal", "Button", _box(PANEL_2, Color("5b4630"), 4, 8, 14))
-	t.set_stylebox("hover", "Button", _box(Color("3a2e22"), Color("7a5e40"), 4, 8, 14))
-	t.set_stylebox("pressed", "Button", _box(Color("1c160f"), Color("5b4630"), 1, 8, 14))
-	t.set_stylebox("disabled", "Button", _box(Color(PANEL_2, 0.5), Color(Color("5b4630"), 0.4), 4, 8, 14))
+	# Carved frames (Frames.carved): a bevelled rim, a groove and a faint gold inlay.
+	t.set_stylebox("normal", "Button", Frames.carved(PANEL_2, Color("6b5236"), 4, 14))
+	t.set_stylebox("hover", "Button", Frames.carved(Color("3a2e22"), Color("8a6a46"), 4, 14))
+	t.set_stylebox("pressed", "Button", Frames.carved(Color("1c160f"), Color("5b4630"), 1, 14))
+	t.set_stylebox("disabled", "Button", Frames.carved(Color(PANEL_2, 0.5), Color(Color("5b4630"), 0.45), 4, 14, false))
 	var focus := _box(Color(0, 0, 0, 0), GOLD, 2, 8, 14)
 	focus.set_border_width_all(2)
 	t.set_stylebox("focus", "Button", focus)
-	t.set_stylebox("panel", "PanelContainer", _box(PANEL, EDGE, 1, 10, 12))
+	t.set_stylebox("panel", "PanelContainer", Frames.carved(PANEL, EDGE, 0, 16))
 	var bar_bg := StyleBoxFlat.new()
 	bar_bg.bg_color = Color(0, 0, 0, 0.6)
 	bar_bg.set_corner_radius_all(5)
@@ -238,11 +239,11 @@ func _icon(kind: String) -> Control:
 	return ic
 
 
-## Opens the Sound window (effects and music sliders) over `host`, or over the HUD when
+## Opens the Settings window (effects and music sliders, screen shake) over `host`, or over the HUD when
 ## none is given. Also used on the level map.
 func sound_button(parent: Control, host: Control = null) -> Button:
 	var b := Button.new()
-	b.text = "Sound"
+	b.text = "Settings"
 	b.custom_minimum_size = Vector2(0, 48)
 	b.focus_mode = Control.FOCUS_NONE
 	b.pressed.connect(func() -> void: SoundWindow.open(self, host if host else self))

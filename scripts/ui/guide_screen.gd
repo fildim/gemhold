@@ -13,6 +13,7 @@ var _hud: Control
 var _topics: Array = []
 var _buttons: Array[Button] = []
 var _title: Label
+var _pics: HBoxContainer   # pictures of what the topic is about
 var _group: Label
 var _body: RichTextLabel
 var _body_scroll: ScrollContainer
@@ -110,12 +111,19 @@ func setup(hud: Control) -> void:
 	_group.add_theme_font_override("font", hud.bold_font)
 	_group.add_theme_font_size_override("font_size", 22)
 	cbox.add_child(_group)
+	var trow := HBoxContainer.new()
+	trow.add_theme_constant_override("separation", 10)
+	cbox.add_child(trow)
 	_title = Label.new()
 	_title.add_theme_font_override("font", hud.display_font)
 	_title.add_theme_font_size_override("font_size", 46)
 	_title.add_theme_color_override("font_color", Hud.GOLD)
 	_title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	cbox.add_child(_title)
+	_title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	trow.add_child(_title)
+	_pics = HBoxContainer.new()
+	_pics.add_theme_constant_override("separation", 8)
+	trow.add_child(_pics)
 	_accent = ColorRect.new()
 	_accent.custom_minimum_size = Vector2(0, 3)
 	cbox.add_child(_accent)
@@ -147,6 +155,10 @@ func _show(i: int) -> void:
 	_group.text = tp["group"].to_upper()
 	_group.add_theme_color_override("font_color", col)
 	_title.text = tp["name"]
+	for c in _pics.get_children():
+		c.queue_free()
+	for k: String in Guide.ICONS.get(tp["name"], []):
+		_pics.add_child(GameIcon.make(k, 92))
 	_accent.color = Color(col, 0.6)
 	_body.text = tp["text"]
 	_body_scroll.scroll_vertical = 0

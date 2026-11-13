@@ -1,7 +1,7 @@
 class_name SoundWindow
 extends Control
-## The Sound window: a slider for effects and one for music, opened from the Sound button on
-## the map and in battle. Covers its host with a dim backdrop; tapping outside the card or
+## The Settings window: a slider for effects and one for music, and the screen shake switch,
+## opened from the Settings button on the map and in battle. Covers its host with a dim backdrop; tapping outside the card or
 ## Close shuts it. Changes apply and save at once.
 
 const Hud := preload("res://scripts/ui/hud.gd")
@@ -47,7 +47,7 @@ func _build(hud: Control) -> void:
 	box.add_theme_constant_override("separation", 18)
 	card.add_child(box)
 	var h := Label.new()
-	h.text = "Sound"
+	h.text = "Settings"
 	h.add_theme_font_override("font", hud.display_font)
 	h.add_theme_font_size_override("font_size", 44)
 	h.add_theme_color_override("font_color", Hud.GOLD)
@@ -58,6 +58,15 @@ func _build(hud: Control) -> void:
 			Sfx.play("coin"))   # a sample at the new level
 	_row(hud, box, "Music", Sfx.music_volume(), func(v: float, done: bool) -> void:
 		Sfx.set_music_volume(v, done))
+	var shake := CheckButton.new()
+	shake.text = "Screen shake"
+	shake.button_pressed = Prefs.get_value("shake", true)
+	shake.focus_mode = Control.FOCUS_NONE
+	shake.add_theme_font_override("font", hud.bold_font)
+	shake.add_theme_font_size_override("font_size", 30)
+	shake.custom_minimum_size = Vector2(0, 60)
+	shake.toggled.connect(func(on: bool) -> void: Prefs.set_value("shake", on))
+	box.add_child(shake)
 	var close := Button.new()
 	close.text = "Close"
 	close.focus_mode = Control.FOCUS_NONE

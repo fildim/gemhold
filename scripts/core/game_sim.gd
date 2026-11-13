@@ -11,6 +11,9 @@ signal ground_changed
 signal light_changed
 ## A sound effect to play (see Sfx.SFX): the rules say what happened, the view decides how it sounds.
 signal sound(name: String)
+## A burst of particles for the view (see Board): "death" (code = the hero), "build", "meteor",
+## "pickup_coin", "pickup_potion". Purely cosmetic; nothing in the rules listens.
+signal burst(kind: String, pos: Vector2, code: String)
 
 
 class Enemy:
@@ -32,6 +35,8 @@ class Enemy:
 	var wave := 0         # which wave it marched with, 0 for barracks troops
 	var soak := 0.0       # seconds of Soaked left (in a ford or swimming, and SOAK_TIME after)
 	var swim := false     # swimming a flooded ford or a collapsed bridge: slow, and no Herald haste
+	var hit := 0.0        # seconds of hit flash left (view only)
+	var knock := Vector2.ZERO   # small knock-back offset in tiles from the last hit (view only)
 
 
 class Tower:
@@ -46,6 +51,7 @@ class Tower:
 	var rank := 0         # veterancy, 0..3
 	var beam: Enemy       # Cinder Shrine: the hero it is burning, or null
 	var heat := 0.0       # Cinder Shrine: 0..1, see Defs.HEAT_TIME
+	var born := -10.0     # battle time it was built or last upgraded (view only: squash and settle)
 	# Permanent bonuses from the skill tree, filled in when the tower is built.
 	var dmg_mul := 1.0
 	var rate_mul := 1.0
@@ -127,7 +133,7 @@ class Site:
 
 
 class Fx:
-	var kind := ""        # "boom" | "meteor" | "text"
+	var kind := ""        # "boom" | "meteor" | "text" | "shock" | "scorch"
 	var pos := Vector2.ZERO
 	var r := 0.0
 	var t := 0.0
@@ -418,6 +424,9 @@ func _update_enemies(dt: float) -> void:
 	for e: Enemy in enemies:
 		if e.hp <= 0.0:
 			continue   # slain this frame; removed below
+		if e.hit > 0.0:
+			e.hit -= dt
+			e.knock *= 0.8
 		if e.slow > 0.0:
 			e.slow -= dt
 		var sp: float = e.d["spd"] * ((1.0 - e.slow_amt) if e.slow > 0.0 else 1.0)
@@ -715,6 +724,8 @@ func _update_shots(dt: float) -> void:
 		if to.length() <= step:
 			s.done = true
 			if s.target != null and s.target.hp > 0.0:
+				s.target.hit = 0.12
+				s.target.knock = to.normalized() * 0.07
 				hurt(s.target, s.dmg, s.pierce, s.src)
 				if s.slow > 0.0:
 					s.target.slow_amt = maxf(s.slow, s.target.slow_amt) if s.target.slow > 0.0 else s.slow
@@ -747,6 +758,9 @@ func _update_fx(dt: float) -> void:
 		if f.kind == "meteor" and not f.hit and f.t >= Defs.METEOR["delay"]:
 			f.hit = true
 			_boom(f.pos, Defs.METEOR["radius"], 0.5)
+			_fx("shock", f.pos, Defs.METEOR["radius"] * 1.6, 0.5)
+			_fx("scorch", f.pos, Defs.METEOR["radius"] * 0.8, 8.0)
+			burst.emit("meteor", f.pos, "")
 			sound.emit("boom")
 			var before := kills
 			for e: Enemy in enemies:
@@ -777,6 +791,7 @@ func hurt(e: Enemy, dmg: float, pierce := false, src: Tower = null) -> void:
 			race_sends += String(e.d.get("send_as", e.code))
 		_text(e.pos + Vector2(0, -0.3), "+%d" % int(e.d["gold"]), Color("e8b84a"))
 		sound.emit("die")
+		burst.emit("death", e.pos, e.code)
 		if e.carry > 0:
 			var g := Drop.new()
 			g.pos = e.pos
@@ -881,6 +896,7 @@ func gather_loot() -> int:
 
 func _take_loot(l: Loot) -> void:
 	sound.emit(l.kind)
+	burst.emit("pickup_" + l.kind, l.pos, "")
 	if l.kind == "coin":
 		coins += 1
 		gold += l.amount
@@ -906,6 +922,16 @@ func _text(pos: Vector2, text: String, color: Color) -> void:
 	f.text = text
 	f.color = color
 	f.dur = 1.0
+	fx.append(f)
+
+
+## A drawn effect: "shock" (a ring sweeping out), "scorch" (burnt ground that fades).
+func _fx(kind: String, pos: Vector2, r: float, dur: float) -> void:
+	var f := Fx.new()
+	f.kind = kind
+	f.pos = pos
+	f.r = r
+	f.dur = dur
 	fx.append(f)
 
 
@@ -1125,6 +1151,8 @@ func do_action(id: String, c: Vector2i) -> String:
 		tw.xp_mul = 1.0 + 0.25 * skill(type + "_vet")
 		tw.ability_rank = skill(type + "_ability")
 		towers[c] = tw
+		tw.born = time
+		burst.emit("build", tw.pos, tw.type)
 		built[type] = true
 		towers_built += 1
 		built_count[type] = int(built_count.get(type, 0)) + 1
@@ -1189,6 +1217,8 @@ func do_action(id: String, c: Vector2i) -> String:
 			upgrades += 1
 			gold_spent += cost
 			tw.lvl += 1
+			tw.born = time
+			burst.emit("build", tw.pos, tw.type)
 			_cover.clear()   # range grew
 			sound.emit("upgrade")
 			if tw.has_ability() and tw.lvl == Defs.ABILITY_LEVEL:

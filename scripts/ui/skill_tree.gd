@@ -23,6 +23,7 @@ var _tabs: HBoxContainer
 var _list: VBoxContainer
 var _tab := "moss"          # the tree shown
 var _buttons: Array[Button] = []   # skill buttons on the shown tab
+var _pads := {}             # state -> padded button stylebox (see _padded)
 var _reset: Button
 var _reset_armed := false   # first tap on Refund done, waiting for the second
 var _reset_arms := 0        # counts armings, so a stale timer leaves a newer one alone
@@ -207,8 +208,27 @@ func _skill_button(sk: Dictionary) -> Button:
 		b.add_theme_color_override("font_disabled_color", Hud.GOLD)
 	elif r > 0:
 		b.add_theme_color_override("font_disabled_color", Color(Hud.BONE, 0.8))
+	# Its picture on the left, with the text moved over to make room.
+	for st: String in ["normal", "hover", "pressed", "disabled"]:
+		b.add_theme_stylebox_override(st, _padded(st))
+	var ic := GameIcon.make("skill:" + id, 78)
+	ic.set_anchors_preset(Control.PRESET_CENTER_LEFT)
+	ic.offset_left = 10
+	ic.offset_right = 88
+	ic.offset_top = -39
+	ic.offset_bottom = 39
+	b.add_child(ic)
 	b.pressed.connect(_on_buy.bind(id))
 	return b
+
+
+## The theme's button look with room on the left for a skill's picture.
+func _padded(state: String) -> StyleBox:
+	if not _pads.has(state):
+		var sb: StyleBox = _hud.theme.get_stylebox(state, "Button").duplicate()
+		sb.content_margin_left = 100
+		_pads[state] = sb
+	return _pads[state]
 
 
 func _on_buy(id: String) -> void:

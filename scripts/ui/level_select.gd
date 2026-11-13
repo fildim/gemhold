@@ -468,13 +468,7 @@ func _erase() -> void:
 
 
 func _draw() -> void:
-	draw_rect(Rect2(Vector2.ZERO, size), Hud.NIGHT)
-	# Faint patches of moss, frost and ash so the map reads as land, not a blank page.
-	var tints := [Color8(58, 74, 44), Color8(70, 86, 104), Color8(86, 60, 52)]
-	for k in 46:
-		var p := Vector2(Paint.hash01(k, 1) * size.x, Paint.hash01(k, 2) * size.y)
-		var r := 40.0 + Paint.hash01(k, 3) * 110.0
-		Paint.glow(self, p, r, Color(tints[k % 3], 0.22))
+	_draw_parchment()
 	# The trail between stops: bright where it has been walked, dim and dotted beyond.
 	var first := _page * PER_PAGE
 	for i in range(first, first + PER_PAGE - 1):
@@ -630,3 +624,99 @@ class Marker extends Control:
 ## For the tutorial spotlight.
 func skills_rect() -> Rect2:
 	return _skills.get_global_rect()
+
+
+# ---------------------------------------------------------------- the old map
+
+const INK := Color(0.86, 0.72, 0.5)
+
+
+## An old map drawn on dark, stained parchment: faint lines of latitude, a burnt edge, and ink
+## sketches of the chapter's country (lowland hills, woods and a river; the crusade's castles,
+## camps and mountains), kept clear of the lair markers.
+func _draw_parchment() -> void:
+	draw_rect(Rect2(Vector2.ZERO, size), Color("211810"))
+	for k in 40:   # stains, lighter and darker
+		var p := Vector2(Paint.hash01(k, 1, _page) * size.x, Paint.hash01(k, 2, _page) * size.y)
+		var r := 50.0 + Paint.hash01(k, 3, _page) * 140.0
+		Paint.glow(self, p, r, Color("4a3a24", 0.3) if k % 3 else Color(0, 0, 0, 0.25))
+	for i in range(1, 6):   # lines of latitude, dashed
+		var y := size.y * i / 6.0 + sin(i * 1.7) * 12.0
+		for x in range(0, int(size.x), 28):
+			draw_line(Vector2(x, y), Vector2(x + 14, y + sin((x + i * 50) * 0.004) * 6.0), Color(INK, 0.05), 1.5)
+	var first := _page * PER_PAGE
+	var spots: Array[Vector2] = []
+	for i in range(first, first + PER_PAGE):
+		spots.append(_spot(i))
+	if _page == 0:
+		_river(spots)
+	for k in 70:
+		var p := Vector2(Paint.hash01(k, 11, _page) * size.x, (0.12 + Paint.hash01(k, 12, _page) * 0.8) * size.y)
+		if spots.any(func(s: Vector2) -> bool: return s.distance_to(p) < 125.0):
+			continue
+		var r := 14.0 + Paint.hash01(k, 13, _page) * 14.0
+		var kind := int(Paint.hash01(k, 14, _page) * 4.0)
+		var col := Color(INK, 0.16 + Paint.hash01(k, 15, _page) * 0.08)
+		if _page % 2 == 0:
+			match kind:
+				0, 1: _hill(p, r, col)
+				2: _wood(p, r, col)
+				_: _field(p, r, col)
+		else:
+			match kind:
+				0: _castle(p, r, col)
+				1: _tent(p, r, col)
+				_: _mountain(p, r, col)
+	for i in 14:   # a burnt, darkened edge
+		var a := 0.07 * (1.0 - i / 14.0)
+		var w := i * 6.0
+		draw_rect(Rect2(w, w, size.x - 2.0 * w, size.y - 2.0 * w), Color(0, 0, 0, a), false, 6.0)
+
+
+func _hill(p: Vector2, r: float, col: Color) -> void:
+	draw_arc(p, r, PI * 1.1, PI * 1.9, 12, col, 2.0, true)
+	draw_arc(p + Vector2(r * 0.9, r * 0.25), r * 0.7, PI * 1.1, PI * 1.9, 10, col, 2.0, true)
+
+
+func _wood(p: Vector2, r: float, col: Color) -> void:
+	for j in 3:
+		var q := p + Vector2((j - 1) * r * 0.7, (j % 2) * r * 0.3)
+		draw_circle(q - Vector2(0, r * 0.4), r * 0.35, col)
+		draw_line(q - Vector2(0, r * 0.1), q + Vector2(0, r * 0.35), col, 2.0)
+
+
+func _field(p: Vector2, r: float, col: Color) -> void:
+	for j in 4:
+		var x := p.x - r + j * r * 0.6
+		draw_line(Vector2(x, p.y - r * 0.4), Vector2(x + r * 0.5, p.y + r * 0.4), col, 1.5)
+
+
+func _castle(p: Vector2, r: float, col: Color) -> void:
+	draw_rect(Rect2(p - Vector2(r * 0.7, r * 0.6), Vector2(r * 1.4, r * 1.0)), col, false, 2.0)
+	for j in 3:
+		draw_rect(Rect2(p + Vector2(-r * 0.7 + j * r * 0.55, -r * 0.85), Vector2(r * 0.3, r * 0.25)), col)
+	draw_line(p + Vector2(0, -r * 0.85), p + Vector2(0, -r * 1.4), col, 1.5)
+	draw_colored_polygon(PackedVector2Array([p + Vector2(0, -r * 1.4), p + Vector2(r * 0.4, -r * 1.28), p + Vector2(0, -r * 1.16)]), col)
+
+
+func _tent(p: Vector2, r: float, col: Color) -> void:
+	draw_polyline(PackedVector2Array([p + Vector2(-r * 0.7, r * 0.4), p + Vector2(0, -r * 0.6), p + Vector2(r * 0.7, r * 0.4), p + Vector2(-r * 0.7, r * 0.4)]), col, 2.0, true)
+	draw_line(p + Vector2(0, -r * 0.6), p + Vector2(0, r * 0.4), col, 1.5)
+
+
+func _mountain(p: Vector2, r: float, col: Color) -> void:
+	draw_polyline(PackedVector2Array([p + Vector2(-r * 1.2, r * 0.5), p + Vector2(-r * 0.3, -r * 0.7), p + Vector2(r * 0.2, -r * 0.1), p + Vector2(r * 0.6, -r * 0.5), p + Vector2(r * 1.2, r * 0.5)]), col, 2.0, true)
+	draw_line(p + Vector2(-r * 0.3, -r * 0.7), p + Vector2(-r * 0.1, -r * 0.2), col, 1.5)
+
+
+## Chapter I's river: a wavy double line across the map, passing between the rows of lairs.
+func _river(_spots: Array[Vector2]) -> void:
+	var pts := PackedVector2Array()
+	for k in 41:
+		var x := size.x * k / 40.0
+		pts.append(Vector2(x, size.y * (0.5 + 0.06 * sin(k * 0.45)) + 18.0 * sin(k * 1.3)))
+	draw_polyline(pts, Color(INK, 0.14), 3.0, true)
+	var pts2 := PackedVector2Array()
+	for q in pts:
+		pts2.append(q + Vector2(0, 10))
+	draw_polyline(pts2, Color(INK, 0.08), 2.0, true)
