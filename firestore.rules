@@ -11,7 +11,7 @@ service cloud.firestore {
         && request.resource.data.keys().hasOnly(['name', 'total', 'stars', 'rw', 'rl', 'scores', 'ach', 'updated', 'unlocked', 'best', 'skills', 'skills_t', 'reset_t', 'stats', 'full'])
         && (!('full' in request.resource.data) || request.resource.data.full is bool)
         && (!('unlocked' in request.resource.data) || (request.resource.data.unlocked is int && request.resource.data.unlocked >= 1 && request.resource.data.unlocked <= 100))
-        && (!('best' in request.resource.data) || (request.resource.data.best is map && request.resource.data.best.size() <= 100))
+        && (!('best' in request.resource.data) || (request.resource.data.best is map && request.resource.data.best.size() <= 150))
         && (!('skills' in request.resource.data) || (request.resource.data.skills is map && request.resource.data.skills.size() <= 100))
         && (!('skills_t' in request.resource.data) || (request.resource.data.skills_t is int && request.resource.data.skills_t >= 0))
         && (!('reset_t' in request.resource.data) || (request.resource.data.reset_t is int && request.resource.data.reset_t >= 0))
@@ -24,7 +24,7 @@ service cloud.firestore {
         && request.resource.data.total >= 0 && request.resource.data.total <= 10000000
         && request.resource.data.stars is int
         && request.resource.data.stars >= 0 && request.resource.data.stars <= 200
-        && request.resource.data.scores is map && request.resource.data.scores.size() <= 100
+        && request.resource.data.scores is map && request.resource.data.scores.size() <= 150
         && request.resource.data.ach is list && request.resource.data.ach.size() <= 500
         && request.resource.data.updated == request.time;
     }

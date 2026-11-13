@@ -151,6 +151,10 @@ A tower that is level III **and** has learned its ability can be upgraded once m
 
 Level IV base stats (add a fourth entry to each array in `Defs.TOWERS`): Hut 22 damage, 3.0 range, 0.33 s; Crypt 66 damage, 2.9 range, 1.25 s, 70% slow; Shrine 18 damage/s, 2.7 range.
 
+**Plunder** (the owner's idea, 2026-11-13; replaces the Scavengers skill). A level IV Hut, whichever mastery, loots what it kills: its first kill as level IV pays +1 gold on top of the bounty, the second +2, and so on, **up to +5 a kill** (`Defs.PLUNDER_MAX`). The count belongs to that Hut and is lost if it is sold. Show the current bonus in the tile panel ("Plunder: +3 a kill") and as the gold number that floats up.
+
+Why it is capped: without a cap, 60 kills would pay 1,830 gold and 100 kills 5,050, against a target of the bot ending a lair with 0–400 gold; doubling each kill passes a million gold at the twentieth. Capped at +5, a Hut that makes 60 kills as level IV pays about 285 extra, roughly what it cost to get there, and it keeps the reward of steering kills to that Hut. Tune the cap with `tests/difficulty.gd` (bot's gold at the end, and the threat's rich-gold rule still biting). Plunder is extra to the Hut's fighting strength, so keep the combat balance targets below as they are and, if the Hut becomes the obvious first level IV in every lair, lower the cap before touching its damage.
+
 | Tower | Mastery A | Mastery B |
 |---|---|---|
 | Warband Hut | **Longhouse**: every shot is three arrows at up to three heroes (the two extra at Volley strength). Crowd killer | **Hunter's Lodge**: one heavy javelin, 1.6× slower, 2.6× damage, ignores armour, aims at the healthiest hero after gem carriers, and marks him for 4 s (+15% damage from everything) |
@@ -170,7 +174,7 @@ Each gets a spotlight tip the first battle after it is unlocked.
 
 ## 7. Dark Arts v2
 
-Today there are 59 points to spend and 120 stars to earn, so a thorough player already runs out of things to buy. With 50 lairs there are 300 stars; a typical player (2.4 per lair) holds about 120 by the finale. The new tree holds 141 points of power plus a score-only sink.
+Today there are 59 points to spend and 120 stars to earn, so a thorough player already runs out of things to buy. With 50 lairs there are 300 stars; a typical player (2.4 per lair) holds about 120 by the finale. The new tree holds 139 points of power plus a score-only sink.
 
 **Screen:** five trees no longer fit as columns with big text. Use one tab per tree (Huts, Crypts, Shrines, The Hoard, The Land); each tab lists its skills as large buttons in tier sections. A locked tier shows its header ("Opens at 60 ★") with the skills dimmed, so the player sees what is coming. Keep Refund all.
 
@@ -182,7 +186,6 @@ Today there are 59 points to spend and 120 stars to earn, so a thorough player a
 |---|---|---|---|
 | Huts | Bodkin Points | Arrows ignore 1 armour | 2 |
 | Huts | Keen Eyes | +10% damage to gem carriers | 3 |
-| Huts | Scavengers | Hut kills pay +1 gold | 2 |
 | Huts | Mastery: Longhouse | Unlocks it | 1 |
 | Huts | Mastery: Hunter's Lodge | Unlocks it | 1 |
 | Crypts | Deep Freeze | Chill lasts 0.4 s longer | 3 |
@@ -224,7 +227,7 @@ Today there are 59 points to spend and 120 stars to earn, so a thorough player a
 | Hoard | Dragon's Patience | +10 starting mana | 3 |
 | Hoard | Renown | +1% leaderboard score; no effect on battles | 150 |
 
-Totals: 59 + 39 (tier II) + 20 (The Land) + 23 (tier III) = 141, plus Renown. `SaveData._skill_max` already ignores unknown ids, so old saves load. A skill's tier gate is checked in `can_buy`; a refund never locks a tier (gates count stars earned, not spent). The achievement "Omniscient" (`arts59`) must count the real total without Renown.
+Totals: 59 + 37 (tier II) + 20 (The Land) + 23 (tier III) = 139, plus Renown. `SaveData._skill_max` already ignores unknown ids, so old saves load. A skill's tier gate is checked in `can_buy`; a refund never locks a tier (gates count stars earned, not spent). The achievement "Omniscient" (`arts59`) must count the real total without Renown.
 
 Update `Bot.SKILL_ORDER` and `Bot.points_before` in `tests/bot.gd` to buy tier II and III skills at the pace of a 2.4-star player, and teach the bot to: take a mastery when offered (alternate A and B by tile), cast Nightmare on a chanting Spiriter and Frenzy on a stunned cluster, collapse bridges when no Diver is in the wave, use Sluices on boats, clear Rubble, and raze Chapels and Signal Fires before woods.
 
@@ -262,7 +265,7 @@ Check glow before relying on it: the game runs on the Compatibility renderer eve
 | [OpenGameArt](https://opengameart.org) | Assorted; check each item's licence | per item |
 | [Blender](https://www.blender.org) with [BlenderSpriteGenerator](https://github.com/RubielGames/BlenderSpriteGenerator) or [blender-sprite-render](https://github.com/coreway-labs/blender-sprite-render) | G5 only: batch-render models to sprites from the command line. Quaternius and KayKit model packs are commonly CC0; verify per pack | GPL tool; check each add-on |
 
-None of these is installed on the owner's PC yet. Downloading any of them needs the owner's go-ahead.
+Installed on the owner's PC on 2026-11-13 as portable copies in `Desktop	ools`: `inkscapeinkscapebininkscape.exe` (1.4.4), `kritakrita-x64-6.0.4.1binkrita.exe`, `material-makermaterial_maker_1_8_windowsmaterial_maker.exe` (1.8), `laigteraigter-windowsaigter.exe` (1.14.0). Inkscape renders SVG from the command line (`inkscape in.svg --export-type=png --export-width=N`), so drawn art can be authored as SVG text and rasterised without the GUI. Krita is a painting program for a person; do not plan work that needs it driven by script. Anything else on the list still needs the owner's go-ahead to download.
 
 ## 9. The thirty new lairs
 
@@ -315,7 +318,8 @@ Each lair turns one lever nobody has seen yet, then later lairs mix levers. Grid
 | 49 | The Last Procession | 4 land, 1 river, 2 air | Every hero in the game | 22 | Each wave revisits one earlier chapter |
 | 50 | The Seraph's Descent | 3 land, 2 air | Seraph (boss) | 24 | Seven gems. Champions in waves 18 and 21, the Seraph in 24 |
 
-**Music.** Thirty lairs need tracks; `MUSIC.get(level.id, "mountain")` would play the tutorial theme on all of them. Until the owner picks new ones through the usual workflow (candidates in `Desktop\Gemhold music to try`, public-domain, CC0 or CC-BY only, credited), give each new lair the track of an earlier lair from a different chapter so no two neighbours share one, and list the borrowed ones in `DEVELOPMENT.md` so they are easy to replace.
+**Music.** Decided 2026-11-13: lairs without a chosen track play no battle music. Change the fallback in `main.gd` (`MUSIC.get(level.id, "mountain")`) to silence. The owner is auditioning candidates in `DesktopGemhold music to try
+ew` (52 tracks on 2026-11-13, each with source and licence in `SOURCES.txt`: CC0, CC-BY or OGA-BY only). Some downloads are the site's preview encodes; when a track is chosen, fetch the best original from its source page before cutting it. Give a lair its track only when the owner names it, then follow the usual workflow (cut the loudest 150 s, -14 LUFS, credit, remove from the folder).
 
 ## 10. Achievements v2
 
@@ -349,7 +353,7 @@ Add the stats these need to `GameSim` and `Achievements.record`. `firestore.rule
 
 Fix in Phase 0, before any content:
 
-- **Firestore rules** cap `best` and `scores` at 100 entries. Fifty lairs by day and night is exactly 100, with no room for anything else. Raise both to 150. Deploying rules needs the owner's explicit OK; until then nothing breaks.
+- **Firestore rules**: done. `best` and `scores` now allow 150 entries (raised from 100 and deployed 2026-11-13), which leaves room beyond the 100 missions of 50 lairs.
 - **Achievements**: the table in §10.
 - **Score**: each lair is worth 10% more than the last, so lair 50 scores ×5.9. Keep it (late lairs should dominate the board) and add the higher score achievements.
 - **`tests/bot.gd`**: `SKILL_ORDER` has 56 entries and `points_before` caps there.
@@ -393,8 +397,8 @@ Not part of this plan; they need decisions or new backend rules.
 
 ## 14. Decisions for the owner
 
-1. **Music** for lairs 21–50: pick tracks, or accept borrowed ones for now.
-2. **Firestore caps**: allow raising `best` and `scores` to 150 and deploying the rules.
+1. **Music**: decided: no music on a new lair until the owner picks its track (§9).
+2. **Firestore caps**: done, raised to 150 and deployed.
 3. **Graphics direction**: decided 2026-11-13: keep the drawn style, passes G1–G4 only.
-4. **Tool downloads**: Inkscape, Krita, Material Maker and Laigter are needed for G2–G4.
-5. **Scavengers** (Hut kills pay +1 gold) touches the economy the threat system guards; drop it if it makes gold too easy.
+4. **Tools**: Inkscape, Krita, Material Maker and Laigter are installed (§8).
+5. **Plunder** (§5): the cap of +5 gold is a starting value; the owner may want it higher once the bot's end-of-lair gold is measured.
