@@ -60,6 +60,14 @@ class Tower:
 	var beam: Enemy       # Cinder Shrine: the hero it is burning, or null
 	var heat := 0.0       # Cinder Shrine: 0..1, see Defs.HEAT_TIME
 	var altars := 0       # freed Dark Altars in reach (see GameSim._attune)
+	var mastery := ""     # level IV: "longhouse", "lodge", "ossuary", "mausoleum", "twin" or "sunlance"
+	var plunder := 0      # level IV Hut: kills since it became level IV (see Defs.PLUNDER_MAX)
+	var charges := 0      # Ossuary: bolts stored
+	var volley_t := 0.0   # Ossuary: seconds to the next stored bolt
+	var volley_hits: Array = []   # Ossuary: heroes already hit in this volley
+	var beam2: Enemy      # Twin Flame: the second beam's hero
+	var heat2 := 0.0
+	var frenzy := 0.0     # seconds of Frenzy left: fires and heats faster
 	var born := -10.0     # battle time it was built or last upgraded (view only: squash and settle)
 	# Permanent bonuses from the skill tree, filled in when the tower is built.
 	var dmg_mul := 1.0
@@ -75,7 +83,12 @@ class Tower:
 			"dmg":
 				return v * dmg_mul * (1.0 + Defs.RANK_DMG * rank) * (altar_mul if altars > 0 else 1.0)
 			"rate":
-				return v / rate_mul
+				var r := v / rate_mul
+				if mastery == "lodge":
+					r *= Defs.LODGE["rate"]
+				if frenzy > 0.0:
+					r /= Defs.FRENZY["speed"]
+				return r
 			"range":
 				return v + range_add
 		return v
@@ -99,6 +112,9 @@ class Shot:
 	var slow := 0.0
 	var fear := 0.0       # chance to terrify on hit
 	var pierce := false   # ignores armour (den bolts)
+	var ap := 0           # armour it ignores (Bodkin Points)
+	var mark := 0.0       # Hunter's Lodge: marks its hero this long
+	var burst := false    # Mausoleum: hurts and chills the heroes around its target too
 	var src: Tower        # gets the XP for damage dealt
 	var spd := 8.0
 	var done := false
@@ -235,6 +251,16 @@ var water_kills := 0      # heroes slain in water (fords, swimming, boats)
 var floods := 0           # Sluice surges sent
 var best_flood := 0       # most heroes one surge slew
 var diver_meteor := 0     # hidden Divers slain by a meteor
+var plundered := 0        # gold Plunder paid
+var masteries_built := {} # mastery id -> how many towers became it this battle
+var nightmares := 0       # Nightmares cast
+var best_nightmare := 0   # most heroes one Nightmare struck
+var frenzies := 0         # Frenzies cast
+var twin_t := -10.0       # battle time a Twin Flame last slew a hero (twin_kills)
+var twin_kills := 0       # a Twin Flame slew two heroes within a second
+var best_ossuary := 0     # most heroes slain by one Ossuary volley
+var lodge_champion := 0   # a Hunter's Lodge landed the killing blow on a Champion
+var sunlance_best := 0    # most heroes burning on one Sunlance at once
 var paved: Array = []     # per road: [{"from", "to"}] stretches a Pavior has paved
 var tide_up := false      # the tide is in: fords are deep
 
@@ -814,16 +840,17 @@ func _update_drops(dt: float) -> void:
 
 
 ## Who a tower shoots: gem carriers first, then special heroes (Cleric, Shieldbearer, Warden, Herald),
-## then whoever has the least health left. Skips `skip`.
-func _pick_target(tw: Tower, skip: Enemy = null) -> Enemy:
+## then whoever has the least health left. Skips `skip` and `skips`; a Hunter's Lodge (healthiest)
+## wants the toughest hero after gem carriers. Hidden Divers are never picked.
+func _pick_target(tw: Tower, skip: Enemy = null, skips: Array = [], healthiest := false) -> Enemy:
 	var rg := tw.stat("range")
 	var best: Enemy = null
 	var best_score := -INF
 	for e: Enemy in enemies:
-		if e == skip or e.hp <= 0.0 or e.hidden or e.pos.distance_to(tw.pos) > rg:
+		if e == skip or e.hp <= 0.0 or e.hidden or e.pos.distance_to(tw.pos) > rg or (not skips.is_empty() and skips.has(e)):
 			continue
-		var score := -e.hp
-		if e.d.get("special", false):
+		var score := e.hp if healthiest else -e.hp
+		if e.d.get("special", false) and not healthiest:
 			score += 100000.0
 		if e.carry > 0:
 			score += 1000000.0
@@ -837,13 +864,18 @@ func _update_towers(dt: float) -> void:
 	for tw: Tower in towers.values():
 		if tw.flash > 0.0:
 			tw.flash -= dt
+		if tw.frenzy > 0.0:
+			tw.frenzy -= dt
 		if Defs.TOWERS[tw.type]["kind"] == "beam":
 			_update_beam(tw, dt)
+			continue
+		if tw.mastery == "ossuary":
+			_update_ossuary(tw, dt)
 			continue
 		tw.cd -= dt
 		if tw.cd > 0.0:
 			continue
-		var best := _pick_target(tw)
+		var best := _pick_target(tw, null, [], tw.mastery == "lodge")
 		if best == null:
 			continue
 		tw.cd = tw.stat("rate")
@@ -851,38 +883,121 @@ func _update_towers(dt: float) -> void:
 		var s := _make_shot(tw, best)
 		shots.append(s)
 		sound.emit("hut" if s.kind == "arrow" else "crypt")
-		if tw.type == "moss" and tw.has_ability():
-			var second := _pick_target(tw, best)
-			if second != null:
-				var v := _make_shot(tw, second)
-				v.dmg *= tw.ability_power()
+		if tw.type == "moss" and tw.has_ability() and tw.mastery != "lodge":
+			# Volley: a second arrow at another hero; a Longhouse looses two more.
+			var skips: Array = [best]
+			for k in (2 if tw.mastery == "longhouse" else 1):
+				var other := _pick_target(tw, best, skips)
+				if other == null:
+					break
+				skips.append(other)
+				var v := _make_shot(tw, other)
+				v.dmg *= maxf(tw.ability_power(), Defs.LONGHOUSE_SHARE) if tw.mastery == "longhouse" else tw.ability_power()
 				shots.append(v)
+
+
+## Ossuary: a bolt is stored every reload, hero or not, up to four; then they fly 0.3 s apart at
+## different heroes, unchilled ones first.
+func _update_ossuary(tw: Tower, dt: float) -> void:
+	tw.cd -= dt
+	if tw.charges >= Defs.OSSUARY["charges"]:
+		tw.cd = maxf(tw.cd, 0.0)
+	elif tw.cd <= 0.0:
+		tw.charges += 1
+		tw.cd = tw.stat("rate")
+	tw.volley_t -= dt
+	if tw.charges <= 0 or tw.volley_t > 0.0:
+		return
+	var rg := tw.stat("range")
+	var best: Enemy = null
+	var best_score := -INF
+	for e: Enemy in enemies:
+		if e.hp <= 0.0 or e.hidden or e.pos.distance_to(tw.pos) > rg:
+			continue
+		var score := -e.hp
+		if not tw.volley_hits.has(e):
+			score += 10000000.0
+		if e.slow <= 0.0:
+			score += 1000000.0
+		if e.carry > 0:
+			score += 100000.0
+		if score > best_score:
+			best_score = score
+			best = e
+	if best == null:
+		tw.volley_hits.clear()
+		return
+	tw.charges -= 1
+	tw.volley_t = Defs.OSSUARY["gap"]
+	tw.volley_hits.append(best)
+	if tw.charges == 0:
+		tw.volley_hits.clear()
+	tw.flash = 0.15
+	shots.append(_make_shot(tw, best))
+	sound.emit("crypt")
 
 
 ## The Cinder Shrine burns one hero without pause. It holds that hero until it dies or leaves
 ## range (or a gem carrier shows up), and its damage grows with heat. Armour does not stop it.
+## A Twin Flame runs two beams, each with its own heat; a Sunlance burns through to the heroes behind.
 func _update_beam(tw: Tower, dt: float) -> void:
-	var b := tw.beam
+	if tw.mastery == "twin":
+		_beam(tw, dt, 0, Defs.TWIN_DMG)
+		_beam(tw, dt, 1, Defs.TWIN_SAME if tw.beam2 != null and tw.beam2 == tw.beam else Defs.TWIN_DMG)
+	else:
+		_beam(tw, dt, 0, 1.0)
+
+
+func _beam(tw: Tower, dt: float, slot: int, share: float) -> void:
+	var b := tw.beam if slot == 0 else tw.beam2
+	var heat := tw.heat if slot == 0 else tw.heat2
 	var lost_hold := b == null or b.hp <= 0.0 or b.gone or b.hidden or b.pos.distance_to(tw.pos) > tw.stat("range")
 	if lost_hold or b.carry == 0:
-		var best := _pick_target(tw)
+		var best := _pick_target(tw, tw.beam if slot == 1 else null)
+		if best == null and slot == 1:
+			best = _pick_target(tw)   # only one hero in reach: both beams burn him
 		if best != b and (lost_hold or (best != null and best.carry > 0)):
-			tw.beam = best
-			tw.heat *= Defs.HEAT_KEEP
+			b = best
+			var keep := Defs.HEAT_KEEP + 0.1 * skill("ash_memory")
+			if tw.mastery == "sunlance":
+				keep = maxf(keep, Defs.SUNLANCE["keep"])
+			heat *= keep
 			tw.cd = 0.0
 	var rate := dt * tw.rate_mul / Defs.HEAT_TIME
-	if tw.beam == null:
-		tw.heat = maxf(0.0, tw.heat - rate)
-		return
-	var e := tw.beam
-	tw.heat = minf(1.0, tw.heat + (rate * Defs.SOAK_HEAT if e.soak > 0.0 else rate))   # wet heroes heat slower
-	if not rains.is_empty() and in_rain(e.pos):
-		tw.heat = minf(tw.heat, Defs.RAIN_HEAT)   # under a Rainbringer's cloud the beam stays cool
-	tw.flash = 0.15
-	var dps := tw.stat("dmg") * (1.0 + (Defs.HEAT_MAX - 1.0) * tw.heat)
-	hurt(e, dps * dt, true, tw)
-	if e.hp <= 0.0:
-		tw.beam = null
+	if tw.frenzy > 0.0:
+		rate *= Defs.FRENZY["speed"]
+	if b == null:
+		heat = maxf(0.0, heat - rate)
+	else:
+		heat = minf(1.0, heat + (rate * Defs.SOAK_HEAT if b.soak > 0.0 else rate))   # wet heroes heat slower
+		if not rains.is_empty() and in_rain(b.pos):
+			heat = minf(heat, Defs.RAIN_HEAT)   # under a Rainbringer's cloud the beam stays cool
+		tw.flash = 0.15
+		var dps := tw.stat("dmg") * (1.0 + (Defs.HEAT_MAX + 0.4 * skill("ash_core") - 1.0) * heat) * share
+		hurt(b, dps * dt, true, tw)
+		if tw.mastery == "sunlance":
+			_lance(tw, b, dps * dt * Defs.SUNLANCE["share"])
+		if b.hp <= 0.0:
+			b = null
+	if slot == 0:
+		tw.beam = b
+		tw.heat = heat
+	else:
+		tw.beam2 = b
+		tw.heat2 = heat
+
+
+## Sunlance: every other hero on the line from the shrine through its target, out to its range.
+func _lance(tw: Tower, target: Enemy, dmg: float) -> void:
+	var dir := (target.pos - tw.pos).normalized()
+	var rg := tw.stat("range")
+	for o: Enemy in enemies:
+		if o == target or o.hp <= 0.0 or o.hidden:
+			continue
+		var rel := o.pos - tw.pos
+		var along := rel.dot(dir)
+		if along > 0.0 and along <= rg and absf(rel.cross(dir)) <= float(o.d["r"]) + 0.15:
+			hurt(o, dmg, true, tw)
 
 
 func _make_shot(tw: Tower, target: Enemy) -> Shot:
@@ -898,6 +1013,15 @@ func _make_shot(tw: Tower, target: Enemy) -> Shot:
 	if tw.has_ability():
 		if tw.type == "frost":
 			s.fear = tw.ability_power()
+	if tw.type == "moss":
+		s.ap = skill("moss_bodkin")
+	match tw.mastery:
+		"lodge":   # a heavy javelin: armour does not stop it, and it marks its hero
+			s.dmg *= Defs.LODGE["dmg"]
+			s.pierce = true
+			s.mark = Defs.LODGE["mark"]
+		"mausoleum":
+			s.burst = true
 	s.spd = 8.0
 	return s
 
@@ -913,16 +1037,29 @@ func _update_shots(dt: float) -> void:
 			if s.target != null and s.target.hp > 0.0:
 				s.target.hit = 0.12
 				s.target.knock = to.normalized() * 0.07
-				hurt(s.target, s.dmg, s.pierce, s.src)
-				if s.slow > 0.0 and not s.target.d.has("steady"):
-					s.target.slow_amt = maxf(s.slow, s.target.slow_amt) if s.target.slow > 0.0 else s.slow
-					s.target.slow = Defs.SLOW_TIME * Defs.SOAK_CHILL if s.target.soak > 0.0 else Defs.SLOW_TIME
-				if s.fear > 0.0 and s.target.hp > 0.0 and rng.randf() < s.fear and not s.target.d.has("steady"):
-					s.target.fear = Defs.ABILITIES["frost"]["dur"]
-					dreads += 1
+				var at := s.target.pos
+				_strike(s, s.target, s.dmg)
+				if s.burst:   # Mausoleum: the bolt bursts over the heroes close by
+					for o: Enemy in enemies.duplicate():
+						if o != s.target and o.hp > 0.0 and o.pos.distance_to(at) <= Defs.MAUSOLEUM["r"]:
+							_strike(s, o, s.dmg * Defs.MAUSOLEUM["share"])
 		else:
 			s.pos += to.normalized() * step
 	shots = shots.filter(func(s: Shot) -> bool: return not s.done)
+
+
+## One hit of a shot on one hero: damage, then chill, Dread and a Hunter's mark.
+func _strike(s: Shot, e: Enemy, dmg: float) -> void:
+	hurt(e, dmg, s.pierce, s.src, s.ap)
+	if s.mark > 0.0:
+		e.mark = s.mark
+	if s.slow > 0.0 and not e.d.has("steady"):
+		e.slow_amt = maxf(s.slow, e.slow_amt) if e.slow > 0.0 else s.slow
+		var chill := Defs.SLOW_TIME + 0.4 * skill("frost_freeze")
+		e.slow = chill * Defs.SOAK_CHILL if e.soak > 0.0 else chill
+	if s.fear > 0.0 and e.hp > 0.0 and rng.randf() < s.fear and not e.d.has("steady"):
+		e.fear = Defs.ABILITIES["frost"]["dur"] + 0.3 * skill("frost_dread")
+		dreads += 1
 
 
 func _update_pools(dt: float) -> void:
@@ -961,12 +1098,18 @@ func _update_fx(dt: float) -> void:
 	fx = fx.filter(func(f: Fx) -> bool: return f.t < f.dur)
 
 
-func hurt(e: Enemy, dmg: float, pierce := false, src: Tower = null) -> void:
+func hurt(e: Enemy, dmg: float, pierce := false, src: Tower = null, ap := 0) -> void:
 	if e.hp <= 0.0:
 		return
-	var dealt := dmg if pierce else maxf(1.0, dmg - float(e.d["armor"]))
+	var dealt := dmg if pierce else maxf(1.0, dmg - (float(e.d["armor"]) if ap == 0 else maxf(0.0, float(e.d["armor"]) - ap)))
 	if not pierce:
 		dealt *= 1.0 - _guard(e)
+	if e.mark > 0.0:
+		dealt *= 1.0 + Defs.LODGE["mark_dmg"]   # marked by a Hunter's Lodge
+	if src != null and src.type == "moss" and e.carry > 0 and skill("moss_keen") > 0:
+		dealt *= 1.0 + 0.1 * skill("moss_keen")   # Keen Eyes
+	if src != null and src.type == "frost" and (e.slow > 0.0 or e.soak > 0.0) and skill("frost_cold") > 0:
+		dealt *= 1.0 + 0.05 * skill("frost_cold")   # Grave Cold
 	dealt = minf(dealt, e.hp)
 	e.hp -= dealt
 	if src != null:
@@ -979,7 +1122,20 @@ func hurt(e: Enemy, dmg: float, pierce := false, src: Tower = null) -> void:
 			kills_tower[src.type] = int(kills_tower.get(src.type, 0)) + 1
 		if race_on and kills % Defs.RACE_KILL_SEND == 0:
 			race_sends += String(e.d.get("send_as", e.code))
-		_text(e.pos + Vector2(0, -0.3), "+%d" % int(e.d["gold"]), Color("e8b84a"))
+		var paid := int(e.d["gold"])
+		if src != null and src.mastery == "twin":
+			if time - twin_t <= 1.0:
+				twin_kills += 1
+			twin_t = time
+		if src != null and src.mastery == "lodge" and e.code == "x":
+			lodge_champion += 1
+		if src != null and src.type == "moss" and src.lvl >= 4:   # Plunder
+			src.plunder += 1
+			var extra := mini(src.plunder, Defs.PLUNDER_MAX)
+			gold += extra
+			plundered += extra
+			paid += extra
+		_text(e.pos + Vector2(0, -0.3), "+%d" % paid, Color("e8b84a"))
 		sound.emit("die")
 		burst.emit("death", e.pos, e.code)
 		if in_water(e):
@@ -1022,7 +1178,7 @@ func _lava(tw: Tower, at: Vector2) -> void:
 	var pl := Pool.new()
 	pl.pos = at
 	pl.r = Defs.ABILITIES["ash"]["r"]
-	pl.dur = Defs.ABILITIES["ash"]["dur"]
+	pl.dur = Defs.ABILITIES["ash"]["dur"] + 0.5 * skill("ash_cooling")
 	pl.dps = tw.stat("dmg") * Defs.HEAT_MAX * tw.ability_power()
 	pl.src = tw
 	lavas += 1
@@ -1168,6 +1324,53 @@ func can_meteor() -> bool:
 	return mana >= Defs.METEOR["cost"]
 
 
+## Nightmare and Frenzy: unlocked in Dark Arts, so never in races (they run without skills).
+func has_spell(id: String) -> bool:
+	return skill("spell_" + id) > 0
+
+
+func can_cast(id: String) -> bool:
+	match id:
+		"meteor":
+			return can_meteor()
+		"nightmare":
+			return has_spell(id) and mana >= Defs.NIGHTMARE["cost"]
+		"frenzy":
+			return has_spell(id) and mana >= Defs.FRENZY["cost"]
+	return false
+
+
+## Casts a spell at pos (in tiles). Returns true if it was cast.
+func cast(id: String, pos: Vector2) -> bool:
+	if id == "meteor":
+		return cast_meteor(pos)
+	if not can_cast(id):
+		return false
+	if id == "nightmare":
+		mana -= Defs.NIGHTMARE["cost"]
+		nightmares += 1
+		var n := 0
+		for e: Enemy in enemies:
+			if e.hp <= 0.0 or e.pos.distance_to(pos) > Defs.NIGHTMARE["radius"]:
+				continue
+			if e.d.has("boss") or e.d.has("boat") or e.code == "x":
+				continue   # bosses and boats ignore it
+			e.fear = Defs.NIGHTMARE["dur"] + 0.5 * skill("nightmare_dur")
+			n += 1
+		best_nightmare = maxi(best_nightmare, n)
+		_fx("nightmare", pos, Defs.NIGHTMARE["radius"], 0.9)
+		sound.emit("whoosh")
+	else:
+		mana -= Defs.FRENZY["cost"]
+		frenzies += 1
+		for tw: Tower in towers.values():
+			if tw.pos.distance_to(pos) <= Defs.FRENZY["radius"]:
+				tw.frenzy = Defs.FRENZY["dur"] + skill("frenzy_dur")
+		_fx("frenzy", pos, Defs.FRENZY["radius"], 0.9)
+		sound.emit("rank")
+	return true
+
+
 func cast_meteor(pos: Vector2) -> bool:
 	if not can_meteor():
 		return false
@@ -1261,6 +1464,9 @@ func cell_info(c: Vector2i) -> Dictionary:
 		var acts := []
 		if tw.lvl < 3:
 			acts.append({"id": "upgrade", "label": "Upgrade", "price": "%dg" % d["cost"][tw.lvl], "gold": d["cost"][tw.lvl]})
+		var offers := masteries_for(tw)
+		for m: Dictionary in offers:
+			acts.append({"id": "master:" + m["id"], "label": m["name"], "price": "%dg" % d["cost"][3], "gold": d["cost"][3]})
 		acts.append({"id": "sell", "label": "Sell", "price": "+%dg" % int(tw.spent * Defs.SELL_REFUND)})
 		var ab: Dictionary = Defs.ABILITIES[tw.type]
 		var txt := "Damage %d, range %.1f\n" % [int(tw.stat("dmg")), tw.stat("range")]
@@ -1270,7 +1476,19 @@ func cell_info(c: Vector2i) -> Dictionary:
 			txt += "%s: %s" % [ab["name"], ab["text"]]
 		else:
 			txt += "%s, once the tower is battle-hardened and level III: %s" % [ab["name"], ab["text"]]
-		return {"title": "%s, level %d" % [d["name"], tw.lvl], "text": txt, "actions": acts}
+		for m: Dictionary in offers:
+			txt += "
+[Level IV] %s: %s" % [m["name"], m["text"]]
+		var title := "%s, level %d" % [d["name"], tw.lvl]
+		if tw.mastery != "":
+			var m := mastery_def(tw.type, tw.mastery)
+			title = "%s, level IV" % m["name"]
+			txt += "
+%s" % m["text"]
+		if tw.type == "moss" and tw.lvl >= 4:
+			txt += "
+Plunder: +%d gold a kill" % mini(tw.plunder + 1, Defs.PLUNDER_MAX)
+		return {"title": title, "text": txt, "actions": acts}
 	if level.is_water(c):
 		return {"title": "Deep water" if t == "water" else "Shallows", "text": "Nothing can be built on water.", "actions": []}
 	if not is_lit(c):
@@ -1374,6 +1592,21 @@ func _range_bonus(type: String, c: Vector2i) -> float:
 	if level.high.has(c):
 		r += float(Defs.TOWERS[type]["high_range"]) + 0.1 * skill("land_heights")
 	return r
+
+
+## The level IV masteries this tower may take now: it is level III with its ability learned, and
+## each mastery must be unlocked in Dark Arts.
+func masteries_for(tw: Tower) -> Array:
+	if tw.lvl != 3 or not tw.has_ability():
+		return []
+	return Defs.MASTERIES[tw.type].filter(func(m: Dictionary) -> bool: return skill("mastery_" + m["id"]) > 0)
+
+
+static func mastery_def(type: String, id: String) -> Dictionary:
+	for m: Dictionary in Defs.MASTERIES[type]:
+		if m["id"] == id:
+			return m
+	return {"id": id, "name": id, "text": ""}
 
 
 ## Runs a tile action. Returns "" on success, or a message explaining why it failed.
@@ -1496,6 +1729,29 @@ func do_action(id: String, c: Vector2i) -> String:
 				_text(tw.pos + Vector2(0, -0.9), Defs.ABILITIES[tw.type]["name"] + "!", Color("c9c0ff"))
 				abilities += 1
 				learned[tw.type] = true
+		_ when id.begins_with("master:"):
+			if not towers.has(c):
+				return "No tower here"
+			var tw: Tower = towers[c]
+			var m := id.get_slice(":", 1)
+			if not masteries_for(tw).any(func(x: Dictionary) -> bool: return x["id"] == m):
+				return "Not possible yet"
+			var cost: int = Defs.TOWERS[tw.type]["cost"][3]
+			if gold < cost:
+				return "Not enough gold"
+			gold -= cost
+			tw.spent += cost
+			upgrades += 1
+			gold_spent += cost
+			tw.lvl = 4
+			tw.mastery = m
+			masteries_built[m] = int(masteries_built.get(m, 0)) + 1
+			tw.born = time
+			burst.emit("build", tw.pos, tw.type)
+			_cover.clear()
+			_relight()
+			sound.emit("upgrade")
+			_text(tw.pos + Vector2(0, -0.9), mastery_def(tw.type, m)["name"] + "!", Color("ffd86a"))
 		"sell":
 			if not towers.has(c):
 				return "No tower here"

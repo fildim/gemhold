@@ -13,17 +13,17 @@ extends RefCounted
 const TOWERS := {
 	"moss": {
 		"name": "Warband Hut", "blurb": "Rapid arrows at one foe. Armour blunts them.",
-		"cost": [50, 75, 100, 150], "dmg": [7, 11, 17, 22], "range": [2.3, 2.6, 2.9, 3.0],
-		"rate": [0.45, 0.4, 0.35, 0.33], "kind": "arrow", "high_range": 0.8,
+		"cost": [50, 75, 100, 150], "dmg": [7, 11, 17, 18], "range": [2.3, 2.6, 2.9, 3.0],
+		"rate": [0.45, 0.4, 0.35, 0.35], "kind": "arrow", "high_range": 0.8,
 	},
 	"frost": {
 		"name": "Bone Crypt", "blurb": "Slow, heavy bolts that chill heroes to a crawl.",
-		"cost": [50, 75, 100, 150], "dmg": [16, 27, 50, 66], "range": [2.2, 2.5, 2.8, 2.9],
-		"rate": [1.5, 1.4, 1.3, 1.25], "slow": [0.45, 0.55, 0.65, 0.7], "kind": "frost", "high_range": 0.5,
+		"cost": [50, 75, 100, 150], "dmg": [16, 27, 50, 53], "range": [2.2, 2.5, 2.8, 2.9],
+		"rate": [1.5, 1.4, 1.3, 1.3], "slow": [0.45, 0.55, 0.65, 0.65], "kind": "frost", "high_range": 0.5,
 	},
 	"ash": {
 		"name": "Cinder Shrine", "blurb": "A searing beam that melts armour and grows hotter on one hero.",
-		"cost": [50, 75, 100, 150], "dmg": [6, 9, 14, 18], "range": [2.0, 2.3, 2.6, 2.7], "kind": "beam", "high_range": 0.6,
+		"cost": [50, 75, 100, 150], "dmg": [6, 9, 14, 15], "range": [2.0, 2.3, 2.6, 2.7], "kind": "beam", "high_range": 0.6,
 	},
 }
 
@@ -325,11 +325,13 @@ const MASTERIES := {
 		{"id": "sunlance", "name": "Sunlance", "text": "The beam burns through its hero and every hero behind him."},
 	],
 }
-const LODGE := {"rate": 1.6, "dmg": 2.6, "mark": 4.0, "mark_dmg": 0.15}
+const LODGE := {"rate": 1.2, "dmg": 1.15, "mark": 4.0, "mark_dmg": 0.15}
 const OSSUARY := {"charges": 4, "gap": 0.3}
-const MAUSOLEUM := {"r": 0.9, "share": 0.5}
-const TWIN_DMG := 0.65
-const SUNLANCE := {"share": 0.5, "keep": 0.5}
+const MAUSOLEUM := {"r": 0.6, "share": 0.15}
+const TWIN_DMG := 0.75
+const TWIN_SAME := 0.3   # the second beam when both burn the one hero in reach
+const LONGHOUSE_SHARE := 0.85   # each extra Longhouse arrow, as a share of a full one (at least Volley strength)
+const SUNLANCE := {"share": 0.18, "keep": 0.35}
 ## Plunder: a level IV Hut pays +1 gold on its first kill as level IV, +2 on the next, ... up to this.
 const PLUNDER_MAX := 5
 

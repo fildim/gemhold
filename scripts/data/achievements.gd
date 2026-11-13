@@ -72,6 +72,7 @@ const LIST: Array[Dictionary] = [
 	{"id": "branch_frost", "name": "Necromancer", "text": "Fill the whole Bone Crypt tree."},
 	{"id": "branch_ash", "name": "High Priest", "text": "Fill the whole Cinder Shrine tree."},
 	{"id": "branch_den", "name": "Dragon of the Den", "text": "Fill the whole Hoard tree."},
+	{"id": "branch_land", "name": "Master of the Marches", "text": "Fill the whole Land tree."},
 
 	# How you fight
 	{"id": "only_moss", "name": "Warband Only", "text": "Win lair 3 or later with Warband Huts as your only towers."},
