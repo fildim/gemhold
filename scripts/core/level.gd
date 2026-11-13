@@ -34,6 +34,11 @@ var land_roads: Array[int] = []     # indexes of the land roads, where heroes ar
 var zones: Array = []    # parallel to paths: Array of {"from", "to", "kind": "ford" | "bridge"} along the road
 var hallowed := {}       # Vector2i -> true for hallowed ground (an `H` in the trees grid)
 var rules: Array = []    # lair rules, e.g. [{"kind": "tide", "period": 40, "up": 14}]
+var wave_rivers: Array = []  # parallel to waves: Array[int] of river roads its boats use
+var landings: Array = []     # per road: where a river road reaches land (Level.landing), or -1
+var crossings := {}          # Vector2i -> index in crossing_cells: land-road tiles over water
+var crossing_cells: Array = []   # each crossing's tiles (a bridge over deep water or a ford over shallows)
+var crossing_kind: Array[String] = []   # "bridge" | "ford", parallel to crossing_cells
 
 const CORNER_RADIUS := 0.5   # tiles; roads curve through their corner tiles
 const ZONE_STEP := 0.1       # tiles between samples when finding a road's zones
@@ -103,6 +108,8 @@ func _parse(d: Dictionary) -> void:
 		var site := {"kind": String(s["kind"]), "cell": Vector2i(int(s["cell"][0]), int(s["cell"][1]))}
 		if s.has("cuts"):
 			site["cuts"] = maxi(1, int(s["cuts"]))
+		if site["kind"] == "sluice":
+			site["path"] = int(s.get("path", 0))
 		if site["kind"] == "camp":
 			site["path"] = int(s.get("path", 0))
 			site["spawn"] = _parse_wave(String(s.get("spawn", "1p")))
@@ -139,9 +146,22 @@ func _parse(d: Dictionary) -> void:
 			if land_roads.has(r):
 				walk.append(r)
 		wave_walk.append(walk if not walk.is_empty() else land_roads)
+	var rivers: Array[int] = []
+	for i in path_kind.size():
+		if path_kind[i] == "river":
+			rivers.append(i)
+	for roads: Array in wave_roads:
+		var boat: Array[int] = []
+		for r: int in roads:
+			if rivers.has(r):
+				boat.append(r)
+		wave_rivers.append(boat if not boat.is_empty() else rivers)
 	_add_air_roads()
 	for i in paths.size():
 		zones.append(_find_zones(i))
+	for i in paths.size():
+		landings.append(landing(i) if path_kind[i] == "river" else -1.0)
+	_find_crossings()
 
 
 ## Flyers need an air road. A level that sends flyers without one gets a straight line from the
@@ -168,8 +188,8 @@ func _add_air_roads() -> void:
 ## ZONE_STEP tiles; air roads have none.
 func _find_zones(i: int) -> Array:
 	var out: Array = []
-	if path_kind[i] == "air":
-		return out
+	if path_kind[i] != "land":
+		return out   # boats float on rivers; flyers fly
 	var total: float = paths[i]["total"]
 	var cur := ""
 	var start := 0.0
@@ -312,3 +332,42 @@ func path_pos(i: int, t: float) -> Vector2:
 	var seg := lens[k] - lens[k - 1]
 	var f := 0.0 if seg == 0.0 else (t - lens[k - 1]) / seg
 	return pts[k - 1].lerp(pts[k], f)
+
+
+## Land-road tiles over water, grouped into crossings: each run of connected road tiles over
+## deep water is one bridge (collapsed and repaired as a whole), over shallows one ford.
+func _find_crossings() -> void:
+	var tiles := {}
+	for i in waypoints.size():
+		if path_kind[i] != "land":
+			continue
+		var wp: Array = waypoints[i]
+		for k in wp.size() - 1:
+			var a: Vector2i = wp[k]
+			var b: Vector2i = wp[k + 1]
+			var step := Vector2i(signi(b.x - a.x), signi(b.y - a.y))
+			var p := a
+			while true:
+				if in_bounds(p) and is_water(p):
+					tiles[p] = terrain_at(p)
+				if p == b:
+					break
+				p += step
+	for start: Vector2i in tiles:
+		if crossings.has(start):
+			continue
+		var idx := crossing_cells.size()
+		var kind: String = tiles[start]
+		var group: Array[Vector2i] = []
+		var todo: Array[Vector2i] = [start]
+		crossings[start] = idx
+		while not todo.is_empty():
+			var c: Vector2i = todo.pop_back()
+			group.append(c)
+			for d in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
+				var n: Vector2i = c + d
+				if tiles.get(n, "") == kind and not crossings.has(n):
+					crossings[n] = idx
+					todo.append(n)
+		crossing_cells.append(group)
+		crossing_kind.append("bridge" if kind == "water" else "ford")

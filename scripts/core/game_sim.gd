@@ -35,6 +35,14 @@ class Enemy:
 	var wave := 0         # which wave it marched with, 0 for barracks troops
 	var soak := 0.0       # seconds of Soaked left (in a ford or swimming, and SOAK_TIME after)
 	var swim := false     # swimming a flooded ford or a collapsed bridge: slow, and no Herald haste
+	var wade := 0.0       # seconds it wades freely, like a Fenwalker (the Tidecaller's surge)
+	var mark := 0.0       # seconds it stays marked by a Hunter's Lodge (takes more damage)
+	var work := 0.0       # Engineer: seconds spent repairing the bridge ahead
+	var surge_t := 0.0    # Tidecaller: seconds until her next surge
+	var crew: Array[String] = []   # Longboat: the heroes it carries
+	var hidden := false   # Diver under water: towers and the den can't see him
+	var zone := ""        # the road zone it stood in last frame
+	var crossing := -1    # which crossing that was (Level.crossings), or -1
 	var hit := 0.0        # seconds of hit flash left (view only)
 	var knock := Vector2.ZERO   # small knock-back offset in tiles from the last hit (view only)
 
@@ -51,6 +59,7 @@ class Tower:
 	var rank := 0         # veterancy, 0..3
 	var beam: Enemy       # Cinder Shrine: the hero it is burning, or null
 	var heat := 0.0       # Cinder Shrine: 0..1, see Defs.HEAT_TIME
+	var altars := 0       # freed Dark Altars in reach (see GameSim._attune)
 	var born := -10.0     # battle time it was built or last upgraded (view only: squash and settle)
 	# Permanent bonuses from the skill tree, filled in when the tower is built.
 	var dmg_mul := 1.0
@@ -58,12 +67,13 @@ class Tower:
 	var range_add := 0.0
 	var xp_mul := 1.0
 	var ability_rank := 0
+	var altar_mul := 1.0   # damage from those altars
 
 	func stat(key: String) -> float:
 		var v := float(Defs.TOWERS[type][key][lvl - 1])
 		match key:
 			"dmg":
-				return v * dmg_mul * (1.0 + Defs.RANK_DMG * rank)
+				return v * dmg_mul * (1.0 + Defs.RANK_DMG * rank) * (altar_mul if altars > 0 else 1.0)
 			"rate":
 				return v / rate_mul
 			"range":
@@ -161,6 +171,8 @@ var wave_live := {}       # wave -> threat already added by its heroes falling e
 var _cover := {}          # road -> defended length up to each COVER_STEP along it; empty = rebuild
 var spawn_t := 0.0
 var lane := 0
+var boat_lane := 0        # boats are dealt over river roads on their own count
+var tide := Vector2.ZERO  # the lair's Tide rule: (period, seconds up), or zero for none
 var enemies: Array = []
 var _rally: Array = []    # [{"codes", "path", "dist", "wave"}]: heroes to raise where a Champion fell
 var towers := {}          # Vector2i -> Tower
@@ -211,6 +223,18 @@ var dreads := 0           # heroes terrified by Dread
 var lavas := 0            # pools of Lava left behind
 # Road zones (Level.zones): what has changed on them during the battle.
 var collapsed := {}       # Vector2i -> true for water tiles whose bridge has been collapsed
+var collapses := {}       # crossing index -> times that bridge has been collapsed (each costs more)
+var planks := {}          # crossing index -> battle time a ford's planks rot away (laid by Engineers)
+var rains: Array = []     # [Vector2 centre, radius] of every rain cloud this frame
+var drowned := 0          # boat crews drowned with their boat
+var boats_sunk := 0
+var boats_landed := 0
+var collapsed_n := 0      # bridges collapsed this battle
+var collapse_kills := 0   # heroes slain while swimming a collapsed bridge
+var water_kills := 0      # heroes slain in water (fords, swimming, boats)
+var floods := 0           # Sluice surges sent
+var best_flood := 0       # most heroes one surge slew
+var diver_meteor := 0     # hidden Divers slain by a meteor
 var paved: Array = []     # per road: [{"from", "to"}] stretches a Pavior has paved
 var tide_up := false      # the tide is in: fords are deep
 
@@ -234,6 +258,10 @@ func _init(lv: Level, skill_ranks := {}) -> void:
 		s.pos = Vector2(s.cell) + Vector2(0.5, 0.5)
 		s.cuts = sd.get("cuts", level.site_cuts)
 		s.cuts_left = s.cuts
+		if s.kind == "sluice":   # yours from the start; s.t counts down its recharge
+			s.owned = true
+			s.path = sd["path"]
+			s.t = 0.0
 		if s.kind == "camp":
 			s.path = sd["path"]
 			s.spawn = sd["spawn"]
@@ -241,6 +269,9 @@ func _init(lv: Level, skill_ranks := {}) -> void:
 			s.t = s.every * 0.5
 			s.dist = lv.nearest_dist(s.path, s.pos)
 		sites[s.cell] = s
+	for rule: Dictionary in lv.rules:
+		if rule.get("kind", "") == "tide":
+			tide = Vector2(float(rule.get("period", 40)), float(rule.get("up", 14)))
 	den_max = int(Defs.DEN["charges"]) + skill("den_charge")
 	den_charges = den_max
 	_relight()
@@ -256,6 +287,8 @@ func update(dt: float) -> void:
 	if over:
 		return
 	time += dt
+	if tide.x > 0.0:
+		tide_up = fmod(time, tide.x) >= tide.x - tide.y
 	mana = minf(mana_max, mana + dt * mana_regen())
 	if wave < level.waves.size():
 		timer -= dt
@@ -289,7 +322,7 @@ func mana_regen() -> float:
 	var r := Defs.MANA_REGEN + Defs.HOARD_REGEN * skill("hoard_regen")
 	for s: Site in sites.values():
 		if s.kind == "well" and s.owned:
-			r += Defs.SITES["well"]["regen"]
+			r += Defs.SITES["well"]["regen"] + 0.1 * skill("land_springs")
 	return r
 
 
@@ -343,13 +376,22 @@ func _spawn(code: String, path := -1, dist := 0.0, w := 0) -> void:
 		mul *= Defs.NIGHT_HP
 	e.hp = d["hp"] * mul
 	e.max_hp = e.hp
-	if path < 0:
+	var rivers: Array = level.wave_rivers[w - 1] if w > 0 and w <= level.wave_rivers.size() else []
+	if path < 0 and d.has("boat") and not rivers.is_empty():
+		# Boats sail the river roads their wave may use, dealt round-robin on their own count.
+		e.path = rivers[boat_lane % rivers.size()]
+		boat_lane += 1
+		var cargo: Dictionary = level.wave_cargo[w - 1]
+		e.crew = cargo[str(e.path)].duplicate() if cargo.has(str(e.path)) else Level._parse_wave(String(d["crew"]))
+	elif path < 0:
 		# Dealt round-robin over the land roads its wave may use (every land road unless it names some).
 		var roads: Array[int] = level.wave_walk[w - 1] if w > 0 and w <= level.wave_walk.size() else level.land_roads
 		e.path = roads[lane % roads.size()]
 		lane += 1
 	else:
 		e.path = path
+	if d.has("surge"):
+		e.surge_t = Defs.SURGE["every"]
 	e.dist = dist
 	e.pos = level.path_pos(e.path, dist)
 	e.bob = randf() * 6.0
@@ -367,11 +409,13 @@ func _update_sites(dt: float) -> void:
 					for code in s.spawn:
 						_spawn(code, s.path, s.dist)
 					_text(s.pos + Vector2(0, -0.6), "Reinforcements!", Color("ff9a7a"))
+		elif s.kind == "sluice" and s.t > 0.0:
+			s.t = maxf(0.0, s.t - dt)
 		elif s.owned and s.kind == "mine":
 			s.t += dt
 			if s.t >= Defs.SITES["mine"]["every"]:
 				s.t = 0.0
-				var g: int = Defs.SITES["mine"]["gold"]
+				var g: int = Defs.SITES["mine"]["gold"] + skill("land_veins")
 				gold += g
 				_text(s.pos + Vector2(0, -0.5), "+%d" % g, Color("e8b84a"))
 
@@ -391,7 +435,7 @@ func _update_den(dt: float) -> void:
 	var best_score := -INF
 	for e: Enemy in enemies:
 		var d := e.pos.distance_to(level.lair_center)
-		if e.hp <= 0.0 or d > Defs.DEN["range"]:
+		if e.hp <= 0.0 or e.hidden or d > Defs.DEN["range"]:
 			continue
 		var score := (100.0 if e.carry > 0 else 0.0) - d
 		if score > best_score:
@@ -417,10 +461,14 @@ func _update_enemies(dt: float) -> void:
 	for r: Dictionary in _rally:
 		for code in r["codes"]:
 			_spawn(code, r["path"], r["dist"], r["wave"])
-		if r["wave"] > 0:
+		if r["wave"] > 0 and not r.get("counted", false):
 			wave_left[r["wave"]] += r["codes"].size()
 	_rally.clear()
 	var heralds := enemies.filter(func(o: Enemy) -> bool: return o.hp > 0.0 and o.d.has("haste"))
+	rains.clear()
+	for o: Enemy in enemies:
+		if o.hp > 0.0 and o.d.has("rain"):
+			rains.append([o.pos, float(o.d["rain"])])
 	for e: Enemy in enemies:
 		if e.hp <= 0.0:
 			continue   # slain this frame; removed below
@@ -429,7 +477,17 @@ func _update_enemies(dt: float) -> void:
 			e.knock *= 0.8
 		if e.slow > 0.0:
 			e.slow -= dt
+		if e.wade > 0.0:
+			e.wade -= dt
+		if e.mark > 0.0:
+			e.mark -= dt
+		if e.d.has("surge"):
+			e.surge_t -= dt
+			if e.surge_t <= 0.0:
+				_surge(e)
 		var sp: float = e.d["spd"] * ((1.0 - e.slow_amt) if e.slow > 0.0 else 1.0)
+		if e.d.has("engineer") and _repairing(e, dt):
+			sp = 0.0
 		if e.d.has("rage") and e.hp < e.max_hp * 0.5:
 			sp *= float(e.d["rage"])
 		var zm := _zone_mul(e, dt)
@@ -453,6 +511,9 @@ func _update_enemies(dt: float) -> void:
 			else:
 				e.dist += sp * dt * e.dir
 		var total: float = level.paths[e.path]["total"]
+		if e.d.has("boat") and e.dist >= float(level.landings[e.path]) and float(level.landings[e.path]) >= 0.0:
+			_land(e)
+			continue
 		if e.dir == 1 and e.dist >= total:
 			var take := mini(int(e.d["cap"]), home)
 			e.carry += take
@@ -512,18 +573,37 @@ func _zone_mul(e: Enemy, dt: float) -> float:
 	if e.soak > 0.0:
 		e.soak -= dt
 	e.swim = false
+	e.hidden = false
 	var m := 1.0
-	match level.zone_at(e.path, e.dist):
+	var z := level.zone_at(e.path, e.dist) if not level.zones[e.path].is_empty() else ""
+	var cell := Vector2i(floori(e.pos.x), floori(e.pos.y))
+	var cross: int = level.crossings.get(cell, -1) if z != "" else -1
+	var free := e.d.has("wader") or e.wade > 0.0   # Fenwalkers, and heroes lifted by the Tidecaller's surge
+	match z:
 		"ford":
-			e.soak = Defs.SOAK_TIME
-			if tide_up:
-				e.swim = true
+			if cross >= 0 and float(planks.get(cross, -1.0)) > time:
+				pass   # planked over: a dry crossing
+			elif free:
+				pass
 			else:
-				m = Defs.ZONE_SPEED["ford"]
-		"bridge":
-			if not collapsed.is_empty() and collapsed.has(Vector2i(floori(e.pos.x), floori(e.pos.y))):
 				e.soak = Defs.SOAK_TIME
-				e.swim = true
+				if tide_up:
+					e.swim = true
+				else:
+					m = Defs.ZONE_SPEED["ford"]
+			if not (cross >= 0 and float(planks.get(cross, -1.0)) > time):
+				e.hidden = e.d.has("diver")
+		"bridge":
+			if collapsed.has(cell):
+				e.hidden = e.d.has("diver")
+				if not free:
+					e.soak = Defs.SOAK_TIME
+					e.swim = true
+	if e.d.has("engineer") and e.zone == "ford" and z != "ford" and e.crossing >= 0:
+		planks[e.crossing] = time + Defs.PLANK_TIME   # he lays planks over the ford he just crossed
+	e.zone = z
+	if cross >= 0:
+		e.crossing = cross
 	if e.swim:
 		m = Defs.ZONE_SPEED["swim"]
 	for p: Dictionary in paved[e.path]:
@@ -535,6 +615,111 @@ func _zone_mul(e: Enemy, dt: float) -> float:
 
 func is_soaked(e: Enemy) -> bool:
 	return e.soak > 0.0
+
+
+## The Tidecaller's surge: heroes around her shed chill and Dread and wade freely for a while.
+func _surge(t: Enemy) -> void:
+	t.surge_t = Defs.SURGE["every"]
+	for o: Enemy in enemies:
+		if o.hp > 0.0 and o.pos.distance_to(t.pos) <= Defs.SURGE["r"]:
+			o.slow = 0.0
+			o.fear = 0.0
+			o.wade = Defs.SURGE["dur"]
+	_fx("surge", t.pos, Defs.SURGE["r"], 0.8)
+	_text(t.pos + Vector2(0, -0.9), "Surge!", Color("9fd8f0"))
+	sound.emit("whoosh")
+
+
+## An Engineer walking up to a collapsed bridge stops at the bank and rebuilds it. True while he
+## is at work (he stands still).
+func _repairing(e: Enemy, dt: float) -> bool:
+	if e.dir != 1 or collapsed.is_empty():
+		e.work = 0.0
+		return false
+	for z: Dictionary in level.zones[e.path]:
+		if z["kind"] != "bridge" or z["from"] < e.dist - 0.05 or z["from"] - e.dist > 0.3:
+			continue
+		var p := level.path_pos(e.path, z["from"] + 0.05)
+		var cell := Vector2i(floori(p.x), floori(p.y))
+		if not collapsed.has(cell):
+			continue
+		e.work += dt
+		if e.work >= Defs.ENGINEER_FIX:
+			e.work = 0.0
+			repair_bridge(int(level.crossings.get(cell, -1)))
+			_text(p + Vector2(0, -0.6), "Bridge rebuilt", Color("ff9a7a"))
+		return true
+	e.work = 0.0
+	return false
+
+
+## A boat reached its landing: its crew steps ashore and marches on; the boat is gone (neither
+## slain nor escaped, so it does not count toward the threat).
+func _land(e: Enemy) -> void:
+	e.gone = true
+	boats_landed += 1
+	if e.wave > 0:
+		wave_left[e.wave] += e.crew.size()   # counted now, before the boat's own removal below
+	_rally.append({"codes": e.crew, "path": e.path, "dist": e.dist + 0.3, "wave": e.wave, "counted": true})
+	_text(e.pos + Vector2(0, -0.7), "They land!", Color("ff9a7a"))
+	sound.emit("horn")
+
+
+## Is the hero in water: a boat afloat, in a ford, or swimming a collapsed bridge.
+func in_water(e: Enemy) -> bool:
+	if e.d.has("boat"):
+		return float(level.landings[e.path]) < 0.0 or e.dist < float(level.landings[e.path])
+	return e.zone == "ford" or e.swim
+
+
+## Is pos under a Rainbringer's cloud.
+func in_rain(pos: Vector2) -> bool:
+	for r: Array in rains:
+		if pos.distance_to(r[0]) <= r[1]:
+			return true
+	return false
+
+
+## Mana to collapse bridge (crossing) i now: more each time, less with Floodmaster.
+func collapse_cost(i: int) -> int:
+	return Defs.COLLAPSE["mana"] + Defs.COLLAPSE["step"] * int(collapses.get(i, 0)) - 5 * skill("land_flood")
+
+
+## A Sluice Gate's surge sweeps down its road: heroes in the water are pushed back and hurt
+## through armour, boats worst of all.
+func _flood(s: Site) -> void:
+	var d: Dictionary = Defs.SITES["sluice"]
+	s.t = float(d["recharge"]) * (1.0 - 0.2 * skill("land_flood"))
+	floods += 1
+	var before := kills
+	for e: Enemy in enemies.duplicate():
+		if e.hp <= 0.0 or e.path != s.path or not in_water(e):
+			continue
+		hurt(e, float(d["dmg"]) * (float(d["boat_mul"]) if e.d.has("boat") else 1.0), true)
+		if e.hp > 0.0:
+			e.dist = maxf(0.0, e.dist - float(d["push"]))
+			e.pos = level.path_pos(e.path, e.dist)
+	best_flood = maxi(best_flood, kills - before)
+	_fx("flood", s.pos, 1.5, 0.9)
+	sound.emit("whoosh")
+
+
+func collapse_bridge(i: int) -> void:
+	for c: Vector2i in level.crossing_cells[i]:
+		collapsed[c] = true
+	collapses[i] = int(collapses.get(i, 0)) + 1
+	collapsed_n += 1
+	_fx("splash", Vector2(level.crossing_cells[i][0]) + Vector2(0.5, 0.5), 0.8, 0.6)
+	sound.emit("boom")
+	ground_changed.emit()
+
+
+func repair_bridge(i: int) -> void:
+	if i < 0:
+		return
+	for c: Vector2i in level.crossing_cells[i]:
+		collapsed.erase(c)
+	ground_changed.emit()
 
 
 ## Where along its road a hero with room to carry more should walk to reach the nearest gem lying
@@ -620,7 +805,7 @@ func _judge_kill(w: int) -> void:
 func _update_drops(dt: float) -> void:
 	for g: Drop in drops:
 		var total: float = level.paths[g.path]["total"]
-		g.dist = minf(total, g.dist + Defs.DROP_SPEED * dt)
+		g.dist = minf(total, g.dist + Defs.DROP_SPEED * (1.0 + 0.2 * skill("gem_magnet")) * dt)
 		g.pos = level.path_pos(g.path, g.dist)
 		if g.dist >= total:
 			home += g.n
@@ -635,7 +820,7 @@ func _pick_target(tw: Tower, skip: Enemy = null) -> Enemy:
 	var best: Enemy = null
 	var best_score := -INF
 	for e: Enemy in enemies:
-		if e == skip or e.hp <= 0.0 or e.pos.distance_to(tw.pos) > rg:
+		if e == skip or e.hp <= 0.0 or e.hidden or e.pos.distance_to(tw.pos) > rg:
 			continue
 		var score := -e.hp
 		if e.d.get("special", false):
@@ -678,7 +863,7 @@ func _update_towers(dt: float) -> void:
 ## range (or a gem carrier shows up), and its damage grows with heat. Armour does not stop it.
 func _update_beam(tw: Tower, dt: float) -> void:
 	var b := tw.beam
-	var lost_hold := b == null or b.hp <= 0.0 or b.gone or b.pos.distance_to(tw.pos) > tw.stat("range")
+	var lost_hold := b == null or b.hp <= 0.0 or b.gone or b.hidden or b.pos.distance_to(tw.pos) > tw.stat("range")
 	if lost_hold or b.carry == 0:
 		var best := _pick_target(tw)
 		if best != b and (lost_hold or (best != null and best.carry > 0)):
@@ -691,6 +876,8 @@ func _update_beam(tw: Tower, dt: float) -> void:
 		return
 	var e := tw.beam
 	tw.heat = minf(1.0, tw.heat + (rate * Defs.SOAK_HEAT if e.soak > 0.0 else rate))   # wet heroes heat slower
+	if not rains.is_empty() and in_rain(e.pos):
+		tw.heat = minf(tw.heat, Defs.RAIN_HEAT)   # under a Rainbringer's cloud the beam stays cool
 	tw.flash = 0.15
 	var dps := tw.stat("dmg") * (1.0 + (Defs.HEAT_MAX - 1.0) * tw.heat)
 	hurt(e, dps * dt, true, tw)
@@ -727,10 +914,10 @@ func _update_shots(dt: float) -> void:
 				s.target.hit = 0.12
 				s.target.knock = to.normalized() * 0.07
 				hurt(s.target, s.dmg, s.pierce, s.src)
-				if s.slow > 0.0:
+				if s.slow > 0.0 and not s.target.d.has("steady"):
 					s.target.slow_amt = maxf(s.slow, s.target.slow_amt) if s.target.slow > 0.0 else s.slow
 					s.target.slow = Defs.SLOW_TIME * Defs.SOAK_CHILL if s.target.soak > 0.0 else Defs.SLOW_TIME
-				if s.fear > 0.0 and s.target.hp > 0.0 and rng.randf() < s.fear:
+				if s.fear > 0.0 and s.target.hp > 0.0 and rng.randf() < s.fear and not s.target.d.has("steady"):
 					s.target.fear = Defs.ABILITIES["frost"]["dur"]
 					dreads += 1
 		else:
@@ -741,6 +928,9 @@ func _update_shots(dt: float) -> void:
 func _update_pools(dt: float) -> void:
 	for pl: Pool in pools:
 		pl.t += dt
+		if not rains.is_empty() and in_rain(pl.pos):
+			pl.t = pl.dur   # the rain puts it out
+			continue
 		for e: Enemy in enemies:
 			if e.pos.distance_to(pl.pos) <= pl.r:
 				hurt(e, pl.dps * dt, true, pl.src)
@@ -792,6 +982,21 @@ func hurt(e: Enemy, dmg: float, pierce := false, src: Tower = null) -> void:
 		_text(e.pos + Vector2(0, -0.3), "+%d" % int(e.d["gold"]), Color("e8b84a"))
 		sound.emit("die")
 		burst.emit("death", e.pos, e.code)
+		if in_water(e):
+			water_kills += 1
+			if e.swim and not e.zone == "ford":
+				collapse_kills += 1
+		if e.d.has("boat") and not e.crew.is_empty():
+			# Sunk before it landed: the crew drowns, and their bounties are yours.
+			boats_sunk += 1
+			for code: String in e.crew:
+				var cd: Dictionary = Defs.ENEMIES[code]
+				gold += int(cd["gold"])
+				kills += 1
+				drowned += 1
+				kills_by[code] = int(kills_by.get(code, 0)) + 1
+			_text(e.pos + Vector2(0, -0.8), "%d drowned" % e.crew.size(), Color("9fd8f0"))
+			e.crew.clear()
 		if e.carry > 0:
 			var g := Drop.new()
 			g.pos = e.pos
@@ -834,7 +1039,7 @@ func _guard(e: Enemy) -> float:
 
 
 func _tower_xp(tw: Tower, amount: float) -> void:
-	tw.xp += amount * tw.xp_mul
+	tw.xp += amount * tw.xp_mul * (1.0 + Defs.SITES["altar"]["xp"] * tw.altars if tw.altars > 0 else 1.0)
 	var ranks: Array = Defs.TOWER_XP_RANKS
 	while tw.rank < ranks.size() and tw.xp >= ranks[tw.rank]:
 		tw.rank += 1
@@ -982,15 +1187,16 @@ func cast_meteor(pos: Vector2) -> bool:
 ## On night levels, tiles near the lair, your towers and your mines and wells are lit.
 func _relight() -> void:
 	_cover.clear()   # towers changed, so did the defended stretch of each road
+	_attune()
 	lit.clear()
 	if not level.night:
 		return
-	var lights: Array = [[level.lair_center, Defs.LIGHT["lair"]]]
+	var lights: Array = [[level.lair_center, Defs.LIGHT["lair"] + 0.3 * skill("land_lantern")]]
 	for tw: Tower in towers.values():
-		lights.append([tw.pos, Defs.LIGHT["tower"]])
+		lights.append([tw.pos, Defs.LIGHT["tower"] + 0.3 * skill("land_lantern")])
 	for s: Site in sites.values():
 		if s.owned and s.kind != "camp":
-			lights.append([s.pos, Defs.SITES[s.kind]["light"]])
+			lights.append([s.pos, float(Defs.SITES[s.kind]["light"]) + 0.3 * skill("land_lantern")])
 	for c in level.cols:
 		for r in level.rows:
 			var center := Vector2(c, r) + Vector2(0.5, 0.5)
@@ -999,6 +1205,17 @@ func _relight() -> void:
 					lit[Vector2i(c, r)] = true
 					break
 	light_changed.emit()
+
+
+## Dark Altars you have freed strengthen the towers around them.
+func _attune() -> void:
+	var alts: Array = sites.values().filter(func(s: Site) -> bool: return s.kind == "altar" and s.owned)
+	for tw: Tower in towers.values():
+		tw.altars = 0
+		for s: Site in alts:
+			if s.pos.distance_to(tw.pos) <= Defs.SITES["altar"]["range"]:
+				tw.altars += 1
+		tw.altar_mul = 1.0 + tw.altars * (Defs.SITES["altar"]["dmg"] + 0.05 * skill("land_rites"))
 
 
 func is_lit(c: Vector2i) -> bool:
@@ -1026,6 +1243,8 @@ func cell_info(c: Vector2i) -> Dictionary:
 	var t := level.terrain_at(c)
 	if sites.has(c):
 		return _site_info(sites[c])
+	if level.crossings.has(c) and level.crossing_kind[level.crossings[c]] == "bridge":
+		return _bridge_info(level.crossings[c])
 	if level.road.has(c):
 		return {"title": "Hero road", "text": "Nothing can be built on the road.", "actions": []}
 	if level.is_lair(c):
@@ -1073,11 +1292,21 @@ func _ground_name(t: String) -> String:
 	return t
 
 
+## A bridge's tile panel: collapse it (heroes must swim the gap) or see it is broken.
+func _bridge_info(i: int) -> Dictionary:
+	if collapsed.has(level.crossing_cells[i][0]):
+		return {"title": "Broken bridge", "text": "Heroes swim the gap, slow and soaked. An Engineer can rebuild it.", "actions": []}
+	var cost := collapse_cost(i)
+	return {"title": "Bridge", "text": "Collapse it and heroes must swim the gap: slow, soaked, and no Herald can hurry them." + ("" if int(collapses.get(i, 0)) == 0 else "
+Rebuilt bridges cost more to bring down again."),
+		"actions": [{"id": "collapse", "label": "Collapse", "price": "%d mana" % cost, "mana": cost}]}
+
+
 ## Mana for one cut. Buildings that take several cuts cost more in all, but less per cut:
 ## the whole job costs 1.5x the base for 2 cuts, 2x for 3, 2.5x for 4.
 func cut_cost(s: Site) -> int:
 	var n := s.cuts
-	return ceili(float(Defs.SITES[s.kind]["cut"]) * (1.0 + 0.5 * (n - 1)) / n)
+	return ceili(float(Defs.SITES[s.kind]["cut"]) * (1.0 + 0.5 * (n - 1)) / n * (1.0 - 0.1 * skill("land_axes")))
 
 
 ## A building's tile panel. One that takes several cuts also gets "cuts": [cuts left, cuts in all],
@@ -1093,6 +1322,19 @@ func _site_panel(s: Site) -> Dictionary:
 	var d: Dictionary = Defs.SITES[s.kind]
 	var cut := {"id": "cut", "price": "%d mana" % cut_cost(s), "mana": cut_cost(s)}
 	var more := ""   # cuts left are shown by the panel's bar (see _site_info)
+	match s.kind:
+		"altar":
+			var boost := int(round((Defs.SITES["altar"]["dmg"] + 0.05 * skill("land_rites")) * 100.0))
+			if s.owned:
+				return {"title": d["name"], "text": "Yours. Towers within %.1f tiles deal %d%% more damage and rank up faster." % [d["range"], boost], "actions": []}
+			cut["label"] = "Cut free"
+			return {"title": d["name"], "text": d["text"] % [d["range"], boost], "actions": [cut]}
+		"sluice":
+			var txt: String = d["text"] % d["dmg"]
+			if s.t > 0.0:
+				return {"title": d["name"], "text": txt + "
+Refilling: ready in %d s." % ceili(s.t), "actions": []}
+			return {"title": d["name"], "text": txt, "actions": [{"id": "flood", "label": "Open the sluice", "price": "%d mana" % d["mana"], "mana": d["mana"]}]}
 	match s.kind:
 		"mine":
 			if s.owned:
@@ -1130,7 +1372,7 @@ func preview_range(c: Vector2i) -> float:
 func _range_bonus(type: String, c: Vector2i) -> float:
 	var r := 0.2 * skill(type + "_range")
 	if level.high.has(c):
-		r += float(Defs.TOWERS[type]["high_range"])
+		r += float(Defs.TOWERS[type]["high_range"]) + 0.1 * skill("land_heights")
 	return r
 
 
@@ -1205,13 +1447,33 @@ func do_action(id: String, c: Vector2i) -> String:
 			s.t = 0.0
 			sound.emit("raze")
 			if s.kind == "camp":
-				gold += d["bounty"]
+				var bounty: int = d["bounty"] + 15 * skill("land_spoils")
+				gold += bounty
 				_boom(s.pos, 0.9, 0.5)
-				_text(s.pos + Vector2(0, -0.4), "+%d" % d["bounty"], Color("e8b84a"))
+				_text(s.pos + Vector2(0, -0.4), "+%d" % bounty, Color("e8b84a"))
 				toast.emit("Barracks razed")
 			else:
 				toast.emit("%s is yours" % d["name"])
 				_relight()
+		"collapse":
+			var i: int = level.crossings.get(c, -1)
+			if i < 0 or level.crossing_kind[i] != "bridge" or collapsed.has(c):
+				return "Nothing to collapse"
+			if mana < collapse_cost(i):
+				return "Not enough mana"
+			mana -= collapse_cost(i)
+			collapse_bridge(i)
+			toast.emit("The bridge falls")
+		"flood":
+			if not sites.has(c) or (sites[c] as Site).kind != "sluice":
+				return "No sluice here"
+			var s: Site = sites[c]
+			if s.t > 0.0:
+				return "Still refilling"
+			if mana < Defs.SITES["sluice"]["mana"]:
+				return "Not enough mana"
+			mana -= Defs.SITES["sluice"]["mana"]
+			_flood(s)
 		"upgrade":
 			if not towers.has(c):
 				return "No tower here"

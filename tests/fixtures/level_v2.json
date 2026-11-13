@@ -48,11 +48,11 @@
  },
  "first_wave_delay": 5,
  "wave_gap": 20,
- "sites": [{"kind": "well", "cell": [1, 7]}],
+ "sites": [{"kind": "well", "cell": [1, 7]}, {"kind": "sluice", "cell": [4, 2], "path": 0}, {"kind": "altar", "cell": [6, 2]}],
  "rules": [{"kind": "tide", "period": 40, "up": 14}],
  "waves": [
   "2p",
   {"heroes": "4p", "roads": [1]},
-  {"heroes": "2f", "roads": [0, 2], "cargo": {"2": "1p"}}
+  {"heroes": "2f,1l", "roads": [0, 2], "cargo": {"2": "1p"}}
  ]
 }

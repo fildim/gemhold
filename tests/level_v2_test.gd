@@ -32,7 +32,7 @@ func _loader() -> void:
 	_check(lv.hallowed.has(Vector2i(2, 2)) and lv.hallowed.size() == 1, "hallowed ground")
 	_check(lv.trees.has(Vector2i(0, 0)) and lv.trees.size() == 1, "woods still read")
 	_check(lv.rules.size() == 1 and lv.rules[0]["kind"] == "tide", "lair rules")
-	_check(lv.waves.size() == 3 and lv.waves[1].size() == 4 and lv.waves[2] == ["f", "f"], "wave objects give their heroes")
+	_check(lv.waves.size() == 3 and lv.waves[1].size() == 4 and lv.waves[2] == ["f", "f", "l"], "wave objects give their heroes")
 	_check(lv.wave_roads[0].is_empty() and lv.wave_roads[1] == [1], "wave roads")
 	_check(lv.wave_walk[0] == [0, 1] and lv.wave_walk[1] == [1] and lv.wave_walk[2] == [0], "walkers keep to land roads: %s" % [lv.wave_walk])
 	_check(lv.wave_cargo[2].has("2") and lv.wave_cargo[2]["2"] == ["p"], "cargo")
@@ -148,7 +148,7 @@ func _old_levels() -> void:
 
 
 func _skills() -> void:
-	_check(Defs.skill_points_all() == 59, "tier I holds 59 points: %d" % Defs.skill_points_all())
+	_check(Defs.skill_points_all() == 116, "tiers I and II and The Land hold 116 points: %d" % Defs.skill_points_all())
 	_check(Achievements.goal_of(Achievements.find("arts59")) == Defs.skill_points_all(), "Omniscient counts the real total")
 	_check(Defs.skill_gate("moss_dmg") == 0, "tier I is open from the start")
 	_check(Defs.TIER_BEATEN[2] == 20 and Defs.TIER_BEATEN[3] == 40 and Defs.TREE_BEATEN["land"] == 10, "tier gates: chapters III and V, The Land with II")
