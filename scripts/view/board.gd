@@ -61,7 +61,6 @@ func _draw() -> void:
 	for i in slots:
 		if i < sim.home:
 			Paint.gem(self, ring[i] * T, T * 0.1)
-			_sparkle(ring[i] * T, T * 0.1, tm, i)
 	for f: GameSim.Fx in sim.fx:
 		if f.kind == "scorch":
 			_draw_scorch(f)
@@ -108,7 +107,6 @@ func _draw_gems(c: Vector2, n: int, glow: float) -> void:
 		var gp := c + Vector2((i - (n - 1) / 2.0) * gap, absf(i - (n - 1) / 2.0) * T * 0.06)
 		Paint.glow(self, gp, T * (0.2 + glow * 0.3), Color(1, 0.38, 0.5, 0.65 - glow * 0.5))
 		Paint.gem(self, gp, T * 0.12)
-		_sparkle(gp, T * 0.12, sim.time, i + int(c.x))
 	if n > 1:
 		var lbl := "%d" % n
 		var at := c + Vector2(n * gap * 0.5 + 2.0, -T * 0.06)
@@ -162,14 +160,12 @@ func _draw_tower(tw: GameSim.Tower, tm: float) -> void:
 
 
 ## How a tower is squashed this frame: it settles with a little bounce for half a second after
-## being built or upgraded, and Huts and Crypts dip as they fire (the Shrine's beam is steady).
+## being built or upgraded.
 func _squash(tw: GameSim.Tower) -> Vector2:
 	var age := sim.time - tw.born
 	var y := 1.0
 	if age >= 0.0 and age < 0.6:
 		y = 1.0 - 0.28 * cos(age * 22.0) * exp(-age * 9.0)
-	elif tw.flash > 0.0 and Defs.TOWERS[tw.type]["kind"] != "beam":
-		y = 1.0 - 0.07 * tw.flash / 0.15
 	if y == 1.0:
 		return Vector2.ONE
 	return Vector2(1.0 + (1.0 - y) * 0.7, y)
@@ -338,9 +334,6 @@ func _draw_pool(pl: GameSim.Pool, tm: float) -> void:
 func _draw_site(s: GameSim.Site, tm: float) -> void:
 	var c := s.pos * T
 	Paint.ellipse(self, c + Vector2(0.03, 0.3) * T, T * 0.44, T * 0.14, Color(0, 0, 0, 0.35))
-	if not s.owned and s.cuts_left > 1:   # one pip per cut still needed
-		for i in s.cuts_left:
-			draw_circle(c + Vector2((i - (s.cuts_left - 1) * 0.5) * 0.16, 0.44) * T, T * 0.05, Color(0.79, 0.75, 1.0, 0.9))
 	Art.site(self, s.kind, c, s.owned, tm, s.cell)
 	if s.kind == "camp" and not s.owned and sim.wave >= 1 and sim.wave < level.waves.size():
 		var k := 1.0 - s.t / s.every
@@ -441,16 +434,3 @@ func _draw_scorch(f: GameSim.Fx) -> void:
 		var q := p + Vector2(cos(ang), sin(ang) * 0.6) * f.r * T * (0.3 + 0.6 * Paint.hash01(i, 3, int(f.pos.x)))
 		draw_circle(q, T * 0.03, Color(1, 0.45 + 0.3 * hot, 0.1, 0.8 * hot * a) if hot > 0.0 else Color(0.1, 0.07, 0.05, 0.6 * a))
 
-
-## Gems catch the light now and then: a short four-pointed glint.
-func _sparkle(p: Vector2, r: float, tm: float, id: int) -> void:
-	var cycle := 2.6 + Paint.hash01(id, 5, 9) * 1.8
-	var k := fmod(tm + Paint.hash01(id, 7, 3) * cycle, cycle) / 0.35
-	if k >= 1.0:
-		return
-	var a := sin(k * PI)
-	var q := p + Vector2(r * 0.35, -r * 0.45)
-	var s := r * 1.1 * a
-	var col := Color(1, 1, 1, 0.9 * a)
-	draw_line(q - Vector2(s, 0), q + Vector2(s, 0), col, 1.5, true)
-	draw_line(q - Vector2(0, s), q + Vector2(0, s), col, 1.5, true)

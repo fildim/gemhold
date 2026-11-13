@@ -287,7 +287,7 @@ func _site_tip_text(s: GameSim.Site) -> String:
 		"well":
 			t = "[b]A Mana Well[/b], choked with roots. [b]Tap it and Cut it free[/b] with mana for +%.1f mana per second, so you can cast and cut more." % d["regen"]
 	if s.cuts > 1:
-		t += " This one takes [b]%d cuts[/b] (the dots under it)." % s.cuts
+		t += " This one takes [b]%d cuts[/b]; tap it to see how many are left." % s.cuts
 	return t
 
 
