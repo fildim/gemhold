@@ -4,7 +4,6 @@ extends Control
 
 signal next_wave_pressed
 signal meteor_pressed
-signal spell_pressed(id: String)   # Nightmare or Frenzy
 signal cut_pressed
 signal speed_pressed
 signal pause_pressed
@@ -59,11 +58,7 @@ var _cut: Button
 var _speed: Button
 var _pause: Button
 var _tide: Control   # the tide clock (lairs with a Tide rule)
-var _nightmare: Button
-var _frenzy: Button
-var _spell_row: HBoxContainer   # Nightmare and Frenzy share a row (shown once unlocked in Dark Arts)
 var _play_row: HBoxContainer    # speed and pause share a row
-var armed_spell := "meteor"     # which spell waits for a tap on the map (main sets it)
 var _send: Button           # online race only, in place of Pause: opens _send_menu
 var _send_menu: PopupMenu
 var _send_kinds: Array[String] = []
@@ -222,11 +217,6 @@ func _build_bars() -> void:
 	mic.offset_top = -20
 	mic.offset_bottom = 20
 	_meteor.add_child(mic)
-	_spell_row = HBoxContainer.new()
-	_spell_row.add_theme_constant_override("separation", 8)
-	brow.add_child(_spell_row)
-	_nightmare = _spell_button(_spell_row, "nightmare", "Nightmare")
-	_frenzy = _spell_button(_spell_row, "frenzy", "Frenzy")
 	_cut = _button(brow, "Cut woods 15", cut_pressed)
 	_play_row = HBoxContainer.new()
 	_play_row.add_theme_constant_override("separation", 8)
@@ -248,7 +238,7 @@ func _build_bars() -> void:
 	add_child(_send_menu)
 	_sound = sound_button(brow)
 	_add_map_button(brow)
-	for b in [_meteor, _cut, _nightmare, _frenzy]:
+	for b in [_meteor, _cut]:
 		b.add_theme_color_override("font_color", Color("c9c0ff"))
 
 
@@ -319,16 +309,6 @@ func _buttons() -> Array[Button]:
 	return out
 
 
-func _spell_button(parent: Control, id: String, label: String) -> Button:
-	var b := Button.new()
-	b.text = label
-	b.custom_minimum_size = Vector2(0, 48)
-	b.focus_mode = Control.FOCUS_NONE
-	b.pressed.connect(func() -> void: spell_pressed.emit(id))
-	parent.add_child(b)
-	return b
-
-
 func _button(parent: Control, text: String, sig: Signal) -> Button:
 	var b := Button.new()
 	b.text = text
@@ -389,7 +369,7 @@ func _set_side(on: bool, safe: Vector4) -> void:
 	for l: Label in [_gold, _mana, _gems, _rating, _wave]:
 		l.add_theme_font_size_override("font_size", 30 if on else 23)
 	_mana_bar.custom_minimum_size = Vector2(120 if on else 90, 14 if on else 12)
-	for row: Control in [_spell_row, _play_row]:
+	for row: Control in [_play_row]:
 		row.size_flags_vertical = Control.SIZE_EXPAND_FILL if on else Control.SIZE_FILL
 	for b: Button in _buttons():
 		var paired := b.get_parent() != _brow
@@ -457,16 +437,8 @@ func refresh(sim: GameSim, armed: bool, speed: int, paused: bool) -> void:
 	else:
 		_next.disabled = true
 		_next.text = "Final wave"
-	var on_meteor := armed and armed_spell == "meteor"
-	_meteor.disabled = not sim.can_meteor() and not on_meteor
-	_meteor.text = "Cancel meteor" if on_meteor else "Meteor %d" % Defs.METEOR["cost"]
-	_spell_row.visible = sim.has_spell("nightmare") or sim.has_spell("frenzy")
-	for pair in [[_nightmare, "nightmare", "Nightmare"], [_frenzy, "frenzy", "Frenzy"]]:
-		var b: Button = pair[0]
-		var on: bool = armed and armed_spell == pair[1]
-		b.visible = sim.has_spell(pair[1])
-		b.disabled = not sim.can_cast(pair[1]) and not on
-		b.text = "Cancel" if on else pair[2]
+	_meteor.disabled = not sim.can_meteor() and not armed
+	_meteor.text = "Cancel meteor" if armed else "Meteor %d" % Defs.METEOR["cost"]
 	_cut.disabled = sim.trees.is_empty() or sim.mana < Defs.CLEAR_MANA
 	_cut.text = "Cut woods %d" % Defs.CLEAR_MANA
 	_speed.text = "%d×" % speed
@@ -668,7 +640,7 @@ func toast(msg: String) -> void:
 
 ## Where a HUD button is on screen, for the tutorial spotlight: "next" or "meteor".
 func button_rect(button: String) -> Rect2:
-	var b: Control = {"next": _next, "meteor": _meteor, "nightmare": _nightmare, "frenzy": _frenzy, "tide": _tide}.get(button)
+	var b: Control = {"next": _next, "meteor": _meteor, "tide": _tide}.get(button)
 	return b.get_global_rect() if b and b.is_visible_in_tree() else Rect2()
 
 

@@ -8,7 +8,7 @@ extends Control
 signal closed
 
 const Hud := preload("res://scripts/ui/hud.gd")
-const TREE_NAMES := {"moss": "Warband Huts", "frost": "Bone Crypts", "ash": "Cinder Shrines", "den": "The Hoard", "land": "The Land"}
+const TAB_NAMES := {"moss": "Huts", "frost": "Crypts", "ash": "Shrines", "den": "The Hoard", "land": "The Land"}
 const TIER_NAMES := {1: "Tier I", 2: "Tier II", 3: "Tier III"}
 const ROMAN := ["", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"]
 ## Shown as a tip the first time Dark Arts opens (see main.gd), instead of taking up the screen.
@@ -67,15 +67,14 @@ func setup(hud: Control, save: SaveData) -> void:
 	head.add_child(info)
 	_stars = Label.new()
 	_stars.add_theme_font_override("font", hud.bold_font)
-	_stars.add_theme_font_size_override("font_size", 30)
+	_stars.add_theme_font_size_override("font_size", 28)
 	_stars.add_theme_color_override("font_color", Hud.GOLD)
 	info.add_child(_stars)
 	_points = Label.new()
 	_points.add_theme_font_override("font", hud.bold_font)
-	_points.add_theme_font_size_override("font_size", 32)
+	_points.add_theme_font_size_override("font_size", 28)
 	_points.add_theme_color_override("font_color", Hud.EMBER)
-	_points.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	head.add_child(_points)
+	info.add_child(_points)   # under the stars, so the heading row stays narrow
 	_reset = Button.new()
 	_reset.text = "Refund all points"
 	_reset.focus_mode = Control.FOCUS_NONE
@@ -96,9 +95,17 @@ func setup(hud: Control, save: SaveData) -> void:
 	head.add_child(back)
 
 
+	# The tabs fill the width when they fit; on a narrow screen the row slides sideways instead.
+	var strip := ScrollContainer.new()
+	strip.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	strip.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_SHOW_NEVER
+	strip.custom_minimum_size = Vector2(0, 76)
+	strip.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	box.add_child(strip)
 	_tabs = HBoxContainer.new()
 	_tabs.add_theme_constant_override("separation", 10)
-	box.add_child(_tabs)
+	_tabs.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	strip.add_child(_tabs)
 	_list = VBoxContainer.new()
 	_list.add_theme_constant_override("separation", 10)
 	box.add_child(_list)
@@ -142,9 +149,9 @@ func _tab_button(tree: String) -> Button:
 	for sk: Dictionary in Defs.SKILLS[tree]:
 		spent += _save.skill_rank(sk["id"])
 		room += int(sk["max"])
-	b.text = "%s  %d/%d" % [TREE_NAMES.get(tree, tree), spent, room]
+	b.text = "%s  %d/%d" % [TAB_NAMES.get(tree, tree), spent, room]
 	b.add_theme_font_override("font", _hud.bold_font)
-	b.add_theme_font_size_override("font_size", 30)
+	b.add_theme_font_size_override("font_size", 28)
 	b.add_theme_color_override("font_color", Color(TREE_COLORS[tree], 0.75))
 	b.add_theme_color_override("font_pressed_color", TREE_COLORS[tree])
 	b.add_theme_color_override("font_hover_pressed_color", TREE_COLORS[tree])

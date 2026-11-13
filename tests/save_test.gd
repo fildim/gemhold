@@ -539,7 +539,6 @@ func _check_every_achievement_can_be_earned() -> void:
 	wet.masteries_built = {"longhouse": 1, "lodge": 1, "ossuary": 1, "mausoleum": 1, "twin": 1, "sunlance": 1}
 	wet.twin_kills = 1
 	wet.lodge_champion = 1
-	wet.best_nightmare = 10
 	wet.boats_sunk = 1
 	wet.collapse_kills = 1
 	wet.best_flood = 5

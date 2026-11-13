@@ -67,7 +67,6 @@ class Tower:
 	var volley_hits: Array = []   # Ossuary: heroes already hit in this volley
 	var beam2: Enemy      # Twin Flame: the second beam's hero
 	var heat2 := 0.0
-	var frenzy := 0.0     # seconds of Frenzy left: fires and heats faster
 	var born := -10.0     # battle time it was built or last upgraded (view only: squash and settle)
 	# Permanent bonuses from the skill tree, filled in when the tower is built.
 	var dmg_mul := 1.0
@@ -86,8 +85,6 @@ class Tower:
 				var r := v / rate_mul
 				if mastery == "lodge":
 					r *= Defs.LODGE["rate"]
-				if frenzy > 0.0:
-					r /= Defs.FRENZY["speed"]
 				return r
 			"range":
 				return v + range_add
@@ -253,9 +250,6 @@ var best_flood := 0       # most heroes one surge slew
 var diver_meteor := 0     # hidden Divers slain by a meteor
 var plundered := 0        # gold Plunder paid
 var masteries_built := {} # mastery id -> how many towers became it this battle
-var nightmares := 0       # Nightmares cast
-var best_nightmare := 0   # most heroes one Nightmare struck
-var frenzies := 0         # Frenzies cast
 var twin_t := -10.0       # battle time a Twin Flame last slew a hero (twin_kills)
 var twin_kills := 0       # a Twin Flame slew two heroes within a second
 var best_ossuary := 0     # most heroes slain by one Ossuary volley
@@ -870,8 +864,6 @@ func _update_towers(dt: float) -> void:
 	for tw: Tower in towers.values():
 		if tw.flash > 0.0:
 			tw.flash -= dt
-		if tw.frenzy > 0.0:
-			tw.frenzy -= dt
 		if Defs.TOWERS[tw.type]["kind"] == "beam":
 			_update_beam(tw, dt)
 			continue
@@ -970,8 +962,6 @@ func _beam(tw: Tower, dt: float, slot: int, share: float) -> void:
 			heat *= keep
 			tw.cd = 0.0
 	var rate := dt * tw.rate_mul / Defs.HEAT_TIME
-	if tw.frenzy > 0.0:
-		rate *= Defs.FRENZY["speed"]
 	if b == null:
 		heat = maxf(0.0, heat - rate)
 	else:
@@ -1331,53 +1321,6 @@ func cut_random_woods() -> String:
 
 func can_meteor() -> bool:
 	return mana >= Defs.METEOR["cost"]
-
-
-## Nightmare and Frenzy: unlocked in Dark Arts, so never in races (they run without skills).
-func has_spell(id: String) -> bool:
-	return skill("spell_" + id) > 0
-
-
-func can_cast(id: String) -> bool:
-	match id:
-		"meteor":
-			return can_meteor()
-		"nightmare":
-			return has_spell(id) and mana >= Defs.NIGHTMARE["cost"]
-		"frenzy":
-			return has_spell(id) and mana >= Defs.FRENZY["cost"]
-	return false
-
-
-## Casts a spell at pos (in tiles). Returns true if it was cast.
-func cast(id: String, pos: Vector2) -> bool:
-	if id == "meteor":
-		return cast_meteor(pos)
-	if not can_cast(id):
-		return false
-	if id == "nightmare":
-		mana -= Defs.NIGHTMARE["cost"]
-		nightmares += 1
-		var n := 0
-		for e: Enemy in enemies:
-			if e.hp <= 0.0 or e.pos.distance_to(pos) > Defs.NIGHTMARE["radius"]:
-				continue
-			if e.d.has("boss") or e.d.has("boat") or e.code == "x":
-				continue   # bosses and boats ignore it
-			e.fear = Defs.NIGHTMARE["dur"] + 0.5 * skill("nightmare_dur")
-			n += 1
-		best_nightmare = maxi(best_nightmare, n)
-		_fx("nightmare", pos, Defs.NIGHTMARE["radius"], 0.9)
-		sound.emit("whoosh")
-	else:
-		mana -= Defs.FRENZY["cost"]
-		frenzies += 1
-		for tw: Tower in towers.values():
-			if tw.pos.distance_to(pos) <= Defs.FRENZY["radius"]:
-				tw.frenzy = Defs.FRENZY["dur"] + skill("frenzy_dur")
-		_fx("frenzy", pos, Defs.FRENZY["radius"], 0.9)
-		sound.emit("rank")
-	return true
 
 
 func cast_meteor(pos: Vector2) -> bool:

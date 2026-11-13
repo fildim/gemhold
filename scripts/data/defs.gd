@@ -236,10 +236,6 @@ const SKILLS := {
 		{"id": "hoard_mana", "name": "Deep Well", "text": "+15 max mana", "max": 4},
 		{"id": "hoard_regen", "name": "Mana Spring", "text": "+0.15 mana per second", "max": 3},
 		{"id": "meteor_dmg", "name": "Starfall", "text": "+25% meteor damage", "max": 3},
-		{"id": "spell_nightmare", "name": "Nightmare", "text": "A spell: heroes flee back along the road", "max": 1, "tier": 2},
-		{"id": "nightmare_dur", "name": "Night Terrors", "text": "Nightmare lasts 0.5 s longer", "max": 2, "tier": 2},
-		{"id": "spell_frenzy", "name": "Frenzy", "text": "A spell: towers fire and heat faster", "max": 1, "tier": 2},
-		{"id": "frenzy_dur", "name": "Bloodlust", "text": "Frenzy lasts 1 s longer", "max": 2, "tier": 2},
 		{"id": "gem_magnet", "name": "Gem Magnet", "text": "Loose gems roll home 20% faster", "max": 3, "tier": 2},
 		{"id": "sturdy", "name": "Sturdy Foundations", "text": "Stun, Rubble and Silence weigh 15% less", "max": 3, "tier": 2},
 	],
@@ -335,7 +331,3 @@ const SUNLANCE := {"share": 0.18, "keep": 0.35}
 ## Plunder: a level IV Hut pays +1 gold on its first kill as level IV, +2 on the next, ... up to this.
 const PLUNDER_MAX := 5
 
-## Spells unlocked in Dark Arts. Nightmare: heroes in the circle flee back along the road (gem
-## carriers freeze); bosses and boats ignore it. Frenzy: towers in the circle fire and heat faster.
-const NIGHTMARE := {"cost": 40, "radius": 1.6, "dur": 3.0}
-const FRENZY := {"cost": 35, "radius": 2.0, "dur": 6.0, "speed": 1.6}

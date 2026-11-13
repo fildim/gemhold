@@ -156,8 +156,6 @@ func _draw_tower(tw: GameSim.Tower, tm: float) -> void:
 			Art.shrine(self, x, y, s, lv, flash, tm, tw.pos)
 	if tw.mastery != "":
 		_draw_mastery(tw, x, y, s, tm)
-	if tw.frenzy > 0.0:   # Frenzy: a red pulse
-		Paint.ellipse_outline(self, Vector2(x, y + s * 0.3), s * 0.5, s * 0.18, Color(1, 0.3, 0.2, 0.5 + 0.4 * sin(tm * 12.0)), 3.0)
 	# a violet halo once the ability is learned; the pips below show only the upgrade level
 	if tw.has_ability():
 		Paint.ellipse_outline(self, Vector2(x, y + s * 0.3), s * 0.46, s * 0.17, Color(0.79, 0.75, 1, 0.5 + 0.3 * sin(tm * 3.0)), 2.0)
@@ -326,9 +324,9 @@ func _draw_fx(f: GameSim.Fx) -> void:
 				Paint.glow(self, m, T * 0.6, Color(1, 0.42, 0.13, 0.7))
 				draw_circle(m, T * 0.28, Color("ff6a20"))
 				draw_circle(m, T * 0.14, Color("ffe08a"))
-		"surge", "splash", "flood", "nightmare", "frenzy":   # rings for the Tidecaller, a falling bridge, a sluice and the spells
+		"surge", "splash", "flood":   # rings for the Tidecaller's surge, a falling bridge and a sluice
 			var e := 1.0 - pow(1.0 - k, 2.0)
-			var col: Color = {"surge": Color(0.6, 0.85, 1), "splash": Color(0.8, 0.92, 1), "flood": Color(0.5, 0.8, 1), "nightmare": Color(0.7, 0.55, 1), "frenzy": Color(1, 0.4, 0.25)}[f.kind]
+			var col: Color = {"surge": Color(0.6, 0.85, 1), "splash": Color(0.8, 0.92, 1), "flood": Color(0.5, 0.8, 1)}[f.kind]
 			Paint.ellipse(self, p, f.r * T * e, f.r * T * e * 0.55, Color(col, 0.22 * (1.0 - k)))
 			Paint.ellipse_outline(self, p, f.r * T * e, f.r * T * e * 0.55, Color(col, 0.8 * (1.0 - k)), 3.0)
 		"shock":   # a ring sweeping out from a meteor strike

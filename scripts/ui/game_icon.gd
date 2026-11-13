@@ -24,8 +24,8 @@ const ACH := {
 	"night_thread": "moon", "night_one": "moon",
 	"chapter3": "banner", "mastery_longhouse": "tower:moss", "mastery_lodge": "tower:moss", "mastery_ossuary": "tower:frost",
 	"mastery_mausoleum": "tower:frost", "mastery_twin": "tower:ash", "mastery_sunlance": "tower:ash", "mastery_all": "towers",
-	"masteries25": "up", "masteries100": "up", "twin_kills": "tower:ash", "hunter_champion": "hero:x", "nightmare10": "dread",
-	"nightmares100": "dread", "frenzies100": "flame", "sink1": "hero:l", "sink_all": "hero:l", "drowned100": "hero:l",
+	"masteries25": "up", "masteries100": "up", "twin_kills": "tower:ash", "hunter_champion": "hero:x",
+	"sink1": "hero:l", "sink_all": "hero:l", "drowned100": "hero:l",
 	"collapse_kill": "hero:e", "collapses25": "hero:e", "sluice5": "site:sluice", "sluices50": "site:sluice", "dry_feet": "hero:m",
 	"diver_meteor": "meteor", "altars10": "site:altar",
 }
@@ -44,7 +44,7 @@ const ACH_PREFIX := [
 const SKILL_BADGE := {"dmg": "blade", "rate": "rate", "range": "range", "vet": "vet"}
 const ABILITY_BADGE := {"moss": "volley", "frost": "dread", "ash": "flame"}
 const HOARD := {"den_charge": "orb", "hoard_gold": "coins", "hoard_mana": "potion", "hoard_regen": "spring", "meteor_dmg": "meteor",
-	"spell_nightmare": "dread", "nightmare_dur": "dread", "spell_frenzy": "flame", "frenzy_dur": "flame", "gem_magnet": "gem", "sturdy": "hill",
+	"gem_magnet": "gem", "sturdy": "hill",
 	"land_veins": "site:mine", "land_springs": "site:well", "land_axes": "tree", "land_heights": "hill", "land_spoils": "site:camp",
 	"land_lantern": "spark", "land_flood": "site:sluice", "land_rites": "site:altar"}
 
@@ -119,7 +119,7 @@ static func paint(ci: CanvasItem, k: String, xf := Transform2D.IDENTITY) -> void
 	elif k.begins_with("skill:"):
 		_skill(ci, k.trim_prefix("skill:"), xf)
 	elif k.begins_with("spell:"):
-		_glyph(ci, {"meteor": "meteor", "nightmare": "dread", "frenzy": "flame"}.get(k.trim_prefix("spell:"), "spark"))
+		_glyph(ci, {"meteor": "meteor"}.get(k.trim_prefix("spell:"), "spark"))
 	else:
 		_glyph(ci, k)
 

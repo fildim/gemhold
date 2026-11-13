@@ -2,7 +2,7 @@
 
 Design plan, written 2026-11-13 against v0.8.10 (20 lairs, 11 heroes, 3 towers, 59 Dark Arts points, 229 achievements). It is meant to be handed to an implementer who has not seen the discussion behind it. Read `docs/DEVELOPMENT.md` first: it describes the game as it is today, the level format, the tests and how to publish.
 
-The plan adds three chapters of ten lairs (21–50), fifteen new heroes, a fourth tower level with two masteries per tower, two spells, water, new map buildings, a larger Dark Arts tree, about 80 achievements and a graphics upgrade. It is split into five phases that can each ship as a version.
+The plan adds three chapters of ten lairs (21–50), fifteen new heroes, a fourth tower level with two masteries per tower, water, new map buildings, a larger Dark Arts tree, about 80 achievements and a graphics upgrade. It is split into five phases that can each ship as a version.
 
 ## 1. Rules the design must keep
 
@@ -24,7 +24,7 @@ These are decisions the owner has already made. Do not change them while impleme
 | Source | Idea | Used here as |
 |---|---|---|
 | Kingdom Rush series | Two-way tower specialisation at the top level; bosses that stun towers; Heroic/Iron challenge stages | Masteries (§5); Sapper, Trebuchet, boss abilities (§4) |
-| Cursed Treasure 2 | Champion that weakens nearby towers; speed-buffing bard; invisible ninja; fear spell | Inquisitor aura; Diver (hidden only in water); Nightmare spell |
+| Cursed Treasure 2 | Champion that weakens nearby towers; speed-buffing bard; invisible ninja; fear spell | Inquisitor aura; Diver (hidden only in water); no new spells (§6) |
 | Bloons TD 6 maps | Water areas, removable obstacles, paths that alternate by round, a map that changes over time | Water and fords; wave routes; Tide and Dusk lair rules (§3) |
 | Infinitode 2 / TD Simulator | Healers and shields as priority targets; immunity to one damage style | Rainbringer completes the counter triangle: armour vs Hut, Warden vs Crypt, Rainbringer vs Shrine |
 | Defender's Quest (Lars Doucet's design posts) | Every enemy must read at a glance and have one clear role | One new rule per hero, a distinct silhouette and a first-sight tip for each |
@@ -75,7 +75,7 @@ Towers can be hindered, never destroyed:
 | Silenced | Inquisitor aura | Ability off, veteran damage bonus off, 30% slower fire or heating | When he leaves or dies |
 | Rubble | Trebuchet stone | No firing | After 9 s, or at once with **Clear rubble** (15 gold, tile action) |
 
-The tile panel names the status and what causes it. Each has its own look (§8). Towers on raised tiles cannot be reached by Sappers; that gives raised tiles a second use. The Frenzy spell (§6) clears Stun and Rubble.
+The tile panel names the status and what causes it. Each has its own look (§8). Towers on raised tiles cannot be reached by Sappers; that gives raised tiles a second use. Clear rubble from the tile panel; Stun wears off.
 
 ### 3.5 New map buildings
 
@@ -132,10 +132,10 @@ Twelve heroes and three bosses. Each has one rule, one counter, and a silhouette
 | Code | Hero | Health / speed / armour / gems / bounty | Rule | Counter |
 |---|---|---|---|---|
 | `y` | Skylancer | 150 / 1.3 / 0 / 1 / 14 | Flies straight for the den along an air road, ignoring the roads, water, Lava and paving. Chill works at half strength. Gems he drops fall to the nearest road and roll home | Towers near the den and under the flight line (drawn as a faint dashed line); den charges |
-| `j` | Justicar | 420 / 0.7 / 3 / 2 / 28 | Once, below 35% health, a holy shield makes him untouchable for 2.5 s and heals him to 60%. Immune to Dread and Nightmare | Burst him down past the shield, or pop it early and finish him in a covered stretch |
-| `n` | Spiriter | 140 / 1.0 / 0 / 1 / 16 | When he takes a gem he does not run: he chants for 4 s at the cave mouth and vanishes with it. Dread, Nightmare or death break the chant (a broken chant makes him run like anyone else) | Den charges, a Crypt with Dread by the den, the Nightmare spell |
+| `j` | Justicar | 420 / 0.7 / 3 / 2 / 28 | Once, below 35% health, a holy shield makes him untouchable for 2.5 s and heals him to 60%. Immune to Dread | Burst him down past the shield, or pop it early and finish him in a covered stretch |
+| `n` | Spiriter | 140 / 1.0 / 0 / 1 / 16 | When he takes a gem he does not run: he chants for 4 s at the cave mouth and vanishes with it. Dread or death break the chant (a broken chant makes him run like anyone else) | Den charges, a Crypt with Dread by the den |
 
-**Boss, lair 50: the Seraph** `S`: 5200 / 0.55 / 4 / 5 gems / 400. She flies. At 66% and 33% health she lands on the nearest road, is untouchable for 4 s, and raises the last 6 (then 8) slain heroes where she stands with half health (no bosses, boats or engines). Immune to Dread and Nightmare.
+**Boss, lair 50: the Seraph** `S`: 5200 / 0.55 / 4 / 5 gems / 400. She flies. At 66% and 33% health she lands on the nearest road, is untouchable for 4 s, and raises the last 6 (then 8) slain heroes where she stands with half health (no bosses, boats or engines). Immune to Dread.
 
 ### Implementation notes
 
@@ -167,12 +167,7 @@ Balance targets, measured with `tests/tower_test.gd` (extend it with level IV ro
 
 ## 6. Spells
 
-Two new spells, both unlocked in Dark Arts. The battle bar becomes Meteor, Nightmare, Frenzy, Cut woods; hide the ones not yet unlocked and keep the buttons as large as Meteor is now. Races run without Dark Arts, so they keep Meteor only.
-
-- **Nightmare** (40 mana, 1.6 tiles): heroes flee back along the road for 3 s; gem carriers freeze. Breaks a Spiriter's chant and a Sapper's fuse. Bosses, Justicars and boats ignore it.
-- **Frenzy** (35 mana, 2.0 tiles): towers inside fire and heat 60% faster for 6 s; clears Stun and Rubble.
-
-Each gets a spotlight tip the first battle after it is unlocked.
+**Removed** (owner's decision, 2026-11-13): no new spells. The Meteor stays the only spell. Nightmare, Frenzy and their Dark Arts skills (Nightmare, Night Terrors, Frenzy, Bloodlust) are gone, with their achievements; Phase 2 built them and they were taken out again.
 
 ## 7. Dark Arts v2
 
@@ -180,7 +175,7 @@ Today there are 59 points to spend and 120 stars to earn, so a thorough player a
 
 **Screen:** five trees no longer fit as columns with big text. Use one tab per tree (Huts, Crypts, Shrines, The Hoard, The Land); each tab lists its skills as large buttons in tier sections. A locked tier shows its header ("Opens in Chapter III") with the skills dimmed, so the player sees what is coming. Keep Refund all.
 
-**Tiers open with the campaign, not with stars** (owner's decision, 2026-11-13): The Land when Chapter II is reached (10 lairs beaten), tier II with Chapter III (20 beaten), tier III with Chapter V (40 beaten). Stars stay the skill points. Star gates were dropped because a typical player (2.4 stars a lair) would reach 60 stars only around lair 25 and 150 stars after the finale, so tier III would never open; chapter gates open each tier as the content that needs it arrives (masteries, Nightmare and Frenzy with Chapter III's heroes), give a clear reward moment on the map (a spotlight tip when a tier opens), and let the bot and the tuning assume exactly which skills exist at each lair.
+**Tiers open with the campaign, not with stars** (owner's decision, 2026-11-13): The Land when Chapter II is reached (10 lairs beaten), tier II with Chapter III (20 beaten), tier III with Chapter V (40 beaten). Stars stay the skill points. Star gates were dropped because a typical player (2.4 stars a lair) would reach 60 stars only around lair 25 and 150 stars after the finale, so tier III would never open; chapter gates open each tier as the content that needs it arrives (the masteries with Chapter III's heroes), give a clear reward moment on the map (a spotlight tip when a tier opens), and let the bot and the tuning assume exactly which skills exist at each lair.
 
 **Tier I** (open from the start): the 20 existing skills, unchanged (59 points).
 
@@ -202,10 +197,6 @@ Today there are 59 points to spend and 120 stars to earn, so a thorough player a
 | Shrines | Slow Cooling | Lava lasts 0.5 s longer | 2 |
 | Shrines | Mastery: Twin Flame | Unlocks it | 1 |
 | Shrines | Mastery: Sunlance | Unlocks it | 1 |
-| Hoard | Nightmare | Unlocks the spell | 1 |
-| Hoard | Night Terrors | Nightmare lasts 0.5 s longer | 2 |
-| Hoard | Frenzy | Unlocks the spell | 1 |
-| Hoard | Bloodlust | Frenzy lasts 1 s longer | 2 |
 | Hoard | Gem Magnet | Loose gems roll home 20% faster | 3 |
 | Hoard | Sturdy Foundations | Stun, Rubble and Silence weigh 15% less (shorter, or less slowdown) | 3 |
 
@@ -231,9 +222,9 @@ Today there are 59 points to spend and 120 stars to earn, so a thorough player a
 | Hoard | Dragon's Patience | +10 starting mana | 3 |
 | Hoard | Renown | +1% leaderboard score; no effect on battles | 150 |
 
-Totals: 59 + 37 (tier II) + 20 (The Land) + 23 (tier III) = 139, plus Renown. `SaveData._skill_max` already ignores unknown ids, so old saves load. A skill's gate is checked in `can_buy` against `SaveData.lairs_beaten()` (`Defs.TIER_BEATEN`, `Defs.TREE_BEATEN`, done in Phase 0); beaten lairs stay beaten, so a refund never locks a tier. When a tier opens, the map shows a Dark Arts spotlight tip once (its own Prefs key). The achievement "Omniscient" (`arts59`) must count the real total without Renown.
+Totals: 59 + 31 (tier II) + 20 (The Land) + 23 (tier III) = 133, plus Renown. `SaveData._skill_max` already ignores unknown ids, so old saves load. A skill's gate is checked in `can_buy` against `SaveData.lairs_beaten()` (`Defs.TIER_BEATEN`, `Defs.TREE_BEATEN`, done in Phase 0); beaten lairs stay beaten, so a refund never locks a tier. When a tier opens, the map shows a Dark Arts spotlight tip once (its own Prefs key). The achievement "Omniscient" (`arts59`) must count the real total without Renown.
 
-Update `Bot.SKILL_ORDER` and `Bot.points_before` in `tests/bot.gd` to buy tier II and III skills at the pace of a 2.4-star player, once their chapter is reached (`Bot.skills(points, beaten)` already passes over shut tiers), and teach the bot to: take a mastery when offered (alternate A and B by tile), cast Nightmare on a chanting Spiriter and Frenzy on a stunned cluster, collapse bridges when no Diver is in the wave, use Sluices on boats, clear Rubble, and raze Chapels and Signal Fires before woods.
+Update `Bot.SKILL_ORDER` and `Bot.points_before` in `tests/bot.gd` to buy tier II and III skills at the pace of a 2.4-star player, once their chapter is reached (`Bot.skills(points, beaten)` already passes over shut tiers), and teach the bot to: take a mastery when offered (alternate A and B by tile), collapse bridges when no Diver is in the wave, use Sluices on boats, clear Rubble, and raze Chapels and Signal Fires before woods.
 
 ## 8. Graphics
 
@@ -343,7 +334,6 @@ Each lair turns one lever nobody has seen yet, then later lairs mix levers. Grid
 - **Stars and score:** `stars150`, `stars200`, `stars250`, `stars300` Every Star There Is; `score30000`, `score40000`; `total500000`, `total1000000`.
 - **Dark Arts:** `arts80`, `arts110`, `branch_land` Landlord, `tier3` Forbidden Knowledge (buy a tier III skill), `renown50`, `renown150` Vanity.
 - **Masteries:** one for building each of the six, `mastery_all` (all six in one battle), `mastery_one_each`, `ossuary_burst` (four heroes slain by one Ossuary volley), `twin_kills` (Twin Flame slays two heroes within a second), `sunlance3` (three heroes burning on one Sunlance), `hunter_champion` (a Hunter's Lodge lands the killing blow on a Champion), lifetime `masteries25`, `masteries100`.
-- **Spells:** `nightmare_save` (break a Spiriter's chant with Nightmare), `nightmare10` (ten heroes in one cast), `frenzy_rescue` (clear Stun or Rubble from three towers with one Frenzy), lifetime `nightmares100`, `frenzies100`.
 - **Water:** `sink1` Davy Jones (sink a Longboat before it lands), `sink_all` (win a river lair with no boat landing), `drowned100` lifetime crew drowned, `collapse_kill` (a hero dies swimming a collapsed bridge), `collapses25`, `sluice5` (five heroes slain by one surge), `dry_feet` (win Reedmere Ford with no hero slain in water), `diver_meteor` (slay a hidden Diver with a Meteor).
 - **Siege:** `sapper_keg` Own Goal (a Sapper's keg slays three heroes), `no_stun` (win a Sapper lair with no tower ever stunned), `rubble10` (clear 10 Rubbles in one battle), `trebuchet_fast` (destroy a Trebuchet before its first stone), `silence_proof` (slay an Inquisitor with a tower he was silencing), `pavior_early` (slay a Pavior before he paves three tiles), `belfry` Belfry Breaker.
 - **Radiant:** `skylancer10` (ten Skylancers in one battle), `shield_waste` (make a Justicar spend his shield outside every tower's range), `chant_broken5`, `chapel_first` (raze every Chapel before wave 5), `hallowed_none` (win Hallowed Fields without building on hallowed ground), `seven_kept` (win a seven-gem lair Brilliant), `seraph` Fallen Angel, `seraph_no_raise` (slay the Seraph before her second rising).
@@ -364,7 +354,7 @@ Fix in Phase 0, before any content:
 - **Board drawing** redraws every hero with many primitives each frame. Waves grow in later chapters: do G3's sprite baking before Chapter IV, and measure frame time on a phone at lair 30.
 - **Races**: `race_shop` offers every hero in a lair's waves; honour `no_send`. A rival on an older version already gets "That lair is not in this version".
 - **Demo**: stays the first 5 lairs. No change.
-- **Guide and tips**: every new hero, building, rule, spell and mastery needs a Guide entry and a first-sight tip. "No more tips" must cover the new kinds (it loops over `Defs.SITES` and `Defs.ENEMIES` already; lair rules and spells need their own Prefs keys in that loop).
+- **Guide and tips**: every new hero, building, rule and mastery needs a Guide entry and a first-sight tip. "No more tips" must cover the new kinds (it loops over `Defs.SITES` and `Defs.ENEMIES` already; lair rules and spells need their own Prefs keys in that loop).
 
 ### Tuning method
 
@@ -382,7 +372,7 @@ Each phase ends with all tests green, the Guide and `DEVELOPMENT.md` updated, a 
 |---|---|---|
 | **0 Groundwork** | §11 fixes; level format v2 loader and `level_check`; road zones; Dark Arts screen with tabs and tier gates (tier I only filled); `--chapter` test filter | The 20 existing lairs play exactly as before (bot results unchanged for the same seeds) |
 | **1 Feel** | G1 motion and G4 icons for what exists | Screenshots before and after; no frame-time loss on Android |
-| **2 The Drowned Marches** | Water, fords, bridges, river roads, Tide, routes; five heroes and the Tidecaller; Altar and Sluice; level IV and the six masteries; Nightmare and Frenzy; Dark Arts tier II and The Land; G2 biomes and water; lairs 21–30; their achievements | Bot wins 21–30 inside the margin targets; `tower_test` balance targets met |
+| **2 The Drowned Marches** | Water, fords, bridges, river roads, Tide, routes; five heroes and the Tidecaller; Altar and Sluice; level IV and the six masteries; Dark Arts tier II and The Land; G2 biomes and water; lairs 21–30; their achievements | Bot wins 21–30 inside the margin targets; `tower_test` balance targets met |
 | **3 The Siegeworks** | Tower statuses; four heroes and the Iron Belfry; Signal Fire, Workshop; Dusk; G3 sprites, lights and status looks; lairs 31–40; achievements | As above, plus stable frame time at lair 40 on a phone |
 | **4 The Radiant Host** | Flyers and air roads; three heroes and the Seraph; Chapel, hallowed ground, Eclipse, seven gems; Dark Arts tier III; lairs 41–50; the remaining achievements; chapter map art | Bot wins 41–50; the whole campaign difficulty curve printed and smooth |
 
@@ -406,3 +396,4 @@ Not part of this plan; they need decisions or new backend rules.
 4. **Tools**: Inkscape, Krita, Material Maker and Laigter are installed (§8).
 5. **Plunder** (§5): the cap of +5 gold is a starting value; the owner may want it higher once the bot's end-of-lair gold is measured.
 6. **Dark Arts tiers**: decided 2026-11-13: they open with chapters, not stars: The Land with Chapter II, tier II with Chapter III, tier III with Chapter V (§7).
+7. **Spells**: decided 2026-11-13: no new spells; Nightmare and Frenzy removed (§6).

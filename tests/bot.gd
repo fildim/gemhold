@@ -14,10 +14,10 @@ const SKILL_ORDER := ["moss_dmg", "ash_dmg", "ash_dmg", "moss_dmg", "ash_ability
 	"moss_ability", "frost_ability", "hoard_mana", "moss_vet", "ash_vet", "frost_vet", "frost_rate", "den_charge",
 	"hoard_gold", "meteor_dmg", "moss_ability", "hoard_mana", "hoard_mana", "hoard_gold",
 	# Chapter III onward (tier II opens with Chapter III, The Land with Chapter II):
-	"mastery_longhouse", "mastery_ossuary", "mastery_twin", "land_axes", "spell_nightmare", "moss_bodkin",
-	"frost_freeze", "ash_memory", "mastery_lodge", "mastery_mausoleum", "mastery_sunlance", "spell_frenzy",
+	"mastery_longhouse", "mastery_ossuary", "mastery_twin", "land_axes", "moss_bodkin",
+	"frost_freeze", "ash_memory", "mastery_lodge", "mastery_mausoleum", "mastery_sunlance",
 	"land_veins", "ash_core", "frost_cold", "moss_keen", "land_springs", "land_flood", "land_rites", "gem_magnet",
-	"land_axes", "nightmare_dur", "frenzy_dur", "moss_bodkin", "frost_freeze", "ash_memory", "land_heights", "land_spoils",
+	"land_axes", "moss_bodkin", "frost_freeze", "ash_memory", "land_heights", "land_spoils",
 	"ash_core", "frost_cold", "moss_keen", "land_veins", "land_springs", "frost_dread", "ash_cooling", "land_lantern"]
 
 
@@ -83,7 +83,6 @@ static func play(lv: Level, skill_ranks: Dictionary, seed := 0) -> GameSim:
 					sim.do_action(a["id"], v)
 					break
 		_collapse(sim)
-		_spells(sim)
 		if sim.can_meteor() and not sim.enemies.is_empty():
 			sim.cast_meteor(sim.enemies[0].pos)
 		for l: GameSim.Loot in sim.loot.duplicate():
@@ -142,23 +141,3 @@ static func _collapse(sim: GameSim) -> void:
 		if sim.level.crossing_kind[i] == "bridge" and not sim.collapsed.has(c) and sim.mana >= sim.collapse_cost(i):
 			sim.do_action("collapse", c)
 
-
-## Nightmare on a gem carrier near the den or a crowd; Frenzy where most heroes are in reach of towers.
-static func _spells(sim: GameSim) -> void:
-	if sim.can_cast("nightmare"):
-		for e: GameSim.Enemy in sim.enemies:
-			if e.carry > 0 or e.pos.distance_to(sim.level.lair_center) < 2.0:
-				var n := sim.enemies.filter(func(o: GameSim.Enemy) -> bool: return o.pos.distance_to(e.pos) <= Defs.NIGHTMARE["radius"]).size()
-				if n >= 3 or e.carry > 0:
-					sim.cast("nightmare", e.pos)
-					break
-	if sim.can_cast("frenzy") and sim.enemies.size() >= 8:
-		var best: GameSim.Tower = null
-		var most := 5
-		for tw: GameSim.Tower in sim.towers.values():
-			var n := sim.enemies.filter(func(o: GameSim.Enemy) -> bool: return o.pos.distance_to(tw.pos) <= tw.stat("range")).size()
-			if n > most:
-				most = n
-				best = tw
-		if best != null:
-			sim.cast("frenzy", best.pos)

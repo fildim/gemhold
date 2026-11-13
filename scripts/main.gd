@@ -56,7 +56,6 @@ var _race_busy := false
 func _ready() -> void:
 	hud.next_wave_pressed.connect(_on_next_wave)
 	hud.meteor_pressed.connect(_on_meteor)
-	hud.spell_pressed.connect(_on_spell)
 	hud.cut_pressed.connect(_on_cut)
 	hud.speed_pressed.connect(func() -> void: speed = 2 if speed == 1 else 1)
 	hud.pause_pressed.connect(func() -> void: paused = not paused)
@@ -267,7 +266,7 @@ func _process(delta: float) -> void:
 
 
 ## Tips for the rules of Chapter III, each shown once (Prefs "rule_tip_<key>").
-const RULE_TIPS := ["ford", "bridge", "tide", "routes", "mastery", "nightmare", "frenzy"]
+const RULE_TIPS := ["ford", "bridge", "tide", "routes", "mastery"]
 var _rule_key := ""
 
 
@@ -303,10 +302,6 @@ func _rule_tip_for(k: String) -> Array:
 			for tw: GameSim.Tower in sim.towers.values():
 				if not sim.masteries_for(tw).is_empty():
 					return ["[b]Level IV![/b] This tower is battle-hardened and level III, so it can become one of its masteries. Tap it to choose; the choice is final.", _cell_rect(Vector2(tw.cell))]
-		"nightmare", "frenzy":
-			if sim.has_spell(k) and started:
-				var txt := "[b]Nightmare[/b] (%d mana): tap it, then tap heroes. They flee back along the road for a few seconds, and gem carriers freeze. Bosses and boats ignore it." % Defs.NIGHTMARE["cost"] if k == "nightmare" else "[b]Frenzy[/b] (%d mana): tap it, then tap among your towers. Those nearby fire and heat up much faster for a few seconds." % Defs.FRENZY["cost"]
-				return [txt, hud.button_rect(k)]
 	return []
 
 
@@ -491,7 +486,7 @@ func _on_map_input(event: InputEvent) -> void:
 		return
 	var p: Vector2 = event.position / T   # tile units
 	if armed:
-		sim.cast(hud.armed_spell, p)
+		sim.cast_meteor(p)
 		armed = false
 		_deselect()
 		return
@@ -552,22 +547,14 @@ func _on_cut() -> void:
 
 
 func _on_meteor() -> void:
-	_on_spell("meteor")
-
-
-## Meteor, Nightmare or Frenzy: tap the button, then the map. Tapping it again cancels.
-func _on_spell(id: String) -> void:
 	if armed:
-		var same: bool = hud.armed_spell == id
 		armed = false
-		if same:
-			return
-	if not sim.can_cast(id):
+		return
+	if not sim.can_meteor():
 		return
 	_deselect()
 	armed = true
-	hud.armed_spell = id
-	hud.toast({"meteor": "Tap the map to drop the meteor", "nightmare": "Tap the heroes to send them fleeing", "frenzy": "Tap among your towers to drive them into a frenzy"}[id])
+	hud.toast("Tap the map to drop the meteor")
 
 
 func _on_ended(won: bool) -> void:

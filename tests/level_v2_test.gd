@@ -148,7 +148,7 @@ func _old_levels() -> void:
 
 
 func _skills() -> void:
-	_check(Defs.skill_points_all() == 116, "tiers I and II and The Land hold 116 points: %d" % Defs.skill_points_all())
+	_check(Defs.skill_points_all() == 110, "tiers I and II and The Land hold 110 points: %d" % Defs.skill_points_all())
 	_check(Achievements.goal_of(Achievements.find("arts59")) == Defs.skill_points_all(), "Omniscient counts the real total")
 	_check(Defs.skill_gate("moss_dmg") == 0, "tier I is open from the start")
 	_check(Defs.TIER_BEATEN[2] == 20 and Defs.TIER_BEATEN[3] == 40 and Defs.TREE_BEATEN["land"] == 10, "tier gates: chapters III and V, The Land with II")

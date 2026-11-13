@@ -168,18 +168,11 @@ A [b]Dark Altar[/b] is overgrown. Cut it free (%d mana) and towers within %.1f t
 	t.append(_t("Your powers", "Loot",
 		"Slain heroes sometimes drop a [b]coin[/b] (gold, more from tougher kinds of hero) or a [b]mana potion[/b] (+%d mana).\n\nTap loot to take it at once. Anything still lying around is gathered by itself when the next wave starts, and in the last wave every drop is taken at once." % Defs.LOOT_POTION_MANA))
 
-	t.append(_t("Your powers", "Nightmare and Frenzy",
-		"Two spells you can learn in Dark Arts once Chapter III opens. Tap the button, then the map.
-
-[b]Nightmare[/b] (%d mana): heroes within %.1f tiles flee back along the road for %d seconds; gem carriers freeze. Bosses and boats ignore it.
-
-[b]Frenzy[/b] (%d mana): towers within %.1f tiles fire and heat up %d%% faster for %d seconds." % [Defs.NIGHTMARE["cost"], Defs.NIGHTMARE["radius"], roundi(Defs.NIGHTMARE["dur"]), Defs.FRENZY["cost"], Defs.FRENZY["radius"], roundi((Defs.FRENZY["speed"] - 1.0) * 100), roundi(Defs.FRENZY["dur"])]))
-
 	# ------------------------------------------------------------ progress
 	t.append(_t("Progress", "Dark Arts",
 		"Your skills, opened from the map. [b]Every star is a skill point.[/b]\n\n"
 		+ "Each tower kind has its own tab: damage, attack speed, range, faster ranks and a stronger ability. [b]The Hoard[/b] tab gives your den more charges, every battle more starting gold, more mana or faster mana (Mana Spring), and the Meteor more damage.\n\n"
-		+ "More skills open as the campaign goes on: [b]The Land[/b] (mines, wells, cutting, raised tiles, Sluices and Altars) with Chapter II, and [b]tier II[/b] of every tree, the masteries and two new spells with Chapter III. A tier that is still shut shows which chapter opens it.
+		+ "More skills open as the campaign goes on: [b]The Land[/b] (mines, wells, cutting, raised tiles, Sluices and Altars) with Chapter II, and [b]tier II[/b] of every tree and the masteries with Chapter III. A tier that is still shut shows which chapter opens it.
 
 "
 		+ "Tower skills apply to towers you build after buying them. [b]Refund all points[/b] any time to try a different plan."))

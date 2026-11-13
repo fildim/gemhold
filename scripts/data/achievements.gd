@@ -295,9 +295,6 @@ const LIST: Array[Dictionary] = [
 	{"id": "masteries100", "name": "Citadel of Masters", "text": "Raise 100 level IV towers in all.", "stat": "masteries", "goal": 100},
 	{"id": "twin_kills", "name": "Double Burn", "text": "A Twin Flame slays two heroes within a second."},
 	{"id": "hunter_champion", "name": "Big Game", "text": "A Hunter's Lodge lands the killing blow on a Champion."},
-	{"id": "nightmare10", "name": "Mass Hysteria", "text": "Strike ten heroes with one Nightmare."},
-	{"id": "nightmares100", "name": "Bringer of Nightmares", "text": "Cast 100 Nightmares.", "stat": "nightmares", "goal": 100},
-	{"id": "frenzies100", "name": "Frenzied", "text": "Cast 100 Frenzies.", "stat": "frenzies", "goal": 100},
 	{"id": "sink1", "name": "Down to the Depths", "text": "Sink a Longboat before it lands."},
 	{"id": "sink_all", "name": "None Shall Land", "text": "Win a lair with boats where not one of them landed."},
 	{"id": "drowned100", "name": "Davy's Locker", "text": "Drown 100 boat crews' heroes in all.", "stat": "drowned", "goal": 100},
@@ -359,8 +356,6 @@ static func record(save: SaveData, sim: GameSim) -> void:
 				save.add_stat(key, 1)
 	for m: String in sim.masteries_built:
 		save.add_stat("masteries", sim.masteries_built[m])
-	save.add_stat("nightmares", sim.nightmares)
-	save.add_stat("frenzies", sim.frenzies)
 	save.add_stat("drowned", sim.drowned)
 	save.add_stat("collapses", sim.collapsed_n)
 	save.add_stat("floods", sim.floods)
@@ -427,7 +422,6 @@ static func check_battle(save: SaveData, sim: GameSim, number: int) -> Array[Str
 	_try(save, got, "mastery_all", sim.masteries_built.size() >= 6)
 	_try(save, got, "twin_kills", sim.twin_kills > 0)
 	_try(save, got, "hunter_champion", sim.lodge_champion > 0)
-	_try(save, got, "nightmare10", sim.best_nightmare >= 10)
 	_try(save, got, "sink1", sim.boats_sunk > 0)
 	_try(save, got, "collapse_kill", sim.collapse_kills > 0)
 	_try(save, got, "sluice5", sim.best_flood >= 5)
