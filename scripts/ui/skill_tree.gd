@@ -1,21 +1,27 @@
 extends Control
-## The skill tree, opened from the level map: stars earned, then one column per tower type.
+## The skill tree, opened from the level map: stars earned, then one tab per tree (Huts, Crypts,
+## Shrines, The Hoard, and The Land once it has skills), each listing its skills as big buttons in tier
+## sections. A tier still shut shows its header ("Opens at 60 ★") with its skills dimmed.
 ## Tap a skill to spend a point. Every star from a mission's best rating is one point.
 ## Builds its own nodes in code, like the HUD.
 
 signal closed
 
 const Hud := preload("res://scripts/ui/hud.gd")
-const TREES := [["moss", "Warband Huts"], ["frost", "Bone Crypts"], ["ash", "Cinder Shrines"], ["den", "The Hoard"]]
+const TREE_NAMES := {"moss": "Warband Huts", "frost": "Bone Crypts", "ash": "Cinder Shrines", "den": "The Hoard", "land": "The Land"}
+const TIER_NAMES := {1: "Tier I", 2: "Tier II", 3: "Tier III"}
 ## Shown as a tip the first time Dark Arts opens (see main.gd), instead of taking up the screen.
-const INTRO := "[b]Dark Arts[/b] are your skills. [b]Every star is a skill point:[/b] each lair's best rating gives ★ Survived, ★★ Wicked or ★★★ Brilliant, and night missions earn their own.\n\nTap a skill to buy a rank; the dots show ranks bought and left. [b]Tower skills[/b] apply to towers you build from then on. [b]The Hoard[/b] column powers your den and gives every battle more starting gold or mana. [b]Refund all points[/b] gives them back to spend again."
-const TREE_COLORS := {"moss": Color("8fb35a"), "frost": Color("9fd8f0"), "ash": Color("ff8a3a"), "den": Color("ff7a90")}
+const INTRO := "[b]Dark Arts[/b] are your skills. [b]Every star is a skill point:[/b] each lair's best rating gives ★ Survived, ★★ Wicked or ★★★ Brilliant, and night missions earn their own.\n\nTap a skill to buy a rank; the dots show ranks bought and left. [b]Tower skills[/b] apply to towers you build from then on. [b]The Hoard[/b] tab powers your den and gives every battle more starting gold or mana. [b]Refund all points[/b] gives them back to spend again."
+const TREE_COLORS := {"moss": Color("8fb35a"), "frost": Color("9fd8f0"), "ash": Color("ff8a3a"), "den": Color("ff7a90"), "land": Color("c9a86a")}
 
 var _hud: Control
 var _save: SaveData
 var _stars: Label
 var _points: Label
-var _cols: HBoxContainer
+var _tabs: HBoxContainer
+var _list: VBoxContainer
+var _tab := "moss"          # the tree shown
+var _buttons: Array[Button] = []   # skill buttons on the shown tab
 var _reset: Button
 var _reset_armed := false   # first tap on Refund done, waiting for the second
 var _reset_arms := 0        # counts armings, so a stale timer leaves a newer one alone
@@ -88,10 +94,22 @@ func setup(hud: Control, save: SaveData) -> void:
 	head.add_child(back)
 
 
-	_cols = HBoxContainer.new()
-	_cols.add_theme_constant_override("separation", 14)
-	box.add_child(_cols)
+	_tabs = HBoxContainer.new()
+	_tabs.add_theme_constant_override("separation", 10)
+	box.add_child(_tabs)
+	_list = VBoxContainer.new()
+	_list.add_theme_constant_override("separation", 10)
+	box.add_child(_list)
 	refresh()
+
+
+## The trees that have skills, in tab order.
+static func trees() -> Array[String]:
+	var out: Array[String] = []
+	for t: String in Defs.SKILL_TREES:
+		if Defs.SKILLS.has(t) and not Defs.SKILLS[t].is_empty():
+			out.append(t)
+	return out
 
 
 func refresh() -> void:
@@ -100,46 +118,96 @@ func refresh() -> void:
 	_points.text = "%d point%s to spend" % [free, "" if free == 1 else "s"]
 	_points.add_theme_color_override("font_color", Hud.EMBER if free > 0 else Hud.DIM)
 	_reset.disabled = _save.points_spent() == 0
-	for c in _cols.get_children():
-		_cols.remove_child(c)
-		c.queue_free()
-	for tree in TREES:
-		_cols.add_child(_column(tree[0], tree[1]))
+	if not trees().has(_tab):
+		_tab = trees()[0]
+	for box: Container in [_tabs, _list]:
+		for c in box.get_children():
+			box.remove_child(c)
+			c.queue_free()
+	_buttons.clear()
+	for t in trees():
+		_tabs.add_child(_tab_button(t))
+	_fill(_tab)
 
 
-func _column(type: String, title: String) -> Control:
-	var panel := PanelContainer.new()
-	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	panel.size_flags_stretch_ratio = 1.0
-	panel.custom_minimum_size = Vector2(0, 0)
-	var col := VBoxContainer.new()
-	col.add_theme_constant_override("separation", 8)
-	panel.add_child(col)
-	var h := Label.new()
-	h.text = title
-	h.add_theme_font_override("font", _hud.display_font)
-	h.add_theme_font_size_override("font_size", 36)
-	h.add_theme_color_override("font_color", TREE_COLORS[type])
-	col.add_child(h)
-	for sk: Dictionary in Defs.SKILLS[type]:
-		var id: String = sk["id"]
-		var r := _save.skill_rank(id)
-		var b := Button.new()
-		b.focus_mode = Control.FOCUS_NONE
-		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
-		b.custom_minimum_size = Vector2(0, 88)
-		b.text = "%s   %s\n%s" % [sk["name"], "●".repeat(r) + "○".repeat(int(sk["max"]) - r), sk["text"]]
-		b.add_theme_font_size_override("font_size", 33)
-		b.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART   # wrap so four columns fit any screen
-		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		b.disabled = not _save.can_buy(id)
-		if r >= int(sk["max"]):
-			b.add_theme_color_override("font_disabled_color", Hud.GOLD)
-		elif r > 0:
-			b.add_theme_color_override("font_disabled_color", Color(Hud.BONE, 0.8))
-		b.pressed.connect(_on_buy.bind(id))
-		col.add_child(b)
-	return panel
+func _tab_button(tree: String) -> Button:
+	var b := Button.new()
+	b.focus_mode = Control.FOCUS_NONE
+	b.toggle_mode = true
+	b.button_pressed = tree == _tab
+	var spent := 0
+	var room := 0
+	for sk: Dictionary in Defs.SKILLS[tree]:
+		spent += _save.skill_rank(sk["id"])
+		room += int(sk["max"])
+	b.text = "%s  %d/%d" % [TREE_NAMES.get(tree, tree), spent, room]
+	b.add_theme_font_override("font", _hud.bold_font)
+	b.add_theme_font_size_override("font_size", 30)
+	b.add_theme_color_override("font_color", Color(TREE_COLORS[tree], 0.75))
+	b.add_theme_color_override("font_pressed_color", TREE_COLORS[tree])
+	b.add_theme_color_override("font_hover_pressed_color", TREE_COLORS[tree])
+	b.custom_minimum_size = Vector2(0, 72)
+	b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	b.pressed.connect(func() -> void:
+		_tab = tree
+		refresh())
+	return b
+
+
+## One tree: its skills grouped by tier. Tier headers only show when the tree has more than one
+## tier or a tier is still shut, so a plain tree is just its skills.
+func _fill(tree: String) -> void:
+	var stars := _save.points_total()
+	var tiers := {}
+	for sk: Dictionary in Defs.SKILLS[tree]:
+		var t := Defs.skill_tier(sk)
+		if not tiers.has(t):
+			tiers[t] = []
+		tiers[t].append(sk)
+	var order := tiers.keys()
+	order.sort()
+	var tree_gate := int(Defs.TREE_STARS.get(tree, 0))
+	for t: int in order:
+		var gate := maxi(int(Defs.TIER_STARS.get(t, 0)), tree_gate)
+		var shut := stars < gate
+		if order.size() > 1 or shut:
+			var h := Label.new()
+			h.text = TIER_NAMES.get(t, "Tier %d" % t) + ("   Opens at %d ★" % gate if shut else "")
+			h.add_theme_font_override("font", _hud.display_font)
+			h.add_theme_font_size_override("font_size", 34)
+			h.add_theme_color_override("font_color", Hud.DIM if shut else TREE_COLORS[tree])
+			_list.add_child(h)
+		var grid := GridContainer.new()
+		grid.columns = 2
+		grid.add_theme_constant_override("h_separation", 12)
+		grid.add_theme_constant_override("v_separation", 10)
+		_list.add_child(grid)
+		for sk: Dictionary in tiers[t]:
+			var b := _skill_button(sk)
+			if shut:
+				b.modulate = Color(1, 1, 1, 0.45)
+			grid.add_child(b)
+			_buttons.append(b)
+
+
+func _skill_button(sk: Dictionary) -> Button:
+	var id: String = sk["id"]
+	var r := _save.skill_rank(id)
+	var b := Button.new()
+	b.focus_mode = Control.FOCUS_NONE
+	b.alignment = HORIZONTAL_ALIGNMENT_LEFT
+	b.custom_minimum_size = Vector2(0, 96)
+	b.text = "%s   %s\n%s" % [sk["name"], "●".repeat(r) + "○".repeat(int(sk["max"]) - r), sk["text"]]
+	b.add_theme_font_size_override("font_size", 34)
+	b.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	b.disabled = not _save.can_buy(id)
+	if r >= int(sk["max"]):
+		b.add_theme_color_override("font_disabled_color", Hud.GOLD)
+	elif r > 0:
+		b.add_theme_color_override("font_disabled_color", Color(Hud.BONE, 0.8))
+	b.pressed.connect(_on_buy.bind(id))
+	return b
 
 
 func _on_buy(id: String) -> void:
@@ -175,10 +243,9 @@ func _disarm_reset() -> void:
 
 ## For the tutorial spotlight: the first skill a point can buy now, and the way back.
 func first_buyable_rect() -> Rect2:
-	for col in _cols.get_children():
-		for b in col.get_child(0).get_children():
-			if b is Button and not b.disabled:
-				return b.get_global_rect()
+	for b in _buttons:
+		if not b.disabled:
+			return b.get_global_rect()
 	return Rect2()
 
 

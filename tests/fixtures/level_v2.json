@@ -1,0 +1,58 @@
+{
+ "id": "fixture_v2",
+ "title": "Format v2 Fixture",
+ "cols": 12,
+ "rows": 8,
+ "legend": {
+  "m": "moss",
+  "f": "frost",
+  "a": "ash",
+  "M": "high moss",
+  "L": "lair"
+ },
+ "terrain": [
+  "mmmmmwmmmfff",
+  "mmmmmommmfff",
+  "mmmmmommmfff",
+  "mmMmmwmmmLLf",
+  "mmmmmwmmmLLf",
+  "aaaaawaaaaaa",
+  "aaaaaawwwwww",
+  "aaaaaaaaaaaa"
+ ],
+ "trees": [
+  "T...........",
+  "............",
+  "..H.........",
+  "............",
+  "............",
+  "............",
+  "............",
+  "............"
+ ],
+ "paths": [
+  [[-1, 1], [8, 1], [8, 3]],
+  [[-1, 5], [9, 5]],
+  [[12, 6], [9, 6], [9, 5]]
+ ],
+ "path_info": [{"kind": "land"}, {"kind": "land"}, {"kind": "river"}],
+ "lair": {
+  "cell": [9, 3],
+  "size": [2, 2],
+  "center": [10, 4]
+ },
+ "start": {
+  "gold": 230,
+  "mana": 40,
+  "gems": 6
+ },
+ "first_wave_delay": 5,
+ "wave_gap": 20,
+ "sites": [{"kind": "well", "cell": [1, 7]}],
+ "rules": [{"kind": "tide", "period": 40, "up": 14}],
+ "waves": [
+  "2p",
+  {"heroes": "4p", "roads": [1]},
+  {"heroes": "2f", "roads": [0, 2], "cargo": {"2": "1p"}}
+ ]
+}

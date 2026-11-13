@@ -348,7 +348,7 @@ func _refresh_achievements() -> void:
 			var when := Time.get_date_string_from_unix_time(int(_save.achievements[a["id"]]))
 			_label(col, "Earned " + when, 19, Hud.DIM)
 		elif a.has("stat"):
-			_label(col, "%s / %s" % [Hud._thousands(int(have.get(a["stat"], 0))), Hud._thousands(int(a["goal"]))], 19, Hud.DIM)
+			_label(col, "%s / %s" % [Hud._thousands(int(have.get(a["stat"], 0))), Hud._thousands(Achievements.goal_of(a))], 19, Hud.DIM)
 
 
 # ---------------------------------------------------------------- account

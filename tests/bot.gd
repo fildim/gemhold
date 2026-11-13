@@ -16,15 +16,23 @@ const SKILL_ORDER := ["moss_dmg", "ash_dmg", "ash_dmg", "moss_dmg", "ash_ability
 
 
 ## Skill points a player has banked before campaign lair `index` (0-based): about 2.4 stars a lair
-## beaten (a mix of Wicked and Brilliant, plus a few night missions).
+## beaten (a mix of Wicked and Brilliant, plus a few night missions). Not capped: skills() spends
+## only as many as SKILL_ORDER lists, so new skills just need adding to it.
 static func points_before(index: int) -> int:
-	return mini(SKILL_ORDER.size(), roundi(2.4 * index))
+	return roundi(2.4 * index)
 
 
 static func skills(points: int) -> Dictionary:
+	# points is also the stars earned, so skills whose tier is still shut are passed over.
 	var s := {}
-	for i in mini(points, SKILL_ORDER.size()):
-		s[SKILL_ORDER[i]] = int(s.get(SKILL_ORDER[i], 0)) + 1
+	var spent := 0
+	for id: String in SKILL_ORDER:
+		if spent >= points:
+			break
+		if Defs.skill_gate(id) > points:
+			continue
+		s[id] = int(s.get(id, 0)) + 1
+		spent += 1
 	return s
 
 
@@ -64,3 +72,26 @@ static func play(lv: Level, skill_ranks: Dictionary, seed := 0) -> GameSim:
 		sim.update(dt)
 		t += dt
 	return sim
+
+
+## Which campaign lairs a test should play, from its command-line arguments: `--chapter N` for
+## the ten lairs of chapter N, campaign numbers ("6 7 8"), or nothing for every lair. Returns
+## [0-based indexes, whether the whole set (every lair or a chapter) was asked for].
+static func pick_lairs(args: PackedStringArray, per_chapter := 10) -> Array:
+	var count: int = load("res://scripts/main.gd").LEVELS.size()
+	var picks: Array[int] = []
+	var k := 0
+	var whole := true
+	while k < args.size():
+		if args[k] == "--chapter" and k + 1 < args.size():
+			var ch := int(args[k + 1])
+			for i in range((ch - 1) * per_chapter, mini(ch * per_chapter, count)):
+				picks.append(i)
+			k += 2
+			continue
+		picks.append(int(args[k]) - 1)
+		whole = false
+		k += 1
+	if picks.is_empty() and args.is_empty():
+		picks.assign(range(count))
+	return [picks, whole]

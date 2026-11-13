@@ -30,6 +30,8 @@ class Enemy:
 	var bob := 0.0
 	var gone := false
 	var wave := 0         # which wave it marched with, 0 for barracks troops
+	var soak := 0.0       # seconds of Soaked left (in a ford or swimming, and SOAK_TIME after)
+	var swim := false     # swimming a flooded ford or a collapsed bridge: slow, and no Herald haste
 
 
 class Tower:
@@ -201,6 +203,10 @@ var potions := 0          # potions picked up
 var gems_saved := 0       # gems knocked out of the hands of heroes that were slain carrying them
 var dreads := 0           # heroes terrified by Dread
 var lavas := 0            # pools of Lava left behind
+# Road zones (Level.zones): what has changed on them during the battle.
+var collapsed := {}       # Vector2i -> true for water tiles whose bridge has been collapsed
+var paved: Array = []     # per road: [{"from", "to"}] stretches a Pavior has paved
+var tide_up := false      # the tide is in: fords are deep
 
 
 func _init(lv: Level, skill_ranks := {}) -> void:
@@ -212,6 +218,8 @@ func _init(lv: Level, skill_ranks := {}) -> void:
 	home = lv.gems
 	timer = lv.first_delay
 	trees = lv.trees.duplicate()
+	for i in lv.paths.size():
+		paved.append([])
 	rng.seed = hash(lv.id)
 	for sd: Dictionary in lv.sites:
 		var s := Site.new()
@@ -330,7 +338,9 @@ func _spawn(code: String, path := -1, dist := 0.0, w := 0) -> void:
 	e.hp = d["hp"] * mul
 	e.max_hp = e.hp
 	if path < 0:
-		e.path = lane % level.paths.size()
+		# Dealt round-robin over the land roads its wave may use (every land road unless it names some).
+		var roads: Array[int] = level.wave_walk[w - 1] if w > 0 and w <= level.wave_walk.size() else level.land_roads
+		e.path = roads[lane % roads.size()]
 		lane += 1
 	else:
 		e.path = path
@@ -413,8 +423,11 @@ func _update_enemies(dt: float) -> void:
 		var sp: float = e.d["spd"] * ((1.0 - e.slow_amt) if e.slow > 0.0 else 1.0)
 		if e.d.has("rage") and e.hp < e.max_hp * 0.5:
 			sp *= float(e.d["rage"])
+		var zm := _zone_mul(e, dt)
+		if zm != 1.0:
+			sp *= zm
 		for o: Enemy in heralds:
-			if o.pos.distance_to(e.pos) <= Defs.HASTE_RANGE:
+			if not e.swim and o.pos.distance_to(e.pos) <= Defs.HASTE_RANGE:
 				sp *= 1.0 + float(o.d["haste"])
 				break
 		if e.fear > 0.0:
@@ -481,6 +494,38 @@ func _update_enemies(dt: float) -> void:
 			if wave_left[e.wave] == 0:
 				_judge_wave(e.wave)
 	enemies = enemies.filter(func(e: Enemy) -> bool: return not e.gone and e.hp > 0.0)
+
+
+## Road zones are the one place hero speed changes with the ground: a ford (shallows) slows and
+## soaks, a flooded ford or a collapsed bridge makes heroes swim, paving speeds them up. Returns
+## the speed factor for e this frame and updates its Soaked and swimming state.
+func _zone_mul(e: Enemy, dt: float) -> float:
+	if e.soak > 0.0:
+		e.soak -= dt
+	e.swim = false
+	var m := 1.0
+	match level.zone_at(e.path, e.dist):
+		"ford":
+			e.soak = Defs.SOAK_TIME
+			if tide_up:
+				e.swim = true
+			else:
+				m = Defs.ZONE_SPEED["ford"]
+		"bridge":
+			if not collapsed.is_empty() and collapsed.has(Vector2i(floori(e.pos.x), floori(e.pos.y))):
+				e.soak = Defs.SOAK_TIME
+				e.swim = true
+	if e.swim:
+		m = Defs.ZONE_SPEED["swim"]
+	for p: Dictionary in paved[e.path]:
+		if e.dist >= p["from"] and e.dist < p["to"]:
+			m *= Defs.ZONE_SPEED["paved"]
+			break
+	return m
+
+
+func is_soaked(e: Enemy) -> bool:
+	return e.soak > 0.0
 
 
 ## Where along its road a hero with room to carry more should walk to reach the nearest gem lying
@@ -635,9 +680,9 @@ func _update_beam(tw: Tower, dt: float) -> void:
 	if tw.beam == null:
 		tw.heat = maxf(0.0, tw.heat - rate)
 		return
-	tw.heat = minf(1.0, tw.heat + rate)
-	tw.flash = 0.15
 	var e := tw.beam
+	tw.heat = minf(1.0, tw.heat + (rate * Defs.SOAK_HEAT if e.soak > 0.0 else rate))   # wet heroes heat slower
+	tw.flash = 0.15
 	var dps := tw.stat("dmg") * (1.0 + (Defs.HEAT_MAX - 1.0) * tw.heat)
 	hurt(e, dps * dt, true, tw)
 	if e.hp <= 0.0:
@@ -673,7 +718,7 @@ func _update_shots(dt: float) -> void:
 				hurt(s.target, s.dmg, s.pierce, s.src)
 				if s.slow > 0.0:
 					s.target.slow_amt = maxf(s.slow, s.target.slow_amt) if s.target.slow > 0.0 else s.slow
-					s.target.slow = Defs.SLOW_TIME
+					s.target.slow = Defs.SLOW_TIME * Defs.SOAK_CHILL if s.target.soak > 0.0 else Defs.SLOW_TIME
 				if s.fear > 0.0 and s.target.hp > 0.0 and rng.randf() < s.fear:
 					s.target.fear = Defs.ABILITIES["frost"]["dur"]
 					dreads += 1
@@ -729,7 +774,7 @@ func hurt(e: Enemy, dmg: float, pierce := false, src: Tower = null) -> void:
 		if src != null:
 			kills_tower[src.type] = int(kills_tower.get(src.type, 0)) + 1
 		if race_on and kills % Defs.RACE_KILL_SEND == 0:
-			race_sends += "k" if e.code == "x" else e.code
+			race_sends += String(e.d.get("send_as", e.code))
 		_text(e.pos + Vector2(0, -0.3), "+%d" % int(e.d["gold"]), Color("e8b84a"))
 		sound.emit("die")
 		if e.carry > 0:
@@ -752,6 +797,8 @@ func hurt(e: Enemy, dmg: float, pierce := false, src: Tower = null) -> void:
 
 ## Lava: a pool of burning ground where a Cinder Shrine killed a hero.
 func _lava(tw: Tower, at: Vector2) -> void:
+	if level.is_water(Vector2i(floori(at.x), floori(at.y))):
+		return   # lava cannot form on water
 	var pl := Pool.new()
 	pl.pos = at
 	pl.r = Defs.ABILITIES["ash"]["r"]
@@ -979,6 +1026,8 @@ func cell_info(c: Vector2i) -> Dictionary:
 		else:
 			txt += "%s, once the tower is battle-hardened and level III: %s" % [ab["name"], ab["text"]]
 		return {"title": "%s, level %d" % [d["name"], tw.lvl], "text": txt, "actions": acts}
+	if level.is_water(c):
+		return {"title": "Deep water" if t == "water" else "Shallows", "text": "Nothing can be built on water.", "actions": []}
 	if not is_lit(c):
 		return {"title": "Darkness", "text": "You can't build where you can't see. Towers, mines and wells light the ground around them.", "actions": []}
 	var td: Dictionary = Defs.TOWERS[t]
@@ -1031,7 +1080,7 @@ func _site_info(s: Site) -> Dictionary:
 func preview_range(c: Vector2i) -> float:
 	if towers.has(c):
 		return (towers[c] as Tower).stat("range")
-	if level.road.has(c) or level.is_lair(c) or trees.has(c) or sites.has(c) or not is_lit(c):
+	if level.road.has(c) or level.is_lair(c) or trees.has(c) or sites.has(c) or not is_lit(c) or level.is_water(c):
 		return 0.0
 	var t := level.terrain_at(c)
 	if level.high.has(c):
@@ -1162,13 +1211,13 @@ func do_action(id: String, c: Vector2i) -> String:
 
 # ---------------------------------------------------------------- scoring
 
-## Online race: the hero kinds that can be bought for the rival (those in this lair's waves, no
-## Champion), cheapest first.
+## Online race: the hero kinds that can be bought for the rival (those in this lair's waves, except those marked no_send:
+## bosses, boats), cheapest first.
 func race_shop() -> Array[String]:
 	var kinds: Array[String] = []
 	for w: Array in level.waves:
 		for code: String in w:
-			if code != "x" and not kinds.has(code):
+			if not Defs.ENEMIES[code].get("no_send", false) and not kinds.has(code):
 				kinds.append(code)
 	kinds.sort_custom(func(a: String, b: String) -> bool: return race_cost(a) < race_cost(b))
 	return kinds

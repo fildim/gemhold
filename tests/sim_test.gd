@@ -1,26 +1,22 @@
 extends SceneTree
-## Plays every campaign level headless with the test bot (tests/bot.gd) and prints the result:
-## by day with no skills and with the Dark Arts points a player would have by then, and at night.
-## Run: godot --headless --script res://tests/sim_test.gd
-## Only some levels, by campaign number:   godot --headless --script res://tests/sim_test.gd -- 6 7 8
+## Plays campaign levels headless with the test bot (tests/bot.gd) and prints each result as it
+## comes: by day with no skills, with the Dark Arts points a player would have by then, and at night.
+## Run: godot --headless --script res://tests/sim_test.gd                  (every lair, day and night)
+## One chapter (ten lairs), day and night:   godot --headless --script res://tests/sim_test.gd -- --chapter 2
+## Only some lairs, by campaign number (by day only):   godot --headless --script res://tests/sim_test.gd -- 6 7 8
 
 const MAIN := preload("res://scripts/main.gd")
 
 
 func _init() -> void:
-	var only := OS.get_cmdline_user_args()
-	var picks: Array[int] = []
-	for n in only:
-		picks.append(int(n) - 1)
-	if picks.is_empty():
-		picks.assign(range(MAIN.LEVELS.size()))
+	var picks := Bot.pick_lairs(OS.get_cmdline_user_args())
+	var nights: bool = picks[1]
 	var ok := true
-	for i in picks:
+	for i: int in picks[0]:
 		ok = _play(Level.load_from(MAIN.LEVELS[i]), {}, i + 1, true) and ok
 		ok = _play(Level.load_from(MAIN.LEVELS[i]), Bot.skills(Bot.points_before(i)), i + 1) and ok
-	if only.is_empty():
-		# Night missions open after a Brilliant clear, so the player has a few more points by then.
-		for i in picks:
+		if nights:
+			# Night missions open after a Brilliant clear, so the player has a few more points by then.
 			var lv := Level.load_from(MAIN.LEVELS[i])
 			lv.night = true
 			ok = _play(lv, Bot.skills(Bot.points_before(i) + 3), i + 1) and ok

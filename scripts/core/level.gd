@@ -22,12 +22,25 @@ var gems := 0
 var first_delay := 15.0
 var wave_gap := 24.0
 var waves: Array = []    # Array of Array[String] hero codes
+var wave_roads: Array = []   # parallel to waves: Array[int] of road indexes the wave may use; empty = every land road
+var wave_cargo: Array = []   # parallel to waves: {road index (String) -> Array[String] hero codes} carried by boats
+var wave_walk: Array = []    # parallel to waves: Array[int] of land roads its walkers are dealt over
 var night := false       # only lit tiles can be built on (set for night missions)
 var hp_mul := 1.0        # hero health multiplier, so later levels can be tougher
 var sites: Array = []    # [{"kind", "cell": Vector2i, "path", "spawn": Array[String], "every"}]
 var site_cuts := 1       # cuts (each paid in mana) to free a mine or well or raze a barracks; grows on later lairs
+var path_kind: Array[String] = []   # parallel to paths: "land" | "river" | "air"
+var land_roads: Array[int] = []     # indexes of the land roads, where heroes are dealt by default
+var zones: Array = []    # parallel to paths: Array of {"from", "to", "kind": "ford" | "bridge"} along the road
+var hallowed := {}       # Vector2i -> true for hallowed ground (an `H` in the trees grid)
+var rules: Array = []    # lair rules, e.g. [{"kind": "tide", "period": 40, "up": 14}]
 
 const CORNER_RADIUS := 0.5   # tiles; roads curve through their corner tiles
+const ZONE_STEP := 0.1       # tiles between samples when finding a road's zones
+## Terrain letters every level understands without a legend entry.
+const WATER_LEGEND := {"w": "water", "o": "shallows"}
+const WATER := ["water", "shallows"]
+const PATH_KINDS := ["land", "river", "air"]
 
 
 static func load_from(path: String) -> Level:
@@ -49,13 +62,15 @@ func _parse(d: Dictionary) -> void:
 		var trow: String = d["terrain"][r]
 		var tree_row: String = d["trees"][r]
 		for c in cols:
-			var kind: String = legend[trow[c]]
+			var kind: String = legend.get(trow[c], WATER_LEGEND.get(trow[c], "moss"))
 			if kind.begins_with("high "):
 				kind = kind.trim_prefix("high ")
 				high[Vector2i(c, r)] = true
 			terrain[Vector2i(c, r)] = kind
 			if tree_row[c] == "T":
 				trees[Vector2i(c, r)] = true
+			elif tree_row[c] == "H":
+				hallowed[Vector2i(c, r)] = true
 	var lc: Array = d["lair"]["cell"]
 	var ls: Array = d["lair"]["size"]
 	lair_rect = Rect2i(int(lc[0]), int(lc[1]), int(ls[0]), int(ls[1]))
@@ -66,7 +81,21 @@ func _parse(d: Dictionary) -> void:
 	first_delay = float(d["first_wave_delay"])
 	wave_gap = float(d["wave_gap"])
 	for w in d["waves"]:
-		waves.append(_parse_wave(String(w)))
+		# A wave is "6p,2f", or {"heroes": "6p,2f", "roads": [0, 2], "cargo": {"1": "2k"}}.
+		var roads: Array[int] = []
+		var cargo := {}
+		if w is Dictionary:
+			for i in w.get("roads", []):
+				roads.append(int(i))
+			var cg: Dictionary = w.get("cargo", {})
+			for k in cg:
+				cargo[str(k)] = _parse_wave(String(cg[k]))
+			waves.append(_parse_wave(String(w.get("heroes", ""))))
+		else:
+			waves.append(_parse_wave(String(w)))
+		wave_roads.append(roads)
+		wave_cargo.append(cargo)
+	rules = d.get("rules", []).duplicate(true)
 	night = bool(d.get("night", false))
 	hp_mul = float(d.get("hp_mul", 1.0))
 	site_cuts = maxi(1, int(d.get("site_cuts", 1)))
@@ -94,6 +123,106 @@ func _parse(d: Dictionary) -> void:
 		for i in range(1, pts.size()):
 			lens.append(lens[i - 1] + pts[i].distance_to(pts[i - 1]))
 		paths.append({"pts": pts, "len": lens, "total": lens[lens.size() - 1]})
+	var info: Array = d.get("path_info", [])
+	for i in paths.size():
+		var kind := "land"
+		if i < info.size() and info[i] is Dictionary:
+			kind = String(info[i].get("kind", "land"))
+		path_kind.append(kind)
+		if kind == "land":
+			land_roads.append(i)
+	if land_roads.is_empty():
+		land_roads.append(0)   # a level with no land road still needs somewhere to send heroes
+	for roads: Array in wave_roads:
+		var walk: Array[int] = []
+		for r: int in roads:
+			if land_roads.has(r):
+				walk.append(r)
+		wave_walk.append(walk if not walk.is_empty() else land_roads)
+	_add_air_roads()
+	for i in paths.size():
+		zones.append(_find_zones(i))
+
+
+## Flyers need an air road. A level that sends flyers without one gets a straight line from the
+## start of each land road to the lair centre.
+func _add_air_roads() -> void:
+	if path_kind.has("air"):
+		return
+	var flyers := false
+	for w: Array in waves:
+		for code: String in w:
+			flyers = flyers or bool(Defs.ENEMIES.get(code, {}).get("fly", false))
+	if not flyers:
+		return
+	for i in land_roads.duplicate():
+		var a: Vector2 = paths[i]["pts"][0]
+		var pts := PackedVector2Array([a, lair_center])
+		var lens := PackedFloat32Array([0.0, a.distance_to(lair_center)])
+		paths.append({"pts": pts, "len": lens, "total": lens[1]})
+		waypoints.append(waypoints[i].duplicate())
+		path_kind.append("air")
+
+
+## Stretches of road i over water: a ford over shallows, a bridge over deep water. Sampled every
+## ZONE_STEP tiles; air roads have none.
+func _find_zones(i: int) -> Array:
+	var out: Array = []
+	if path_kind[i] == "air":
+		return out
+	var total: float = paths[i]["total"]
+	var cur := ""
+	var start := 0.0
+	var k := 0
+	while true:
+		var t := minf(k * ZONE_STEP, total)
+		var p := path_pos(i, t)
+		var kind := ""
+		match terrain_at(Vector2i(floori(p.x), floori(p.y))):
+			"shallows":
+				kind = "ford"
+			"water":
+				kind = "bridge"
+		if kind != cur:
+			if cur != "":
+				out.append({"from": start, "to": t, "kind": cur})
+			cur = kind
+			start = t
+		if t >= total:
+			break
+		k += 1
+	if cur != "":
+		out.append({"from": start, "to": total, "kind": cur})
+	return out
+
+
+## The zone kind ("ford", "bridge") at distance t along road i, or "".
+func zone_at(i: int, t: float) -> String:
+	for z: Dictionary in zones[i]:
+		if t >= z["from"] and t < z["to"]:
+			return z["kind"]
+	return ""
+
+
+func is_water(c: Vector2i) -> bool:
+	return WATER.has(terrain_at(c))
+
+
+## Where a river road's boats reach land: the distance of the first sample not over water, or -1.
+func landing(i: int) -> float:
+	var total: float = paths[i]["total"]
+	var t := 0.0
+	var seen_water := false
+	while t <= total:
+		var p := path_pos(i, t)
+		var c := Vector2i(floori(p.x), floori(p.y))
+		if in_bounds(c):
+			if is_water(c):
+				seen_water = true
+			elif seen_water:
+				return t
+		t += ZONE_STEP
+	return -1.0
 
 
 ## Swaps each sharp turn for a curve that starts and ends r tiles from the corner, so roads

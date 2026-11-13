@@ -5,6 +5,7 @@ extends SceneTree
 ## One battle swings a lot on luck, so each lair is measured with SEEDS different rolls of the dice
 ## and the margins averaged (geometric mean). Use it to keep the campaign's difficulty rising smoothly.
 ## Run: godot --headless --script res://tests/difficulty.gd            (every lair, takes a while)
+##      godot --headless --script res://tests/difficulty.gd -- --chapter 2   (one chapter of ten)
 ##      godot --headless --script res://tests/difficulty.gd -- 4 5 6   (campaign numbers)
 
 const MAIN := preload("res://scripts/main.gd")
@@ -12,12 +13,8 @@ const SEEDS := [0, 101, 202]
 
 
 func _init() -> void:
-	var picks: Array[int] = []
-	for a in OS.get_cmdline_user_args():
-		picks.append(int(a) - 1)
-	if picks.is_empty():
-		picks.assign(range(MAIN.LEVELS.size()))
-	for i in picks:
+	var picks: Array = Bot.pick_lairs(OS.get_cmdline_user_args())[0]
+	for i: int in picks:
 		var pts := Bot.points_before(i)
 		var sk := Bot.skills(pts)
 		var base := Level.load_from(MAIN.LEVELS[i])

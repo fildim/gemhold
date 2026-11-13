@@ -8,7 +8,7 @@ const GROUND_SHADER := preload("res://scripts/view/ground.gdshader")
 ## see ground.gdshader.
 const TERRAIN_MASK := {
 	"moss": Color(1, 0, 0, 0), "frost": Color(0, 1, 0, 0), "ash": Color(0, 0, 1, 0),
-	"lair": Color(0, 0, 0, 0),
+	"lair": Color(0, 0, 0, 0), "water": Color(0, 0, 0, 0), "shallows": Color(0, 0, 0, 0),   # water gets its own mask in G2
 }
 
 ## The ground shader is costly, so it is rendered once per level into a texture at this many

@@ -129,7 +129,7 @@ static func topics() -> Array:
 	# ------------------------------------------------------------ progress
 	t.append(_t("Progress", "Dark Arts",
 		"Your skills, opened from the map. [b]Every star is a skill point.[/b]\n\n"
-		+ "Each tower kind has its own column: damage, attack speed, range, faster ranks and a stronger ability. [b]The Hoard[/b] column gives your den more charges, every battle more starting gold, more mana or faster mana (Mana Spring), and the Meteor more damage.\n\n"
+		+ "Each tower kind has its own tab: damage, attack speed, range, faster ranks and a stronger ability. [b]The Hoard[/b] tab gives your den more charges, every battle more starting gold, more mana or faster mana (Mana Spring), and the Meteor more damage.\n\n"
 		+ "Tower skills apply to towers you build after buying them. [b]Refund all points[/b] any time to try a different plan."))
 	t.append(_t("Progress", "Night missions",
 		"Win a lair [b]Brilliant[/b] and its night mission opens (the moon on the map).\n\n"

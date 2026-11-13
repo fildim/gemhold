@@ -176,7 +176,7 @@ func skill_rank(id: String) -> int:
 
 
 func can_buy(id: String) -> bool:
-	return points_free() > 0 and skill_rank(id) < _skill_max(id)
+	return points_free() > 0 and skill_rank(id) < _skill_max(id) and points_total() >= Defs.skill_gate(id)
 
 
 func buy(id: String) -> bool:

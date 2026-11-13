@@ -558,9 +558,11 @@ func _check_every_achievement_can_be_earned() -> void:
 		tw.cell = cells[i] if i < cells.size() else Vector2i(100 + i, 0)
 		big.towers[tw.cell] = tw
 	Achievements.check_battle(s, big, 20)
+	# The Hoard Throne (lair 20 of the campaign, file 05) won Brilliant.
+	Achievements.check_battle(s, _ending("level_05", true), 20)
 
 	# One kind of tower by night, down to the last gem, as cheaply as can be.
-	var lean := _ending("level_20", true)
+	var lean := _ending("level_05", true)
 	lean.gold = 3
 	lean.lost = 4
 	lean.most_towers = 3

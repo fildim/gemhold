@@ -17,7 +17,7 @@ const LIST: Array[Dictionary] = [
 	{"id": "beaten13", "name": "Unlucky for Some", "text": "Defend the first 13 lairs.", "stat": "beaten", "goal": 13},
 	{"id": "beaten15", "name": "Deep in the Crusade", "text": "Defend the first 15 lairs.", "stat": "beaten", "goal": 15},
 	{"id": "beaten18", "name": "Almost Home", "text": "Defend the first 18 lairs.", "stat": "beaten", "goal": 18},
-	{"id": "chapter2", "name": "Crusade Crushed", "text": "Defend all twenty lairs."},
+	{"id": "chapter2", "name": "Crusade Crushed", "text": "Defend every lair of Chapter II."},
 
 	# Ratings
 	{"id": "brilliant", "name": "Untouched", "text": "Win a lair Brilliant: no hero lays a hand on a gem."},
@@ -30,7 +30,7 @@ const LIST: Array[Dictionary] = [
 	{"id": "last_gem", "name": "By a Thread", "text": "Win with a single gem left."},
 	{"id": "brilliant_fast", "name": "Showing Off", "text": "Win Brilliant after calling 8 waves early."},
 	{"id": "purist", "name": "Purist", "text": "Win lair 3 or later Brilliant with one kind of tower."},
-	{"id": "brilliant_last", "name": "Flawless Finale", "text": "Win the last lair Brilliant."},
+	{"id": "brilliant_last", "name": "Flawless Finale", "text": "Win the Hoard Throne Brilliant."},
 
 	# The night
 	{"id": "night_win", "name": "Creature of the Night", "text": "Win a night mission."},
@@ -41,17 +41,17 @@ const LIST: Array[Dictionary] = [
 	{"id": "night_brilliant", "name": "Moonlit Perfection", "text": "Win a night mission Brilliant.", "stat": "night_brilliant", "goal": 1},
 	{"id": "night_brilliant5", "name": "Unseen", "text": "Win 5 night missions Brilliant.", "stat": "night_brilliant", "goal": 5},
 	{"id": "night_brilliant10", "name": "Shadow Sovereign", "text": "Win 10 night missions Brilliant.", "stat": "night_brilliant", "goal": 10},
-	{"id": "night_brilliant20", "name": "Master of Darkness", "text": "Win all twenty night missions Brilliant.", "stat": "night_brilliant", "goal": 20},
+	{"id": "night_brilliant20", "name": "Master of Darkness", "text": "Win 20 night missions Brilliant.", "stat": "night_brilliant", "goal": 20},
 	{"id": "night_thread", "name": "Thread by Moonlight", "text": "Win a night mission with a single gem left."},
 	{"id": "night_one", "name": "Lone Lantern", "text": "Win a night mission with one kind of tower."},
-	{"id": "night_final", "name": "Dawn Never Comes", "text": "Win the last lair by night."},
+	{"id": "night_final", "name": "Dawn Never Comes", "text": "Win the Hoard Throne by night."},
 
 	# Stars and score
 	{"id": "stars10", "name": "Stargazer", "text": "Earn 10 stars.", "stat": "stars", "goal": 10},
 	{"id": "stars30", "name": "Constellation", "text": "Earn 30 stars.", "stat": "stars", "goal": 30},
 	{"id": "stars60", "name": "Milky Way", "text": "Earn 60 stars.", "stat": "stars", "goal": 60},
 	{"id": "stars90", "name": "Night Sky", "text": "Earn 90 stars.", "stat": "stars", "goal": 90},
-	{"id": "stars120", "name": "Every Star in Heaven", "text": "Earn all 120 stars.", "stat": "stars", "goal": 120},
+	{"id": "stars120", "name": "Every Star in Heaven", "text": "Earn 120 stars.", "stat": "stars", "goal": 120},
 	{"id": "score3000", "name": "Worth Counting", "text": "Score 3,000 points in one battle."},
 	{"id": "score", "name": "High Roller", "text": "Score 6,000 points in one battle."},
 	{"id": "score10000", "name": "Treasure Keeper", "text": "Score 10,000 points in one battle."},
@@ -265,6 +265,8 @@ const LIST: Array[Dictionary] = [
 ]
 
 const SCORE_GOAL := 6000
+## The Hoard Throne, the finale of Chapter II (lair 20): "Flawless Finale" and "Dawn Never Comes" are earned there.
+const THRONE := "level_05"
 
 
 static func find(id: String) -> Dictionary:
@@ -375,11 +377,11 @@ static func check_battle(save: SaveData, sim: GameSim, number: int) -> Array[Str
 		_try(save, got, "survived", rank == "Survived")
 		_try(save, got, "brilliant_fast", rank == "Brilliant" and sim.early_calls >= 8)
 		_try(save, got, "purist", rank == "Brilliant" and number >= 3 and kinds == 1)
-		_try(save, got, "brilliant_last", rank == "Brilliant" and number >= 20)
+		_try(save, got, "brilliant_last", rank == "Brilliant" and sim.level.id == THRONE)
 		_try(save, got, "night_win", night)
 		_try(save, got, "night_thread", night and last_gem)
 		_try(save, got, "night_one", night and kinds == 1)
-		_try(save, got, "night_final", night and number >= 20)
+		_try(save, got, "night_final", night and sim.level.id == THRONE)
 		_try(save, got, "last_gem", last_gem)
 		_try(save, got, "landlord", sim.sites.size() >= 3 and owned == sim.sites.size())
 		_try(save, got, "no_sites", sim.sites.size() >= 3 and owned == 0)
@@ -444,13 +446,13 @@ static func check_progress(save: SaveData, ids: Array, per_chapter := 10) -> Arr
 	var v := values(save, ids)
 	for a: Dictionary in LIST:
 		if a.has("stat"):
-			_try(save, got, a["id"], int(v.get(a["stat"], 0)) >= int(a["goal"]))
+			_try(save, got, a["id"], int(v.get(a["stat"], 0)) >= goal_of(a))
 	# Also battle ones the save proves, for players who won before achievements existed.
 	_try(save, got, "first_win", save.points_total() > 0)
 	_try(save, got, "brilliant", v["brilliant"] > 0)
 	_try(save, got, "night_win", v["nights"] > 0)
 	_try(save, got, "chapter1", v["beaten"] >= mini(per_chapter, ids.size()))
-	_try(save, got, "chapter2", v["beaten"] >= ids.size())
+	_try(save, got, "chapter2", v["beaten"] >= mini(2 * per_chapter, ids.size()))
 	_try(save, got, "all_brilliant", v["brilliant"] >= ids.size())
 	_try(save, got, "all_night", v["nights"] >= ids.size())
 	_try(save, got, "arts20", v["spent"] >= 20)
@@ -465,3 +467,11 @@ static func check_progress(save: SaveData, ids: Array, per_chapter := 10) -> Arr
 static func _try(save: SaveData, got: Array[String], id: String, ok: bool) -> void:
 	if ok and save.earn(id):
 		got.append(id)
+
+
+## The goal of a "stat" achievement. "Omniscient" counts every rank of every skill that does
+## something in battle, so it follows Defs.SKILLS as the tree grows.
+static func goal_of(a: Dictionary) -> int:
+	if a["id"] == "arts59":
+		return Defs.skill_points_all()
+	return int(a["goal"])

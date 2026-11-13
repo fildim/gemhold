@@ -22,11 +22,11 @@ The campaign opens on a level map: twenty lairs in two chapters of ten (the arro
 - **The den fights back:** your lair holds charges (1 to start). Each is a bolt it fires automatically at heroes within 2.6 tiles, gem carriers first, ignoring armour. Spent charges refill one every 8 s. The sparks circling above the cave show how many are ready.
 - **Ratings and stars:** Survived ★ (you lost gems), Wicked ★★ (none lost, but a hero touched one, even if you got it back) and Brilliant ★★★ (no hero ever touched a gem).
 - **Night missions:** clearing a level Brilliant unlocks the same level at night, with its own best rating and stars. Darkness is the challenge, so night heroes have 15% less health (`NIGHT_HP` in defs.gd). You can only build where you can see; the lair, your towers and your mines and wells light the ground around them. A moon on the map marks it: faint while locked, pale when open, gold once won.
-- **Dark Arts** (skill tree, on the map): every star is a skill point to spend across the Hut, Crypt and Shrine trees, or on The Hoard: a den charge, +50 starting gold, +15 max mana or +25% meteor damage (Starfall) per point. Stars come from each mission's best rating, day and night counted separately, so replaying a lair for a better rating earns more points. There is no player XP.
+- **Dark Arts** (skill tree, on the map): every star is a skill point to spend across the Hut, Crypt and Shrine trees, or on The Hoard: a den charge, +50 starting gold, +15 max mana or +25% meteor damage (Starfall) per point. The screen has one tab per tree (`Defs.SKILL_TREES`; a tree shows once it has skills), each listing its skills in tier sections. A skill may set `"tier"` (default 1); tier II opens at 60 stars earned and tier III at 150 (`Defs.TIER_STARS`), and a whole tree can need stars too (`Defs.TREE_STARS`: The Land at 30). Gates count stars earned, not spent, so a refund never shuts a tier; `SaveData.can_buy` checks them. A shut tier shows its header ("Opens at 60 ★") with its skills dimmed. Skills listed in `Defs.SCORE_ONLY_SKILLS` (Renown) don't count toward "Omniscient", whose goal is `Defs.skill_points_all()`. Stars come from each mission's best rating, day and night counted separately, so replaying a lair for a better rating earns more points. There is no player XP.
 
 ## Campaign
 
-Twenty lairs, in two chapters of ten. Each lair turns one or two levers further than the last: the roads (how many, how long, whether they join), raised tiles, woods crowding the roads, which ground dominates, buildings and how many cuts they take, how many waves and heroes, which hero abilities appear, and hero health (`hp_mul`). Hero health is tuned last, with `tests/difficulty.gd`, so the bot's headroom falls smoothly from about ×3.5 on the tutorial to about ×1.15 on the finale, assuming the player spends about 2.4 stars per lair beaten in Dark Arts (`Bot.points_before`).
+Twenty lairs, in two chapters of ten. Each lair turns one or two levers further than the last: the roads (how many, how long, whether they join), raised tiles, woods crowding the roads, which ground dominates, buildings and how many cuts they take, how many waves and heroes, which hero abilities appear, and hero health (`hp_mul`). Hero health is tuned last, with `tests/difficulty.gd`, so the bot's headroom falls smoothly from about ×3.5 on the tutorial to about ×1.15 on the finale, assuming the player spends about 2.4 stars per lair beaten in Dark Arts (`Bot.points_before`, not capped; `Bot.skills` buys `Bot.SKILL_ORDER` in order, passing over skills whose tier is still shut). Chapter achievements count lairs, not "every lair": "Crusade Crushed" is the first 20, and "Flawless Finale" and "Dawn Never Comes" are earned on the Hoard Throne itself (`Achievements.THRONE`), so they keep their meaning as chapters are added.
 
 | # | Lair | File | Roads | Raised | Buildings (cuts) | Waves | What's new |
 |---|---|---|---|---|---|---|---|
@@ -84,7 +84,7 @@ scripts/
   data/achievements.gd   the achievements and when each is earned
   ui/hall.gd             Hall of Fame: leaderboard, achievements, account, online races
   main.gd                connects everything, handles taps
-tests/                   headless checks (see below)
+tests/                   headless checks (see below); tests/fixtures/ holds test-only level files
 assets/fonts/            Grenze Gotisch and Alegreya Sans (SIL Open Font License, see OFL.txt)
 assets/audio/            sound effects and music, all made by tools/make_audio.gd
 tools/make_audio.gd      synthesises every sound; edit it and run it to change them
@@ -94,16 +94,29 @@ tools/make_audio.gd      synthesises every sound; edit it and run it to change t
 **Adding a level:** copy a level file, give it a new `id`, edit it, and add its path to `LEVELS` in `scripts/main.gd`. `LEVELS` is the campaign order; file numbers only say when a map was made, so ids (and players' saved stars) never move when lairs are reordered. The map shows ten lairs a chapter (`PER_PAGE`, `SPOTS` and `CHAPTERS` in `scripts/ui/level_select.gd`); every chapter zigzags left to right, entering from the previous chapter at the left edge and leaving for the next at the right (chapter buttons sit beside the heading). Optional `intro` story text is kept in the file but not shown. Check the new lair with `tests/difficulty.gd` (below) so it fits the curve.
 In the level file, `terrain` uses `m` moss, `f` frost, `a` ash and `L` lair; a capital `M`, `F` or `A` is a raised tile of that ground. Add `"hp_mul": 1.4` to make heroes tougher on a later level. `"night": true` makes a level night-only (normally night is the unlockable mission). `sites` lists map buildings: `{"kind": "mine"|"well", "cell": [x, y]}` or `{"kind": "camp", "cell": [x, y], "path": 0, "spawn": "2p,1f", "every": 30}`; any building can add `"cuts": 3` to override the level's `site_cuts`. In `trees`, `T` marks woods. `paths` lists each road's corner tiles; roads start off the map edge and end next to the lair. Waves use hero codes: `p` peasant, `f` footman, `s` scout, `c` cleric, `k` knight, `b` shieldbearer, `t` cutpurse, `w` warden, `h` herald, `r` berserker, `x` champion. For example, `"6p,2f"` is 6 peasants and 2 footmen.
 
+**Level format v2** (all keys optional; old files load unchanged, `tests/fixtures/level_v2.json` uses every one):
+
+- **Terrain letters** `w` (deep water) and `o` (shallows) need no legend entry. Nothing is built on water and woods cannot stand there.
+- **Marks** in `trees`: `T` woods, `H` hallowed ground (`Level.hallowed`).
+- **`path_info`**: parallel to `paths`, each `{"kind": "land" | "river" | "air"}` (missing = land). Heroes are dealt only over land roads (`Level.land_roads`). River roads must enter the map on water and reach a landing (`Level.landing`). If a wave has flyers (`"fly"` in `Defs.ENEMIES`) and the level has no air road, one straight air road is added per land road, from its start to the lair centre.
+- **Wave objects**: a wave may be `{"heroes": "6p,2f", "roads": [0, 2], "cargo": {"2": "2k,1c"}}`. `roads` limits the wave to those roads; its walkers are dealt round-robin over the land roads among them (`Level.wave_walk`), and without `roads` over every land road, as before. `cargo` maps a river road to the heroes its boats carry (`Level.wave_cargo`).
+- **`rules`**: lair rules such as `[{"kind": "tide", "period": 40, "up": 14}, {"kind": "dusk", "wave": 9}]` (`tide`, `dusk`, `eclipse`), read into `Level.rules`.
+- **`start.gems`** may be 5 to 7.
+
+**Road zones:** at load each road is sampled every 0.1 tile and split into zones (`Level.zones`): a **ford** where it crosses shallows, a **bridge** where it crosses deep water. `GameSim._zone_mul` is the one place hero speed changes with the ground: a ford slows to 70% and soaks; a flooded ford (`GameSim.tide_up`) or a collapsed bridge (`GameSim.collapsed`, by water tile) is swum at 40% with no Herald haste; paving (`GameSim.paved`, stretches per road) speeds up 25% (`Defs.ZONE_SPEED`). **Soaked** lasts while in water and `SOAK_TIME` (4 s) after: Crypt chill lasts 1.5× longer and a Shrine heats at 0.6× speed. Lava never forms on water. In races, heroes marked `no_send` (the Champion) are not in the Send shop, and `send_as` names what their kills send instead.
+
 ## Tests
 
 From this folder, with Godot on your PATH:
 
 ```
 godot --headless --import
-godot --headless --script res://tests/sim_test.gd     # the bot (tests/bot.gd) plays every lair by day and at night, with the skill points a player would have by then
+godot --headless --script res://tests/sim_test.gd     # the bot (tests/bot.gd) plays every lair by day and at night, with the skill points a player would have by then; prints each battle as it ends
 godot --headless --script res://tests/sim_test.gd -- 6 7  # just those campaign lairs, without and with skills
+godot --headless --script res://tests/sim_test.gd -- --chapter 2  # one chapter of ten, day and night (difficulty.gd takes --chapter too)
 godot --headless --script res://tests/difficulty.gd    # how much headroom the bot has on each lair (the difficulty curve)
-godot --headless --script res://tests/level_check.gd  # level files: grid sizes, woods on roads, roads reaching the lair
+godot --headless --script res://tests/level_check.gd  # level files: grid sizes, woods on roads, roads reaching the lair, v2 keys
+godot --headless --script res://tests/level_v2_test.gd  # level format v2 and road zones on tests/fixtures/level_v2.json, Dark Arts tiers
 godot --headless --script res://tests/save_test.gd    # unlocking, ratings, stars as skill points, loot, damaged save files
 godot --headless --script res://tests/scene_test.gd   # boots the real scene, taps tiles, casts spells, plays the night level
 godot --headless --script res://tests/tower_test.gd   # the three tower types side by side against set groups of heroes

@@ -43,6 +43,8 @@ const SLOW_TIME := 2.5
 ## rage: below half health it walks this many times faster (Berserker).
 ## rally: heroes that rise where it falls and march on with its wave (Champion).
 ## special: towers shoot these support heroes before ordinary ones (gem carriers still come first).
+## no_send: online races never offer it in the Send shop; send_as: the hero its kills send to the rival instead.
+## fly: walks an air road (Level adds one if the lair has none).
 const ENEMIES := {
 	"p": {"name": "Peasant", "hp": 32, "spd": 1.05, "gold": 4, "r": 0.2, "armor": 0, "cap": 1},
 	"f": {"name": "Footman", "hp": 75, "spd": 0.85, "gold": 7, "r": 0.24, "armor": 2, "cap": 1},
@@ -54,7 +56,7 @@ const ENEMIES := {
 	"w": {"name": "Warden", "hp": 95, "spd": 0.9, "gold": 12, "r": 0.23, "armor": 1, "cap": 1, "ward": 1.4, "special": true},
 	"h": {"name": "Herald", "hp": 110, "spd": 0.85, "gold": 12, "r": 0.23, "armor": 1, "cap": 1, "haste": 0.35, "special": true},
 	"r": {"name": "Berserker", "hp": 180, "spd": 0.72, "gold": 14, "r": 0.26, "armor": 0, "cap": 1, "rage": 2.1},
-	"x": {"name": "Champion", "hp": 1500, "spd": 0.5, "gold": 80, "r": 0.38, "armor": 6, "cap": 3, "rally": "3f"},
+	"x": {"name": "Champion", "hp": 1500, "spd": 0.5, "gold": 80, "r": 0.38, "armor": 6, "cap": 3, "rally": "3f", "no_send": true, "send_as": "k"},
 }
 
 ## Shown the first time each hero walks onto the map (see main.gd).
@@ -97,6 +99,15 @@ const THREAT := {"easy": 0.45, "hard": 0.7, "up_max": 0.4, "up_easy": 0.1, "up_m
 	"up_close": 0.03, "up_touched": 0.01, "max": 4.0,
 	"rich": 250, "per_gold": 0.0005, "rich_max": 0.25}
 const DROP_SPEED := 0.7      # dropped gems roll home along the road at this many tiles/s
+
+## Road zones (Level.zones, GameSim._zone_mul): hero speed factors. A ford is road over shallows;
+## swimming is a flooded ford or a collapsed bridge; paving is laid by a Pavior.
+const ZONE_SPEED := {"ford": 0.7, "swim": 0.4, "paved": 1.25}
+## Soaked: in a ford or swimming, and SOAK_TIME seconds after. Crypt chill lasts SOAK_CHILL times
+## longer on a soaked hero; a Shrine heats up at SOAK_HEAT of its speed.
+const SOAK_TIME := 4.0
+const SOAK_CHILL := 1.5
+const SOAK_HEAT := 0.6
 
 ## The den (your lair) strikes heroes near it. It holds charges: each is one bolt, and spent
 ## charges refill one at a time. Every point in the Den skill adds one more charge.
@@ -153,8 +164,17 @@ const LIGHT := {"lair": 2.3, "tower": 1.7}
 const NIGHT_HP := 0.85
 
 
-## Skill trees, one per tower type. Effects are applied in GameSim.
+## Skill trees, one per tower type, plus The Hoard (and The Land). Effects are applied in GameSim.
 ## Skill points are stars: each mission's best rating gives 1 (Survived), 2 (Wicked) or 3 (Brilliant).
+## A skill may set "tier" (default 1). A tier opens once enough stars are earned (TIER_STARS),
+## and a whole tree may need stars too (TREE_STARS). Gates count stars earned, not spent, so a
+## refund never locks anything.
+const TIER_STARS := {1: 0, 2: 60, 3: 150}
+const TREE_STARS := {"land": 30}
+## Skills that only add score and are not counted as "learning every Dark Art".
+const SCORE_ONLY_SKILLS := ["renown"]
+## Tree ids in the order the Dark Arts tabs show them.
+const SKILL_TREES := ["moss", "frost", "ash", "den", "land"]
 const SKILLS := {
 	"moss": [
 		{"id": "moss_dmg", "name": "Barbed Arrows", "text": "+10% damage", "max": 3},
@@ -185,3 +205,36 @@ const SKILLS := {
 		{"id": "meteor_dmg", "name": "Starfall", "text": "+25% meteor damage", "max": 3},
 	],
 }
+
+
+## The skill entry with this id, its tree id under "tree", or {} if there is none.
+static func skill_def(id: String) -> Dictionary:
+	for tree: String in SKILLS:
+		for sk: Dictionary in SKILLS[tree]:
+			if sk["id"] == id:
+				var out := sk.duplicate()
+				out["tree"] = tree
+				return out
+	return {}
+
+
+static func skill_tier(sk: Dictionary) -> int:
+	return int(sk.get("tier", 1))
+
+
+## Stars a player must have earned before this skill can be bought.
+static func skill_gate(id: String) -> int:
+	var sk := skill_def(id)
+	if sk.is_empty():
+		return 0
+	return maxi(int(TIER_STARS.get(skill_tier(sk), 0)), int(TREE_STARS.get(sk["tree"], 0)))
+
+
+## Every rank of every skill that does something in battle: what "learn every Dark Art" means.
+static func skill_points_all() -> int:
+	var n := 0
+	for tree: String in SKILLS:
+		for sk: Dictionary in SKILLS[tree]:
+			if not SCORE_ONLY_SKILLS.has(sk["id"]):
+				n += int(sk["max"])
+	return n
