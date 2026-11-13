@@ -242,7 +242,7 @@ Update `Bot.SKILL_ORDER` and `Bot.points_before` in `tests/bot.gd` to buy tier I
 - **G2 Ground and biomes.** A palette and prop set per chapter passed to the ground shader as uniforms: lowland green, crusade autumn, drowned marsh, siege mud and trampled earth, radiant gold-white. Animated water (ripples, foam where roads cross, shore line) as a second shader layer. Scatter drawn props from seeded positions: rocks, bones, reeds, ruined walls, banners, tents by barracks. Ambient particles per biome: fireflies, snow, embers, mist, rain on Rainbringer lairs. Cloud shadows drifting over day maps.
 - **G3 Sprites, light and status looks.** Bake each hero kind's walk cycle and each tower level into a texture atlas once at load (draw the existing code into a `SubViewport`), then draw sprites. That cuts per-frame draw calls (needed for the larger waves of later lairs on phones) and lets one small shader do hit-flash, outline for the selected tower, dissolve on death and a soft drop shadow. Draw heroes about 20% larger. At night, replace the flat fog with `PointLight2D` lights and a `CanvasModulate`, keeping the build rule exactly as it is. Looks for Stun (smoke), Silence (pale motes, halo off), Rubble (stones), Soaked (drips), hidden Diver (ripple and reed), level IV towers and each mastery.
 - **G4 Icons and frames.** An icon for every skill, spell, achievement, hero and building: the Hall of Fame and Dark Arts become pictures, not lists. Carved-frame nine-patch panels and buttons; a painted parchment map per chapter behind the lair markers.
-- **G5 (optional, owner decides) Pre-rendered 3D.** Model towers and props in Blender, render them to sprites with one fixed light and matching normal maps. Gives the most "premium" look and consistent lighting, costs the hand-drawn identity, a larger download and a real art pipeline. Only worth starting if G1–G4 are not enough.
+- **G5 Pre-rendered 3D: not chosen.** The owner decided on 2026-11-13 to keep the drawn style; do not start this pass. Kept here for reference only. Model towers and props in Blender, render them to sprites with one fixed light and matching normal maps. Gives the most "premium" look and consistent lighting, costs the hand-drawn identity, a larger download and a real art pipeline. Only worth starting if G1–G4 are not enough.
 
 Check glow before relying on it: the game runs on the Compatibility renderer everywhere. Test any `WorldEnvironment` glow on an Android phone and in the web build first; the fallback is the additive glow sprites `Paint.glow` already draws.
 
@@ -395,6 +395,6 @@ Not part of this plan; they need decisions or new backend rules.
 
 1. **Music** for lairs 21–50: pick tracks, or accept borrowed ones for now.
 2. **Firestore caps**: allow raising `best` and `scores` to 150 and deploying the rules.
-3. **Graphics direction**: keep the drawn style with passes G1–G4 (recommended), or also start G5.
+3. **Graphics direction**: decided 2026-11-13: keep the drawn style, passes G1–G4 only.
 4. **Tool downloads**: Inkscape, Krita, Material Maker and Laigter are needed for G2–G4.
 5. **Scavengers** (Hut kills pay +1 gold) touches the economy the threat system guards; drop it if it makes gold too easy.
