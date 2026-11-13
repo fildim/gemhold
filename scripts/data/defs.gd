@@ -166,11 +166,13 @@ const NIGHT_HP := 0.85
 
 ## Skill trees, one per tower type, plus The Hoard (and The Land). Effects are applied in GameSim.
 ## Skill points are stars: each mission's best rating gives 1 (Survived), 2 (Wicked) or 3 (Brilliant).
-## A skill may set "tier" (default 1). A tier opens once enough stars are earned (TIER_STARS),
-## and a whole tree may need stars too (TREE_STARS). Gates count stars earned, not spent, so a
-## refund never locks anything.
-const TIER_STARS := {1: 0, 2: 60, 3: 150}
-const TREE_STARS := {"land": 30}
+## A skill may set "tier" (default 1). Tiers open with the campaign: once the player has beaten
+## this many lairs (TIER_BEATEN), so tier II comes with Chapter III and tier III with Chapter V; a
+## whole tree may wait for a chapter too (TREE_BEATEN: The Land with Chapter II). Beaten lairs stay
+## beaten, so a refund never locks anything.
+const TIER_BEATEN := {1: 0, 2: 20, 3: 40}
+const TREE_BEATEN := {"land": 10}
+const LAIRS_PER_CHAPTER := 10
 ## Skills that only add score and are not counted as "learning every Dark Art".
 const SCORE_ONLY_SKILLS := ["renown"]
 ## Tree ids in the order the Dark Arts tabs show them.
@@ -222,12 +224,12 @@ static func skill_tier(sk: Dictionary) -> int:
 	return int(sk.get("tier", 1))
 
 
-## Stars a player must have earned before this skill can be bought.
+## Lairs a player must have beaten before this skill can be bought.
 static func skill_gate(id: String) -> int:
 	var sk := skill_def(id)
 	if sk.is_empty():
 		return 0
-	return maxi(int(TIER_STARS.get(skill_tier(sk), 0)), int(TREE_STARS.get(sk["tree"], 0)))
+	return maxi(int(TIER_BEATEN.get(skill_tier(sk), 0)), int(TREE_BEATEN.get(sk["tree"], 0)))
 
 
 ## Every rank of every skill that does something in battle: what "learn every Dark Art" means.
@@ -238,3 +240,8 @@ static func skill_points_all() -> int:
 			if not SCORE_ONLY_SKILLS.has(sk["id"]):
 				n += int(sk["max"])
 	return n
+
+
+## The chapter a gate of `beaten` lairs opens with: 20 lairs beaten = Chapter III reached.
+static func gate_chapter(beaten: int) -> int:
+	return beaten / LAIRS_PER_CHAPTER + 1

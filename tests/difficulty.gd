@@ -16,7 +16,7 @@ func _init() -> void:
 	var picks: Array = Bot.pick_lairs(OS.get_cmdline_user_args())[0]
 	for i: int in picks:
 		var pts := Bot.points_before(i)
-		var sk := Bot.skills(pts)
+		var sk := Bot.skills(pts, i)
 		var base := Level.load_from(MAIN.LEVELS[i])
 		var sim := Bot.play(base, sk)
 		var logsum := 0.0

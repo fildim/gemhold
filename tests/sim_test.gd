@@ -14,12 +14,12 @@ func _init() -> void:
 	var ok := true
 	for i: int in picks[0]:
 		ok = _play(Level.load_from(MAIN.LEVELS[i]), {}, i + 1, true) and ok
-		ok = _play(Level.load_from(MAIN.LEVELS[i]), Bot.skills(Bot.points_before(i)), i + 1) and ok
+		ok = _play(Level.load_from(MAIN.LEVELS[i]), Bot.skills(Bot.points_before(i), i), i + 1) and ok
 		if nights:
 			# Night missions open after a Brilliant clear, so the player has a few more points by then.
 			var lv := Level.load_from(MAIN.LEVELS[i])
 			lv.night = true
-			ok = _play(lv, Bot.skills(Bot.points_before(i) + 3), i + 1) and ok
+			ok = _play(lv, Bot.skills(Bot.points_before(i) + 3, i + 1), i + 1) and ok
 	quit(0 if ok else 1)
 
 

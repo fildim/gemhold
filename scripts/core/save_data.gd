@@ -176,7 +176,13 @@ func skill_rank(id: String) -> int:
 
 
 func can_buy(id: String) -> bool:
-	return points_free() > 0 and skill_rank(id) < _skill_max(id) and points_total() >= Defs.skill_gate(id)
+	return points_free() > 0 and skill_rank(id) < _skill_max(id) and lairs_beaten() >= Defs.skill_gate(id)
+
+
+## Campaign lairs beaten so far: each win opens the next lair, so every lair before the last one
+## open has been beaten. Opens Dark Arts tiers (Defs.skill_gate).
+func lairs_beaten() -> int:
+	return unlocked - 1
 
 
 func buy(id: String) -> bool:

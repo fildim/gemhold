@@ -151,11 +151,14 @@ func _skills() -> void:
 	_check(Defs.skill_points_all() == 59, "tier I holds 59 points: %d" % Defs.skill_points_all())
 	_check(Achievements.goal_of(Achievements.find("arts59")) == Defs.skill_points_all(), "Omniscient counts the real total")
 	_check(Defs.skill_gate("moss_dmg") == 0, "tier I is open from the start")
-	_check(Defs.TIER_STARS[2] == 60 and Defs.TIER_STARS[3] == 150 and Defs.TREE_STARS["land"] == 30, "tier gates")
+	_check(Defs.TIER_BEATEN[2] == 20 and Defs.TIER_BEATEN[3] == 40 and Defs.TREE_BEATEN["land"] == 10, "tier gates: chapters III and V, The Land with II")
+	_check(Defs.gate_chapter(20) == 3 and Defs.gate_chapter(40) == 5 and Defs.gate_chapter(10) == 2, "gate_chapter")
 	var s := SaveData.new()
 	s.best["level_01"] = {"rank": "Survived"}
 	_check(s.can_buy("moss_dmg"), "a tier I skill can be bought with one star")
-	_check(Bot.skills(Bot.points_before(19)).values().reduce(func(a: int, b: int) -> int: return a + b, 0) == 46, "the bot spends 46 points before lair 20")
+	s.unlocked = 21
+	_check(s.lairs_beaten() == 20, "21 lairs open = 20 beaten, Chapter III reached")
+	_check(Bot.skills(Bot.points_before(19), 19).values().reduce(func(a: int, b: int) -> int: return a + b, 0) == 46, "the bot spends 46 points before lair 20")
 	_check(Bot.points_before(49) == 118, "points_before is not capped")
 
 

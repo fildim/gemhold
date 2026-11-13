@@ -1,7 +1,7 @@
 extends Control
 ## The skill tree, opened from the level map: stars earned, then one tab per tree (Huts, Crypts,
 ## Shrines, The Hoard, and The Land once it has skills), each listing its skills as big buttons in tier
-## sections. A tier still shut shows its header ("Opens at 60 ★") with its skills dimmed.
+## sections. A tier still shut shows its header ("Opens in Chapter III") with its skills dimmed.
 ## Tap a skill to spend a point. Every star from a mission's best rating is one point.
 ## Builds its own nodes in code, like the HUD.
 
@@ -10,6 +10,7 @@ signal closed
 const Hud := preload("res://scripts/ui/hud.gd")
 const TREE_NAMES := {"moss": "Warband Huts", "frost": "Bone Crypts", "ash": "Cinder Shrines", "den": "The Hoard", "land": "The Land"}
 const TIER_NAMES := {1: "Tier I", 2: "Tier II", 3: "Tier III"}
+const ROMAN := ["", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"]
 ## Shown as a tip the first time Dark Arts opens (see main.gd), instead of taking up the screen.
 const INTRO := "[b]Dark Arts[/b] are your skills. [b]Every star is a skill point:[/b] each lair's best rating gives ★ Survived, ★★ Wicked or ★★★ Brilliant, and night missions earn their own.\n\nTap a skill to buy a rank; the dots show ranks bought and left. [b]Tower skills[/b] apply to towers you build from then on. [b]The Hoard[/b] tab powers your den and gives every battle more starting gold or mana. [b]Refund all points[/b] gives them back to spend again."
 const TREE_COLORS := {"moss": Color("8fb35a"), "frost": Color("9fd8f0"), "ash": Color("ff8a3a"), "den": Color("ff7a90"), "land": Color("c9a86a")}
@@ -157,7 +158,7 @@ func _tab_button(tree: String) -> Button:
 ## One tree: its skills grouped by tier. Tier headers only show when the tree has more than one
 ## tier or a tier is still shut, so a plain tree is just its skills.
 func _fill(tree: String) -> void:
-	var stars := _save.points_total()
+	var beaten := _save.lairs_beaten()
 	var tiers := {}
 	for sk: Dictionary in Defs.SKILLS[tree]:
 		var t := Defs.skill_tier(sk)
@@ -166,13 +167,13 @@ func _fill(tree: String) -> void:
 		tiers[t].append(sk)
 	var order := tiers.keys()
 	order.sort()
-	var tree_gate := int(Defs.TREE_STARS.get(tree, 0))
+	var tree_gate := int(Defs.TREE_BEATEN.get(tree, 0))
 	for t: int in order:
-		var gate := maxi(int(Defs.TIER_STARS.get(t, 0)), tree_gate)
-		var shut := stars < gate
+		var gate := maxi(int(Defs.TIER_BEATEN.get(t, 0)), tree_gate)
+		var shut := beaten < gate
 		if order.size() > 1 or shut:
 			var h := Label.new()
-			h.text = TIER_NAMES.get(t, "Tier %d" % t) + ("   Opens at %d ★" % gate if shut else "")
+			h.text = TIER_NAMES.get(t, "Tier %d" % t) + ("   Opens in Chapter %s" % ROMAN[Defs.gate_chapter(gate)] if shut else "")
 			h.add_theme_font_override("font", _hud.display_font)
 			h.add_theme_font_size_override("font_size", 34)
 			h.add_theme_color_override("font_color", Hud.DIM if shut else TREE_COLORS[tree])

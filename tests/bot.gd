@@ -22,14 +22,15 @@ static func points_before(index: int) -> int:
 	return roundi(2.4 * index)
 
 
-static func skills(points: int) -> Dictionary:
-	# points is also the stars earned, so skills whose tier is still shut are passed over.
+## points to spend, with `beaten` campaign lairs behind the player: skills whose tier has not opened
+## yet (Defs.skill_gate) are passed over. Before campaign lair i (0-based) the player has beaten i.
+static func skills(points: int, beaten := 1000) -> Dictionary:
 	var s := {}
 	var spent := 0
 	for id: String in SKILL_ORDER:
 		if spent >= points:
 			break
-		if Defs.skill_gate(id) > points:
+		if Defs.skill_gate(id) > beaten:
 			continue
 		s[id] = int(s.get(id, 0)) + 1
 		spent += 1

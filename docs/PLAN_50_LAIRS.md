@@ -176,11 +176,13 @@ Each gets a spotlight tip the first battle after it is unlocked.
 
 Today there are 59 points to spend and 120 stars to earn, so a thorough player already runs out of things to buy. With 50 lairs there are 300 stars; a typical player (2.4 per lair) holds about 120 by the finale. The new tree holds 139 points of power plus a score-only sink.
 
-**Screen:** five trees no longer fit as columns with big text. Use one tab per tree (Huts, Crypts, Shrines, The Hoard, The Land); each tab lists its skills as large buttons in tier sections. A locked tier shows its header ("Opens at 60 ★") with the skills dimmed, so the player sees what is coming. Keep Refund all.
+**Screen:** five trees no longer fit as columns with big text. Use one tab per tree (Huts, Crypts, Shrines, The Hoard, The Land); each tab lists its skills as large buttons in tier sections. A locked tier shows its header ("Opens in Chapter III") with the skills dimmed, so the player sees what is coming. Keep Refund all.
+
+**Tiers open with the campaign, not with stars** (owner's decision, 2026-11-13): The Land when Chapter II is reached (10 lairs beaten), tier II with Chapter III (20 beaten), tier III with Chapter V (40 beaten). Stars stay the skill points. Star gates were dropped because a typical player (2.4 stars a lair) would reach 60 stars only around lair 25 and 150 stars after the finale, so tier III would never open; chapter gates open each tier as the content that needs it arrives (masteries, Nightmare and Frenzy with Chapter III's heroes), give a clear reward moment on the map (a spotlight tip when a tier opens), and let the bot and the tuning assume exactly which skills exist at each lair.
 
 **Tier I** (open from the start): the 20 existing skills, unchanged (59 points).
 
-**Tier II** (opens at 60 stars earned):
+**Tier II** (opens with Chapter III, 20 lairs beaten):
 
 | Tree | Skill | Effect per rank | Max |
 |---|---|---|---|
@@ -205,7 +207,7 @@ Today there are 59 points to spend and 120 stars to earn, so a thorough player a
 | Hoard | Gem Magnet | Loose gems roll home 20% faster | 3 |
 | Hoard | Sturdy Foundations | Stun, Rubble and Silence weigh 15% less (shorter, or less slowdown) | 3 |
 
-**The Land** (new tree, opens at 30 stars):
+**The Land** (new tree, opens with Chapter II, 10 lairs beaten):
 
 | Skill | Effect per rank | Max |
 |---|---|---|
@@ -218,7 +220,7 @@ Today there are 59 points to spend and 120 stars to earn, so a thorough player a
 | Floodmaster | Sluices recharge 20% faster; collapsing a bridge costs 5 mana less | 2 |
 | Black Rites | Dark Altars give +5% more damage | 2 |
 
-**Tier III** (opens at 150 stars):
+**Tier III** (opens with Chapter V, 40 lairs beaten):
 
 | Tree | Skill | Effect per rank | Max |
 |---|---|---|---|
@@ -227,9 +229,9 @@ Today there are 59 points to spend and 120 stars to earn, so a thorough player a
 | Hoard | Dragon's Patience | +10 starting mana | 3 |
 | Hoard | Renown | +1% leaderboard score; no effect on battles | 150 |
 
-Totals: 59 + 37 (tier II) + 20 (The Land) + 23 (tier III) = 139, plus Renown. `SaveData._skill_max` already ignores unknown ids, so old saves load. A skill's tier gate is checked in `can_buy`; a refund never locks a tier (gates count stars earned, not spent). The achievement "Omniscient" (`arts59`) must count the real total without Renown.
+Totals: 59 + 37 (tier II) + 20 (The Land) + 23 (tier III) = 139, plus Renown. `SaveData._skill_max` already ignores unknown ids, so old saves load. A skill's gate is checked in `can_buy` against `SaveData.lairs_beaten()` (`Defs.TIER_BEATEN`, `Defs.TREE_BEATEN`, done in Phase 0); beaten lairs stay beaten, so a refund never locks a tier. When a tier opens, the map shows a Dark Arts spotlight tip once (its own Prefs key). The achievement "Omniscient" (`arts59`) must count the real total without Renown.
 
-Update `Bot.SKILL_ORDER` and `Bot.points_before` in `tests/bot.gd` to buy tier II and III skills at the pace of a 2.4-star player, and teach the bot to: take a mastery when offered (alternate A and B by tile), cast Nightmare on a chanting Spiriter and Frenzy on a stunned cluster, collapse bridges when no Diver is in the wave, use Sluices on boats, clear Rubble, and raze Chapels and Signal Fires before woods.
+Update `Bot.SKILL_ORDER` and `Bot.points_before` in `tests/bot.gd` to buy tier II and III skills at the pace of a 2.4-star player, once their chapter is reached (`Bot.skills(points, beaten)` already passes over shut tiers), and teach the bot to: take a mastery when offered (alternate A and B by tile), cast Nightmare on a chanting Spiriter and Frenzy on a stunned cluster, collapse bridges when no Diver is in the wave, use Sluices on boats, clear Rubble, and raze Chapels and Signal Fires before woods.
 
 ## 8. Graphics
 
@@ -401,3 +403,4 @@ Not part of this plan; they need decisions or new backend rules.
 3. **Graphics direction**: decided 2026-11-13: keep the drawn style, passes G1–G4 only.
 4. **Tools**: Inkscape, Krita, Material Maker and Laigter are installed (§8).
 5. **Plunder** (§5): the cap of +5 gold is a starting value; the owner may want it higher once the bot's end-of-lair gold is measured.
+6. **Dark Arts tiers**: decided 2026-11-13: they open with chapters, not stars: The Land with Chapter II, tier II with Chapter III, tier III with Chapter V (§7).
