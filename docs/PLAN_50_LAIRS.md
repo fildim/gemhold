@@ -318,8 +318,7 @@ Each lair turns one lever nobody has seen yet, then later lairs mix levers. Grid
 | 49 | The Last Procession | 4 land, 1 river, 2 air | Every hero in the game | 22 | Each wave revisits one earlier chapter |
 | 50 | The Seraph's Descent | 3 land, 2 air | Seraph (boss) | 24 | Seven gems. Champions in waves 18 and 21, the Seraph in 24 |
 
-**Music.** Decided 2026-11-13: lairs without a chosen track play no battle music. Change the fallback in `main.gd` (`MUSIC.get(level.id, "mountain")`) to silence. The owner is auditioning candidates in `DesktopGemhold music to try
-ew` (52 tracks on 2026-11-13, each with source and licence in `SOURCES.txt`: CC0, CC-BY or OGA-BY only). Some downloads are the site's preview encodes; when a track is chosen, fetch the best original from its source page before cutting it. Give a lair its track only when the owner names it, then follow the usual workflow (cut the loudest 150 s, -14 LUFS, credit, remove from the folder).
+**Music.** Decided 2026-11-13: lairs without a chosen track play no battle music. Change the fallback in `main.gd` (`MUSIC.get(level.id, "mountain")`) to silence. The owner is auditioning candidates in `Desktop/Gemhold music to try/new` (52 tracks on 2026-11-13, each with source and licence in `SOURCES.txt`: CC0, CC-BY or OGA-BY only). Some downloads are the site's preview encodes; when a track is chosen, fetch the best original from its source page before cutting it. Give a lair its track only when the owner names it, then follow the usual workflow (cut the loudest 150 s, -14 LUFS, credit, remove from the folder).
 
 ## 10. Achievements v2
 
