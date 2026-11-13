@@ -29,7 +29,9 @@ static func topics() -> Array:
 		+ "The stars next to the gem count at the top show the best rating still within reach in this battle; a message tells you the moment it slips.\n\n"
 		+ "Stars are your skill points for Dark Arts. Only your best rating on each lair counts, so replay a lair to earn the stars you missed. A Brilliant win also opens that lair's night mission."))
 	t.append(_t("The basics", "Speed and pause",
-		"[b]1× / 2×[/b] runs the battle at double speed when a wave is easy.\n\n[b]Pause[/b] stops everything; on a phone the back button pauses too. You can still tap tiles and read their panels while paused."))
+		"[b]1× / 2×[/b] runs the battle at double speed when a wave is easy.\n\n[b]Pause[/b] stops everything; on a phone the back button pauses too. You can still tap tiles and read their panels while paused.
+
+[b]Settings[/b] (on the map and in battle) sets the volume of effects and music, and turns the screen shake of a Meteor on or off."))
 
 	# ------------------------------------------------------------ towers
 	t.append(_t("Towers", "Building",

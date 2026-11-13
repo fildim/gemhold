@@ -652,7 +652,15 @@ func _draw_parchment() -> void:
 		_river(spots)
 	for k in 70:
 		var p := Vector2(Paint.hash01(k, 11, _page) * size.x, (0.12 + Paint.hash01(k, 12, _page) * 0.8) * size.y)
-		if spots.any(func(s: Vector2) -> bool: return s.distance_to(p) < 125.0):
+		# Keep clear of the markers with their names and stars, the heading and the button rows.
+		var blocked := false
+		for j in spots.size():
+			var dy := p.y - spots[j].y   # top-row names sit above the marker, bottom-row names below
+			if absf(spots[j].x - p.x) < 150.0 and (dy > -135.0 and dy < 60.0 if j % 2 == 0 else dy > -60.0 and dy < 120.0):
+				blocked = true
+		if blocked:
+			continue
+		if p.y < 150.0 and absf(p.x - size.x * 0.5) < size.x * 0.25 or p.y > size.y - 100.0:
 			continue
 		var r := 14.0 + Paint.hash01(k, 13, _page) * 14.0
 		var kind := int(Paint.hash01(k, 14, _page) * 4.0)

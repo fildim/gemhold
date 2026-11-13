@@ -198,6 +198,18 @@ func _build_bars() -> void:
 	_next = _button(brow, "Next wave", next_wave_pressed)
 	_next.add_theme_stylebox_override("normal", _box(Color("3d2a12"), Color("8a6420"), 4, 8, 14))
 	_meteor = _button(brow, "Meteor %d" % Defs.METEOR["cost"], meteor_pressed)
+	for st: String in ["normal", "hover", "pressed", "disabled"]:   # room for its picture on the left
+		var sb: StyleBox = theme.get_stylebox(st, "Button").duplicate()
+		sb.content_margin_left += 34
+		_meteor.add_theme_stylebox_override(st, sb)
+	var mic := GameIcon.make("spell:meteor", 40)
+	mic.framed = false
+	mic.set_anchors_preset(Control.PRESET_CENTER_LEFT)
+	mic.offset_left = 8
+	mic.offset_right = 48
+	mic.offset_top = -20
+	mic.offset_bottom = 20
+	_meteor.add_child(mic)
 	_cut = _button(brow, "Cut woods 15", cut_pressed)
 	_speed = _button(brow, "1×", speed_pressed)
 	_pause = _button(brow, "Pause", pause_pressed)

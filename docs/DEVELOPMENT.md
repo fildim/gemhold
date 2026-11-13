@@ -2,7 +2,7 @@
 
 The rules in detail, how the project is organised, tests, builds and publishing. For players, see the [README](../README.md).
 
-A dark-lord tower defense for Windows, macOS, Linux, Android, iPhone and the web, built with **Godot 4.6**. You guard a cave of gems; heroes walk the roads to steal them. It has music and sound effects (the **Sound** button opens a window with separate volume sliders for effects and music), and the first lair teaches you as you play: each tip freezes the battle, darkens the screen and lights up the one thing to tap. The first time you have a skill point to spend, the map does the same for Dark Arts. The first time a mine, well or barracks shows up, or a new kind of hero walks onto the map, the battle stops and a tip lights it up and explains it. **Skip tutorial** ends the first-lair tips, **No more tips** ends the building and hero tips; **Reset progress** brings them all back.
+A dark-lord tower defense for Windows, macOS, Linux, Android, iPhone and the web, built with **Godot 4.6**. You guard a cave of gems; heroes walk the roads to steal them. It has music and sound effects (the **Settings** button opens a window with separate volume sliders for effects and music and a screen shake switch), and the first lair teaches you as you play: each tip freezes the battle, darkens the screen and lights up the one thing to tap. The first time you have a skill point to spend, the map does the same for Dark Arts. The first time a mine, well or barracks shows up, or a new kind of hero walks onto the map, the battle stops and a tip lights it up and explains it. **Skip tutorial** ends the first-lair tips, **No more tips** ends the building and hero tips; **Reset progress** brings them all back.
 
 The campaign opens on a level map: twenty lairs in two chapters of ten (the arrows beside the heading switch chapter). Lair 1 ("Mossfold Pass") is the tutorial, ported from the web prototype. From there each lair turns one or two difficulty levers further, and later lairs mix them, so no two play alike (see **Campaign** below). Clearing a level Brilliant unlocks its night mission. Progress saves automatically: unlocked levels, best rating per mission and skills. Each level guards 5 gems.
 
@@ -71,6 +71,10 @@ scripts/
   view/ground.gd         terrain, roads, woods, lair (redrawn only when woods are cleared)
   view/board.gd          towers, heroes, shots, effects (redrawn every frame)
   view/paint.gd          drawing helpers
+  view/art.gd            towers, heroes and map buildings, drawn on any canvas (the board and the icons share them)
+  view/bursts.gd         pooled, capped particle bursts (CPUParticles2D) for deaths, building, loot and meteors
+  ui/game_icon.gd        round framed icons for heroes, towers, buildings, skills, spells and achievements
+  ui/frames.gd           carved nine-patch frames for buttons and panels, drawn in code
   ui/hud.gd              stats bar, buttons, tile panel, start and end screens
   ui/level_select.gd     the campaign map (tap a lair to play it)
   ui/skill_tree.gd       Dark Arts, the skill tree
@@ -225,6 +229,14 @@ Apple only lets apps onto an iPhone through the App Store, TestFlight or a signe
 2. **Sideload the app:** every release includes `Gemhold-iOS-unsigned.ipa`, built on a GitHub Mac. Install [AltStore](https://altstore.io) or [Sideloadly](https://sideloadly.io) on a Windows PC or Mac, sign in with any free Apple ID, and install the IPA with the iPhone plugged in. With a free Apple ID the app stops opening after 7 days until you install it again from the computer (AltStore can refresh it over Wi-Fi). Turn on **Settings > Privacy & Security > Developer Mode** on the iPhone when it asks.
 
 With a paid Apple developer account, the same workflow could sign the build and send it to TestFlight.
+
+## Graphics
+
+Everything is drawn in code; there are no sprite files. `view/art.gd` (`Art`) holds the figures (towers, heroes, map buildings) and draws them on any canvas, so the board and the icons always show the same picture.
+
+- **Motion (G1):** the rules stay free of drawing, but carry a few view-only fields and one signal: `Enemy.hit` and `Enemy.knock` (hit flash and a small knock-back from Hut and Crypt hits), `Tower.born` (towers squash and settle after being built or upgraded; Huts and Crypts dip as they fire) and `GameSim.burst(kind, pos, code)`, which `view/bursts.gd` turns into particles: dust and scraps where a hero falls, dust when a tower goes up, sparks for loot picked up, debris from a meteor. Emitters are pooled and capped (`MAX_EMITTERS` × `MAX_AMOUNT`). Meteors also leave a `shock` ring and a `scorch` decal (`Fx` kinds) and shake the screen for 0.35 s (`main.gd`, Prefs `shake`, the switch in Settings). Shots leave trails, gems glint now and then, dropped coins pop up, and floating text pops in and eases out.
+- **Icons and frames (G4):** `ui/game_icon.gd` (`GameIcon.make(key, px, lit)`) draws a round framed icon for `hero:<code>`, `tower:<type>`, `site:<kind>`, `skill:<id>`, `spell:meteor`, `ach:<id>` (achievements map to a picture by id in `ACH` and `ACH_PREFIX`) or a plain glyph name. They show on Hall of Fame achievement cards, Dark Arts skill buttons, Guide topics (`Guide.ICONS`) and the Meteor button. `ui/frames.gd` (`Frames.carved`) draws the carved nine-patch the theme uses for buttons and panels. The campaign map is an old map on dark parchment, with ink sketches for each chapter (`level_select.gd`, `_draw_parchment`).
+- **Checking:** frame time was measured windowed at 1720×720 on the PC: a battle averaged 21.4 ms a frame before G1/G4 and 21.7 ms after. Check on an Android phone before publishing.
 
 ## Sound
 
