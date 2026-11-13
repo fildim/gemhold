@@ -1,0 +1,70 @@
+{
+ "id": "level_27",
+ "title": "Sluicegate",
+ "cols": 16,
+ "rows": 10,
+ "hp_mul": 3.66,
+ "legend": {"A":"high ash","F":"high frost","L":"lair","M":"high moss","a":"ash","f":"frost","m":"moss"},
+ "terrain": [
+  "aaaaaammmmmmmmmm",
+  "aaaaaawwwwwwwwww",
+  "aaaaaawwwwwwwwww",
+  "mmmmmmwwwwwwwwww",
+  "mLLmmmmffFffffff",
+  "mLLmmmmfffffffff",
+  "mmmmmmmfffffffff",
+  "mmmmmMmfffffffff",
+  "mmmmmmmmmmmmmmmm",
+  "mmmmmmmmmmmmAmmm"
+ ],
+ "trees": [
+  "T.T.......T..T.T",
+  "TT...T..........",
+  "T..T............",
+  "................",
+  "........T..T...T",
+  "..........T.T.TT",
+  ".......T....T.TT",
+  "......T.T..T....",
+  "................",
+  "T..T.T..T....T.."
+ ],
+ "paths": [
+  [[16,8],[2,8],[2,6]],
+  [[16,2],[6,2],[6,5],[3,5]]
+ ],
+ "lair": {"cell":[1,4],"center":[2,5],"size":[2,2]},
+ "sites": [
+  {"cell":[10,4],"kind":"sluice","path":1},
+  {"cell":[8,6],"kind":"altar"},
+  {"cell":[13,5],"kind":"mine"},
+  {"cell":[4,1],"kind":"well"}
+ ],
+ "start": {"gems":5,"gold":230,"mana":60},
+ "first_wave_delay": 30,
+ "wave_gap": 24,
+ "site_cuts": 3,
+ "waves": [
+  "8p",
+  "6f,2s",
+  {"cargo":{"1":"2k"},"heroes":"4m,1l"},
+  "6m,2c",
+  {"cargo":{"1":"2k"},"heroes":"4f,1l"},
+  "2k,6m",
+  {"cargo":{"1":"2k,1c"},"heroes":"6t,2l"},
+  "8m,2w,2q",
+  {"cargo":{"1":"2k"},"heroes":"2k,4f,2l"},
+  "6m,4d,2c",
+  {"cargo":{"1":"3k"},"heroes":"3k,2l"},
+  "8m,4f,2b",
+  {"cargo":{"1":"2k,2f"},"heroes":"4k,2l"},
+  "10m,2e,2c",
+  {"cargo":{"1":"3k"},"heroes":"4k,4m,3l"},
+  {"cargo":{"1":"2k,1b"},"heroes":"5k,6m,2l"},
+  {"cargo":{"1":"3k"},"heroes":"6k,8m,3l"}
+ ],
+ "path_info": [
+  {"kind":"land"},
+  {"kind":"river"}
+ ]
+}

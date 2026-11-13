@@ -520,11 +520,11 @@ func _random_save() -> SaveData:
 func _check_every_achievement_can_be_earned() -> void:
 	var s := SaveData.load_from(FILE + ".none")
 	var ids := []
-	for i in 20:
+	for i in 30:
 		ids.append("level_%02d" % (i + 1))
 		for m in [ids[i], SaveData.mission_id(ids[i], true)]:
 			s.best[m] = {"rank": "Brilliant", "kept": 5}
-	s.scores["level_01"] = 300000
+	s.scores["level_01"] = 600000
 	for tree: String in Defs.SKILLS:
 		for sk: Dictionary in Defs.SKILLS[tree]:
 			s.skills[sk["id"]] = sk["max"]
@@ -532,6 +532,19 @@ func _check_every_achievement_can_be_earned() -> void:
 		if a.has("stat"):
 			s.stats[a["stat"]] = 10000000
 	Achievements.check_progress(s, ids)
+
+	# Chapter III: masteries, spells and water, on Reedmere Ford with nobody slain in the water.
+	var wet := _ending("level_21", true)
+	wet.gold = 4000
+	wet.masteries_built = {"longhouse": 1, "lodge": 1, "ossuary": 1, "mausoleum": 1, "twin": 1, "sunlance": 1}
+	wet.twin_kills = 1
+	wet.lodge_champion = 1
+	wet.best_nightmare = 10
+	wet.boats_sunk = 1
+	wet.collapse_kills = 1
+	wet.best_flood = 5
+	wet.diver_meteor = 1
+	Achievements.check_battle(s, wet, 30)
 
 	var big := _ending("level_20", true)
 	big.gold = 2000

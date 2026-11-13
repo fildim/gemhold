@@ -1,0 +1,67 @@
+{
+ "id": "level_25",
+ "title": "Oarsmen's Reach",
+ "cols": 16,
+ "rows": 10,
+ "hp_mul": 3.4,
+ "legend": {"A":"high ash","F":"high frost","L":"lair","M":"high moss","a":"ash","f":"frost","m":"moss"},
+ "terrain": [
+  "ffffffffffaaaaaa",
+  "fffAffffffaaaaaa",
+  "wwwwwwwwwwaaaaaa",
+  "wwwwwwwwwwaaaaaa",
+  "mmmmmmmMmmaaaaaa",
+  "mmmmmmmmmmaaaaaa",
+  "mmmmmmmmmmmmmLLm",
+  "mmmmmmmmmmmmmLLm",
+  "mmmmmmmmmmmFmmmm",
+  "mmmmmmmmmmmmmmmm"
+ ],
+ "trees": [
+  "T....TT...T....T",
+  ".....T...TTTTTT.",
+  "...........T.T.T",
+  "............T.T.",
+  ".T.TTT..T....T.T",
+  "T..T.TT.T..T....",
+  "T....TTT........",
+  "..........T.....",
+  "T.........T.....",
+  ".TT............T"
+ ],
+ "paths": [
+  [[-1,7],[4,7],[4,9],[14,9],[14,8]],
+  [[-1,2],[9,2],[9,6],[12,6]]
+ ],
+ "lair": {"cell":[13,6],"center":[14,7],"size":[2,2]},
+ "sites": [
+  {"cell":[11,3],"kind":"mine"},
+  {"cell":[1,5],"kind":"well"}
+ ],
+ "start": {"gems":5,"gold":230,"mana":60},
+ "first_wave_delay": 30,
+ "wave_gap": 24,
+ "site_cuts": 2,
+ "waves": [
+  "8p",
+  "6f,2s",
+  {"cargo":{"1":"4p"},"heroes":"4m,1l"},
+  "6m,2c",
+  {"heroes":"4f,1l"},
+  "2k,6m",
+  {"cargo":{"1":"3f,1c"},"heroes":"6t,1l"},
+  "8m,2w",
+  {"heroes":"2k,4f,2l"},
+  "6m,4t,2c",
+  {"cargo":{"1":"2f,2t"},"heroes":"3k,2l"},
+  "8m,4f,2b",
+  {"heroes":"4k,2l"},
+  "10m,2w,2c",
+  {"cargo":{"1":"3f,1k"},"heroes":"4k,4m,3l"},
+  {"heroes":"5k,6m,3l"}
+ ],
+ "path_info": [
+  {"kind":"land"},
+  {"kind":"river"}
+ ]
+}

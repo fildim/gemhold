@@ -625,6 +625,12 @@ func _zone_mul(e: Enemy, dt: float) -> float:
 				if not free:
 					e.soak = Defs.SOAK_TIME
 					e.swim = true
+	if level.path_kind[e.path] == "river" and not e.d.has("boat") and e.dist < float(level.landings[e.path]):
+		# Off the boat and back into the river (a crew running away with gems): they must swim.
+		e.hidden = e.d.has("diver")
+		if not free:
+			e.soak = Defs.SOAK_TIME
+			e.swim = true
 	if e.d.has("engineer") and e.zone == "ford" and z != "ford" and e.crossing >= 0:
 		planks[e.crossing] = time + Defs.PLANK_TIME   # he lays planks over the ford he just crossed
 	e.zone = z
@@ -1092,7 +1098,10 @@ func _update_fx(dt: float) -> void:
 			var before := kills
 			for e: Enemy in enemies:
 				if e.pos.distance_to(f.pos) <= Defs.METEOR["radius"]:
+					var under := e.hidden
 					hurt(e, meteor_damage(), true)
+					if under and e.hp <= 0.0:
+						diver_meteor += 1
 			best_meteor = maxi(best_meteor, kills - before)
 			meteor_kills += kills - before
 	fx = fx.filter(func(f: Fx) -> bool: return f.t < f.dur)
@@ -1140,7 +1149,7 @@ func hurt(e: Enemy, dmg: float, pierce := false, src: Tower = null, ap := 0) -> 
 		burst.emit("death", e.pos, e.code)
 		if in_water(e):
 			water_kills += 1
-			if e.swim and not e.zone == "ford":
+			if e.swim and e.zone == "bridge":
 				collapse_kills += 1
 		if e.d.has("boat") and not e.crew.is_empty():
 			# Sunk before it landed: the crew drowns, and their bounties are yours.

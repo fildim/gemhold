@@ -1,0 +1,60 @@
+{
+ "id": "level_21",
+ "title": "Reedmere Ford",
+ "cols": 16,
+ "rows": 10,
+ "hp_mul": 5.47,
+ "legend": {"A":"high ash","F":"high frost","L":"lair","M":"high moss","a":"ash","f":"frost","m":"moss"},
+ "terrain": [
+  "mmffwffmmwmaaaaa",
+  "mmffwffmmwmaaaaa",
+  "mmffoffmmwmaaaaa",
+  "mmffwffmmwmFmmmm",
+  "mmffwfMmmwmmmLLm",
+  "mmmmwmmffwffmLLm",
+  "mmmmwmmffwffmmmm",
+  "aaaawmmffoffmmmm",
+  "aaaawmmffwffmmmm",
+  "aaaawmmffwffmmmm"
+ ],
+ "trees": [
+  "T.TT.T.TT..T.TTT",
+  "...T.T..T..T...T",
+  "...........T...T",
+  "TT....T.T.......",
+  "..TT......TT....",
+  ".TT..T..T.......",
+  "..T.....T.......",
+  "............T...",
+  "T....TT.........",
+  ".T....T...T.TT.."
+ ],
+ "paths": [
+  [[-1,2],[7,2],[7,7],[11,7],[11,5],[12,5]]
+ ],
+ "lair": {"cell":[13,4],"center":[14,5],"size":[2,2]},
+ "sites": [
+  {"cell":[1,4],"kind":"mine"},
+  {"cell":[14,8],"kind":"well"}
+ ],
+ "start": {"gems":5,"gold":230,"mana":60},
+ "first_wave_delay": 30,
+ "wave_gap": 24,
+ "site_cuts": 2,
+ "waves": [
+  "6p",
+  "4m,4p",
+  "6f,2s",
+  "6m,2c",
+  "4f,4m,2t",
+  "2k,6p",
+  "8m,2b",
+  "4f,2w,4m",
+  "2k,6m",
+  "6t,4m,2c",
+  "2k,4f,4m",
+  "8m,2w,2b",
+  "3k,6m",
+  "4k,8m,2c"
+ ]
+}

@@ -6,7 +6,9 @@ extends Node2D
 const T := 64.0
 ## Campaign order. Add new level files here. File numbers follow when each map was made, not its place in the campaign, so
 ## level ids (and the saved progress keyed by them) stay put when the campaign is reordered.
-const LEVELS: Array[String] = ["res://levels/level_01.json", "res://levels/level_02.json", "res://levels/level_03.json", "res://levels/level_09.json", "res://levels/level_04.json", "res://levels/level_06.json", "res://levels/level_10.json", "res://levels/level_07.json", "res://levels/level_11.json", "res://levels/level_08.json", "res://levels/level_12.json", "res://levels/level_13.json", "res://levels/level_14.json", "res://levels/level_15.json", "res://levels/level_16.json", "res://levels/level_17.json", "res://levels/level_18.json", "res://levels/level_19.json", "res://levels/level_20.json", "res://levels/level_05.json"]
+const LEVELS: Array[String] = ["res://levels/level_01.json", "res://levels/level_02.json", "res://levels/level_03.json", "res://levels/level_09.json", "res://levels/level_04.json", "res://levels/level_06.json", "res://levels/level_10.json", "res://levels/level_07.json", "res://levels/level_11.json", "res://levels/level_08.json", "res://levels/level_12.json", "res://levels/level_13.json", "res://levels/level_14.json", "res://levels/level_15.json", "res://levels/level_16.json", "res://levels/level_17.json", "res://levels/level_18.json", "res://levels/level_19.json", "res://levels/level_20.json", "res://levels/level_05.json",
+	"res://levels/level_21.json", "res://levels/level_22.json", "res://levels/level_23.json", "res://levels/level_24.json", "res://levels/level_25.json",
+	"res://levels/level_26.json", "res://levels/level_27.json", "res://levels/level_28.json", "res://levels/level_29.json", "res://levels/level_30.json"]
 ## Each lair's battle music, by level id (tracks in assets/music, credits in CREDITS.md there).
 const MUSIC := {"level_01": "mountain", "level_02": "heroicage", "level_03": "curseofthescarab", "level_09": "preludeandaction",
 	"level_04": "volatilereaction", "level_06": "crusade", "level_10": "firebrand", "level_07": "fate", "level_11": "killers",
@@ -54,6 +56,7 @@ var _race_busy := false
 func _ready() -> void:
 	hud.next_wave_pressed.connect(_on_next_wave)
 	hud.meteor_pressed.connect(_on_meteor)
+	hud.spell_pressed.connect(_on_spell)
 	hud.cut_pressed.connect(_on_cut)
 	hud.speed_pressed.connect(func() -> void: speed = 2 if speed == 1 else 1)
 	hud.pause_pressed.connect(func() -> void: paused = not paused)
@@ -183,6 +186,7 @@ func _new_battle() -> void:
 	_shake = 0.0
 	tutorial = Tutorial.new() if Tutorial.wanted(level_index, night) and race.is_empty() else null
 	hud.reset_rating()
+	ground.biome = mini(level_index / 10, 2)
 	ground.setup(level, sim)
 	board.setup(level, sim, hud.bold_font)
 	frame.size = Vector2(level.cols, level.rows) * T
@@ -212,8 +216,10 @@ func _process(delta: float) -> void:
 		tip = tutorial.text(armed)
 	var site_cell := Vector2i(-1, -1)
 	var hero: GameSim.Enemy = null
+	var rule_rect := Rect2()
 	_site_tip = ""
 	_hero_tip = ""
+	_rule_key = ""
 	if tip == "" and started and not sim.over and race.is_empty():   # tips freeze the battle: never in a race
 		site_cell = _site_tip_cell()
 		if site_cell.x >= 0:
@@ -222,10 +228,17 @@ func _process(delta: float) -> void:
 			hero = _new_hero()
 			if hero:
 				tip = "[b]New hero: %s[/b]\n%s" % [hero.d["name"], Defs.HERO_TIPS.get(hero.code, "")]
+			else:
+				var rt := _rule_tip()
+				if not rt.is_empty():
+					tip = rt[0]
+					rule_rect = rt[1]
 	if site_cell.x >= 0:
 		spot.show_tip(tip, _cell_rect(Vector2(site_cell)), true, "No more tips")
 	elif hero:
 		spot.show_tip(tip, _cell_rect(hero.pos - Vector2(0.75, 0.9), Vector2(1.5, 1.5)), true, "No more tips")
+	elif _rule_key != "":
+		spot.show_tip(tip, rule_rect, true, "No more tips")
 	elif tip != "":
 		spot.show_tip(tip, _tip_rect(tutorial.target), tutorial.has_ok())
 	else:
@@ -241,7 +254,7 @@ func _process(delta: float) -> void:
 			if tw.beam != null:
 				beams += 1
 	Sfx.set_beams(beams)
-	Sfx.play_music("" if sim.over else (MUSIC.get(level.id, "mountain") if started else "map"))
+	Sfx.play_music("" if sim.over else (MUSIC.get(level.id, "") if started else "map"))
 	_shake = maxf(0.0, _shake - delta)
 	var jolt := Vector2.ZERO   # a short screen shake when a meteor lands (off in Settings)
 	if _shake > 0.0:
@@ -251,6 +264,50 @@ func _process(delta: float) -> void:
 	board.armed = armed
 	board.queue_redraw()
 	hud.refresh(sim, armed, speed, paused)
+
+
+## Tips for the rules of Chapter III, each shown once (Prefs "rule_tip_<key>").
+const RULE_TIPS := ["ford", "bridge", "tide", "routes", "mastery", "nightmare", "frenzy"]
+var _rule_key := ""
+
+
+## The first rule tip that applies now: [text, rectangle on screen], or [] (sets _rule_key).
+func _rule_tip() -> Array:
+	for k: String in RULE_TIPS:
+		if Prefs.get_value("rule_tip_" + k, false):
+			continue
+		var r := _rule_tip_for(k)
+		if not r.is_empty():
+			_rule_key = k
+			return r
+	return []
+
+
+func _rule_tip_for(k: String) -> Array:
+	match k:
+		"ford", "bridge":
+			for i in level.crossing_cells.size():
+				if level.crossing_kind[i] == k:
+					var c: Vector2i = level.crossing_cells[i][0]
+					if k == "ford":
+						return ["[b]A ford.[/b] Heroes wade through the shallows slowly and come out [b]soaked[/b]: Crypt chill lasts longer on them, but Shrine beams heat up slower.", _cell_rect(Vector2(c))]
+					return ["[b]A bridge.[/b] Tap it and [b]Collapse[/b] it with mana: heroes must swim the gap, slow and soaked. An Engineer can rebuild it, and each collapse costs more.", _cell_rect(Vector2(c))]
+		"tide":
+			if sim.tide.x > 0.0 and sim.wave >= 1:
+				return ["[b]The tide[/b] comes and goes here. At high tide the fords are too deep to wade, so heroes swim them, slowly. The tide clock by the wave counter shows what is coming.", hud.button_rect("tide")]
+		"routes":
+			if sim.wave < level.waves.size() and not level.wave_roads[sim.wave].is_empty():
+				var roads: Array = level.wave_roads[sim.wave]
+				return ["[b]Waves take different roads here.[/b] The glowing road starts show where the next wave will come from, so you can get ready.", _cell_rect(level.path_pos(roads[0], 1.0) - Vector2(0.75, 0.75), Vector2(1.5, 1.5))]
+		"mastery":
+			for tw: GameSim.Tower in sim.towers.values():
+				if not sim.masteries_for(tw).is_empty():
+					return ["[b]Level IV![/b] This tower is battle-hardened and level III, so it can become one of its masteries. Tap it to choose; the choice is final.", _cell_rect(Vector2(tw.cell))]
+		"nightmare", "frenzy":
+			if sim.has_spell(k) and started:
+				var txt := "[b]Nightmare[/b] (%d mana): tap it, then tap heroes. They flee back along the road for a few seconds, and gem carriers freeze. Bosses and boats ignore it." % Defs.NIGHTMARE["cost"] if k == "nightmare" else "[b]Frenzy[/b] (%d mana): tap it, then tap among your towers. Those nearby fire and heat up much faster for a few seconds." % Defs.FRENZY["cost"]
+				return [txt, hud.button_rect(k)]
+	return []
 
 
 ## The first time a hero of a kind walks onto the map, the battle stops and a tip introduces him
@@ -268,7 +325,7 @@ func _new_hero() -> GameSim.Enemy:
 ## Returns the cell of a building still to explain, or (-1, -1).
 func _site_tip_cell() -> Vector2i:
 	for s: GameSim.Site in sim.sites.values():
-		if not s.owned and not Prefs.get_value("building_tip_" + s.kind, false):
+		if (not s.owned or s.kind == "sluice") and not Prefs.get_value("building_tip_" + s.kind, false):
 			_site_tip = s.kind
 			return s.cell
 	_site_tip = ""
@@ -286,6 +343,10 @@ func _site_tip_text(s: GameSim.Site) -> String:
 			t = "[b]A Gold Mine[/b], overgrown. [b]Tap it and Cut it free[/b] with mana; then it pays %d gold every %d s for the rest of the battle." % [d["gold"], int(d["every"])]
 		"well":
 			t = "[b]A Mana Well[/b], choked with roots. [b]Tap it and Cut it free[/b] with mana for +%.1f mana per second, so you can cast and cut more." % d["regen"]
+		"altar":
+			t = "[b]A Dark Altar[/b], overgrown. [b]Cut it free[/b] with mana and towers within %.1f tiles deal %d%% more damage and grow battle-hardened faster." % [d["range"], int(d["dmg"] * 100)]
+		"sluice":
+			t = "[b]A Sluice Gate[/b]. [b]Tap it and Open the sluice[/b] (%d mana) to send a flood down its waterway: heroes in the water are swept back and hurt, boats worst of all. It takes %d s to fill again." % [d["mana"], int(d["recharge"])]
 	if s.cuts > 1:
 		t += " This one takes [b]%d cuts[/b]; tap it to see how many are left." % s.cuts
 	return t
@@ -326,6 +387,11 @@ func _on_tip_ok() -> void:
 		_hero_tip = ""
 		spot.hide_tip()
 		return
+	if not on_map and _rule_key != "":
+		Prefs.set_value("rule_tip_" + _rule_key, true)
+		_rule_key = ""
+		spot.hide_tip()
+		return
 	if not on_map and tutorial:
 		tutorial.dismiss()
 	elif _race_intro:
@@ -344,13 +410,16 @@ func _on_tip_skip() -> void:
 		Prefs.set_value("race_tip", RACE_TIPS.size())
 		spot.hide_tip()
 		return
-	if not on_map and (_site_tip != "" or _hero_tip != ""):
+	if not on_map and (_site_tip != "" or _hero_tip != "" or _rule_key != ""):
 		for k in Defs.SITES:
 			Prefs.set_value("building_tip_" + k, true)
 		for k in Defs.ENEMIES:
 			Prefs.set_value("hero_tip_" + k, true)
+		for k in RULE_TIPS:
+			Prefs.set_value("rule_tip_" + k, true)
 		_site_tip = ""
 		_hero_tip = ""
+		_rule_key = ""
 		spot.hide_tip()
 		return
 	if tutorial:
@@ -422,7 +491,7 @@ func _on_map_input(event: InputEvent) -> void:
 		return
 	var p: Vector2 = event.position / T   # tile units
 	if armed:
-		sim.cast_meteor(p)
+		sim.cast(hud.armed_spell, p)
 		armed = false
 		_deselect()
 		return
@@ -483,14 +552,22 @@ func _on_cut() -> void:
 
 
 func _on_meteor() -> void:
+	_on_spell("meteor")
+
+
+## Meteor, Nightmare or Frenzy: tap the button, then the map. Tapping it again cancels.
+func _on_spell(id: String) -> void:
 	if armed:
+		var same: bool = hud.armed_spell == id
 		armed = false
-		return
-	if not sim.can_meteor():
+		if same:
+			return
+	if not sim.can_cast(id):
 		return
 	_deselect()
 	armed = true
-	hud.toast("Tap the map to drop the meteor")
+	hud.armed_spell = id
+	hud.toast({"meteor": "Tap the map to drop the meteor", "nightmare": "Tap the heroes to send them fleeing", "frenzy": "Tap among your towers to drive them into a frenzy"}[id])
 
 
 func _on_ended(won: bool) -> void:

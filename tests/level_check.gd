@@ -69,10 +69,13 @@ func _check_file(path: String) -> void:
 		_check(not lv.in_bounds(first), "%s: road %d should start off the map edge" % [lv.id, i])
 		if kind == "river":
 			var entry := Vector2i(-1, -1)
-			for v: Vector2i in lv.waypoints[i]:
-				if lv.in_bounds(v):
-					entry = v
+			var t := 0.0
+			while t < float(lv.paths[i]["total"]):   # the first tile the river road reaches on the map
+				var p := lv.path_pos(i, t)
+				if lv.in_bounds(Vector2i(floori(p.x), floori(p.y))):
+					entry = Vector2i(floori(p.x), floori(p.y))
 					break
+				t += 0.1
 			_check(lv.in_bounds(entry) and lv.is_water(entry), "%s: river road %d does not enter the map on water" % [lv.id, i])
 			_check(lv.landing(i) >= 0.0, "%s: river road %d never reaches a landing" % [lv.id, i])
 	_check(lv.land_roads.size() > 0 and lv.path_kind[lv.land_roads[0]] == "land", "%s: no land road" % lv.id)
@@ -84,14 +87,16 @@ func _check_file(path: String) -> void:
 		var roads: Array = lv.wave_roads[wi]
 		for r in roads:
 			_check(int(r) >= 0 and int(r) < lv.paths.size(), "%s: wave %d names missing road %d" % [lv.id, wi + 1, r])
-		var has_river := rivers.any(func(r: int) -> bool: return roads.has(r))
+		var has_river := not rivers.is_empty() if roads.is_empty() else rivers.any(func(r: int) -> bool: return roads.has(r))
+		var boats := 0
 		var walkers := 0
 		for code: String in lv.waves[wi]:
 			_check(Defs.ENEMIES.has(code), "%s: unknown hero code %s" % [lv.id, code])
 			if Defs.ENEMIES.get(code, {}).get("boat", false):
-				_check(has_river, "%s: wave %d has boats but no river road" % [lv.id, wi + 1])
+				boats += 1
 			else:
 				walkers += 1
+		_check(boats == 0 or has_river, "%s: wave %d has boats but no river road" % [lv.id, wi + 1])
 		if walkers > 0 and not roads.is_empty():
 			var any_land := roads.any(func(r) -> bool: return int(r) < lv.path_kind.size() and lv.path_kind[int(r)] == "land")
 			_check(any_land, "%s: wave %d sends walkers but names no land road" % [lv.id, wi + 1])

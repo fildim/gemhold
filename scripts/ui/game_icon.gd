@@ -22,6 +22,12 @@ const ACH := {
 	"broke": "coin", "so_close": "gem_broken", "overrun": "gem_broken", "landlord": "site:mine", "lost50": "gem_broken",
 	"race_loss": "flag", "race_draw": "flag", "brilliant_fast": "hourglass", "brilliant_last": "crown", "night_final": "moon",
 	"night_thread": "moon", "night_one": "moon",
+	"chapter3": "banner", "mastery_longhouse": "tower:moss", "mastery_lodge": "tower:moss", "mastery_ossuary": "tower:frost",
+	"mastery_mausoleum": "tower:frost", "mastery_twin": "tower:ash", "mastery_sunlance": "tower:ash", "mastery_all": "towers",
+	"masteries25": "up", "masteries100": "up", "twin_kills": "tower:ash", "hunter_champion": "hero:x", "nightmare10": "dread",
+	"nightmares100": "dread", "frenzies100": "flame", "sink1": "hero:l", "sink_all": "hero:l", "drowned100": "hero:l",
+	"collapse_kill": "hero:e", "collapses25": "hero:e", "sluice5": "site:sluice", "sluices50": "site:sluice", "dry_feet": "hero:m",
+	"diver_meteor": "meteor", "altars10": "site:altar",
 }
 ## Prefixes, checked in order: the first one an id starts with gives its glyph.
 const ACH_PREFIX := [
@@ -37,7 +43,10 @@ const ACH_PREFIX := [
 ## Skill id suffix -> the badge on its tower.
 const SKILL_BADGE := {"dmg": "blade", "rate": "rate", "range": "range", "vet": "vet"}
 const ABILITY_BADGE := {"moss": "volley", "frost": "dread", "ash": "flame"}
-const HOARD := {"den_charge": "orb", "hoard_gold": "coins", "hoard_mana": "potion", "hoard_regen": "spring", "meteor_dmg": "meteor"}
+const HOARD := {"den_charge": "orb", "hoard_gold": "coins", "hoard_mana": "potion", "hoard_regen": "spring", "meteor_dmg": "meteor",
+	"spell_nightmare": "dread", "nightmare_dur": "dread", "spell_frenzy": "flame", "frenzy_dur": "flame", "gem_magnet": "gem", "sturdy": "hill",
+	"land_veins": "site:mine", "land_springs": "site:well", "land_axes": "tree", "land_heights": "hill", "land_spoils": "site:camp",
+	"land_lantern": "spark", "land_flood": "site:sluice", "land_rites": "site:altar"}
 
 
 static func make(k: String, px: float, on := true) -> GameIcon:
@@ -109,8 +118,8 @@ static func paint(ci: CanvasItem, k: String, xf := Transform2D.IDENTITY) -> void
 		ci.draw_set_transform_matrix(xf)
 	elif k.begins_with("skill:"):
 		_skill(ci, k.trim_prefix("skill:"), xf)
-	elif k == "spell:meteor":
-		_glyph(ci, "meteor")
+	elif k.begins_with("spell:"):
+		_glyph(ci, {"meteor": "meteor", "nightmare": "dread", "frenzy": "flame"}.get(k.trim_prefix("spell:"), "spark"))
 	else:
 		_glyph(ci, k)
 
@@ -133,10 +142,15 @@ static func _tower(ci: CanvasItem, type: String, at: Vector2, sc: float) -> void
 ## A skill: its tower (or a Hoard picture) with a badge saying what the skill improves.
 static func _skill(ci: CanvasItem, id: String, xf: Transform2D) -> void:
 	if HOARD.has(id):
-		_glyph(ci, HOARD[id])
+		paint(ci, HOARD[id], xf)
 		return
 	var type := id.get_slice("_", 0)
 	var what := id.get_slice("_", 1)
+	if type == "mastery":   # a level IV mastery: its tower with the IV chevrons
+		for t: String in Defs.MASTERIES:
+			if Defs.MASTERIES[t].any(func(m: Dictionary) -> bool: return m["id"] == what):
+				type = t
+		what = "vet"
 	_tower(ci, type, Vector2(-8, -6), 0.85)
 	var badge: String = ABILITY_BADGE.get(type, "spark") if what == "ability" else SKILL_BADGE.get(what, "spark")
 	var b := Vector2(24, 24)

@@ -1,0 +1,63 @@
+{
+ "id": "level_22",
+ "title": "Twin Bridges",
+ "cols": 16,
+ "rows": 10,
+ "hp_mul": 3.0,
+ "legend": {"A":"high ash","F":"high frost","L":"lair","M":"high moss","a":"ash","f":"frost","m":"moss"},
+ "terrain": [
+  "mmmmmmmwwfffffff",
+  "mmmmmmmwwfffffff",
+  "mmmmmmmwwfffffff",
+  "mmmmmmmwwFffffff",
+  "mmmmMmmwwffffLLf",
+  "mmmmmmmwwmmmmLLm",
+  "mmmmmmmwwAaaaaaa",
+  "mmmmmmmwwaaaaaaa",
+  "mmmmmmmwwaaaaaaa",
+  "mmmmmmmwwaaaaaaa"
+ ],
+ "trees": [
+  "......T....TT..T",
+  "..............TT",
+  "T.T..T...TT...T.",
+  ".T.TT.T....T....",
+  "...T............",
+  ".TTT......T.....",
+  "TTTT.T..........",
+  "..T.TT.........T",
+  "................",
+  "..........TTT..T"
+ ],
+ "paths": [
+  [[-1,1],[13,1],[13,3]],
+  [[-1,8],[13,8],[13,6]]
+ ],
+ "lair": {"cell":[13,4],"center":[14,5],"size":[2,2]},
+ "sites": [
+  {"cell":[2,4],"every":30,"kind":"camp","path":0,"spawn":"2p,1e"},
+  {"cell":[11,4],"kind":"mine"},
+  {"cell":[4,6],"kind":"well"}
+ ],
+ "start": {"gems":5,"gold":230,"mana":60},
+ "first_wave_delay": 30,
+ "wave_gap": 24,
+ "site_cuts": 2,
+ "waves": [
+  "8p",
+  "6f,2e",
+  "6m,4p",
+  "4f,2e,2c",
+  "8m,2e",
+  "2k,4f,2e",
+  "6t,2e,2w",
+  "8m,4f",
+  "2k,2b,2e,4m",
+  "10m,2e",
+  "3k,4f,2c",
+  "6m,4t,2e",
+  "3k,6m,2e",
+  "4k,4f,2b,2e",
+  "4k,8m,4e"
+ ]
+}

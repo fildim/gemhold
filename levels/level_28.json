@@ -1,0 +1,69 @@
+{
+ "id": "level_28",
+ "title": "Tidewrack Flats",
+ "cols": 16,
+ "rows": 10,
+ "hp_mul": 2.95,
+ "legend": {"A":"high ash","F":"high frost","L":"lair","M":"high moss","a":"ash","f":"frost","m":"moss"},
+ "terrain": [
+  "fffffoooooommmmm",
+  "fffffoooooommmmm",
+  "fffffooooooFmmmm",
+  "oooooommmmoooooo",
+  "owwooomLLmoooooo",
+  "oooooomLLmoowwwo",
+  "oooooommmmoowwwo",
+  "mmmmmMmmmmAaaaaa",
+  "mmmmmmmmmmmaaaaa",
+  "mmmmmmmmmmmaaaaa"
+ ],
+ "trees": [
+  "TTT.T........T..",
+  "..T........TT...",
+  "T.T.T...........",
+  "................",
+  "................",
+  "................",
+  "................",
+  "TT..............",
+  ".....T...TT.TT..",
+  ".....TT..T..T..."
+ ],
+ "paths": [
+  [[-1,8],[3,8],[3,5],[6,5]],
+  [[16,1],[13,1],[13,4],[9,4]],
+  [[8,-1],[8,3]]
+ ],
+ "lair": {"cell":[7,4],"center":[8,5],"size":[2,2]},
+ "sites": [
+  {"cell":[15,8],"every":32,"kind":"camp","path":1,"spawn":"1d,2m"},
+  {"cell":[1,1],"kind":"mine"},
+  {"cell":[14,9],"kind":"well"}
+ ],
+ "start": {"gems":5,"gold":230,"mana":60},
+ "first_wave_delay": 30,
+ "wave_gap": 24,
+ "site_cuts": 3,
+ "waves": [
+  "8p",
+  "6m,2d",
+  "6f,2s,2d",
+  "6m,4d",
+  "2k,4f,2c",
+  "8d,4p",
+  "6m,4d,2q",
+  "3k,4d,2e",
+  "8m,6d",
+  "4k,2b,4d",
+  "8d,6t",
+  "4k,4d,2w",
+  "10m,6d,2e",
+  "4k,8d,2c",
+  "5k,8d,6m",
+  "6k,10d,4q",
+  "6k,8m,8d,4e"
+ ],
+ "rules": [
+  {"kind":"tide","period":40,"up":14}
+ ]
+}

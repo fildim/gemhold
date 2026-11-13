@@ -8,7 +8,7 @@ const GROUND_SHADER := preload("res://scripts/view/ground.gdshader")
 ## see ground.gdshader.
 const TERRAIN_MASK := {
 	"moss": Color(1, 0, 0, 0), "frost": Color(0, 1, 0, 0), "ash": Color(0, 0, 1, 0),
-	"lair": Color(0, 0, 0, 0), "water": Color(0, 0, 0, 0), "shallows": Color(0, 0, 0, 0),   # water gets its own mask in G2
+	"lair": Color(0, 0, 0, 0), "water": Color(1, 0, 0, 0), "shallows": Color(1, 0, 0, 0),   # water: its own mask (below), moss under it
 }
 
 ## The ground shader is costly, so it is rendered once per level into a texture at this many
@@ -20,6 +20,8 @@ var sim: GameSim
 var _bake: SubViewport   # renders the ground shader once
 var _shaded: Sprite2D    # inside _bake: the terrain texture run through ground.gdshader
 var _base: Sprite2D      # the baked ground, drawn behind everything else here
+var biome := 0             # chapter look for the shader: 0 lowland, 1 crusade, 2 marsh (set by main)
+var _ripples: Sprite2D   # animated highlights over water (water_fx.gdshader), above the baked ground
 
 
 func setup(lv: Level, s: GameSim) -> void:
@@ -34,6 +36,7 @@ func setup(lv: Level, s: GameSim) -> void:
 ## One pixel per tile (plus a border) saying which terrain it is; the shader turns it into ground.
 func _build_base() -> void:
 	var img := Image.create(level.cols + 2, level.rows + 2, false, Image.FORMAT_RGBA8)
+	var wimg := Image.create(level.cols + 2, level.rows + 2, false, Image.FORMAT_RGBA8)
 	for c in range(-1, level.cols + 1):
 		for r in range(-1, level.rows + 1):
 			var cc := clampi(c, 0, level.cols - 1)
@@ -41,6 +44,8 @@ func _build_base() -> void:
 			var px: Color = TERRAIN_MASK[level.terrain_at(Vector2i(cc, rr))]
 			px.a = 1.0 if level.high.has(Vector2i(c, r)) else 0.0
 			img.set_pixel(c + 1, r + 1, px)
+			var wt := level.terrain_at(Vector2i(cc, rr))
+			wimg.set_pixel(c + 1, r + 1, Color(1.0 if wt == "water" else 0.0, 1.0 if wt == "shallows" else 0.0, 0, 1))
 	if _bake == null:
 		_bake = SubViewport.new()
 		_bake.disable_3d = true
@@ -59,7 +64,13 @@ func _build_base() -> void:
 		_base.scale = Vector2.ONE / BAKE_SCALE
 		add_child(_base)
 	_bake.size = Vector2i(Vector2(level.cols, level.rows) * T * BAKE_SCALE)
-	_shaded.texture = ImageTexture.create_from_image(img)
+	var tex := ImageTexture.create_from_image(img)
+	var wtex := ImageTexture.create_from_image(wimg)
+	_shaded.texture = tex
+	_shaded.material.set_shader_parameter("terrain_mask", tex)
+	_shaded.material.set_shader_parameter("water_mask", wtex)
+	_shaded.material.set_shader_parameter("biome", biome)
+	_build_ripples(wtex)
 	_shaded.region_rect = Rect2(1, 1, level.cols, level.rows)
 	_shaded.scale = Vector2(T, T) * BAKE_SCALE
 	_shaded.material.set_shader_parameter("grid", Vector2(level.cols, level.rows))
@@ -73,6 +84,8 @@ func _draw() -> void:
 	var H := level.rows * T
 	_draw_details()
 	_draw_roads()
+	_draw_crossings()
+	_draw_reeds()
 	var cells: Array = sim.trees.keys()
 	cells.sort_custom(func(a: Vector2i, b: Vector2i) -> bool: return a.y < b.y)
 	for c: Vector2i in cells:
@@ -86,7 +99,7 @@ func _draw_details() -> void:
 	for c in level.cols:
 		for r in level.rows:
 			var t := level.terrain_at(Vector2i(c, r))
-			if t == "lair" or level.high.has(Vector2i(c, r)):   # raised tiles are bare stone
+			if t == "lair" or t == "water" or t == "shallows" or level.high.has(Vector2i(c, r)):   # raised tiles are bare stone; water has no grass
 				continue
 			var o := Vector2(c, r) * T
 			# Kept off the tile's rim, where the shader may already show the neighbouring ground.
@@ -133,6 +146,8 @@ func _draw_roads() -> void:
 		for i in level.paths.size():
 			for smp in _road_samples(i, 0.08):
 				var s: float = smp[0]
+				if _wet(i, smp[1], s):
+					continue
 				var wob := (sin(s * 2.1 + i * 1.7) + sin(s * 5.3 + i * 3.1 + li)) * 0.5
 				var side := sin(s * 3.7 + i * 2.3) * 0.025
 				var c: Vector2 = (smp[1] + smp[2].orthogonal() * side) * T
@@ -140,6 +155,8 @@ func _draw_roads() -> void:
 	for i in level.paths.size():
 		for smp in _road_samples(i, 0.3):
 			var s: float = smp[0]
+			if _wet(i, smp[1], s):
+				continue
 			var k := int(s * 10.0) + i * 1000
 			for j in 2:
 				var off := (Paint.hash01(k, j, 20) - 0.5) * 0.55
@@ -147,6 +164,59 @@ func _draw_roads() -> void:
 				var p: Vector2 = (smp[1] + smp[2].orthogonal() * off + smp[2] * along) * T
 				var col := Color(0.48, 0.35, 0.2, 0.4) if (k + j) % 3 else Color(0.85, 0.73, 0.54, 0.53)
 				draw_circle(p, T * (0.025 + Paint.hash01(k, j, 40) * 0.03), col)
+
+
+## True where road i is over water at p (distance s): a river before its landing, or a crossing.
+func _wet(i: int, p: Vector2, s: float) -> bool:
+	if level.path_kind[i] == "river":
+		return s < float(level.landings[i])
+	return level.is_water(Vector2i(floori(p.x), floori(p.y)))
+
+
+## Bridges as plank decks with rails (broken stumps once collapsed), fords as stepping stones.
+func _draw_crossings() -> void:
+	for i in level.paths.size():
+		if level.path_kind[i] != "land":
+			continue
+		for smp in _road_samples(i, 0.11):
+			var p: Vector2 = smp[1]
+			var cell := Vector2i(floori(p.x), floori(p.y))
+			if not level.crossings.has(cell):
+				continue
+			var d: Vector2 = smp[2]
+			var n := d.orthogonal()
+			var c := p * T
+			if level.crossing_kind[level.crossings[cell]] == "bridge":
+				if sim.collapsed.has(cell):
+					if Paint.hash01(int(smp[0] * 9.0), i, 3) < 0.18:   # a few broken stumps
+						draw_line(c + n * T * 0.3, c + n * T * 0.3 + Vector2(0, -0.08) * T, Color("3a2414"), 4.0)
+					continue
+				draw_line(c - n * T * 0.36, c + n * T * 0.36, Color("6a4628") if int(smp[0] * 9.0) % 2 else Color("7a5432"), T * 0.1)
+				draw_circle(c + n * T * 0.38, 2.5, Color("3a2414"))
+				draw_circle(c - n * T * 0.38, 2.5, Color("3a2414"))
+			elif int(smp[0] * 9.0) % 3 == 0:
+				var j := (Paint.hash01(int(smp[0] * 9.0), i, 5) - 0.5) * 0.3
+				Paint.ellipse(self, c + n * T * j, T * 0.13, T * 0.09, Color("8a8478"))
+				Paint.ellipse(self, c + n * T * j + Vector2(0, -2), T * 0.1, T * 0.06, Color("aaa396"))
+
+
+## Reeds along the water's edge.
+func _draw_reeds() -> void:
+	for c: Vector2i in level.terrain:
+		if level.is_water(c) or level.road.has(c) or level.is_lair(c) or sim.trees.has(c) or level.high.has(c):
+			continue
+		var shore := false
+		for d in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
+			shore = shore or level.is_water(c + d)
+		if not shore:
+			continue
+		for k in 4:
+			var q := (Vector2(c) + Vector2(0.15 + Paint.hash01(c.x, c.y, k + 7) * 0.7, 0.35 + Paint.hash01(c.x, c.y, k + 17) * 0.6)) * T
+			var h := T * (0.16 + Paint.hash01(c.x, c.y, k + 27) * 0.14)
+			draw_line(q, q + Vector2(-2, -h), Color("5a6a34"), 2.0, true)
+			draw_line(q + Vector2(3, 0), q + Vector2(5, -h * 0.8), Color("6e7c3e"), 2.0, true)
+			if k == 0:
+				Paint.ellipse(self, q + Vector2(-2, -h), 2.5, 5.0, Color("6a4a26"))
 
 
 ## Two to four trees of varied size, scattered a little past their tile so woods read as forest
@@ -222,3 +292,29 @@ func _draw_vignette(W: float, H: float) -> void:
 	Paint.hgrad_poly(self, Paint.rect_pts(Rect2(0, 0, e, H)), dark, clear)
 	Paint.hgrad_poly(self, Paint.rect_pts(Rect2(W - e, 0, e, H)), clear, dark)
 
+
+
+## Moving light on the water: one quad over the map with an animated shader, drawn only where
+## the water mask says there is water. Cheap: no redraw of the ground.
+func _build_ripples(wtex: Texture2D) -> void:
+	var any := false
+	for c: Vector2i in level.terrain:
+		any = any or level.is_water(c)
+	if not any:
+		if _ripples:
+			_ripples.visible = false
+		return
+	if _ripples == null:
+		_ripples = Sprite2D.new()
+		_ripples.centered = false
+		_ripples.region_enabled = true
+		_ripples.show_behind_parent = true   # over the ground picture, under roads and woods
+		_ripples.material = ShaderMaterial.new()
+		_ripples.material.shader = preload("res://scripts/view/water_fx.gdshader")
+		add_child(_ripples)
+	_ripples.visible = true
+	_ripples.texture = wtex
+	_ripples.region_rect = Rect2(1, 1, level.cols, level.rows)
+	_ripples.scale = Vector2(T, T)
+	_ripples.material.set_shader_parameter("water_mask", wtex)
+	_ripples.material.set_shader_parameter("grid", Vector2(level.cols, level.rows))

@@ -136,7 +136,7 @@ func _hero(sim: GameSim, code: String, path: int, dist: float) -> GameSim.Enemy:
 
 
 func _old_levels() -> void:
-	for path: String in MAIN.LEVELS:
+	for path: String in MAIN.LEVELS.slice(0, 20):   # Chapters I and II: made before the water rules
 		var lv := Level.load_from(path)
 		var all: Array[int] = []
 		all.assign(range(lv.paths.size()))

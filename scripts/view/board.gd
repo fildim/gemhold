@@ -68,6 +68,7 @@ func _draw() -> void:
 		_draw_pool(pl, tm)
 	for c: Vector2i in level.high:
 		_draw_high_shine(c, tm)
+	_draw_routes(tm)
 	_draw_selection()
 	_draw_den_charges(tm)
 	for s: GameSim.Site in sim.sites.values():
@@ -86,7 +87,9 @@ func _draw() -> void:
 		_draw_shot(s)
 	for tw: GameSim.Tower in tws:
 		if tw.beam != null:
-			_draw_beam(tw, tm)
+			_draw_beam(tw, tm, tw.beam, tw.heat)
+		if tw.beam2 != null:
+			_draw_beam(tw, tm, tw.beam2, tw.heat2)
 	var full := Rect2(0, 0, level.cols * T, level.rows * T)
 	if _fog != null:
 		draw_rect(full, Color(0.05, 0.07, 0.2, 0.22))
@@ -151,6 +154,10 @@ func _draw_tower(tw: GameSim.Tower, tm: float) -> void:
 			Art.crypt(self, x, y, s, lv, flash, tm)
 		_:
 			Art.shrine(self, x, y, s, lv, flash, tm, tw.pos)
+	if tw.mastery != "":
+		_draw_mastery(tw, x, y, s, tm)
+	if tw.frenzy > 0.0:   # Frenzy: a red pulse
+		Paint.ellipse_outline(self, Vector2(x, y + s * 0.3), s * 0.5, s * 0.18, Color(1, 0.3, 0.2, 0.5 + 0.4 * sin(tm * 12.0)), 3.0)
 	# a violet halo once the ability is learned; the pips below show only the upgrade level
 	if tw.has_ability():
 		Paint.ellipse_outline(self, Vector2(x, y + s * 0.3), s * 0.46, s * 0.17, Color(0.79, 0.75, 1, 0.5 + 0.3 * sin(tm * 3.0)), 2.0)
@@ -173,7 +180,7 @@ func _squash(tw: GameSim.Tower) -> Vector2:
 
 ## The upgrade level as a gold Roman numeral on a dark plaque at the tower's foot.
 func _draw_level_badge(c: Vector2, lv: int) -> void:
-	var txt: String = ["I", "II", "III"][clampi(lv, 1, 3) - 1]
+	var txt: String = ["I", "II", "III", "IV"][clampi(lv, 1, 4) - 1]
 	var fs := 26
 	var w := font.get_string_size(txt, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + 14.0
 	var r := Rect2(c - Vector2(w / 2.0, 14.0), Vector2(w, 28.0))
@@ -186,6 +193,8 @@ func _draw_level_badge(c: Vector2, lv: int) -> void:
 			sb.set_corner_radius_all(6)
 			_plates.append(sb)
 	draw_style_box(_plates[1 if lv >= 3 else 0], r)
+	if lv >= 4:
+		draw_rect(r.grow(2.0), Color("ffd86a"), false, 1.5)
 	draw_string(font, Vector2(r.position.x + 7.0, c.y + 9.0), txt, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color("ffd86a"))
 
 
@@ -200,6 +209,15 @@ func _draw_enemy(e: GameSim.Enemy, tm: float) -> void:
 	var yb := (e.pos.y + e.knock.y * hitk) * T
 	var y := yb - bob
 	var code := e.code
+	if e.hidden:   # a Diver under water: only a ripple and a reed give him away
+		for k in 2:
+			var rr := fmod(tm * 0.8 + k * 0.5, 1.0)
+			Paint.ellipse_outline(self, Vector2(x, yb + u * 0.6), u * (0.4 + rr), u * (0.15 + rr * 0.35), Color(0.8, 0.9, 1, 0.5 * (1.0 - rr)), 1.5)
+		draw_line(Vector2(x + u * 0.2, yb + u * 0.6), Vector2(x + u * 0.3, yb - u * 0.5), Color("6e7c3e"), 2.0, true)
+		_draw_gems(Vector2(e.pos.x, e.pos.y - 0.3) * T, e.carry, 0.0)
+		return
+	if e.d.has("rain"):   # the reach of its rain cloud
+		Paint.ellipse(self, Vector2(x, yb + u * 0.95), float(e.d["rain"]) * T, float(e.d["rain"]) * T * 0.4, Color(0.55, 0.7, 0.9, 0.12))
 	var lw := maxf(1.0, u * 0.09)
 	Paint.ellipse(self, Vector2(x, yb + u * 0.95), u * 0.75, u * 0.22, Color(0, 0, 0, 0.33))
 	if e.d.has("haste"):  # the Herald's rallying ring on the ground
@@ -207,6 +225,8 @@ func _draw_enemy(e: GameSim.Enemy, tm: float) -> void:
 	if e.d.has("rage") and e.hp < e.max_hp * 0.5:  # raging
 		Paint.glow(self, Vector2(x, y - u * 0.3), u * 1.6, Color(1, 0.2, 0.1, 0.5))
 	var body := Art.hero(self, code, x, y, yb, u, f, walk, tm)
+	if e.mark > 0.0:   # marked by a Hunter's Lodge
+		draw_arc(Vector2(x, y - u * 0.2), u * 1.1, 0, TAU, 20, Color(1, 0.3, 0.25, 0.8), 2.0, true)
 	if hitk > 0.0:   # hit flash: the body and head blink white
 		draw_colored_polygon(body, Color(1, 1, 1, 0.6 * hitk))
 		draw_circle(Vector2(x, y - u * 0.68), u * 0.38, Color(1, 1, 1, 0.6 * hitk))
@@ -222,7 +242,7 @@ func _draw_enemy(e: GameSim.Enemy, tm: float) -> void:
 	_draw_gems(Vector2(e.pos.x, e.pos.y - e.d["r"] * 2.3 - 0.08) * T, e.carry, 0.0)
 	if e.hp < e.max_hp:
 		var w := maxf(16.0, u * 2.6)
-		var hy := y - u * (1.8 if code == "k" or code == "x" else 1.65) - 6.0
+		var hy := y - u * (1.8 if code == "k" or code == "x" else 2.6 if code == "q" or code == "T" else 2.1 if code == "l" else 1.65) - 6.0
 		draw_rect(Rect2(x - w / 2 - 1, hy - 1, w + 2, 6), Color(0, 0, 0, 0.7))
 		draw_rect(Rect2(x - w / 2, hy, w * e.hp / e.max_hp, 4), Color("6fd36f") if e.hp / e.max_hp > 0.4 else Color("e0503a"))
 
@@ -275,11 +295,12 @@ const TRAIL := {"arrow": Color(1, 1, 1, 0.35), "frost": Color(0.7, 0.92, 1, 0.45
 
 
 ## Cinder Shrine beam: from the brazier to the hero, orange when cool, white-hot at full heat.
-func _draw_beam(tw: GameSim.Tower, tm: float) -> void:
-	var h := tw.heat
+func _draw_beam(tw: GameSim.Tower, tm: float, target: GameSim.Enemy, h: float) -> void:
 	var lift := HIGH_LIFT if level.high.has(tw.cell) else 0.0
 	var a := (tw.pos + Vector2(0, 0.2 - (0.5 + tw.lvl * 0.07) - 0.1 - lift)) * T   # the flame atop _draw_shrine
-	var b := tw.beam.pos * T + Vector2(0, -T * 0.15)
+	var b := target.pos * T + Vector2(0, -T * 0.15)
+	if tw.mastery == "sunlance":   # burns on through to the edge of its reach
+		b = (tw.pos + (target.pos - tw.pos).normalized() * tw.stat("range")) * T
 	var flick := 0.85 + 0.15 * sin(tm * 40.0 + tw.pos.x * 7.0)
 	var outer := Color(1, 0.35 + 0.25 * h, 0.08, 0.35 * flick)
 	var core := Color(1, 0.7 + 0.3 * h, 0.35 + 0.6 * h, 0.95)
@@ -305,6 +326,11 @@ func _draw_fx(f: GameSim.Fx) -> void:
 				Paint.glow(self, m, T * 0.6, Color(1, 0.42, 0.13, 0.7))
 				draw_circle(m, T * 0.28, Color("ff6a20"))
 				draw_circle(m, T * 0.14, Color("ffe08a"))
+		"surge", "splash", "flood", "nightmare", "frenzy":   # rings for the Tidecaller, a falling bridge, a sluice and the spells
+			var e := 1.0 - pow(1.0 - k, 2.0)
+			var col: Color = {"surge": Color(0.6, 0.85, 1), "splash": Color(0.8, 0.92, 1), "flood": Color(0.5, 0.8, 1), "nightmare": Color(0.7, 0.55, 1), "frenzy": Color(1, 0.4, 0.25)}[f.kind]
+			Paint.ellipse(self, p, f.r * T * e, f.r * T * e * 0.55, Color(col, 0.22 * (1.0 - k)))
+			Paint.ellipse_outline(self, p, f.r * T * e, f.r * T * e * 0.55, Color(col, 0.8 * (1.0 - k)), 3.0)
 		"shock":   # a ring sweeping out from a meteor strike
 			var e := 1.0 - pow(1.0 - k, 3.0)
 			draw_arc(p, f.r * T * (0.2 + 0.8 * e), 0, TAU, 48, Color(1, 0.85, 0.55, 0.8 * (1.0 - k)), T * 0.08 * (1.0 - k) + 1.0, true)
@@ -335,6 +361,12 @@ func _draw_site(s: GameSim.Site, tm: float) -> void:
 	var c := s.pos * T
 	Paint.ellipse(self, c + Vector2(0.03, 0.3) * T, T * 0.44, T * 0.14, Color(0, 0, 0, 0.35))
 	Art.site(self, s.kind, c, s.owned, tm, s.cell)
+	if s.kind == "sluice":   # ready: a soft glow; refilling: a ring filling up
+		if s.t <= 0.0:
+			Paint.glow(self, c, T * (0.45 + 0.05 * sin(tm * 3.0)), Color(0.5, 0.8, 1, 0.35))
+		else:
+			var kk: float = 1.0 - s.t / (float(Defs.SITES["sluice"]["recharge"]) * (1.0 - 0.2 * sim.skill("land_flood")))
+			draw_arc(c + Vector2(0, -0.1) * T, T * 0.5, -PI / 2, -PI / 2 + TAU * kk, 32, Color(0.5, 0.8, 1, 0.6), 2.5, true)
 	if s.kind == "camp" and not s.owned and sim.wave >= 1 and sim.wave < level.waves.size():
 		var k := 1.0 - s.t / s.every
 		draw_arc(c + Vector2(0, -0.1) * T, T * 0.5, -PI / 2, -PI / 2 + TAU * k, 32, Color(0.6, 0.75, 1, 0.6), 2.5, true)
@@ -434,3 +466,46 @@ func _draw_scorch(f: GameSim.Fx) -> void:
 		var q := p + Vector2(cos(ang), sin(ang) * 0.6) * f.r * T * (0.3 + 0.6 * Paint.hash01(i, 3, int(f.pos.x)))
 		draw_circle(q, T * 0.03, Color(1, 0.45 + 0.3 * hot, 0.1, 0.8 * hot * a) if hot > 0.0 else Color(0.1, 0.07, 0.05, 0.6 * a))
 
+
+
+## What a level IV tower became, drawn over its level III look.
+func _draw_mastery(tw: GameSim.Tower, x: float, y: float, s: float, tm: float) -> void:
+	match tw.mastery:
+		"longhouse":   # a second banner and a longer roof
+			draw_line(Vector2(x - s * 0.34, y + s * 0.2), Vector2(x - s * 0.34, y - s * 0.62), Color("3a2414"), maxf(2.0, s * 0.035))
+			draw_colored_polygon(PackedVector2Array([Vector2(x - s * 0.34, y - s * 0.62), Vector2(x - s * 0.56, y - s * 0.55), Vector2(x - s * 0.34, y - s * 0.46)]), Color("c0283a"))
+		"lodge":   # a rack of javelins and antlers over the door
+			for d in [-0.14, 0.0, 0.14]:
+				draw_line(Vector2(x + s * (0.3 + d), y + s * 0.25), Vector2(x + s * (0.34 + d), y - s * 0.3), Color("dfe6ec"), 2.0)
+			draw_arc(Vector2(x, y - s * 0.02), s * 0.12, PI, TAU, 8, Color("f1e6cc"), 2.0)
+		"ossuary":   # skulls on the roof, lit by bolts stored
+			for k in 4:
+				var p := Vector2(x + (k - 1.5) * s * 0.14, y - s * 0.2)
+				draw_circle(p, s * 0.05, Color("e9f1f4"))
+				if k < tw.charges:
+					Paint.glow(self, p, s * 0.09, Color(0.56, 0.88, 1, 0.8))
+		"mausoleum":   # a dome
+			draw_arc(Vector2(x, y - s * 0.16), s * 0.22, PI, TAU, 14, Color("c3ccd2"), 4.0)
+			draw_circle(Vector2(x, y - s * 0.4), s * 0.04, Color("4fd0ff"))
+		"twin":   # a second brazier
+			Paint.glow(self, Vector2(x + s * 0.26, y - s * 0.38), s * 0.2, Color(1, 0.48, 0.16, 0.55))
+			draw_circle(Vector2(x + s * 0.26, y - s * 0.38), s * 0.06, Color("ffd25a"))
+		"sunlance":   # a sun disc above the flame
+			var c := Vector2(x, y - s * (0.95 + 0.03 * sin(tm * 3.0)))
+			Paint.glow(self, c, s * 0.2, Color(1, 0.9, 0.5, 0.7))
+			draw_circle(c, s * 0.08, Color("fff2c0"))
+
+
+## Where the next wave comes from, on lairs whose waves take different roads: its road starts glow.
+func _draw_routes(tm: float) -> void:
+	if sim.wave >= level.waves.size() or level.wave_roads[sim.wave].is_empty():
+		return
+	var roads: Array = level.wave_roads[sim.wave].duplicate()
+	for r: int in level.wave_rivers[sim.wave]:
+		if not roads.has(r) and level.waves[sim.wave].any(func(c: String) -> bool: return Defs.ENEMIES[c].has("boat")):
+			roads.append(r)
+	var pulse := 0.5 + 0.5 * sin(tm * 4.0)
+	for r: int in roads:
+		var p := level.path_pos(r, 1.0) * T
+		Paint.glow(self, p, T * (0.6 + 0.15 * pulse), Color(1, 0.75, 0.3, 0.35 + 0.25 * pulse))
+		draw_arc(p, T * 0.4, 0, TAU, 24, Color(1, 0.85, 0.45, 0.8), 3.0, true)

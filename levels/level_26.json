@@ -1,0 +1,64 @@
+{
+ "id": "level_26",
+ "title": "Blackwater Fen",
+ "cols": 16,
+ "rows": 10,
+ "hp_mul": 3.01,
+ "legend": {"A":"high ash","F":"high frost","L":"lair","M":"high moss","a":"ash","f":"frost","m":"moss"},
+ "terrain": [
+  "ffffffffffffffff",
+  "ffffffffffffffff",
+  "ffffffFfffffffff",
+  "mmmoooooooommmmm",
+  "mmmoooooooomLLmm",
+  "mmmoooooooomLLmm",
+  "mmmmwwwwwwmmmaaa",
+  "mmoooooooomAmaaa",
+  "mmoooooooommmaaa",
+  "mmmmmmmMmmmmmaaa"
+ ],
+ "trees": [
+  ".T.TTT..T.T.....",
+  "T.TT..T.TT.TT..T",
+  ".T.T....T..TT...",
+  "..T.............",
+  "................",
+  ".T..............",
+  ".TTT...........T",
+  "T............TT.",
+  "..............T.",
+  "...T.........T.T"
+ ],
+ "paths": [
+  [[-1,4],[11,4]],
+  [[-1,8],[12,8],[12,6]]
+ ],
+ "lair": {"cell":[12,4],"center":[13,5],"size":[2,2]},
+ "sites": [
+  {"cell":[1,1],"every":32,"kind":"camp","path":0,"spawn":"2d"},
+  {"cell":[14,1],"kind":"mine"},
+  {"cell":[0,6],"kind":"well"}
+ ],
+ "start": {"gems":5,"gold":230,"mana":60},
+ "first_wave_delay": 30,
+ "wave_gap": 24,
+ "site_cuts": 2,
+ "waves": [
+  "8p",
+  "4m,2d",
+  "6f,2d",
+  "4m,4d,2c",
+  "2k,4f",
+  "6d,4p",
+  "4m,4d,2q",
+  "3k,4d",
+  "8m,4d",
+  "4k,2b,2d",
+  "6d,6t",
+  "4k,4d,2w",
+  "8m,6d,2e",
+  "4k,6d,2c",
+  "5k,8d,4m",
+  "6k,8d,4q"
+ ]
+}

@@ -8,14 +8,16 @@ const T := 64.0
 const OUTLINE := Color("1a120c")
 
 const TUNIC := {"p": "9a7446", "f": "4e6584", "s": "4d7638", "c": "efe9da", "k": "c9a43c", "b": "6e7682", "t": "4a3a5a", "w": "5a4630",
-	"h": "a8343e", "r": "c08a60", "x": "d8dce0"}
+	"h": "a8343e", "r": "c08a60", "x": "d8dce0", "m": "5a6a3a", "e": "a0602a", "q": "6a7a8a", "l": "6a4628", "d": "2e5a5e", "T": "2a4a7a"}
 const TUNIC_DARK := {"p": "6a4a26", "f": "2e3e54", "s": "2e4a20", "c": "b8ae96", "k": "7a5e18", "b": "3e444c", "t": "2a2036", "w": "362818",
-	"h": "5e1a22", "r": "7a4e30", "x": "7e8690"}
+	"h": "5e1a22", "r": "7a4e30", "x": "7e8690", "m": "3a4624", "e": "6a3e18", "q": "46525e", "l": "3a2414", "d": "1a3638", "T": "182c4a"}
 
 
 ## A hero's figure, standing at x (feet at yb, body at y) with body unit u, facing f (1 or -1),
 ## legs at walk (-1..1). Returns the body outline, for the hit flash.
 static func hero(ci: CanvasItem, code: String, x: float, y: float, yb: float, u: float, f: float, walk: float, tm: float) -> PackedVector2Array:
+	if code == "l":
+		return boat(ci, x, yb, u, f, tm)
 	var lw := maxf(1.0, u * 0.09)
 	var tun := Color(TUNIC[code])
 	var dark := Color(TUNIC_DARK[code])
@@ -27,12 +29,12 @@ static func hero(ci: CanvasItem, code: String, x: float, y: float, yb: float, u:
 	if code == "s":  # bow on the back
 		var a0 := PI * 0.6 if f > 0 else -PI * 0.4
 		ci.draw_arc(Vector2(x - f * u * 0.3, y - u * 0.05), u * 0.5, a0, a0 + PI * 0.8, 12, Color("6a4a22"), maxf(1.5, u * 0.12), true)
-	if code != "c":  # legs
+	if not code in ["c", "q", "T"]:  # legs
 		var lwid := maxf(2.0, u * 0.22)
 		ci.draw_line(Vector2(x - u * 0.15, y + u * 0.35), Vector2(x - u * 0.15 + walk * u * 0.28, yb + u * 0.85), dark, lwid)
 		ci.draw_line(Vector2(x + u * 0.15, y + u * 0.35), Vector2(x + u * 0.15 - walk * u * 0.28, yb + u * 0.85), dark, lwid)
 	var body: PackedVector2Array
-	if code == "c":
+	if code == "c" or code == "q" or code == "T":   # robes to the ground
 		body = PackedVector2Array([Vector2(x - u * 0.3, y - u * 0.35), Vector2(x + u * 0.3, y - u * 0.35), Vector2(x + u * 0.5, yb + u * 0.85), Vector2(x - u * 0.5, yb + u * 0.85)])
 	else:
 		body = PackedVector2Array([Vector2(x - u * 0.34, y - u * 0.35), Vector2(x + u * 0.34, y - u * 0.35), Vector2(x + u * 0.4, y + u * 0.45), Vector2(x - u * 0.4, y + u * 0.45)])
@@ -45,7 +47,7 @@ static func hero(ci: CanvasItem, code: String, x: float, y: float, yb: float, u:
 		Paint.glow(ci, Vector2(x, y - u * 0.7), u * 0.9, Color(1, 0.95, 0.7, 0.6))
 	if code == "f":
 		ci.draw_rect(Rect2(x - u * 0.34, y - u * 0.35, u * 0.68, u * 0.22), Color("9aa8b5"))
-	if code != "c":
+	if not code in ["c", "q", "T"]:
 		ci.draw_rect(Rect2(x - u * 0.38, y + u * 0.12, u * 0.76, u * 0.09), Color("3a2414"))
 	# head
 	ci.draw_circle(Vector2(x, y - u * 0.68), u * 0.38, Color("f0c9a0"))
@@ -53,6 +55,7 @@ static func hero(ci: CanvasItem, code: String, x: float, y: float, yb: float, u:
 	ci.draw_rect(Rect2(x + f * u * 0.1 - u * 0.04, y - u * 0.74, maxf(1.0, u * 0.09), maxf(1.0, u * 0.1)), OUTLINE)
 	_headgear(ci, code, x, y, u, f, lw)
 	_held(ci, code, x, y, yb, u, f, tm)
+	_marsh(ci, code, x, y, yb, u, f, tm)
 	return body
 
 
@@ -265,6 +268,28 @@ static func _held(ci: CanvasItem, code: String, x: float, y: float, yb: float, u
 ## barracks is ruins; cell seeds where its charred beams lie.
 static func site(ci: CanvasItem, kind: String, c: Vector2, owned: bool, tm: float, cell: Vector2i) -> void:
 	match kind:
+		"altar":   # a dark stone altar; a violet flame once freed, choked with vines until then
+			ci.draw_colored_polygon(PackedVector2Array([c + Vector2(-0.34, 0.3) * T, c + Vector2(-0.26, -0.05) * T, c + Vector2(0.26, -0.05) * T, c + Vector2(0.34, 0.3) * T]), Color("3a3440"))
+			ci.draw_rect(Rect2(c + Vector2(-0.32, -0.12) * T, Vector2(0.64, 0.1) * T), Color("5a5262"))
+			ci.draw_line(c + Vector2(-0.1, 0.05) * T, c + Vector2(0.1, 0.22) * T, Color("8a6cc0"), 2.0)
+			ci.draw_line(c + Vector2(0.1, 0.05) * T, c + Vector2(-0.1, 0.22) * T, Color("8a6cc0"), 2.0)
+			if owned:
+				Paint.glow(ci, c + Vector2(0, -0.3) * T, T * (0.4 + 0.05 * sin(tm * 4.0)), Color(0.62, 0.4, 1, 0.6))
+				ci.draw_colored_polygon(PackedVector2Array([c + Vector2(-0.1, -0.12) * T, c + Vector2(0, -0.5 - 0.04 * sin(tm * 9.0)) * T, c + Vector2(0.1, -0.12) * T]), Color("b89cff"))
+			else:
+				for i in 5:
+					var q := c + Vector2(-0.3 + i * 0.15, 0.25) * T
+					ci.draw_line(q, q + Vector2(0.05, -0.32 - 0.05 * (i % 2)) * T, Color("2f5a22"), 2.5)
+		"sluice":   # a timber gate across a channel, with a wheel
+			ci.draw_rect(Rect2(c + Vector2(-0.38, -0.05) * T, Vector2(0.76, 0.3) * T), Color("1c3a40"))
+			for i in 4:
+				ci.draw_rect(Rect2(c + Vector2(-0.34 + i * 0.18, -0.2) * T, Vector2(0.14, 0.42) * T), Color("6a4628") if i % 2 else Color("7a5432"))
+			ci.draw_line(c + Vector2(-0.4, -0.22) * T, c + Vector2(0.4, -0.22) * T, Color("3a2414"), 4.0)
+			var w := c + Vector2(0.22, -0.4) * T
+			ci.draw_arc(w, T * 0.13, 0, TAU, 16, Color("8a8478"), 3.0, true)
+			for k in 3:
+				var a := k * PI / 3.0 + tm * 0.5
+				ci.draw_line(w - Vector2(cos(a), sin(a)) * T * 0.13, w + Vector2(cos(a), sin(a)) * T * 0.13, Color("8a8478"), 2.0)
 		"mine":
 			var hill := PackedVector2Array([c + Vector2(-0.45, 0.3) * T])
 			hill.append_array(Paint.quad(c + Vector2(-0.45, 0.3) * T, c + Vector2(0, -0.6) * T, c + Vector2(0.45, 0.3) * T, 10))
@@ -305,3 +330,79 @@ static func site(ci: CanvasItem, kind: String, c: Vector2, owned: bool, tm: floa
 			ci.draw_line(pole, pole + Vector2(0, -0.55) * T, Color("3a2414"), 2.5)
 			var wv := sin(tm * 5.0) * T * 0.03
 			ci.draw_colored_polygon(PackedVector2Array([pole + Vector2(0, -0.55) * T, pole + Vector2(0.26, -0.48) * T + Vector2(0, wv), pole + Vector2(0, -0.38) * T]), Color("2f4f8a"))
+
+
+## Chapter III heroes' hats and gear.
+static func _marsh(ci: CanvasItem, code: String, x: float, y: float, yb: float, u: float, f: float, tm: float) -> void:
+	var w := maxf(1.5, u * 0.11)
+	match code:
+		"m":   # Fenwalker: a wide reed hat and a punting pole
+			ci.draw_colored_polygon(PackedVector2Array([Vector2(x - u * 0.7, y - u * 0.85), Vector2(x, y - u * 1.35), Vector2(x + u * 0.7, y - u * 0.85)]), Color("b8a25a"))
+			ci.draw_line(Vector2(x - u * 0.7, y - u * 0.85), Vector2(x + u * 0.7, y - u * 0.85), Color("7a6a34"), maxf(1.0, u * 0.08))
+			ci.draw_line(Vector2(x + f * u * 0.55, yb + u * 0.9), Vector2(x + f * u * 0.8, y - u * 1.7), Color("6a4422"), w)
+		"e":   # Engineer: a leather cap with goggles, a hammer, a plank on his back
+			ci.draw_rect(Rect2(x - f * u * 0.75 - u * 0.1, y - u * 0.9, u * 0.2, u * 1.5), Color("8a6440"))
+			var cap := PackedVector2Array()
+			for i in 9:
+				var a := PI + PI * i / 8.0
+				cap.append(Vector2(x, y - u * 0.78) + Vector2(cos(a), sin(a)) * u * 0.4)
+			ci.draw_colored_polygon(cap, Color("6a4628"))
+			ci.draw_circle(Vector2(x + f * u * 0.16, y - u * 0.82), u * 0.12, Color("c9d8e0"))
+			ci.draw_line(Vector2(x + f * u * 0.5, y + u * 0.3), Vector2(x + f * u * 0.7, y - u * 0.4), Color("6a4422"), w)
+			ci.draw_rect(Rect2(Vector2(x + f * u * 0.7, y - u * 0.4) - Vector2(u * 0.18, u * 0.1), Vector2(u * 0.36, u * 0.2)), Color("9aa8b5"))
+		"q", "T":   # Rainbringer and Tidecaller: hood or shell crown, a staff, and a rain cloud
+			var hood := PackedVector2Array()
+			for i in 11:
+				var a := PI * 1.05 + PI * 0.9 * i / 10.0
+				hood.append(Vector2(x, y - u * 0.78) + Vector2(cos(a), sin(a)) * u * 0.42)
+			ci.draw_colored_polygon(hood, Color("46525e") if code == "q" else Color("182c4a"))
+			if code == "T":
+				for i in 5:
+					ci.draw_circle(Vector2(x + (i - 2) * u * 0.17, y - u * 1.12 - (0.08 if i % 2 else 0.0) * u), u * 0.09, Color("f0e0d0"))
+				var top := Vector2(x + f * u * 0.6, y - u * 1.5)
+				ci.draw_line(Vector2(x + f * u * 0.6, yb + u * 0.9), top, Color("c9b46a"), w)
+				for d in [-1.0, 0.0, 1.0]:
+					ci.draw_line(top + Vector2(d * u * 0.15, 0), top + Vector2(d * u * 0.15, -u * 0.3), Color("c9b46a"), maxf(1.0, u * 0.07))
+			else:
+				ci.draw_line(Vector2(x + f * u * 0.5, yb + u * 0.9), Vector2(x + f * u * 0.5, y - u * 1.1), Color("6a5a4a"), w)
+			var cy := y - u * (2.1 if code == "q" else 2.3)
+			var cw := u * (0.9 if code == "q" else 1.2)
+			for k in 4:   # rain under the cloud
+				var rx := x + (k - 1.5) * cw * 0.45
+				var ry := cy + u * 0.3 + fmod(tm * 2.0 + k * 0.37, 1.0) * u * 0.8
+				ci.draw_line(Vector2(rx, ry), Vector2(rx - u * 0.06, ry + u * 0.22), Color(0.7, 0.82, 0.95, 0.8), maxf(1.0, u * 0.06))
+			ci.draw_circle(Vector2(x - cw * 0.45, cy + u * 0.08), cw * 0.38, Color("8a96a4"))
+			ci.draw_circle(Vector2(x + cw * 0.4, cy + u * 0.1), cw * 0.34, Color("8a96a4"))
+			ci.draw_circle(Vector2(x, cy - u * 0.05), cw * 0.48, Color("a4b0bc"))
+		"d":   # Diver: a snug cap and a knife
+			var cap := PackedVector2Array()
+			for i in 11:
+				var a := PI + PI * i / 10.0
+				cap.append(Vector2(x, y - u * 0.7) + Vector2(cos(a), sin(a)) * u * 0.42)
+			ci.draw_colored_polygon(cap, Color("1a3638"))
+			ci.draw_line(Vector2(x + f * u * 0.45, y + u * 0.2), Vector2(x + f * u * 0.75, y - u * 0.2), Color("dfe6ec"), maxf(1.5, u * 0.09))
+
+
+## A Longboat: a long hull with a row of shields, a mast and a striped sail. Returns the hull.
+static func boat(ci: CanvasItem, x: float, yb: float, u: float, f: float, tm: float) -> PackedVector2Array:
+	var bob := sin(tm * 3.0 + x * 0.05) * u * 0.06
+	var y := yb + bob
+	var hull := PackedVector2Array([Vector2(x - u * 1.5, y - u * 0.15), Vector2(x + u * 1.5, y - u * 0.15)])
+	hull.append_array(Paint.quad(Vector2(x + u * 1.5, y - u * 0.15), Vector2(x + u * 1.0, y + u * 0.6), Vector2(x, y + u * 0.6), 6))
+	hull.append_array(Paint.quad(Vector2(x, y + u * 0.6), Vector2(x - u * 1.0, y + u * 0.6), Vector2(x - u * 1.5, y - u * 0.15), 6))
+	Paint.ellipse(ci, Vector2(x, y + u * 0.6), u * 1.6, u * 0.25, Color(0.7, 0.85, 0.9, 0.25))   # wake
+	Paint.vgrad_poly(ci, hull, Color("7a5432"), Color("3a2414"))
+	var ho := hull.duplicate()
+	ho.append(hull[0])
+	ci.draw_polyline(ho, OUTLINE, maxf(1.0, u * 0.08), true)
+	ci.draw_line(Vector2(x + f * u * 1.5, y - u * 0.15), Vector2(x + f * u * 1.75, y - u * 0.55), Color("7a5432"), maxf(2.0, u * 0.14))   # prow
+	ci.draw_line(Vector2(x, y - u * 0.15), Vector2(x, y - u * 1.9), Color("4a3220"), maxf(1.5, u * 0.1))
+	var sail := Paint.rect_pts(Rect2(x - u * 0.6, y - u * 1.8, u * 1.2, u * 1.0))
+	ci.draw_colored_polygon(sail, Color("d8d0bc"))
+	for k in 3:
+		ci.draw_rect(Rect2(x - u * 0.6, y - u * 1.8 + k * u * 0.34, u * 1.2, u * 0.16), Color("a8343e"))
+	for k in 5:
+		var sx := x + (k - 2) * u * 0.55
+		ci.draw_circle(Vector2(sx, y - u * 0.05), u * 0.2, Color("2f4f8a") if k % 2 else Color("c9a43c"))
+		ci.draw_arc(Vector2(sx, y - u * 0.05), u * 0.2, 0, TAU, 12, OUTLINE, maxf(1.0, u * 0.05), true)
+	return hull

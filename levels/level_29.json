@@ -1,0 +1,73 @@
+{
+ "id": "level_29",
+ "title": "The Flooded Abbey",
+ "cols": 16,
+ "rows": 10,
+ "hp_mul": 3.49,
+ "legend": {"A":"high ash","F":"high frost","L":"lair","M":"high moss","a":"ash","f":"frost","m":"moss"},
+ "terrain": [
+  "wwwwwmmmmmmmmmaa",
+  "mmmmwmmmmmmmmmaa",
+  "fffffmmmmmmmmmaa",
+  "ffffMmmmmmmmmmaa",
+  "fffffmmFmmmmLLmm",
+  "fffffwwmmmmmLLmm",
+  "fffffwwmmmAmmmmm",
+  "fffffwwmmmmmmmmm",
+  "fffffwwmmmmmmmmm",
+  "fffffwwmmmmmmmmm"
+ ],
+ "trees": [
+  "......T.T.T.TT..",
+  ".TT..T.T...TT..T",
+  "T.T......T...TTT",
+  "................",
+  "T.T.......T.....",
+  ".TT....T.T......",
+  ".........T.....T",
+  "..............T.",
+  ".TT.........T...",
+  "T..T...T.T.TT.T."
+ ],
+ "paths": [
+  [[-1,7],[11,7],[11,5]],
+  [[16,8],[13,8],[13,6]],
+  [[-1,0],[4,0],[4,3],[12,3]]
+ ],
+ "lair": {"cell":[12,4],"center":[13,5],"size":[2,2]},
+ "sites": [
+  {"cell":[1,4],"every":30,"kind":"camp","path":0,"spawn":"1c,2f"},
+  {"cell":[8,9],"kind":"mine"},
+  {"cell":[15,4],"kind":"well"},
+  {"cell":[3,8],"kind":"altar"}
+ ],
+ "start": {"gems":5,"gold":230,"mana":60},
+ "first_wave_delay": 30,
+ "wave_gap": 24,
+ "site_cuts": 3,
+ "waves": [
+  "8p",
+  "6f,2c",
+  {"heroes":"4m,1l"},
+  "6m,2w,2h",
+  "2k,4f,2e",
+  {"cargo":{"2":"2f,2c"},"heroes":"6t,1l"},
+  "8m,2q,2c",
+  "3k,4d,2h",
+  {"heroes":"8m,2l"},
+  "4k,2b,2w",
+  "8d,4t,2e",
+  {"cargo":{"2":"1x,2f"},"heroes":"4k,2l"},
+  "10m,4f,2c,2h",
+  "4k,6d,2q,2w",
+  {"cargo":{"2":"3f,1k"},"heroes":"5k,6m,2l"},
+  "6k,6d,4e,2c",
+  {"cargo":{"2":"1x,2k"},"heroes":"6k,8m,2q,2l"},
+  {"cargo":{"2":"2k,2c"},"heroes":"1x,6k,8d,4h,3l"}
+ ],
+ "path_info": [
+  {"kind":"land"},
+  {"kind":"land"},
+  {"kind":"river"}
+ ]
+}

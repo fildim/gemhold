@@ -98,10 +98,50 @@ static func topics() -> Array:
 	t.append(_t("Heroes", "Champion",
 		"Arrives from the fifteenth lair, at the head of the final waves. A crowned giant with [b]%d health[/b], heavy armour (%d), and he carries [b]3 gems[/b].\n\n" % [e["x"]["hp"], e["x"]["armor"]]
 		+ "When he falls, [b]three Footmen rise[/b] where he lay and march on. Bring him down far from the cave, with Shrines, the Meteor and the den's bolts."))
+	t.append(_t("Heroes", "Fenwalker",
+		"From the Drowned Marches (lair 21). Quick and light, and [b]water does not slow or soak him[/b]: he wades fords and swims broken bridges at full speed.
+
+Kill him on dry land; fords and collapsed bridges won't hold him."))
+	t.append(_t("Heroes", "Engineer",
+		"From lair 22. He [b]rebuilds a collapsed bridge[/b] (he stands at the bank for %d seconds first) and [b]lays planks over a ford[/b] he crosses alive, so heroes cross it dry for a while.
+
+Towers aim for him first. Cover the bank where he will stop." % roundi(Defs.ENGINEER_FIX)))
+	t.append(_t("Heroes", "Rainbringer",
+		"From lair 23. She carries a [b]rain cloud[/b]: Shrine beams on heroes under it never heat past a third, and it puts out Lava.
+
+Arrows and bolts don't care about rain. Or catch her with a Shrine before the crowd closes in."))
+	t.append(_t("Heroes", "Longboat",
+		"From lair 25. A boat of heroes on the [b]river[/b], sturdy (%d health) and armoured; chill and Dread don't touch it. Where the water ends it [b]lands its crew[/b], who march on.
+
+[b]Sink it on the water and the crew drowns[/b]: every one of them counts as slain and pays its bounty. Towers along the river, a Sluice Gate or the Meteor." % e["l"]["hp"]))
+	t.append(_t("Heroes", "Diver",
+		"From lair 26. He swims [b]under the water[/b]: while he is in a ford, a broken bridge or the high tide, towers and the den can't see him (a ripple and a reed give him away). The Meteor and Sluice Gates still hit him.
+
+Guard the far bank, and don't collapse a bridge while Divers are coming."))
+	t.append(_t("Heroes", "The Tidecaller",
+		"The boss of the Drowned Marches (lair 30): [b]%d health[/b], a wide rain cloud and 3 gems. Every %d seconds her [b]surge[/b] washes chill and Dread off the heroes around her and lets them wade freely.
+
+Where she falls, Fenwalkers and Divers rise." % [e["T"]["hp"], roundi(Defs.SURGE["every"])]))
 	t.append(_t("Heroes", "Heroes get stronger",
 		"Each wave's heroes are tougher than the last. The game also watches how you play: when you crush a wave far from the cave, the next heroes come back much tougher; when a wave gets close, only a little. Heroes falling quickly toughen the rest of their own wave too.\n\n"
 		+ "[b]Riches draw heroes too.[/b] Gold you leave unspent above %d makes every following wave stronger. Spend it on towers and upgrades instead of saving it.\n\n" % roundi(Defs.THREAT["rich"])
 		+ "It never gets easier during a battle, but it never runs away either."))
+
+	# ------------------------------------------------------------ water
+	t.append(_t("The Marches", "Fords and bridges",
+		"Where a road crosses [b]shallows[/b] it is a ford: heroes wade at %d%% speed and come out [b]soaked[/b] for %d seconds. Crypt chill lasts longer on a soaked hero, but Shrine beams heat up slower.
+
+Where a road crosses [b]deep water[/b] it is a bridge. Tap it and [b]Collapse[/b] it (%d mana): heroes must swim the gap at %d%% speed, soaked, and no Herald can hurry them. An Engineer can rebuild it, and each collapse of the same bridge costs %d mana more." % [roundi(Defs.ZONE_SPEED["ford"] * 100), roundi(Defs.SOAK_TIME), Defs.COLLAPSE["mana"], roundi(Defs.ZONE_SPEED["swim"] * 100), Defs.COLLAPSE["step"]]))
+	t.append(_t("The Marches", "The tide",
+		"On some lairs the water rises and falls. At [b]high tide[/b] the fords are too deep to wade, so heroes swim them, slowly, and Divers hide in them.
+
+The tide clock beside the wave counter shows it: the blue arc is high tide, the hand is now."))
+	t.append(_t("The Marches", "Wave routes",
+		"On some lairs each wave takes only some of the roads. The [b]glowing road starts[/b] show where the next wave will come from, so you can get ready."))
+	t.append(_t("The Marches", "Sluice Gates and Dark Altars",
+		"A [b]Sluice Gate[/b] is yours from the start. Open it (%d mana) and a flood sweeps down its waterway: heroes in the water are pushed back and take %d damage through armour, boats triple. It takes %d seconds to fill again.
+
+A [b]Dark Altar[/b] is overgrown. Cut it free (%d mana) and towers within %.1f tiles deal %d%% more damage and grow battle-hardened faster." % [Defs.SITES["sluice"]["mana"], Defs.SITES["sluice"]["dmg"], roundi(Defs.SITES["sluice"]["recharge"]), Defs.SITES["altar"]["cut"], Defs.SITES["altar"]["range"], roundi(Defs.SITES["altar"]["dmg"] * 100)]))
 
 	# ------------------------------------------------------------ your powers
 	t.append(_t("Your powers", "Mana",
@@ -124,14 +164,24 @@ static func topics() -> Array:
 		+ "[b]Mana Well[/b] (%d mana): +%.1f mana a second.\n\n" % [Defs.SITES["well"]["cut"], Defs.SITES["well"]["regen"]]
 		+ "Free them early: they pay back over the whole battle."))
 	t.append(_t("Your powers", "Hero barracks",
-		"A barracks keeps sending extra heroes onto its road while the waves are still coming.\n\n[b]Raze it[/b] (%d mana) to stop it for good, and take %d gold from the ruins.\n\nFrom lair 5 on, buildings are sturdier: mines, wells and barracks take [b]2 cuts[/b], and [b]3[/b] from lair 7 (the dots under them). Each cut costs less, but the whole job costs more. Every cut on a barracks also slows its musters." % [Defs.SITES["camp"]["cut"], Defs.SITES["camp"]["bounty"]]))
+		"A barracks keeps sending extra heroes onto its road while the waves are still coming.\n\n[b]Raze it[/b] (%d mana) to stop it for good, and take %d gold from the ruins.\n\nFrom lair 5 on, buildings are sturdier: mines, wells and barracks take [b]2 cuts[/b], and [b]3[/b] from lair 7 (tap one to see how many are left). Each cut costs less, but the whole job costs more. Every cut on a barracks also slows its musters." % [Defs.SITES["camp"]["cut"], Defs.SITES["camp"]["bounty"]]))
 	t.append(_t("Your powers", "Loot",
 		"Slain heroes sometimes drop a [b]coin[/b] (gold, more from tougher kinds of hero) or a [b]mana potion[/b] (+%d mana).\n\nTap loot to take it at once. Anything still lying around is gathered by itself when the next wave starts, and in the last wave every drop is taken at once." % Defs.LOOT_POTION_MANA))
+
+	t.append(_t("Your powers", "Nightmare and Frenzy",
+		"Two spells you can learn in Dark Arts once Chapter III opens. Tap the button, then the map.
+
+[b]Nightmare[/b] (%d mana): heroes within %.1f tiles flee back along the road for %d seconds; gem carriers freeze. Bosses and boats ignore it.
+
+[b]Frenzy[/b] (%d mana): towers within %.1f tiles fire and heat up %d%% faster for %d seconds." % [Defs.NIGHTMARE["cost"], Defs.NIGHTMARE["radius"], roundi(Defs.NIGHTMARE["dur"]), Defs.FRENZY["cost"], Defs.FRENZY["radius"], roundi((Defs.FRENZY["speed"] - 1.0) * 100), roundi(Defs.FRENZY["dur"])]))
 
 	# ------------------------------------------------------------ progress
 	t.append(_t("Progress", "Dark Arts",
 		"Your skills, opened from the map. [b]Every star is a skill point.[/b]\n\n"
 		+ "Each tower kind has its own tab: damage, attack speed, range, faster ranks and a stronger ability. [b]The Hoard[/b] tab gives your den more charges, every battle more starting gold, more mana or faster mana (Mana Spring), and the Meteor more damage.\n\n"
+		+ "More skills open as the campaign goes on: [b]The Land[/b] (mines, wells, cutting, raised tiles, Sluices and Altars) with Chapter II, and [b]tier II[/b] of every tree, the masteries and two new spells with Chapter III. A tier that is still shut shows which chapter opens it.
+
+"
 		+ "Tower skills apply to towers you build after buying them. [b]Refund all points[/b] any time to try a different plan."))
 	t.append(_t("Progress", "Night missions",
 		"Win a lair [b]Brilliant[/b] and its night mission opens (the moon on the map).\n\n"
