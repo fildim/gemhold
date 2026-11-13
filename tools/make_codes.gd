@@ -3,7 +3,7 @@ extends SceneTree
 ## private text file outside the project, never into the public repository; the game only holds
 ## their hashes, in scripts/data/unlock_codes.gd, which this rewrites with the new ones added.
 ## Run from the project folder (count, then the private file to append the codes to):
-##   godot --headless --path . -s res://tools/make_codes.gd -- 50 "C:/Users/me/Desktop/Gemhold codes/codes.txt"
+##   godot --headless --path . -s res://tools/make_codes.gd -- 50 "C:/Users/me/Desktop/Gemhold/Codes/codes.txt"
 
 const LETTERS := "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"   # no 0/O or 1/I, easy to read out
 const HASH_FILE := "res://scripts/data/unlock_codes.gd"

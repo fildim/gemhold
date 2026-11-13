@@ -124,7 +124,7 @@ Firebase project `gemhold`: **Authentication** (Email/Password) for accounts and
 
 ## Putting it on your Android phone
 
-The Android tools live in `tools/` next to this folder (on this PC: `Desktop\tools`):
+The Android tools live in `tools/` next to this folder (on this PC: `Desktop\Gemhold\tools`):
 Godot 4.6.2, JDK 17 (`jdk-17`) and the Android SDK (`android-sdk`: platform-tools,
 build-tools 35.0.1, Android 36). Godot's export templates are installed, and its editor settings
 point at the JDK and SDK. On a new PC, set **Editor > Editor Settings > Export > Android**
@@ -155,10 +155,10 @@ Demo builds (exports with the `demo` feature: GitHub, web, Steam demo) stop afte
 The **Android Play** export preset builds the store file: a Gradle build, `.aab` format, target SDK 36 (Play has required API 36 since August 31, 2026). The plain **Android** preset stays a quick debug APK for Firebase testers and CI.
 
 - **Build template:** `android/build/` is not in git. Godot installs it on the first Play export with `--install-android-build-template`.
-- **Upload key:** `Desktop\Gemhold Play key\gemhold-upload.jks` (alias `upload`; the password is in the README next to it). Keep backups. Never commit it. Godot reads it from environment variables, so no password goes in `export_presets.cfg`:
+- **Upload key:** `Desktop\Gemhold\Play key\gemhold-upload.jks` (alias `upload`; the password is in the README next to it). Keep backups. Never commit it. Godot reads it from environment variables, so no password goes in `export_presets.cfg`:
 
   ```bash
-  export GODOT_ANDROID_KEYSTORE_RELEASE_PATH="C:/Users/fil/Desktop/Gemhold Play key/gemhold-upload.jks"
+  export GODOT_ANDROID_KEYSTORE_RELEASE_PATH="C:/Users/fil/Desktop/Gemhold/Play key/gemhold-upload.jks"
   export GODOT_ANDROID_KEYSTORE_RELEASE_USER=upload
   export GODOT_ANDROID_KEYSTORE_RELEASE_PASSWORD=...   # from the README
   godot --headless --path . --install-android-build-template --export-release "Android Play" build/gemhold-X.Y.Z.aab
@@ -166,7 +166,7 @@ The **Android Play** export preset builds the store file: a Gradle build, `.aab`
   The first build downloads Gradle (about 10 minutes). Bump `version/code` in **both** Android presets each release. Play rejects a code it has already seen.
 - **Store pages:** `site/privacy.html` and `site/delete-account.html` are copied into the GitHub Pages build by `web.yml`. They are live at `fildim.github.io/gemhold/privacy.html` and `/delete-account.html`. Play requires both: Gemhold has accounts, so players must be able to delete them outside the game too.
 - **Icon:** `icon.svg` is the main icon. Android uses separate layers in `assets/icons/` (background, foreground scaled into the safe circle, monochrome, legacy 192). Re-render them when the icon changes.
-- **Listing text, graphics and Play Console answers:** `Desktop\Gemhold Play store\`.
+- **Listing text, graphics and Play Console answers:** `Desktop\Gemhold\Play store\`.
 - **Rules:** new personal accounts must run a closed test with 12+ testers for 14 days before going public. Keep the art and name original.
 
 ## Roadmap toward Cursed Treasure 2–level depth
@@ -240,7 +240,7 @@ Sound effects are synthesised by `tools/make_audio.gd` (oscillators, noise and p
 | 19 The Last Bridge | skrjablin, *The Final Battle* (CC0) |
 | 20 The Hoard Throne | Wagner, *Ride of the Valkyries* |
 
-To swap a piece, drop an .ogg (its most intense 2:30, normalised to -14 LUFS) into `assets/music/` (cut with ffmpeg; tracks still waiting for a lair are in `DesktopGemhold music to try`, and a track's source is deleted from there once it is in the game), put its name in `MUSIC` and add it to CREDITS.md. To change a sound effect, edit its function in `tools/make_audio.gd` and rebuild:
+To swap a piece, drop an .ogg (its most intense 2:30, normalised to -14 LUFS) into `assets/music/` (cut with ffmpeg; tracks still waiting for a lair are in `DesktopGemholdMusic to try`, and a track's source is deleted from there once it is in the game), put its name in `MUSIC` and add it to CREDITS.md. To change a sound effect, edit its function in `tools/make_audio.gd` and rebuild:
 
 ```
 godot --headless -s res://tools/make_audio.gd -- coin boom   # just these, or no names for all
