@@ -240,7 +240,7 @@ Sound effects are synthesised by `tools/make_audio.gd` (oscillators, noise and p
 | 19 The Last Bridge | skrjablin, *The Final Battle* (CC0) |
 | 20 The Hoard Throne | Wagner, *Ride of the Valkyries* |
 
-To swap a piece, drop an .ogg (its most intense 2:30, normalised to -14 LUFS) into `assets/music/` (cut with ffmpeg; tracks still waiting for a lair are in `DesktopGemholdMusic to try`, and a track's source is deleted from there once it is in the game), put its name in `MUSIC` and add it to CREDITS.md. To change a sound effect, edit its function in `tools/make_audio.gd` and rebuild:
+To swap a piece, drop an .ogg (its most intense 2:30, normalised to -14 LUFS) into `assets/music/` (cut with ffmpeg; tracks still waiting for a lair are in `Desktop\Gemhold\Music to try`, and a track's source is deleted from there once it is in the game), put its name in `MUSIC` and add it to CREDITS.md. To change a sound effect, edit its function in `tools/make_audio.gd` and rebuild:
 
 ```
 godot --headless -s res://tools/make_audio.gd -- coin boom   # just these, or no names for all
