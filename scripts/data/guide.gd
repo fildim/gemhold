@@ -31,7 +31,9 @@ static func topics() -> Array:
 	t.append(_t("The basics", "Speed and pause",
 		"[b]1× / 2×[/b] runs the battle at double speed when a wave is easy.\n\n[b]Pause[/b] stops everything; on a phone the back button pauses too. You can still tap tiles and read their panels while paused.
 
-[b]Settings[/b] (on the map and in battle) sets the volume of effects and music, and turns the screen shake of a Meteor on or off."))
+[b]Settings[/b] (on the map and in battle) sets the volume of effects and music, and turns the screen shake of a Meteor on or off.
+
+With a keyboard there are [b]shortcuts[/b]: %s pauses, %s changes speed, %s calls the next wave, %s readies the Meteor and %s cuts woods. Change any of them under [b]Keyboard[/b] in Settings." % [Keys.name_of("pause"), Keys.name_of("speed"), Keys.name_of("next"), Keys.name_of("meteor"), Keys.name_of("cut")]))
 
 	# ------------------------------------------------------------ towers
 	t.append(_t("Towers", "Building",
@@ -130,7 +132,7 @@ Guard the far bank, and don't collapse a bridge while Divers are coming."))
 	t.append(_t("Heroes", "The Tidecaller",
 		"The boss of the Drowned Marches (lair 30): [b]%d health[/b], a wide rain cloud and 3 gems. Every %d seconds her [b]surge[/b] washes chill and Dread off the heroes around her and lets them wade freely.
 
-Where she falls, Fenwalkers and Divers rise." % [e["T"]["hp"], roundi(Defs.SURGE["every"])]))
+Where she falls, Fenwalkers and Divers rise. While a boss is on the map, her name and health show in a bar over the top of it." % [e["T"]["hp"], roundi(Defs.SURGE["every"])]))
 	t.append(_t("Heroes", "Sapper",
 		"From the Siegeworks (lair 31). Fast, with a powder keg on his back. He runs off the road at the nearest tower within %.1f tiles, lights a fuse and [b]stuns it for %d seconds[/b], dying in the blast (no bounty).
 \nTowers on [b]raised tiles[/b] are out of his reach. Slay him while the fuse burns and the keg goes off among the heroes around him (%d damage). Towers aim for him first." % [Defs.SAPPER["reach"], roundi(Defs.STUN_TIME), Defs.SAPPER["dmg"]]))
@@ -191,14 +193,14 @@ A [b]Dark Altar[/b] is overgrown. Cut it free (%d mana) and towers within %.1f t
 \nA [b]Siege Workshop[/b] builds Trebuchets and rolls them onto its road while waves are coming. Raze it (%d mana) to stop it, for %d gold." % [roundi(Defs.SITES["beacon"]["sooner"]), Defs.SITES["beacon"]["cut"], Defs.SITES["beacon"]["bounty"], Defs.SITES["workshop"]["cut"], Defs.SITES["workshop"]["bounty"]]))
 	t.append(_t("The Siegeworks", "Dusk",
 		"On some lairs [b]night falls during the battle[/b], as a set wave begins. From then on you can only build where your den, towers, mines and wells give light, just as on a night mission.
-\nThe towers you build by day decide where you can build after dark. The lair's own night mission is dark from the start."))
+\nThe wave counter shows which wave brings the night. The towers you build by day decide where you can build after dark. The lair's own night mission is dark from the start."))
 
 	# ------------------------------------------------------------ radiant
 	t.append(_t("The Radiant Host", "Chapels and hallowed ground",
 		"A [b]Chapel[/b] heals the heroes walking within %.1f tiles of it. Raze it (%d mana) for %d gold.
 \nSome tiles are [b]hallowed ground[/b] (they glow pale gold). Towers built on them have %d%% less range and no ability until [b]every Chapel[/b] in the lair is razed; then the glow goes out and they work in full." % [Defs.SITES["chapel"]["r"], Defs.SITES["chapel"]["cut"], Defs.SITES["chapel"]["bounty"], roundi((1.0 - Defs.HALLOW_RANGE) * 100)]))
 	t.append(_t("The Radiant Host", "Eclipse",
-		"On some lairs [b]the sun goes dark[/b] for a while, again and again. While it is dark you can only build where your den, towers, mines and wells give light, as on a night mission. Towers already built keep fighting.\n\nThe lair's night mission is dark all the time."))
+		"On some lairs [b]the sun goes dark[/b] for a while, again and again. While it is dark you can only build where your den, towers, mines and wells give light, as on a night mission. Towers already built keep fighting. The dial beside the wave counter shows it: the violet arc is the darkness, the hand is now.\n\nThe lair's night mission is dark all the time."))
 	t.append(_t("The Radiant Host", "Flight lines",
 		"Flyers ignore the roads and take a [b]flight line[/b] (a faint dashed line) straight to your den. Nothing blocks building under it.\n\nOnly towers in reach of the line can hit a flyer, so build some along it and near the den."))
 
@@ -212,7 +214,7 @@ A [b]Dark Altar[/b] is overgrown. Cut it free (%d mana) and towers within %.1f t
 	t.append(_t("Your powers", "Your den",
 		"The cave fights back. It holds charges (the sparks above it) and fires a bolt at heroes within %.1f tiles, gem carriers first, for %d damage through armour. A spent charge comes back every %d seconds.\n\n"
 		% [Defs.DEN["range"], Defs.DEN["dmg"], roundi(Defs.DEN["refill"])]
-		+ "It starts with %d charge; the Hoard's Wrath skill adds more. It is your last line, not your first." % Defs.DEN["charges"]))
+		+ "It starts with %d charge; the Hoard's Wrath skill adds more. It is your last line, not your first. Tap the cave to see how far its bolts reach." % Defs.DEN["charges"]))
 	t.append(_t("Your powers", "Woods",
 		"Woods block good building spots. Tap a patch and choose [b]Cut woods[/b] (%d mana): you get %d gold for the timber and the ground is free to build on.\n\n"
 		% [Defs.CLEAR_MANA, Defs.CLEAR_GOLD]

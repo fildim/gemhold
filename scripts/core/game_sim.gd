@@ -1940,6 +1940,15 @@ Refilling: ready in %d s." % ceili(s.t), "actions": []}
 func preview_range(c: Vector2i) -> float:
 	if towers.has(c):
 		return (towers[c] as Tower).stat("range")
+	if sites.has(c):   # what a building reaches: an Altar's blessing, a Chapel's healing
+		var s: Site = sites[c]
+		if s.kind == "altar":
+			return float(Defs.SITES["altar"]["range"])
+		if s.kind == "chapel" and not s.owned:
+			return float(Defs.SITES["chapel"]["r"])
+		return 0.0
+	if level.is_lair(c):   # the den's bolts
+		return float(Defs.DEN["range"])
 	if level.road.has(c) or level.is_lair(c) or trees.has(c) or sites.has(c) or not is_lit(c) or level.is_water(c):
 		return 0.0
 	var t := level.terrain_at(c)
@@ -1950,6 +1959,11 @@ func preview_range(c: Vector2i) -> float:
 			best = maxf(best, float(Defs.TOWERS[type]["range"][0]) + _range_bonus(type, c))
 		return best * holy
 	return (float(Defs.TOWERS[t]["range"][0]) + _range_bonus(t, c)) * holy
+
+
+## Where the previewed range is measured from (in tiles): the tile's middle, or the den's for the lair.
+func preview_center(c: Vector2i) -> Vector2:
+	return level.lair_center if level.is_lair(c) else Vector2(c) + Vector2(0.5, 0.5)
 
 
 ## Extra range from the skill tree and, on a raised tile, from the height.

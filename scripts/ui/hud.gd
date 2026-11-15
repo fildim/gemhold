@@ -57,7 +57,10 @@ var _meteor: Button
 var _cut: Button
 var _speed: Button
 var _pause: Button
-var _tide: Control   # the tide clock (lairs with a Tide rule)
+var _tide: Control   # the tide clock (lairs with a Tide rule); it shows the Eclipse on lairs that have one
+var _boss_box: PanelContainer   # a boss's name and health over the top of the map while one is alive
+var _boss_name: Label
+var _boss_bar: ProgressBar
 var _play_row: HBoxContainer    # speed and pause share a row
 var _send: Button           # online race only, in place of Pause: opens _send_menu
 var _send_menu: PopupMenu
@@ -400,6 +403,8 @@ func set_battle_visible(on: bool) -> void:
 	_top.visible = on
 	_bottom.visible = on
 	if not on:
+		_boss_box.visible = false
+	if not on:
 		_overlay.visible = false
 		hide_popup()
 
@@ -424,11 +429,22 @@ func refresh(sim: GameSim, armed: bool, speed: int, paused: bool) -> void:
 	_mana_bar.value = sim.mana
 	_gems.text = "%d/%d" % [sim.gems_left(), sim.level.gems]
 	_wave.text = "Wave %d/%d" % [sim.wave, sim.level.waves.size()]
-	_tide.visible = sim.tide.x > 0.0
+	if sim.dusk_wave > 0 and not sim.dark:   # the Dusk rule: say when night will fall
+		_wave.text += " · night at %d" % sim.dusk_wave
+	# One dial serves both rules: the tide (blue arc = high water) or the eclipse (dark arc = darkness).
+	var cycle := sim.tide if sim.tide.x > 0.0 else sim.eclipse
+	if _tide.visible != (cycle.x > 0.0):   # the dial comes or goes with the lair: make room for it
+		_tide.visible = cycle.x > 0.0
+		_layout()
 	if _tide.visible:
-		_tide.phase = fmod(sim.time, sim.tide.x) / sim.tide.x
-		_tide.high = sim.tide.y / sim.tide.x
+		_tide.phase = fmod(sim.time, cycle.x) / cycle.x
+		_tide.high = cycle.y / cycle.x
+		_tide.arc = Color("5aa0d0") if sim.tide.x > 0.0 else Color("7a5cc8")
 		_tide.queue_redraw()
+	_show_boss(sim)
+	if Keys.available():
+		for pair: Array in [[_pause, "pause"], [_speed, "speed"], [_next, "next"], [_meteor, "meteor"], [_cut, "cut"]]:
+			pair[0].tooltip_text = "Key: %s (change it in Settings)" % Keys.name_of(pair[1])
 	_show_rating(sim.rating_now())
 	if sim.wave < sim.level.waves.size():
 		var s := int(ceil(sim.timer))
@@ -448,6 +464,25 @@ func refresh(sim: GameSim, armed: bool, speed: int, paused: bool) -> void:
 		var col := POOR if short else BONE
 		for c in ["font_color", "font_hover_color", "font_pressed_color"]:
 			a["button"].add_theme_color_override(c, col)
+
+
+## A boss on the map: its name and health in a bar over the top of the map, so the player always
+## knows how far along the fight is. Gone when no boss is alive.
+func _show_boss(sim: GameSim) -> void:
+	var boss: GameSim.Enemy = null
+	for e: GameSim.Enemy in sim.enemies:
+		if e.hp > 0.0 and e.d.has("boss") and not e.retreat:
+			boss = e
+			break
+	_boss_box.visible = boss != null
+	if boss == null:
+		return
+	var bn := String(boss.d["name"])
+	_boss_name.text = bn.left(1).to_upper() + bn.substr(1)
+	_boss_bar.max_value = boss.max_hp
+	_boss_bar.value = boss.hp
+	_boss_box.reset_size()
+	_boss_box.position = Vector2(map_area.position.x + (map_area.size.x - _boss_box.size.x) / 2.0, map_area.position.y + 8)
 
 
 ## The rating the battle is heading for, as stars, with a message the moment it slips.
@@ -614,6 +649,28 @@ func _build_toast() -> void:
 	_toast_label.add_theme_font_override("font", bold_font)
 	_toast.add_child(_toast_label)
 	add_child(_toast)
+	_boss_box = PanelContainer.new()
+	_boss_box.add_theme_stylebox_override("panel", _box(Color(0, 0, 0, 0.72), Color("8a2e3a"), 1, 10, 12))
+	_boss_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_boss_box.visible = false
+	var bb := VBoxContainer.new()
+	bb.add_theme_constant_override("separation", 4)
+	_boss_box.add_child(bb)
+	_boss_name = Label.new()
+	_boss_name.add_theme_font_override("font", display_font)
+	_boss_name.add_theme_font_size_override("font_size", 28)
+	_boss_name.add_theme_color_override("font_color", Color("ff9aae"))
+	_boss_name.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	bb.add_child(_boss_name)
+	_boss_bar = ProgressBar.new()
+	_boss_bar.custom_minimum_size = Vector2(420, 18)
+	_boss_bar.show_percentage = false
+	var bf := StyleBoxFlat.new()
+	bf.bg_color = GEM
+	bf.set_corner_radius_all(5)
+	_boss_bar.add_theme_stylebox_override("fill", bf)
+	bb.add_child(_boss_bar)
+	add_child(_boss_box)
 	_rival_box = PanelContainer.new()
 	_rival_box.add_theme_stylebox_override("panel", _box(Color(0, 0, 0, 0.7), Color("e2683a"), 1, 10, 12))
 	_rival_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -629,7 +686,8 @@ func _build_toast() -> void:
 func toast(msg: String) -> void:
 	_toast_label.text = msg
 	_toast.reset_size()
-	_toast.position = Vector2(map_area.position.x + (map_area.size.x - _toast.size.x) / 2.0, map_area.position.y + 10)
+	_toast.position = Vector2(map_area.position.x + (map_area.size.x - _toast.size.x) / 2.0,
+		map_area.position.y + 10 + (_boss_box.size.y + 8 if _boss_box.visible else 0.0))
 	if _toast_tween:
 		_toast_tween.kill()
 	_toast_tween = create_tween()
@@ -903,12 +961,13 @@ class CutBar extends Control:
 class TideClock extends Control:
 	var phase := 0.0   # 0..1 through the tide's period
 	var high := 0.3    # the share of the period the water is up (at the end of each period)
+	var arc := Color("5aa0d0")   # blue for high tide, violet for an eclipse's darkness
 
 	func _draw() -> void:
 		var c := size / 2.0
 		var r := minf(size.x, size.y) / 2.0 - 2.0
 		draw_circle(c, r, Color("1c160f"))
-		draw_arc(c, r - 3.0, -PI / 2 + TAU * (1.0 - high), -PI / 2 + TAU, 20, Color("5aa0d0"), 5.0, true)
+		draw_arc(c, r - 3.0, -PI / 2 + TAU * (1.0 - high), -PI / 2 + TAU, 20, arc, 5.0, true)
 		draw_arc(c, r, 0, TAU, 28, Color("8a6420"), 2.0, true)
 		var a := -PI / 2 + TAU * phase
 		draw_line(c, c + Vector2(cos(a), sin(a)) * (r - 2.0), Color("efe4cc"), 2.5, true)

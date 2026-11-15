@@ -569,7 +569,7 @@ func _select(c: Vector2i) -> void:
 	var xf := frame.get_global_transform_with_canvas()
 	var rect := Rect2(xf * (Vector2(c) * T), Vector2(T, T) * frame.scale)
 	var rg := sim.preview_range(c)
-	var circle := _cell_rect(Vector2(c) + Vector2(0.5 - rg, 0.5 - rg), Vector2(rg, rg) * 2.0) if rg > 0.0 else Rect2()
+	var circle := _cell_rect(sim.preview_center(c) - Vector2(rg, rg), Vector2(rg, rg) * 2.0) if rg > 0.0 else Rect2()
 	hud.show_popup(sim.cell_info(c), rect, circle)
 
 
@@ -676,6 +676,24 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_cancel"):
 		_deselect()
 		armed = false
+		return
+	# Keyboard shortcuts (Keys; the player sets them in Settings): only in a battle that is under way.
+	var act := Keys.action_of(event)
+	if act == "" or on_map or not started or sim.over or spot.visible or not get_tree().get_nodes_in_group("sound_window").is_empty():
+		return
+	match act:
+		"pause":
+			if race.is_empty():   # no pausing in a race
+				paused = not paused
+		"speed":
+			speed = 2 if speed == 1 else 1
+		"next":
+			_on_next_wave()
+		"meteor":
+			_on_meteor()
+		"cut":
+			_on_cut()
+	get_viewport().set_input_as_handled()
 
 
 ## Newly earned achievements outside a battle (the end card lists those from battles).

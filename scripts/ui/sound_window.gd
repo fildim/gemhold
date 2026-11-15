@@ -1,10 +1,14 @@
 class_name SoundWindow
 extends Control
-## The Settings window: a slider for effects and one for music, and the screen shake switch,
+## The Settings window: a slider for effects and one for music, the screen shake switch and, with a
+## keyboard, the battle shortcuts (Keys),
 ## opened from the Settings button on the map and in battle. Covers its host with a dim backdrop; tapping outside the card or
 ## Close shuts it. Changes apply and save at once.
 
 const Hud := preload("res://scripts/ui/hud.gd")
+
+var _capture := ""        # the shortcut waiting for its new key ("" when none is)
+var _key_buttons := {}    # action -> its button in the Keyboard section
 
 
 ## Opens the window over `host` (the HUD in battle, the map on the map).
@@ -67,6 +71,8 @@ func _build(hud: Control) -> void:
 	shake.custom_minimum_size = Vector2(0, 60)
 	shake.toggled.connect(func(on: bool) -> void: Prefs.set_value("shake", on))
 	box.add_child(shake)
+	if Keys.available():
+		_build_keys(hud, box)
 	var close := Button.new()
 	close.text = "Close"
 	close.focus_mode = Control.FOCUS_NONE
@@ -75,6 +81,72 @@ func _build(hud: Control) -> void:
 	close.add_theme_font_size_override("font_size", 26)
 	close.pressed.connect(queue_free)
 	box.add_child(close)
+
+
+## The Keyboard section: one button per shortcut showing its key. Click it, then press the new key
+## (Esc keeps the old one). A key another shortcut uses swaps with it.
+func _build_keys(hud: Control, box: VBoxContainer) -> void:
+	var head := HBoxContainer.new()
+	box.add_child(head)
+	var title := Label.new()
+	title.text = "Keyboard"
+	title.add_theme_font_override("font", hud.bold_font)
+	title.add_theme_font_size_override("font_size", 30)
+	title.add_theme_color_override("font_color", Hud.GOLD)
+	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	head.add_child(title)
+	var reset := Button.new()
+	reset.text = "Default keys"
+	reset.focus_mode = Control.FOCUS_NONE
+	reset.add_theme_font_size_override("font_size", 22)
+	reset.add_theme_color_override("font_color", Hud.DIM)
+	reset.pressed.connect(func() -> void:
+		_capture = ""
+		Keys.reset()
+		_show_keys())
+	head.add_child(reset)
+	var grid := GridContainer.new()
+	grid.columns = 4
+	grid.add_theme_constant_override("h_separation", 14)
+	grid.add_theme_constant_override("v_separation", 10)
+	box.add_child(grid)
+	for a: Array in Keys.ACTIONS:
+		var l := Label.new()
+		l.text = a[1]
+		l.add_theme_font_size_override("font_size", 26)
+		l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		grid.add_child(l)
+		var b := Button.new()
+		b.focus_mode = Control.FOCUS_NONE
+		b.custom_minimum_size = Vector2(170, 52)
+		b.add_theme_font_size_override("font_size", 26)
+		var action: String = a[0]
+		b.pressed.connect(func() -> void:
+			_capture = "" if _capture == action else action
+			_show_keys())
+		grid.add_child(b)
+		_key_buttons[action] = b
+	_show_keys()
+
+
+func _show_keys() -> void:
+	for action: String in _key_buttons:
+		var b: Button = _key_buttons[action]
+		var waiting := action == _capture
+		b.text = "Press a key…" if waiting else Keys.name_of(action)
+		b.add_theme_color_override("font_color", Hud.EMBER if waiting else Hud.BONE)
+
+
+## While a shortcut waits for its key, the next key press is that key (Esc cancels).
+func _input(e: InputEvent) -> void:
+	if _capture == "" or not (e is InputEventKey) or not e.pressed or e.echo:
+		return
+	get_viewport().set_input_as_handled()
+	if e.keycode != KEY_ESCAPE:
+		Keys.assign(_capture, Keys.code_of(e))
+		Sfx.play("click")
+	_capture = ""
+	_show_keys()
 
 
 func _unhandled_input(e: InputEvent) -> void:

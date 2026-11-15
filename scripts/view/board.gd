@@ -172,7 +172,7 @@ func _draw_selection() -> void:
 	draw_rect(r.grow(-1), Color.WHITE, false, 2.0)
 	var rg := sim.preview_range(selected)
 	if rg > 0.0:
-		var c := r.get_center()
+		var c := sim.preview_center(selected) * T
 		draw_circle(c, rg * T, Color(1, 1, 1, 0.08))
 		draw_arc(c, rg * T, 0, TAU, 64, Color(1, 1, 1, 0.45), 1.5, true)
 
