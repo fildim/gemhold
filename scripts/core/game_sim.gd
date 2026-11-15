@@ -230,7 +230,7 @@ var den_charges := 0
 var den_refill := 0.0     # seconds toward the next charge
 var den_cd := 0.0         # seconds until the den may fire again
 var time := 0.0
-var race_on := false       # an online race: kills send heroes to the rival
+var race_on := false       # an online race (set_race): kills send heroes to the rival, the race clock runs
 var race_sends := ""      # hero codes sent to the rival so far, oldest first
 var stopped := false      # an online race ended because the rival finished first
 var touched := false      # a hero has laid hands on a gem (grabbed from the hoard or picked up)
@@ -429,7 +429,7 @@ func start_wave() -> void:
 	wave_left[wave + 1] = list.size()
 	wave_peak[wave + 1] = 0.0
 	wave += 1
-	timer = level.wave_gap - (Defs.SITES["beacon"]["sooner"] if beacon_lit() else 0.0) if wave < level.waves.size() else 0.0
+	timer = wave_gap() if wave < level.waves.size() else 0.0
 	spawn_t = 0.0
 	toast.emit("Wave %d: heroes approach" % wave)
 	sound.emit("horn")
@@ -438,6 +438,22 @@ func start_wave() -> void:
 		dark_t = time
 		_relight()
 		toast.emit("Night falls")
+
+
+## Seconds from one wave to the next: the lair's gap, or the race clock's in an online race;
+## a lit Signal Fire takes its seconds off (in a race never below Defs.RACE["gap_min"]).
+func wave_gap() -> float:
+	var sooner: float = Defs.SITES["beacon"]["sooner"] if beacon_lit() else 0.0
+	if race_on:
+		return maxf(float(Defs.RACE["gap_min"]), float(Defs.RACE["gap"]) - sooner)
+	return level.wave_gap - sooner
+
+
+## Makes this battle an online race: kills send heroes to the rival, the waves come on the race
+## clock (Defs.RACE) and heroes have the lair's race health (Level.race_hp). Call before it begins.
+func set_race() -> void:
+	race_on = true
+	timer = float(Defs.RACE["first"])
 
 
 ## A Signal Fire still burns: waves come sooner and barracks muster faster.
@@ -472,6 +488,8 @@ func _spawn(code: String, path := -1, dist := 0.0, w := 0) -> void:
 	var mul := level.hp_mul * (1.0 + Defs.WAVE_HP_SCALE * maxi(0, wave - 1)) * threat
 	if level.night:
 		mul *= level.night_hp
+	if race_on:
+		mul *= level.race_hp
 	e.hp = d["hp"] * mul
 	e.max_hp = e.hp
 	var rivers: Array = level.wave_rivers[w - 1] if w > 0 and w <= level.wave_rivers.size() else []
@@ -1536,11 +1554,13 @@ func hurt(e: Enemy, dmg: float, pierce := false, src: Tower = null, ap := 0) -> 
 			silence_proof += 1
 		if e.d.has("siege") and e.stones == 0:
 			treb_fast += 1
-		if e.d.has("spill") and not e.unloaded:
+		# A hero already off the map (escaped this frame, then hit by a shot in flight) raises nobody:
+		# his wave has been judged, and the heroes would march in from where he left.
+		if e.d.has("spill") and not e.unloaded and not e.gone:
 			# Broken open before it reached the den: its garrison spills out where it fell.
 			_rally.append({"codes": Level._parse_wave(String(e.d["spill"])), "path": e.path, "dist": e.dist, "wave": e.wave})
 			_text(e.pos + Vector2(0, -0.8), "It breaks open!", Color("ff9a7a"))
-		if e.d.has("rally"):
+		if e.d.has("rally") and not e.gone:
 			# His escort rises where he fell (spawned next frame, outside any loop over heroes).
 			_rally.append({"codes": Level._parse_wave(String(e.d["rally"])), "path": e.path, "dist": e.dist, "wave": e.wave})
 			_text(e.pos + Vector2(0, -0.8), "Rally!", Color("ff9a7a"))

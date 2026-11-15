@@ -6,7 +6,8 @@ extends SceneTree
 ##   godot --headless --path . -s res://tools/make_lairs.gd -- 21 25   (just those numbers)
 ## Then check with tests/level_check.gd. hp_mul is tuned afterwards with tests/difficulty.gd and
 ## kept: a spec's "hp_mul" is only the starting value for a file that does not exist yet. A file's
-## "night_hp" (night hero health, set by hand) is kept too.
+## "night_hp" (night hero health, set by hand) and "race_hp" (race hero health, tuned with
+## tests/race_test.gd) are kept too.
 
 const SPECS := preload("res://tools/lair_specs.gd")
 const LEGEND := {"m": "moss", "f": "frost", "a": "ash", "M": "high moss", "F": "high frost", "A": "high ash", "L": "lair"}
@@ -23,12 +24,14 @@ func _init() -> void:
 			var old = JSON.parse_string(FileAccess.get_file_as_string(path))
 			if old is Dictionary and old.has("hp_mul"):
 				d["hp_mul"] = old["hp_mul"]
-			if old is Dictionary and old.has("night_hp"):   # and a tuned night health, right after hp_mul
+			if old is Dictionary and (old.has("night_hp") or old.has("race_hp")):   # and a tuned night and race health, right after hp_mul
 				var keep := {}
 				for k: String in d:
 					keep[k] = d[k]
 					if k == "hp_mul":
-						keep["night_hp"] = old["night_hp"]
+						for extra in ["night_hp", "race_hp"]:
+							if old.has(extra):
+								keep[extra] = old[extra]
 				d = keep
 		var f := FileAccess.open(path, FileAccess.WRITE)
 		f.store_string(_pretty(d))

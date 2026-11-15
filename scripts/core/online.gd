@@ -330,6 +330,13 @@ func top(field: String, limit := 50) -> Variant:
 
 const RACE_LETTERS := "ABCDEFGHJKMNPQRSTUVWXYZ23456789"   # no I, L, O, 0 or 1 to misread
 const RACE_CODE_LEN := 5
+## Races are played by the rules of this version (the race clock, race hero health), so a race only
+## pairs clients of the same one: the host stores the lair as "<level id>@<RACE_VERSION>". Clients
+## from before version 2 cannot find such a lair and ask to update; this one refuses older races.
+const RACE_VERSION := 2
+const RACE_TIMEOUT := 6.0   # seconds a race request may take: a slow one must never hold a race up
+const RACE_OLDER := "Your friend's game is an older version: ask them to update."
+const RACE_NEWER := "That lair is not in this version of the game: update it"
 
 
 ## Opens a race on level_id (its night mission if night). Returns {"code": String}, or {"error": String}.
@@ -342,11 +349,11 @@ func race_host(level_id: String, night := false) -> Dictionary:
 			code += RACE_LETTERS[randi() % RACE_LETTERS.length()]
 		var doc := {
 			"name": "projects/%s/databases/(default)/documents/races/%s" % [PROJECT, code],
-			"fields": _typed_fields({"host": uid, "host_name": player_name, "level": level_id, "night": night, "state": "open", "h": race_progress()}),
+			"fields": _typed_fields({"host": uid, "host_name": player_name, "level": race_level_field(level_id), "night": night, "state": "open", "h": race_progress()}),
 		}
 		var body := {"writes": [{"update": doc, "currentDocument": {"exists": false},
 			"updateTransforms": [{"fieldPath": "created", "setToServerValue": "REQUEST_TIME"}]}]}
-		var r := await _call("POST", _docs + ":commit", body, true)
+		var r := await _call("POST", _docs + ":commit", body, true, RACE_TIMEOUT)
 		if r["ok"]:
 			return {"code": code}
 		if not str(r["error"]).contains("exists") and not str(r["error"]).contains("ALREADY"):
@@ -354,39 +361,69 @@ func race_host(level_id: String, night := false) -> Dictionary:
 	return {"error": "Could not open a race: try again"}
 
 
-## Joins the open race with this code. Returns the race (see race_get), or {"error": String}.
+## The race document's "level" for a lair: its id tagged with this version's rules.
+static func race_level_field(level_id: String) -> String:
+	return "%s@%d" % [level_id, RACE_VERSION]
+
+
+## A race document's "level" split into [level id, rules version]: 1 for an untagged one (an old host).
+static func race_level(stored: String) -> Array:
+	var at := stored.rfind("@")
+	if at < 0:
+		return [stored, 1]
+	return [stored.left(at), int(stored.substr(at + 1))]
+
+
+## Why this player may not join a race (as race_get returns it), or "" if they may.
+static func race_refusal(race: Dictionary, me: String) -> String:
+	if int(race.get("version", 1)) < RACE_VERSION:
+		return RACE_OLDER
+	if int(race.get("version", 1)) > RACE_VERSION:
+		return RACE_NEWER
+	if race.get("host", "") == me:
+		return "That is your own race: give the code to your rival"
+	if race.get("state", "") != "open":
+		return "That race has already begun"
+	return ""
+
+
+## Joins the open race with this code. It reads the race first and writes only if this player may
+## join it (race_refusal): never a race from another version. Returns the race (see race_get), or {"error": String}.
 func race_join(code: String) -> Dictionary:
 	code = code.strip_edges().to_upper()
 	var race := await race_get(code)
 	if race.has("error"):
 		return race
-	if race["host"] == uid:
-		return {"error": "That is your own race: give the code to your rival"}
-	if race["state"] != "open":
-		return {"error": "That race has already begun"}
+	var refused := race_refusal(race, uid)
+	if refused != "":
+		return {"error": refused}
 	var doc := {
 		"name": "projects/%s/databases/(default)/documents/races/%s" % [PROJECT, code],
 		"fields": _typed_fields({"guest": uid, "guest_name": player_name, "state": "on", "g": race_progress()}),
 	}
 	var body := {"writes": [{"update": doc, "updateMask": {"fieldPaths": ["guest", "guest_name", "state", "g"]},
 		"currentDocument": {"exists": true}}]}
-	var r := await _call("POST", _docs + ":commit", body, true)
+	var r := await _call("POST", _docs + ":commit", body, true, RACE_TIMEOUT)
 	if not r["ok"]:
 		return {"error": r["error"]}
 	return await race_get(code)
 
 
-## The race with this code: {code, host, host_name, guest, guest_name, level, state, h, g}, or {"error"}.
+## The race with this code: {code, host, host_name, guest, guest_name, level, version, state, h, g}, or {"error"}.
+## level is the plain lair id; version the rules version it was hosted with (race_level).
 func race_get(code: String) -> Dictionary:
 	if code.length() != RACE_CODE_LEN:
 		return {"error": "A race code has %d letters" % RACE_CODE_LEN}
-	var r := await _call("GET", _docs + "/races/" + code, null, true)
+	var r := await _call("GET", _docs + "/races/" + code, null, true, RACE_TIMEOUT)
 	if not r["ok"]:
 		return {"error": "No race with that code" if str(r["error"]).contains("NOT_FOUND") or str(r["error"]).contains("not found") else r["error"]}
 	var f: Dictionary = r["data"].get("fields", {})
 	var out := {"code": code, "guest": "", "guest_name": "", "g": race_progress()}
 	for k: String in f:
 		out[k] = _value(f[k])
+	var lv := race_level(str(out.get("level", "")))
+	out["level"] = lv[0]
+	out["version"] = lv[1]
 	return out
 
 
@@ -397,13 +434,13 @@ func race_report(code: String, side: String, progress: Dictionary) -> String:
 		"fields": _typed_fields({side: progress}),
 	}
 	var body := {"writes": [{"update": doc, "updateMask": {"fieldPaths": [side]}, "currentDocument": {"exists": true}}]}
-	var r := await _call("POST", _docs + ":commit", body, true)
+	var r := await _call("POST", _docs + ":commit", body, true, RACE_TIMEOUT)
 	return "" if r["ok"] else r["error"]
 
 
 ## The host calls off a race nobody joined.
 func race_cancel(code: String) -> void:
-	await _call("DELETE", _docs + "/races/" + code, null, true)
+	await _call("DELETE", _docs + "/races/" + code, null, true, RACE_TIMEOUT)
 
 
 ## A racer's progress record; with no sim, the one for a battle not begun. secs: seconds since the
@@ -473,11 +510,12 @@ func _take_tokens(d: Dictionary) -> void:
 
 
 ## An id token lasts an hour; trade the stored refresh token for a new one when it has run out.
-func _fresh_token() -> bool:
+## wait: seconds the request may take.
+func _fresh_token(wait := 15.0) -> bool:
 	if _token != "" and Time.get_unix_time_from_system() < _token_until:
 		return true
 	var http := HTTPRequest.new()
-	http.timeout = 15.0
+	http.timeout = wait
 	http.accept_gzip = false   # on web the browser has already unpacked the reply; Godot would fail unpacking it again
 	add_child(http)
 	http.request(_token_url + "?key=" + API_KEY,
@@ -497,15 +535,19 @@ func _fresh_token() -> bool:
 	return true
 
 
-## One JSON request. Returns {"ok": bool, "data": parsed body, "error": friendly message}.
-func _call(method: String, url: String, body: Variant, auth := false) -> Dictionary:
+## One JSON request, never blocking a frame (HTTPRequest works in the background). Returns
+## {"ok": bool, "data": parsed body, "error": friendly message}. wait: seconds before it gives up
+## (the token refresh it may need included), after which it fails like an unreachable server.
+func _call(method: String, url: String, body: Variant, auth := false, wait := 15.0) -> Dictionary:
 	var headers := PackedStringArray(["Content-Type: application/json"])
 	if auth:
-		if not await _fresh_token():
+		var t0 := Time.get_ticks_msec()
+		if not await _fresh_token(wait):
 			return {"ok": false, "data": {}, "error": "Signed out: please sign in again"}
+		wait = maxf(1.0, wait - (Time.get_ticks_msec() - t0) / 1000.0)
 		headers.append("Authorization: Bearer " + _token)
 	var http := HTTPRequest.new()
-	http.timeout = 15.0
+	http.timeout = wait
 	http.accept_gzip = false   # see _fresh_token
 	add_child(http)
 	var m := {"GET": HTTPClient.METHOD_GET, "POST": HTTPClient.METHOD_POST, "DELETE": HTTPClient.METHOD_DELETE}

@@ -44,6 +44,36 @@ func _run() -> void:
 	b.uid = (lair[0]["uid"])
 	_check(await a.rename("Alpha Prime", save_a) == "", "rename")
 
+	# Online races: the host tags the lair with the rules version, a guest reads before joining and
+	# refuses a race from an older host; each racer then reports their own progress.
+	var hosted := await a.race_host("level_03")
+	_check(hosted.has("code"), "host a race: %s" % [hosted])
+	var raw := await a._call("GET", a._docs + "/races/" + str(hosted.get("code", "")), null, true)
+	_check(raw["ok"] and Online._value(raw["data"]["fields"]["level"]) == "level_03@%d" % Online.RACE_VERSION, "the race document's lair carries the version: %s" % [raw["data"]])
+	var seen := await b.race_get(str(hosted.get("code", "")))
+	_check(seen.get("level") == "level_03" and seen.get("version") == Online.RACE_VERSION and seen.get("state") == "open", "a new client reads the plain lair: %s" % [seen])
+	var old_code := "QLDR" + Online.RACE_LETTERS[randi() % Online.RACE_LETTERS.length()]
+	var old_doc := {"name": "projects/%s/databases/(default)/documents/races/%s" % [Online.PROJECT, old_code],
+		"fields": Online._typed_fields({"host": a.uid, "host_name": a.player_name, "level": "level_03", "night": false, "state": "open", "h": Online.race_progress()})}
+	var made := await a._call("POST", a._docs + ":commit", {"writes": [{"update": old_doc,
+		"updateTransforms": [{"fieldPath": "created", "setToServerValue": "REQUEST_TIME"}]}]}, true)
+	_check(made["ok"], "an old client's race (no version on the lair): %s" % [made])
+	var refused := await b.race_join(old_code)
+	_check(refused.get("error") == Online.RACE_OLDER, "a new client won't join an old host's race: %s" % [refused])
+	var untouched := await b.race_get(old_code)
+	_check(untouched.get("state") == "open" and untouched.get("guest") == "", "and wrote nothing to it: %s" % [untouched])
+	await a.race_cancel(old_code)
+	_check((await a.race_join(str(hosted["code"]))).has("error"), "a host can't join their own race")
+	var joined := await b.race_join(str(hosted["code"]))
+	_check(joined.get("state") == "on" and joined.get("guest") == b.uid and joined.get("level") == "level_03", "the guest joins: %s" % [joined])
+	var mine := Online.race_progress()
+	mine["wave"] = 3
+	_check(await b.race_report(str(hosted["code"]), "g", mine) == "", "the guest reports their progress")
+	_check(await b.race_report(str(hosted["code"]), "h", mine) != "", "but not the host's")
+	_check(await a.race_report(str(hosted["code"]), "h", mine) == "", "the host reports theirs")
+	var both := await a.race_get(str(hosted["code"]))
+	_check(int(both["g"]["wave"]) == 3 and int(both["h"]["wave"]) == 3, "both progresses are there: %s" % [both])
+
 	# Signing in elsewhere brings scores and achievements back.
 	a.sign_out()
 	_check(not a.signed_in(), "signed out")

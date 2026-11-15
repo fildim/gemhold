@@ -22,8 +22,13 @@ static func skills(points: int, beaten := 1000) -> Dictionary:
 ## Plays the battle to the end (or 1200 s) and returns the finished sim. A non-zero seed changes
 ## the luck (loot, Dread, Lava) for the same battle. The style sets which tiles it builds on first:
 ## "near" closest to the lair, "far" earliest along a land road, "mid" halfway along one.
-static func play(lv: Level, skill_ranks: Dictionary, seed := 0, style := "near") -> GameSim:
+## race: plays it as an online race (GameSim.set_race) against an equal rival: every hero its kills
+## send (sim.race_sends) comes straight back onto its own roads. It never buys heroes to send.
+static func play(lv: Level, skill_ranks: Dictionary, seed := 0, style := "near", race := false) -> GameSim:
 	var sim := GameSim.new(lv, skill_ranks)
+	if race:
+		sim.set_race()
+	var echoed := 0   # race: how many of its own sends have come back
 	if OS.has_environment("BOT_TRACE"):   # print what the battle announces, for debugging a lair
 		sim.toast.connect(func(t: String) -> void: print("%.1f w%d %s" % [sim.time, sim.wave, t]))
 	if seed != 0:
@@ -79,6 +84,9 @@ static func play(lv: Level, skill_ranks: Dictionary, seed := 0, style := "near")
 			sim.cast_meteor(sim.enemies[0].pos)
 		for l: GameSim.Loot in sim.loot.duplicate():
 			sim.collect_loot(l.pos)
+		while echoed < sim.race_sends.length():   # the rival (playing as well) sends as many back
+			sim.race_receive(sim.race_sends[echoed])
+			echoed += 1
 		sim.update(dt)
 		t += dt
 	return sim

@@ -203,6 +203,11 @@ const LOOT_POTION_MANA := 15
 const RACE_KILL_SEND := 10
 const RACE_SEND_COST := 5
 const RACE_TIME_BONUS := 20
+## The race clock (GameSim.set_race): a race should last about 3 to 6 minutes, so the first wave
+## comes after `first` seconds and the next ones every `gap` (a lit Signal Fire still takes its
+## seconds off, but never below `gap_min`). Hero health is multiplied by the lair's race factor
+## (Level.race_hp, "race_hp" in the file), `hp` unless the lair sets its own (tuned with tests/race_test.gd).
+const RACE := {"first": 10.0, "gap": 12.0, "gap_min": 6.0, "hp": 0.55}
 const LOOT_COIN_MUL := 1.4    # a coin is worth this times the hero's bounty, grown by wave (not threat),
 const LOOT_COIN_BONUS := 4    # plus this flat amount, so even small heroes drop a worthwhile coin
 

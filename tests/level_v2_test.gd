@@ -1,7 +1,7 @@
 extends SceneTree
 ## Level format v2 and road zones, on tests/fixtures/level_v2.json: water and shallows, river roads,
 ## wave routes and cargo, hallowed ground, lair rules, six gems; fords, bridges, tide and paving
-## slowing or speeding heroes; Soaked; Dark Arts tier gates; the test lair picker. Also checks
+## slowing or speeding heroes; Soaked; Dark Arts tier gates; the test lair picker; online races (the race clock, race_hp, the version tag). Also checks
 ## that the campaign lairs read as before (every road land, every wave over every road).
 ## Run: godot --headless --script res://tests/level_v2_test.gd
 
@@ -18,6 +18,7 @@ func _init() -> void:
 	_old_levels()
 	_skills()
 	_picker()
+	_race()
 	print("level_v2_test: %s" % ("all passed" if fails == 0 else "%d failed" % fails))
 	quit(0 if fails == 0 else 1)
 
@@ -179,6 +180,55 @@ func _picker() -> void:
 	_check(p[0] == [5, 6] and not p[1], "numbers pick single lairs")
 	p = Bot.pick_lairs(PackedStringArray())
 	_check(p[0].size() == MAIN.LEVELS.size() and p[1], "no arguments: every lair")
+
+
+## Online races: the race clock, race hero health and the version tag on the race's lair.
+func _race() -> void:
+	var lv := Level.load_from(FIXTURE)
+	_check(lv.race_hp == Defs.RACE["hp"], "race_hp defaults to Defs.RACE hp")
+	var day := GameSim.new(lv)
+	var race := GameSim.new(lv)
+	race.set_race()
+	_check(race.race_on and not day.race_on, "set_race turns the race on")
+	_check(race.timer == Defs.RACE["first"] and day.timer == lv.first_delay, "a race starts on the race clock: %s (by day %s)" % [race.timer, day.timer])
+	race.start_wave()
+	day.start_wave()
+	_check(race.timer == Defs.RACE["gap"] and race.timer < day.timer, "and so do the next ones: %s vs %s" % [race.timer, day.timer])
+	# A Signal Fire takes its seconds off the race gap too, but never below gap_min.
+	var siege := GameSim.new(Level.load_from("res://tests/fixtures/level_siege.json"))
+	siege.set_race()
+	_check(siege.beacon_lit(), "the siege fixture has a burning Signal Fire")
+	siege.start_wave()
+	var want := maxf(Defs.RACE["gap_min"], Defs.RACE["gap"] - Defs.SITES["beacon"]["sooner"])
+	_check(is_equal_approx(siege.timer, want) and siege.timer >= Defs.RACE["gap_min"], "a Signal Fire in a race: gap %s (want %s, never below %s)" % [siege.timer, want, Defs.RACE["gap_min"]])
+	# race_hp from the file, applied only in a race.
+	var tuned := Level.new()
+	tuned._parse(_fixture_with({"race_hp": 0.5}))
+	_check(is_equal_approx(tuned.race_hp, 0.5), "race_hp is read from the file")
+	var calm := GameSim.new(tuned)
+	var fast := GameSim.new(tuned)
+	fast.set_race()
+	calm.race_receive("f")
+	fast.race_receive("f")
+	_check(is_equal_approx(fast.enemies[0].max_hp, calm.enemies[0].max_hp * 0.5), "race_hp applies in a race only: %s vs %s" % [fast.enemies[0].max_hp, calm.enemies[0].max_hp])
+	# The race document's lair carries the rules version; a new client refuses older (or newer) races.
+	_check(Online.race_level_field("level_07") == "level_07@%d" % Online.RACE_VERSION, "the host tags the lair: %s" % Online.race_level_field("level_07"))
+	_check(Online.race_level("level_07@2") == ["level_07", 2], "a tagged lair is split")
+	_check(Online.race_level("level_07") == ["level_07", 1], "an untagged lair is an old host's")
+	var open := {"host": "a", "state": "open", "version": Online.RACE_VERSION}
+	_check(Online.race_refusal(open, "b") == "", "a guest may join an open race of this version")
+	_check(Online.race_refusal(open, "a") != "", "but not their own")
+	var old := open.duplicate()
+	old["version"] = 1
+	_check(Online.race_refusal(old, "b") == Online.RACE_OLDER, "a race from an older host is refused before joining")
+	old["version"] = Online.RACE_VERSION + 1
+	_check(Online.race_refusal(old, "b") == Online.RACE_NEWER, "and one from a newer host asks to update")
+
+
+func _fixture_with(extra: Dictionary) -> Dictionary:
+	var d: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(FIXTURE))
+	d.merge(extra, true)
+	return d
 
 
 func _check(cond: bool, what: String) -> void:

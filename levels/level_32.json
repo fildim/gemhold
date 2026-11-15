@@ -4,6 +4,7 @@
  "cols": 18,
  "rows": 10,
  "hp_mul": 4.36,
+ "race_hp": 0.45,
  "legend": {"A":"high ash","F":"high frost","L":"lair","M":"high moss","a":"ash","f":"frost","m":"moss"},
  "terrain": [
   "ffffffffffffffmmmm",

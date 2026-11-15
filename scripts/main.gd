@@ -49,6 +49,8 @@ var _ids: Array = []          # every lair's level id, campaign order
 var race := {}                # the online race being played (Online.race_get + "side"), or {}
 var _race_t := 0.0            # seconds to the next progress report
 var _race_busy := false
+var _race_fails := 0          # race polls failed in a row (3 or more: connection trouble is shown)
+var _race_sends := 0          # heroes sent so far that the rival has been told of, or is about to be
 
 @onready var frame: Control = $MapFrame
 @onready var ground: Node2D = $MapFrame/Ground
@@ -207,6 +209,9 @@ func _restart() -> void:
 
 func _process(delta: float) -> void:
 	if not race.is_empty():
+		if sim.race_sends.length() != _race_sends:   # a hero sent by the kills rule: tell the rival now
+			_race_sends = sim.race_sends.length()
+			_race_t = 0.0
 		_race_t -= delta
 		if _race_t <= 0.0 and not _race_busy:
 			_race_tick()
@@ -724,6 +729,8 @@ func _start_race(r: Dictionary, side: String) -> void:
 	race["t0"] = Time.get_ticks_msec()
 	race["got"] = 0   # how many of the rival's sent heroes have marched in here
 	_race_t = 0.0
+	_race_fails = 0
+	_race_sends = 0
 	hall.visible = false
 	on_map = false
 	select.visible = false
@@ -731,10 +738,10 @@ func _start_race(r: Dictionary, side: String) -> void:
 	hud.set_battle_visible(true)
 	night = bool(r.get("night", false))
 	_load_level(i)
-	sim.race_on = true
+	sim.set_race()   # the race clock and race hero health
 	_layout()
 	started = true
-	hud.set_rival(_rival_name(), race["rival"])
+	hud.set_rival(_rival_badge(), race["rival"])
 	hud.toast("Race against %s: go!" % _rival_name())
 	Sfx.play("horn")
 
@@ -743,19 +750,32 @@ func _rival_name() -> String:
 	return str(race.get("guest_name" if race.get("side") == "h" else "host_name", "Rival"))
 
 
+## The rival's name for the badge: "…" after it while the connection is in trouble.
+func _rival_badge() -> String:
+	return _rival_name() + ("…" if _race_fails >= RACE_TROUBLE else "")
+
+
 ## Every couple of seconds: send this player's progress (when it changed) and fetch the rival's.
+## It never holds the battle up: the requests run in the background and give up after
+## Online.RACE_TIMEOUT, a failed poll leaves the race running and the next one comes as usual.
+## After RACE_TROUBLE failures in a row the player is told once, and again once it is back.
 func _race_tick() -> void:
 	_race_busy = true
 	_race_t = 2.5
 	var code: String = race["code"]
 	var side: String = race["side"]
 	var me := Online.race_progress(sim, false, _race_secs())
+	var ok := true
 	if me != race.get("sent", {}):
-		if await online.race_report(code, side, me) == "" and race.get("code") == code:
+		ok = await online.race_report(code, side, me) == ""
+		if ok and race.get("code") == code:
 			race["sent"] = me
 	var r := await online.race_get(code)
 	_race_busy = false
-	if race.get("code") != code or r.has("error"):
+	if race.get("code") != code:
+		return
+	_race_connection(ok and not r.has("error"))
+	if r.has("error"):
 		return
 	var rival: Dictionary = r["g" if side == "h" else "h"]
 	var out := str(rival.get("out", ""))
@@ -771,17 +791,31 @@ func _race_tick() -> void:
 	if rival.get("done", false) and not sim.over:
 		# The race is over for both the moment one finishes or falls.
 		race["rival"] = rival
-		hud.set_rival(_rival_name(), rival)
+		hud.set_rival(_rival_badge(), rival)
 		hud.toast("%s %s: the race is over" % [_rival_name(), "finished first" if rival.get("won", false) else "fell"])
 		sim.race_stop()   # ends the battle here (_on_ended); the next tick tells the rival
 		return
 	race["rival"] = rival
-	hud.set_rival(_rival_name(), rival)
+	hud.set_rival(_rival_badge(), rival)
 	if sim.over:
 		hud.show_race_end(me, rival, _rival_name())
 		if rival.get("done", false) and race.get("sent", {}) == me:
 			_record_race(Online.race_compare(me, rival))
 			_race_t = INF   # both finished and told: nothing more to send or fetch
+
+
+## Keeps count of failed race polls: the third in a row says so once (and marks the rival's badge),
+## the first success after that says the connection is back.
+func _race_connection(ok: bool) -> void:
+	if ok:
+		if _race_fails >= RACE_TROUBLE:
+			hud.toast("Connected again")
+		_race_fails = 0
+		return
+	_race_fails += 1
+	if _race_fails == RACE_TROUBLE:
+		hud.toast("Connection trouble: still trying…")
+		hud.set_rival(_rival_badge(), race.get("rival", Online.race_progress()))
 
 
 ## Counts a decided race once in the record (1 won, -1 lost, 0 drawn) and puts it online.
@@ -836,10 +870,12 @@ func _on_send(code: String) -> void:
 
 ## The race walkthrough: the first time the Race page opens (signed in), three tips show how to host,
 ## how to join and how a race goes. Each OK moves on (Prefs "race_tip"); "No more tips" ends it.
+const RACE_TROUBLE := 3   # race polls failed in a row before the player is told
+
 const RACE_TIPS := [
-	["host", "[b]Race a friend![/b] Pick a lair (night missions you have opened are there too) and tap [b]Host a race[/b]. You get a 5-letter code to give your friend."],
-	["join", "Got a code from a friend? Type it here and tap [b]Join[/b]. The race starts for both of you at once."],
-	["", "[b]In the race[/b] you both play the same lair with the same Dark Arts: a standard set for that lair, not your own. Every %d heroes you slay sends one to your rival, and [b]Send heroes[/b] (where Pause was) buys more with gold. The moment one of you clears the last wave or falls, the race is over: clear it first to win. Leaving counts as a loss." % Defs.RACE_KILL_SEND],
+	["host", "[b]Race a friend![/b] Pick any lair you have cleared, or [b]Random lair[/b] (night missions you have opened are there too), and tap [b]Host a race[/b]. You get a 5-letter code to give your friend."],
+	["join", "Got a code from a friend? Type it here and tap [b]Join[/b], whatever lair it is. The race starts for both of you at once."],
+	["", "[b]In the race[/b] you both play the same lair with the same standard Dark Arts for it (nothing to choose), and the waves come faster than in the campaign: a race takes about 3 to 6 minutes. Every %d heroes you slay sends one to your rival, and [b]Send heroes[/b] (where Pause was) buys more with gold. The moment one of you clears the last wave or falls, the race is over: clear it first to win. Leaving counts as a loss." % Defs.RACE_KILL_SEND],
 ]
 
 

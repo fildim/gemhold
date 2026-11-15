@@ -3,6 +3,7 @@
  "title": "Mossfold Pass",
  "cols": 16,
  "rows": 10,
+ "race_hp": 0.9,
  "legend": {
   "m": "moss",
   "f": "frost",

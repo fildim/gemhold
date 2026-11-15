@@ -32,6 +32,8 @@ var _race: VBoxContainer
 var _race_status: Label
 var _race_rows := {}             # "host" and "join" rows of the Race page, for the race walkthrough
 var _race_pick: OptionButton
+var _race_host_btn: Button
+const RACE_RANDOM := 100000   # the Race page's "Random lair" entry
 var _race_entry: LineEdit
 var _race_code := ""             # the race this player hosts and waits on, or ""
 var _race_poll := 0.0
@@ -536,7 +538,7 @@ func _refresh_race() -> void:
 			_cancel_race()
 			_refresh_race())
 		return
-	_label(_race, "You both play the same lair at the same time (by day, or at night once you have opened it), with the same heroes and the same Dark Arts skills (a standard set for that lair, not your own). Slaying heroes and spending gold sends heroes onto your rival's road. The race ends for both the moment one of you clears the last wave or falls: clear it first to win. Every race counts on the Races leaderboard.", 24, Hud.DIM)
+	_label(_race, "A race takes about 3 to 6 minutes. You both play the same lair at the same time, with the same heroes and the same standard Dark Arts for that lair (nothing to choose). Host one on any lair you have cleared (by day, or at night once you have opened it); to join, you only need the code. Slaying heroes and spending gold sends heroes onto your rival's road. The race ends for both the moment one of you clears the last wave or falls: clear it first to win. Every race counts on the Races leaderboard.", 24, Hud.DIM)
 	var host := HBoxContainer.new()
 	_race_rows["host"] = host
 	host.add_theme_constant_override("separation", 10)
@@ -547,17 +549,27 @@ func _refresh_race() -> void:
 	_race_pick.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_race_pick.add_theme_font_size_override("font_size", 26)
 	_race_pick.get_popup().add_theme_font_size_override("font_size", 28)
-	# Item id = lair index × 2, +1 for its night mission (offered once the host has opened it).
+	# Lairs the host has cleared by day (and the edition has). Item id = lair index × 2, +1 for its
+	# night mission (offered once the host has opened it); RACE_RANDOM picks one of those lairs by day.
+	_race_pick.add_item("Random lair", RACE_RANDOM)
 	var newest := 0
 	for i in _levels.size():
-		if _save.is_unlocked(i) and not Edition.locked(i):
+		if _save.stars(_levels[i]["id"]) > 0 and not Edition.locked(i):
 			_race_pick.add_item("Lair %d: %s" % [i + 1, _levels[i]["title"]], i * 2)
 			newest = _race_pick.item_count - 1
 			if _save.night_unlocked(_levels[i]["id"]):
 				_race_pick.add_item("Lair %d: %s · Night" % [i + 1, _levels[i]["title"]], i * 2 + 1)
-	_race_pick.select(newest)
-	host.add_child(_race_pick)
-	_action(host, "Host a race", _host_race)
+	if newest == 0:   # nothing cleared yet: nothing to host, but joining works
+		_race_pick.free()
+		_race_pick = null
+		var none := _label(host, "Clear a lair in the campaign to host a race on it.", 24, Hud.DIM)
+		none.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		none.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	else:
+		_race_pick.select(newest)
+		host.add_child(_race_pick)
+	_race_host_btn = _action(host, "Host a race", _host_race)
+	_race_host_btn.disabled = _race_pick == null
 	var join := HBoxContainer.new()
 	_race_rows["join"] = join
 	join.add_theme_constant_override("separation", 10)
@@ -577,11 +589,20 @@ func _race_say(msg: String, bad := false) -> void:
 
 func _race_lock(on: bool) -> void:
 	for b in _race.find_children("*", "Button", true, false):
-		(b as Button).disabled = on
+		(b as Button).disabled = on or (b == _race_host_btn and _race_pick == null)
 
 
 func _host_race() -> void:
+	if _race_pick == null:
+		return
 	var pick := _race_pick.get_selected_id()
+	if pick == RACE_RANDOM:   # any of the offered lairs, by day
+		var days: Array[int] = []
+		for k in _race_pick.item_count:
+			var id := _race_pick.get_item_id(k)
+			if id != RACE_RANDOM and id % 2 == 0:
+				days.append(id)
+		pick = days.pick_random()
 	_race_say("Please wait…")
 	_race_lock(true)
 	var r: Dictionary = await _online.race_host(_levels[pick / 2]["id"], pick % 2 == 1)

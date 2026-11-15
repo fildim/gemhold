@@ -35,6 +35,8 @@ func _check_file(path: String) -> void:
 	_check(lv.gems >= 5 and lv.gems <= 7, "%s: start.gems is %d, must be 5 to 7" % [lv.id, lv.gems])
 	if d.has("night_hp"):
 		_check(float(d["night_hp"]) > 0.3 and float(d["night_hp"]) <= 1.0, "%s: night_hp is %s, must be over 0.3 and at most 1.0" % [lv.id, d["night_hp"]])
+	if d.has("race_hp"):
+		_check(float(d["race_hp"]) > 0.2 and float(d["race_hp"]) <= 1.5, "%s: race_hp is %s, must be over 0.2 and at most 1.5" % [lv.id, d["race_hp"]])
 	var sites := {}
 	for s in lv.sites:
 		sites[s["cell"]] = true

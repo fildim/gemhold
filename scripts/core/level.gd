@@ -28,6 +28,7 @@ var wave_walk: Array = []    # parallel to waves: Array[int] of land roads its w
 var night := false       # only lit tiles can be built on (set for night missions)
 var hp_mul := 1.0        # hero health multiplier, so later levels can be tougher
 var night_hp := Defs.NIGHT_HP   # hero health factor on the night mission ("night_hp" in the file; most lairs keep the default)
+var race_hp: float = Defs.RACE["hp"]   # hero health factor in an online race ("race_hp" in the file; most lairs keep the default)
 var sites: Array = []    # [{"kind", "cell": Vector2i, "path", "spawn": Array[String], "every"}]
 var site_cuts := 1       # cuts (each paid in mana) to free a mine or well or raze a barracks; grows on later lairs
 var path_kind: Array[String] = []   # parallel to paths: "land" | "river" | "air"
@@ -106,6 +107,7 @@ func _parse(d: Dictionary) -> void:
 	night = bool(d.get("night", false))
 	hp_mul = float(d.get("hp_mul", 1.0))
 	night_hp = float(d.get("night_hp", Defs.NIGHT_HP))
+	race_hp = float(d.get("race_hp", Defs.RACE["hp"]))
 	site_cuts = maxi(1, int(d.get("site_cuts", 1)))
 	for s in d.get("sites", []):
 		var site := {"kind": String(s["kind"]), "cell": Vector2i(int(s["cell"][0]), int(s["cell"][1]))}
