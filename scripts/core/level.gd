@@ -35,6 +35,7 @@ var zones: Array = []    # parallel to paths: Array of {"from", "to", "kind": "f
 var hallowed := {}       # Vector2i -> true for hallowed ground (an `H` in the trees grid)
 var rules: Array = []    # lair rules, e.g. [{"kind": "tide", "period": 40, "up": 14}]
 var wave_rivers: Array = []  # parallel to waves: Array[int] of river roads its boats use
+var wave_air: Array = []     # parallel to waves: Array[int] of air roads its flyers use
 var landings: Array = []     # per road: where a river road reaches land (Level.landing), or -1
 var crossings := {}          # Vector2i -> index in crossing_cells: land-road tiles over water
 var crossing_cells: Array = []   # each crossing's tiles (a bridge over deep water or a ford over shallows)
@@ -115,12 +116,16 @@ func _parse(d: Dictionary) -> void:
 			site["spawn"] = _parse_wave(String(s.get("spawn", "1p")))
 			site["every"] = float(s.get("every", 25.0))
 		sites.append(site)
-	for p in d["paths"]:
+	var info0: Array = d.get("path_info", [])
+	for pi in d["paths"].size():
+		var p: Array = d["paths"][pi]
 		var wp: Array[Vector2i] = []
 		for pt in p:
 			wp.append(Vector2i(int(pt[0]), int(pt[1])))
 		waypoints.append(wp)
-		_rasterize_road(wp)
+		var air: bool = pi < info0.size() and info0[pi] is Dictionary and String(info0[pi].get("kind", "")) == "air"
+		if not air:   # flyers pass over the ground: an air road blocks no building
+			_rasterize_road(wp)
 		var pts := PackedVector2Array()
 		for v in wp:
 			pts.append(Vector2(v) + Vector2(0.5, 0.5))
@@ -157,6 +162,16 @@ func _parse(d: Dictionary) -> void:
 				boat.append(r)
 		wave_rivers.append(boat if not boat.is_empty() else rivers)
 	_add_air_roads()
+	var airs: Array[int] = []
+	for i in path_kind.size():
+		if path_kind[i] == "air":
+			airs.append(i)
+	for roads: Array in wave_roads:
+		var fly: Array[int] = []
+		for r: int in roads:
+			if airs.has(r):
+				fly.append(r)
+		wave_air.append(fly if not fly.is_empty() else airs)
 	for i in paths.size():
 		zones.append(_find_zones(i))
 	for i in paths.size():

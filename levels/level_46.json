@@ -1,0 +1,74 @@
+{
+ "id": "level_46",
+ "title": "Pilgrim's Flood",
+ "cols": 16,
+ "rows": 10,
+ "hp_mul": 2.60,
+ "legend": {"A":"high ash","F":"high frost","L":"lair","M":"high moss","a":"ash","f":"frost","m":"moss"},
+ "terrain": [
+  "mmmmmmmmmmmaaaaa",
+  "wwwwwwwwwwwaaaaa",
+  "wwwwwwwwwwwaaaaa",
+  "wwwwwwwwwwwaaaaa",
+  "ffffffmmmmmFmmmm",
+  "fffffMmmmmmmmmmm",
+  "ffffffmmmmmmmLLm",
+  "mmmmmmmmmmmmmLLm",
+  "mmmmmmmmmmmmmmmm",
+  "mmmmmmmAmmmmmmmm"
+ ],
+ "trees": [
+  ".T.TT...T.T.T...",
+  "...........T....",
+  "................",
+  "................",
+  ".T...T.T....T.T.",
+  "T.TTT.TTT..T....",
+  "T...TT..T.......",
+  "..T.....T.......",
+  "................",
+  ".T.T.TT......TT."
+ ],
+ "paths": [
+  [[-1,8],[12,8],[12,7]],
+  [[-1,2],[10,2],[10,6],[12,6]],
+  [[16,0],[13,5]]
+ ],
+ "lair": {"cell":[13,6],"center":[14,7],"size":[2,2]},
+ "sites": [
+  {"cell":[8,4],"kind":"sluice","path":1},
+  {"cell":[0,9],"kind":"mine"},
+  {"cell":[15,9],"kind":"well"}
+ ],
+ "start": {"gems":5,"gold":230,"mana":60},
+ "first_wave_delay": 30,
+ "wave_gap": 24,
+ "site_cuts": 3,
+ "waves": [
+  "8p",
+  "6f,2y",
+  {"heroes":"4p,1l"},
+  "4f,2c,2y",
+  {"cargo":{"1":"3f"},"heroes":"2k,1l"},
+  "6t,4y",
+  "4f,2j,2y",
+  {"cargo":{"1":"2j"},"heroes":"3k,2l"},
+  "8p,6y,2h",
+  "4k,2w,4y",
+  {"cargo":{"1":"2k,1c"},"heroes":"6t,2y,2l"},
+  "4k,2b,6y",
+  {"cargo":{"1":"2j,2f"},"heroes":"8f,2l"},
+  "5k,4y,2j",
+  "6k,8y,2b",
+  {"cargo":{"1":"3k"},"heroes":"6k,4y,3l"},
+  "1x,6k,6y",
+  {"cargo":{"1":"2j,1k"},"heroes":"6k,8y,2j,2l"},
+  "6k,10y,4j",
+  {"cargo":{"1":"3k"},"heroes":"2x,6k,8y,3l"}
+ ],
+ "path_info": [
+  {"kind":"land"},
+  {"kind":"river"},
+  {"kind":"air"}
+ ]
+}

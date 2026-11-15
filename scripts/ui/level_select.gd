@@ -19,7 +19,7 @@ const Hud := preload("res://scripts/ui/hud.gd")
 const PER_PAGE := 10
 const SPOTS: Array[Vector2] = [Vector2(0.095, 0.27), Vector2(0.185, 0.70), Vector2(0.275, 0.27), Vector2(0.365, 0.70), Vector2(0.455, 0.27),
 	Vector2(0.545, 0.70), Vector2(0.635, 0.27), Vector2(0.725, 0.70), Vector2(0.815, 0.27), Vector2(0.905, 0.70)]
-const CHAPTERS: Array[String] = ["Chapter I: The Lowland Roads", "Chapter II: The Crusade", "Chapter III: The Drowned Marches", "Chapter IV: The Siegeworks"]
+const CHAPTERS: Array[String] = ["Chapter I: The Lowland Roads", "Chapter II: The Crusade", "Chapter III: The Drowned Marches", "Chapter IV: The Siegeworks", "Chapter V: The Radiant Host"]
 
 var _hud: Control
 var _levels: Array = []       # [{"id", "title", "waves"}]
@@ -709,6 +709,12 @@ func _draw_parchment() -> void:
 				0: _castle(p, r, col)
 				1, 2: _palisade(p, r, col)
 				_: _engine(p, r, col)
+		elif _page == 4:   # the Radiant Host: chapel spires, suns and wings
+			match kind:
+				0: _spire(p, r, col)
+				1: _sun(p, r, col)
+				2: _wing(p, r, col)
+				_: _field(p, r, col)
 		elif _page % 2 == 0:
 			match kind:
 				0, 1: _hill(p, r, col)
@@ -729,6 +735,26 @@ func _pool(p: Vector2, r: float, col: Color) -> void:
 	for k in 3:
 		draw_arc(p + Vector2(0, k * r * 0.25), r * (1.0 - k * 0.25), PI * 0.1, PI * 0.9, 12, col, 1.5, true)
 	draw_line(p + Vector2(-r * 0.8, r * 0.1), p + Vector2(-r * 0.4, r * 0.1), col, 1.5)
+
+
+func _spire(p: Vector2, r: float, col: Color) -> void:
+	draw_rect(Rect2(p + Vector2(-r * 0.25, -r * 0.2), Vector2(r * 0.5, r * 0.7)), col, false, 1.5)
+	draw_line(p + Vector2(-r * 0.3, -r * 0.2), p + Vector2(0, -r * 0.9), col, 1.5)
+	draw_line(p + Vector2(r * 0.3, -r * 0.2), p + Vector2(0, -r * 0.9), col, 1.5)
+	draw_line(p + Vector2(0, -r * 0.9), p + Vector2(0, -r * 1.2), col, 1.5)
+	draw_line(p + Vector2(-r * 0.12, -r * 1.08), p + Vector2(r * 0.12, -r * 1.08), col, 1.5)
+
+
+func _sun(p: Vector2, r: float, col: Color) -> void:
+	draw_arc(p, r * 0.35, 0, TAU, 14, col, 1.5, true)
+	for k in 8:
+		var a := k * TAU / 8.0
+		draw_line(p + Vector2(cos(a), sin(a)) * r * 0.5, p + Vector2(cos(a), sin(a)) * r * 0.8, col, 1.5)
+
+
+func _wing(p: Vector2, r: float, col: Color) -> void:
+	for k in 3:
+		draw_arc(p + Vector2(k * r * 0.15, k * r * 0.12), r * (0.9 - k * 0.2), PI * 1.05, PI * 1.6, 10, col, 1.5, true)
 
 
 func _palisade(p: Vector2, r: float, col: Color) -> void:

@@ -30,6 +30,9 @@ const ACH := {
 	"diver_meteor": "meteor", "altars10": "site:altar",
 	"chapter4": "banner", "sapper_keg": "hero:a", "no_stun": "hero:a", "rubble10": "hero:u", "trebuchet_fast": "hero:u",
 	"silence_proof": "hero:i", "pavior_early": "hero:v", "beacons10": "site:beacon", "workshops10": "site:workshop", "night_dusk": "moon",
+	"chapter5": "crown", "final_brilliant": "hero:S", "final_night": "moon", "seven_kept": "gem", "tier3": "book", "renown50": "trophy", "renown150": "trophy",
+	"skylancer10": "hero:y", "shield_waste": "hero:j", "chant_broken5": "hero:n", "chapel_first": "site:chapel", "hallowed_none": "site:chapel",
+	"seraph_no_raise": "hero:S", "chapels25": "site:chapel", "ossuary_burst": "tower:frost", "sunlance3": "tower:ash", "mastery_one_each": "towers",
 }
 ## Prefixes, checked in order: the first one an id starts with gives its glyph.
 const ACH_PREFIX := [
@@ -43,12 +46,13 @@ const ACH_PREFIX := [
 	["battles", "swords"], ["wins", "swords"], ["losses", "gem_broken"], ["race", "flag"],
 ]
 ## Skill id suffix -> the badge on its tower.
-const SKILL_BADGE := {"dmg": "blade", "rate": "rate", "range": "range", "vet": "vet"}
+const SKILL_BADGE := {"dmg": "blade", "rate": "rate", "range": "range", "vet": "vet", "legend": "crown"}
 const ABILITY_BADGE := {"moss": "volley", "frost": "dread", "ash": "flame"}
 const HOARD := {"den_charge": "orb", "hoard_gold": "coins", "hoard_mana": "potion", "hoard_regen": "spring", "meteor_dmg": "meteor",
 	"gem_magnet": "gem", "sturdy": "hill",
 	"land_veins": "site:mine", "land_springs": "site:well", "land_axes": "tree", "land_heights": "hill", "land_spoils": "site:camp",
-	"land_lantern": "spark", "land_flood": "site:sluice", "land_rites": "site:altar"}
+	"land_lantern": "spark", "land_flood": "site:sluice", "land_rites": "site:altar",
+	"den_fury": "orb", "dragon_patience": "potion", "renown": "trophy"}
 
 
 static func make(k: String, px: float, on := true) -> GameIcon:
@@ -107,7 +111,7 @@ static func paint(ci: CanvasItem, k: String, xf := Transform2D.IDENTITY) -> void
 		k = for_achievement(k.trim_prefix("ach:"))
 	if k.begins_with("hero:"):
 		var code := k.trim_prefix("hero:")
-		var u: float = {"x": 28.0, "u": 22.0, "I": 14.0}.get(code, 33.0)
+		var u: float = {"x": 28.0, "u": 22.0, "I": 14.0, "S": 24.0, "y": 26.0}.get(code, 33.0)
 		Paint.ellipse(ci, Vector2(0, 14 + u * 0.95), u * 0.8, u * 0.24, Color(0, 0, 0, 0.35))
 		Art.hero(ci, code, 0.0, 14.0, 14.0, u, 1.0, 0.35, tm)
 	elif k.begins_with("tower:"):

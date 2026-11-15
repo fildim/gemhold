@@ -53,6 +53,11 @@ class Enemy:
 	var retreat := false  # an engine rolling away: it never comes back, nor counts as escaped
 	var unloaded := false # Iron Belfry: has unloaded its Footmen at the den
 	var covered := false  # walking in an Iron Belfry's shadow: towers and the den can't see him
+	var untouch := 0.0    # seconds untouchable (a Justicar's shield, the Seraph landing)
+	var shielded := false # Justicar: has spent his shield
+	var chant := 0.0      # Spiriter: seconds of chanting left at the cave mouth (0 = not chanting)
+	var phase := 0        # the Seraph: times she has landed and raised the fallen
+	var grounded := false # a flyer that has come down onto a road (the Seraph after landing)
 	var hit := 0.0        # seconds of hit flash left (view only)
 	var knock := Vector2.ZERO   # small knock-back offset in tiles from the last hit (view only)
 
@@ -75,6 +80,7 @@ class Tower:
 	var charges := 0      # Ossuary: bolts stored
 	var volley_t := 0.0   # Ossuary: seconds to the next stored bolt
 	var volley_hits: Array = []   # Ossuary: heroes already hit in this volley
+	var volley_kills := 0  # Ossuary: heroes its current volley has slain
 	var beam2: Enemy      # Twin Flame: the second beam's hero
 	var heat2 := 0.0
 	var born := -10.0     # battle time it was built or last upgraded (view only: squash and settle)
@@ -82,6 +88,7 @@ class Tower:
 	var rubble := 0.0     # seconds buried under Rubble (Trebuchet): no firing
 	var silence := 0.0    # silenced by an Inquisitor this frame: how much slower it fires (0 = not)
 	var sapped: Enemy     # a Sapper is on his way to it
+	var holy := false     # on hallowed ground while a Chapel stands: less range, no ability
 	# Permanent bonuses from the skill tree, filled in when the tower is built.
 	var dmg_mul := 1.0
 	var rate_mul := 1.0
@@ -101,11 +108,11 @@ class Tower:
 					r *= Defs.LODGE["rate"]
 				return r
 			"range":
-				return v + range_add
+				return (v + range_add) * (Defs.HALLOW_RANGE if holy else 1.0)
 		return v
 
 	func has_ability() -> bool:
-		return rank >= Defs.ABILITY_RANK and lvl >= Defs.ABILITY_LEVEL and silence <= 0.0
+		return rank >= Defs.ABILITY_RANK and lvl >= Defs.ABILITY_LEVEL and silence <= 0.0 and not holy
 
 	## Stunned or buried: it can't fire.
 	func blocked() -> bool:
@@ -281,7 +288,17 @@ var tide_up := false      # the tide is in: fords are deep
 # Chapter IV: siege.
 var dark := false         # darkness is on: the night mission, or after Dusk (see dusk_wave)
 var dusk_wave := 0        # the Dusk rule: night falls as this wave starts (0 = never)
-var dusk_t := -100.0      # battle time night fell at Dusk (the view fades the light in)
+var dark_t := -100.0      # battle time darkness last came or went (Dusk, Eclipse): the view fades it
+var eclipse := Vector2.ZERO   # the Eclipse rule: (period, seconds dark), or zero for none
+# Chapter V: the Radiant Host.
+var air_lane := 0         # flyers are dealt over air roads on their own count
+var fallen: Array[String] = []   # heroes slain so far, oldest first: the Seraph raises the last ones
+var chants_broken := 0    # Spiriters whose chant was broken by Dread or death
+var chants_done := 0      # Spiriters who vanished with a gem
+var shield_waste := 0     # Justicar shields spent where no tower could reach him
+var built_hallowed := 0   # towers built on hallowed ground
+var chapels_razed_wave := -1   # the wave during which the last Chapel fell (-1: none fell, or none to raze)
+var seraph_phase := -1    # how many times the Seraph had risen when she fell (-1: not slain)
 var stuns := 0            # towers stunned by Sappers and the Belfry
 var rubbles := 0          # towers buried under Rubble
 var rubble_cleared := 0   # Rubble cleared from the tile panel
@@ -297,7 +314,7 @@ func _init(lv: Level, skill_ranks := {}) -> void:
 	skills = skill_ranks
 	gold = lv.start_gold + Defs.HOARD_GOLD * skill("hoard_gold")
 	mana_max = Defs.MANA_MAX + Defs.HOARD_MANA * skill("hoard_mana")
-	mana = lv.start_mana
+	mana = lv.start_mana + Defs.PATIENCE_MANA * skill("dragon_patience")
 	home = lv.gems
 	timer = lv.first_delay
 	trees = lv.trees.duplicate()
@@ -328,6 +345,8 @@ func _init(lv: Level, skill_ranks := {}) -> void:
 			tide = Vector2(float(rule.get("period", 40)), float(rule.get("up", 14)))
 		if rule.get("kind", "") == "dusk" and not lv.night:   # the night mission is dark from the start
 			dusk_wave = int(rule.get("wave", 1))
+		if rule.get("kind", "") == "eclipse" and not lv.night:
+			eclipse = Vector2(float(rule.get("period", 70)), float(rule.get("dark", 25)))
 	den_max = int(Defs.DEN["charges"]) + skill("den_charge")
 	den_charges = den_max
 	_relight()
@@ -345,6 +364,13 @@ func update(dt: float) -> void:
 	time += dt
 	if tide.x > 0.0:
 		tide_up = fmod(time, tide.x) >= tide.x - tide.y
+	if eclipse.x > 0.0:
+		var d := fmod(time, eclipse.x) >= eclipse.x - eclipse.y
+		if d != dark:
+			dark = d
+			dark_t = time
+			_relight()
+			toast.emit("The sun goes dark" if dark else "The light returns")
 	mana = minf(mana_max, mana + dt * mana_regen())
 	if wave < level.waves.size():
 		timer -= dt
@@ -406,7 +432,7 @@ func start_wave() -> void:
 	sound.emit("horn")
 	if wave == dusk_wave and not dark:
 		dark = true
-		dusk_t = time
+		dark_t = time
 		_relight()
 		toast.emit("Night falls")
 
@@ -452,6 +478,15 @@ func _spawn(code: String, path := -1, dist := 0.0, w := 0) -> void:
 		boat_lane += 1
 		var cargo: Dictionary = level.wave_cargo[w - 1]
 		e.crew = cargo[str(e.path)].duplicate() if cargo.has(str(e.path)) else Level._parse_wave(String(d["crew"]))
+	elif path < 0 and d.has("fly") and level.path_kind.has("air"):
+		# Flyers take the air roads their wave may use, dealt round-robin on their own count.
+		var airs: Array = level.wave_air[w - 1] if w > 0 and w <= level.wave_air.size() else []
+		if airs.is_empty():
+			for i in level.path_kind.size():
+				if level.path_kind[i] == "air":
+					airs.append(i)
+		e.path = airs[air_lane % airs.size()]
+		air_lane += 1
 	elif path < 0:
 		# Dealt round-robin over the land roads its wave may use (every land road unless it names some).
 		var roads: Array[int] = level.wave_walk[w - 1] if w > 0 and w <= level.wave_walk.size() else level.land_roads
@@ -475,6 +510,11 @@ func _spawn(code: String, path := -1, dist := 0.0, w := 0) -> void:
 func _update_sites(dt: float) -> void:
 	var muster := float(Defs.SITES["beacon"]["muster"]) if beacon_lit() else 1.0
 	for s: Site in sites.values():
+		if s.kind == "chapel" and not s.owned:   # heals the heroes around it
+			var cd: Dictionary = Defs.SITES["chapel"]
+			for e: Enemy in enemies:
+				if e.hp > 0.0 and e.hp < e.max_hp and e.pos.distance_to(s.pos) <= float(cd["r"]):
+					e.hp = minf(e.max_hp, e.hp + float(cd["heal"]) * level.hp_mul * dt)
 		if not s.owned and Defs.MUSTER_SITES.has(s.kind):
 			# Barracks and workshops muster only while the hero army is still marching in.
 			if wave >= 1 and wave < level.waves.size():
@@ -527,7 +567,7 @@ func _update_den(dt: float) -> void:
 	s.pos = level.lair_center + Vector2(0, -0.5)
 	s.target = best
 	s.tpos = best.pos
-	s.dmg = Defs.DEN["dmg"]
+	s.dmg = Defs.DEN["dmg"] * (1.0 + Defs.FURY_DMG * skill("den_fury"))
 	s.pierce = true
 	s.spd = 9.0
 	shots.append(s)
@@ -538,6 +578,8 @@ func _update_enemies(dt: float) -> void:
 	for r: Dictionary in _rally:
 		for code in r["codes"]:
 			_spawn(code, r["path"], r["dist"], r["wave"])
+			if r.get("half", false):   # raised by the Seraph: at half health
+				enemies[-1].hp *= Defs.SERAPH["hp"]
 		if r["wave"] > 0 and not r.get("counted", false):
 			wave_left[r["wave"]] += r["codes"].size()
 	_rally.clear()
@@ -567,6 +609,8 @@ func _update_enemies(dt: float) -> void:
 			e.wade -= dt
 		if e.mark > 0.0:
 			e.mark -= dt
+		if e.untouch > 0.0:
+			e.untouch -= dt
 		if e.d.has("surge"):
 			e.surge_t -= dt
 			if e.surge_t <= 0.0:
@@ -581,6 +625,17 @@ func _update_enemies(dt: float) -> void:
 		var sp: float = e.d["spd"] * ((1.0 - e.slow_amt) if e.slow > 0.0 else 1.0)
 		if e.d.has("siege") and _siege(e, dt):
 			sp = 0.0
+		if e.chant > 0.0:
+			if e.fear > 0.0:   # Dread breaks the chant: now he runs like anyone else
+				e.chant = 0.0
+				chants_broken += 1
+				_text(e.pos + Vector2(0, -0.8), "Chant broken!", Color("c9c0ff"))
+			else:
+				e.chant -= dt
+				if e.chant <= 0.0:
+					_vanish(e)
+					continue
+				sp = 0.0
 		if e.d.has("engineer") and _repairing(e, dt):
 			sp = 0.0
 		if e.d.has("rage") and e.hp < e.max_hp * 0.5:
@@ -620,6 +675,9 @@ func _update_enemies(dt: float) -> void:
 				touched = true
 				_text(level.lair_center + Vector2(0, -0.6), "-%d gem" % take, Color("ff7a90"))
 				sound.emit("grab")
+				if e.d.has("chant"):   # a Spiriter chants at the cave mouth instead of running
+					e.chant = Defs.CHANT_TIME
+					_text(e.pos + Vector2(0, -0.8), "He chants!", Color("ff7a90"))
 		if e.dir == -1 and e.dist <= 0.0:
 			e.gone = true
 			if e.carry > 0:
@@ -1101,9 +1159,14 @@ func _pick_target(tw: Tower, skip: Enemy = null, skips: Array = [], healthiest :
 
 func _update_towers(dt: float) -> void:
 	var censers: Array = enemies.filter(func(o: Enemy) -> bool: return o.hp > 0.0 and o.d.has("censer"))
+	var holy := hallow_on()
 	for tw: Tower in towers.values():
 		if tw.flash > 0.0:
 			tw.flash -= dt
+		var was := tw.holy
+		tw.holy = holy and level.hallowed.has(tw.cell)
+		if was != tw.holy:
+			_cover.clear()   # its reach changed
 		tw.silence = 0.0   # an Inquisitor's censer smoke reaches it
 		for o: Enemy in censers:
 			if o.pos.distance_to(tw.pos) <= float(o.d["censer"]):
@@ -1182,6 +1245,8 @@ func _update_ossuary(tw: Tower, dt: float) -> void:
 		return
 	tw.charges -= 1
 	tw.volley_t = Defs.OSSUARY["gap"]
+	if tw.volley_hits.is_empty():
+		tw.volley_kills = 0   # a new volley begins
 	tw.volley_hits.append(best)
 	if tw.charges == 0:
 		tw.volley_hits.clear()
@@ -1242,6 +1307,7 @@ func _beam(tw: Tower, dt: float, slot: int, share: float) -> void:
 func _lance(tw: Tower, target: Enemy, dmg: float) -> void:
 	var dir := (target.pos - tw.pos).normalized()
 	var rg := tw.stat("range")
+	var burning := 1
 	for o: Enemy in enemies:
 		if o == target or o.hp <= 0.0 or o.hidden:
 			continue
@@ -1249,6 +1315,8 @@ func _lance(tw: Tower, target: Enemy, dmg: float) -> void:
 		var along := rel.dot(dir)
 		if along > 0.0 and along <= rg and absf(rel.cross(dir)) <= float(o.d["r"]) + 0.15:
 			hurt(o, dmg, true, tw)
+			burning += 1
+	sunlance_best = maxi(sunlance_best, burning)
 
 
 func _make_shot(tw: Tower, target: Enemy) -> Shot:
@@ -1305,10 +1373,11 @@ func _strike(s: Shot, e: Enemy, dmg: float) -> void:
 	if s.mark > 0.0:
 		e.mark = s.mark
 	if s.slow > 0.0 and not e.d.has("steady"):
-		e.slow_amt = maxf(s.slow, e.slow_amt) if e.slow > 0.0 else s.slow
+		var amt := s.slow * (Defs.FLY_CHILL if flying(e) else 1.0)   # a flyer is only half held
+		e.slow_amt = maxf(amt, e.slow_amt) if e.slow > 0.0 else amt
 		var chill := Defs.SLOW_TIME + 0.4 * skill("frost_freeze")
 		e.slow = chill * Defs.SOAK_CHILL if e.soak > 0.0 else chill
-	if s.fear > 0.0 and e.hp > 0.0 and rng.randf() < s.fear and not e.d.has("steady"):
+	if s.fear > 0.0 and e.hp > 0.0 and rng.randf() < s.fear and not e.d.has("steady") and not e.d.has("fearless"):
 		e.fear = Defs.ABILITIES["frost"]["dur"] + 0.3 * skill("frost_dread")
 		dreads += 1
 
@@ -1320,7 +1389,7 @@ func _update_pools(dt: float) -> void:
 			pl.t = pl.dur   # the rain puts it out
 			continue
 		for e: Enemy in enemies:
-			if e.pos.distance_to(pl.pos) <= pl.r:
+			if e.pos.distance_to(pl.pos) <= pl.r and not flying(e):   # flyers pass over Lava
 				hurt(e, pl.dps * dt, true, pl.src)
 	pools = pools.filter(func(pl: Pool) -> bool: return pl.t < pl.dur)
 
@@ -1362,7 +1431,7 @@ func _update_fx(dt: float) -> void:
 
 
 func hurt(e: Enemy, dmg: float, pierce := false, src: Tower = null, ap := 0) -> void:
-	if e.hp <= 0.0:
+	if e.hp <= 0.0 or e.untouch > 0.0:
 		return
 	var dealt := dmg if pierce else maxf(1.0, dmg - (float(e.d["armor"]) if ap == 0 else maxf(0.0, float(e.d["armor"]) - ap)))
 	if not pierce:
@@ -1377,6 +1446,17 @@ func hurt(e: Enemy, dmg: float, pierce := false, src: Tower = null, ap := 0) -> 
 	e.hp -= dealt
 	if src != null:
 		_tower_xp(src, dealt)
+	if e.hp > 0.0 and e.d.has("shield") and not e.shielded and e.hp < e.max_hp * Defs.JUSTICAR["below"]:
+		# The Justicar's holy shield: untouchable for a moment, and healed.
+		e.shielded = true
+		e.untouch = Defs.JUSTICAR["dur"]
+		e.hp = e.max_hp * Defs.JUSTICAR["heal"]
+		if not _covered_by_towers(e.pos):
+			shield_waste += 1
+		_fx("surge", e.pos, 0.7, 0.6)
+		_text(e.pos + Vector2(0, -0.9), "Holy shield!", Color("fff2c0"))
+	if e.hp > 0.0 and e.d.has("seraph") and e.phase < Defs.SERAPH["at"].size() and e.hp < e.max_hp * float(Defs.SERAPH["at"][e.phase]):
+		_seraph_land(e)
 	if e.hp <= 0.0:
 		gold += int(e.d["gold"])
 		kills += 1
@@ -1390,6 +1470,9 @@ func hurt(e: Enemy, dmg: float, pierce := false, src: Tower = null, ap := 0) -> 
 			if time - twin_t <= 1.0:
 				twin_kills += 1
 			twin_t = time
+		if src != null and src.mastery == "ossuary":
+			src.volley_kills += 1
+			best_ossuary = maxi(best_ossuary, src.volley_kills)
 		if src != null and src.mastery == "lodge" and e.code == "x":
 			lodge_champion += 1
 		if src != null and src.type == "moss" and src.lvl >= 4:   # Plunder
@@ -1423,8 +1506,21 @@ func hurt(e: Enemy, dmg: float, pierce := false, src: Tower = null, ap := 0) -> 
 			gems_saved += e.carry
 			g.path = e.path
 			g.dist = e.dist
+			if level.path_kind[e.path] == "air":   # fell from the air: to the nearest road, to roll home
+				var near := _nearest_land(e.pos)
+				g.path = near[0]
+				g.dist = near[1]
+				g.pos = level.path_pos(g.path, g.dist)
 			drops.append(g)
 			e.carry = 0
+		if not (e.d.has("boss") or e.d.has("boat") or e.d.has("siege") or e.d.has("fly")):
+			fallen.append(e.code)   # the Seraph may raise him again
+			if fallen.size() > 40:
+				fallen.pop_front()
+		if e.chant > 0.0:
+			chants_broken += 1
+		if e.d.has("seraph"):
+			seraph_phase = e.phase
 		_roll_loot(e)
 		if e.d.has("sapper") and e.fuse >= 0.0:
 			_keg(e)
@@ -1621,7 +1717,7 @@ func _relight() -> void:
 	_attune()
 	lit.clear()
 	lights = []
-	if not dark:
+	if not can_dark():
 		return
 	lights = [[level.lair_center, Defs.LIGHT["lair"] + 0.3 * skill("land_lantern")]]
 	for tw: Tower in towers.values():
@@ -1734,9 +1830,11 @@ Plunder: +%d gold a kill" % mini(tw.plunder + 1, Defs.PLUNDER_MAX)
 		for type: String in Defs.TOWERS:
 			acts.append(_build_action(type, Defs.TOWERS[type]["name"]))
 			bonus.append("%s +%.1f" % [Defs.TOWERS[type]["name"], Defs.TOWERS[type]["high_range"]])
-		return {"title": "Raised ground", "text": "Any tower can be built up here, and it reaches further: %s." % ", ".join(bonus),
+		var hl := " Hallowed: towers here have less range and no ability while a Chapel stands." if hallow_on() and level.hallowed.has(c) else ""
+		return {"title": "Raised ground", "text": "Any tower can be built up here, and it reaches further: %s." % ", ".join(bonus) + hl,
 			"actions": acts}
-	return {"title": td["name"], "text": "%s Builds only on %s." % [td["blurb"], t],
+	var holy_note := " Hallowed: towers here have less range and no ability while a Chapel stands." if hallow_on() and level.hallowed.has(c) else ""
+	return {"title": td["name"], "text": "%s Builds only on %s.%s" % [td["blurb"], t, holy_note],
 		"actions": [_build_action(t, "Build")]}
 
 
@@ -1751,6 +1849,8 @@ func tower_status(tw: Tower) -> String:
 		out.append("BURIED under rubble by a Trebuchet: it can't fire for %d s, or clear it now." % ceili(tw.rubble))
 	if tw.stun > 0.0:
 		out.append("STUNNED by a Sapper's keg: it can't fire for %d s." % ceili(tw.stun))
+	if tw.holy:
+		out.append("HALLOWED ground: %d%% less range and no ability until every Chapel is razed." % roundi((1.0 - Defs.HALLOW_RANGE) * 100.0))
 	if tw.silence > 0.0:
 		out.append("SILENCED by an Inquisitor's censer: no ability, no battle-hardened bonus, %d%% slower." % roundi(tw.silence * 100.0))
 	return "\n".join(out)
@@ -1816,7 +1916,7 @@ Refilling: ready in %d s." % ceili(s.t), "actions": []}
 	cut["label"] = "Raze"
 	var bounty: int = d["bounty"] + 15 * skill("land_spoils")
 	cut["price"] = "%d mana  +%dg" % [cut_cost(s), bounty]
-	var txt: String = d["text"] % ([int(d["sooner"]), bounty] if s.kind == "beacon" else bounty)
+	var txt: String = d["text"] % ([int(d["sooner"]), bounty] if s.kind == "beacon" else [float(d["r"]), bounty] if s.kind == "chapel" else bounty)
 	return {"title": d["name"], "text": txt + more, "actions": [cut]}
 
 
@@ -1827,12 +1927,13 @@ func preview_range(c: Vector2i) -> float:
 	if level.road.has(c) or level.is_lair(c) or trees.has(c) or sites.has(c) or not is_lit(c) or level.is_water(c):
 		return 0.0
 	var t := level.terrain_at(c)
+	var holy := Defs.HALLOW_RANGE if hallow_on() and level.hallowed.has(c) else 1.0
 	if level.high.has(c):
 		var best := 0.0   # any tower fits: show the longest reach
 		for type: String in Defs.TOWERS:
 			best = maxf(best, float(Defs.TOWERS[type]["range"][0]) + _range_bonus(type, c))
-		return best
-	return float(Defs.TOWERS[t]["range"][0]) + _range_bonus(t, c)
+		return best * holy
+	return (float(Defs.TOWERS[t]["range"][0]) + _range_bonus(t, c)) * holy
 
 
 ## Extra range from the skill tree and, on a raised tile, from the height.
@@ -1878,7 +1979,7 @@ func do_action(id: String, c: Vector2i) -> String:
 		tw.cell = c
 		tw.pos = Vector2(c) + Vector2(0.5, 0.5)
 		tw.spent = cost
-		tw.dmg_mul = 1.0 + 0.1 * skill(type + "_dmg")
+		tw.dmg_mul = 1.0 + 0.1 * skill(type + "_dmg") + Defs.LEGEND_DMG * skill(type + "_legend")
 		tw.rate_mul = 1.0 + 0.08 * skill(type + "_rate")
 		tw.range_add = _range_bonus(type, c)
 		tw.xp_mul = 1.0 + 0.25 * skill(type + "_vet")
@@ -1892,6 +1993,8 @@ func do_action(id: String, c: Vector2i) -> String:
 		gold_spent += cost
 		if level.high.has(c):
 			high_built += 1
+		if level.hallowed.has(c):
+			built_hallowed += 1
 		most_towers = maxi(most_towers, towers.size())
 		_relight()
 		sound.emit("build")
@@ -1934,6 +2037,10 @@ func do_action(id: String, c: Vector2i) -> String:
 				_boom(s.pos, 0.9, 0.5)
 				_text(s.pos + Vector2(0, -0.4), "+%d" % bounty, Color("e8b84a"))
 				toast.emit("%s razed" % d["name"])
+				if s.kind == "chapel" and not hallow_on() and not level.hallowed.is_empty():
+					chapels_razed_wave = wave
+					toast.emit("The ground is no longer holy")
+				_cover.clear()
 			else:
 				toast.emit("%s is yours" % d["name"])
 				_relight()
@@ -2099,6 +2206,7 @@ func score(number: int) -> int:
 	pts += [0, 0, 500, 1000][SaveData.RANKS.find(rank())]
 	pts += 5.0 * skipped + gold
 	pts *= 1.0 + 0.1 * (number - 1)
+	pts *= 1.0 + Defs.RENOWN_SCORE * skill("renown")   # Renown: score only
 	if level.night:
 		pts *= 1.5
 	return roundi(pts)
@@ -2111,3 +2219,87 @@ func rating_now() -> String:
 	if touched:
 		return "Wicked"
 	return "Brilliant"
+
+
+## Can this battle go dark: a night mission, or a lair with Dusk or an Eclipse.
+func can_dark() -> bool:
+	return level.night or dusk_wave > 0 or eclipse.x > 0.0
+
+
+## How dark the view should be (0 day .. 1 night), fading over DUSK_FADE when darkness comes or goes.
+func dark_k() -> float:
+	var k := clampf((time - dark_t) / Defs.DUSK_FADE, 0.0, 1.0)
+	return k if dark else 1.0 - k
+
+
+## Is e in the air: a flyer that has not come down onto a road.
+func flying(e: Enemy) -> bool:
+	return e.d.has("fly") and not e.grounded
+
+
+## A Spiriter finished his chant: he vanishes with the gems he holds (they are lost).
+func _vanish(e: Enemy) -> void:
+	e.gone = true
+	chants_done += 1
+	if e.carry > 0:
+		lost += e.carry
+		toast.emit("%s vanished with %s" % [e.d["name"], "a gem" if e.carry == 1 else "%d gems" % e.carry])
+		sound.emit("lost")
+	_fx("surge", e.pos, 0.8, 0.8)
+
+
+## Hallowed ground is holy while a Chapel stands (on a lair with hallowed tiles but no Chapel, always).
+func hallow_on() -> bool:
+	if level.hallowed.is_empty():
+		return false
+	var any := false
+	for s: Site in sites.values():
+		if s.kind == "chapel":
+			any = true
+			if not s.owned:
+				return true
+	return not any
+
+
+## The nearest land road to pos: [road index, distance along it].
+func _nearest_land(pos: Vector2) -> Array:
+	var best := [level.land_roads[0], 0.0]
+	var bd := INF
+	for r: int in level.land_roads:
+		var t := level.nearest_dist(r, pos)
+		var dd := level.path_pos(r, t).distance_to(pos)
+		if dd < bd:
+			bd = dd
+			best = [r, t]
+	return best
+
+
+## The Seraph comes down: onto the nearest road (she walks from now on), untouchable for a while,
+## and the last heroes slain rise around her at half health (no bosses, boats or engines).
+func _seraph_land(e: Enemy) -> void:
+	var sd: Dictionary = Defs.SERAPH
+	var n: int = sd["raise"][mini(e.phase, sd["raise"].size() - 1)]
+	e.phase += 1
+	e.untouch = sd["dur"]
+	if level.path_kind[e.path] == "air":
+		var near := _nearest_land(e.pos)
+		e.path = near[0]
+		e.dist = near[1]
+		e.pos = level.path_pos(e.path, e.dist)
+	e.grounded = true
+	var codes: Array[String] = []
+	while codes.size() < n and not fallen.is_empty():
+		codes.append(fallen.pop_back())
+	if not codes.is_empty():
+		_rally.append({"codes": codes, "path": e.path, "dist": e.dist, "wave": e.wave, "half": true})
+	_fx("surge", e.pos, 2.0, 1.0)
+	_text(e.pos + Vector2(0, -1.2), "Rise!", Color("fff2c0"))
+	sound.emit("horn")
+
+
+## Can any tower reach pos.
+func _covered_by_towers(pos: Vector2) -> bool:
+	for tw: Tower in towers.values():
+		if tw.pos.distance_to(pos) <= tw.stat("range"):
+			return true
+	return false

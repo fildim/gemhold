@@ -1,0 +1,68 @@
+{
+ "id": "level_44",
+ "title": "Hallowed Fields",
+ "cols": 16,
+ "rows": 10,
+ "hp_mul": 3.5,
+ "legend": {"A":"high ash","F":"high frost","L":"lair","M":"high moss","a":"ash","f":"frost","m":"moss"},
+ "terrain": [
+  "aaaaammmmmmmmmmm",
+  "aaaaammmmmmmmmmm",
+  "aaaaammmmmmmmmmm",
+  "mmmmmmfffffffmmm",
+  "mmmmmmffFffffLLm",
+  "mmmmmmfffffffLLm",
+  "mmmMmmffffAffmmm",
+  "mmmmmmmmmmmmmmmm",
+  "mmmmmmmmmmmmmmmm",
+  "mmmmmmmmmmmmmmmm"
+ ],
+ "trees": [
+  ".....T......T...",
+  "..........TTTT..",
+  ".TTT..T.T.HT...T",
+  "TTT..T.TH.HH....",
+  "...T.T.TH.......",
+  "T..TT..T........",
+  ".T...TT.H.HH....",
+  "..T.......H.TT..",
+  "...........TT.T.",
+  "T......T....TT.."
+ ],
+ "paths": [
+  [[-1,1],[9,1],[9,4],[12,4]],
+  [[-1,8],[9,8],[9,5],[12,5]]
+ ],
+ "lair": {"cell":[13,4],"center":[14,5],"size":[2,2]},
+ "sites": [
+  {"cell":[4,3],"kind":"chapel"},
+  {"cell":[4,6],"kind":"chapel"},
+  {"cell":[15,9],"kind":"mine"},
+  {"cell":[15,0],"kind":"well"}
+ ],
+ "start": {"gems":5,"gold":230,"mana":60},
+ "first_wave_delay": 30,
+ "wave_gap": 24,
+ "site_cuts": 3,
+ "waves": [
+  "8p",
+  "6f,2c",
+  "6p,2y",
+  "4f,2j",
+  "2k,2n",
+  "6t,4y",
+  "4f,2j,2i",
+  "3k,2b,2n",
+  "8p,4y,2j",
+  "4k,2w,2i",
+  "6t,4n,2c",
+  "4k,2b,3j",
+  "8f,4y,3i",
+  "5k,3j,2n",
+  "6k,4y,4j",
+  "6k,8f,4i,2c",
+  "1x,6k,4j,4n",
+  "6k,6j,4y,2i",
+  "2x,6k,4j,6y,2i"
+ ]
+}

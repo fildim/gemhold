@@ -4,7 +4,7 @@
 
 Deep in your cave lie five gems. Self-righteous heroes march down the roads in waves to steal them: peasants, scouts, armoured knights, healers and worse. Raise towers on moss, frost and ash, rain meteors on the crowds, cut down the woods to make room, and let not a single gem leave your lair.
 
-Forty lairs in four chapters, from the lowlands through the drowned marshes to the siegeworks, growing harder one step at a time, a night mission to unlock in every one, and a tree of Dark Arts to grow stronger with the stars you earn.
+Fifty lairs in five chapters, from the lowlands through the drowned marshes and the siegeworks to the radiant host, growing harder one step at a time, a night mission to unlock in every one, and a tree of Dark Arts to grow stronger with the stars you earn.
 
 ## Play
 

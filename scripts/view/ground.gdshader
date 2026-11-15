@@ -115,6 +115,8 @@ void fragment() {
 	} else if (biome == 3) {   // the siegeworks: churned brown mud and trampled earth
 		float churn = fbm(p * 3.1 + 17.0);
 		ground = mix(ground, vec3(0.33, 0.26, 0.18) * (0.75 + 0.5 * churn), 0.5) * vec3(1.02, 0.95, 0.86);
+	} else if (biome == 4) {   // the radiant host: sunlit, pale gold-white fields
+		ground = mix(ground, vec3(dot(ground, vec3(0.33))) * vec3(1.25, 1.15, 0.9), 0.4) * 1.08;
 	}
 	// Water: deep pools dark and still, shallows murky over sand, a pale rim where it meets land.
 	vec2 w = water(p);

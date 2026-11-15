@@ -9,10 +9,10 @@ const OUTLINE := Color("1a120c")
 
 const TUNIC := {"p": "9a7446", "f": "4e6584", "s": "4d7638", "c": "efe9da", "k": "c9a43c", "b": "6e7682", "t": "4a3a5a", "w": "5a4630",
 	"h": "a8343e", "r": "c08a60", "x": "d8dce0", "m": "5a6a3a", "e": "a0602a", "q": "6a7a8a", "l": "6a4628", "d": "2e5a5e", "T": "2a4a7a",
-	"a": "7a3a2a", "v": "8a7a5a", "i": "6a1e2a", "u": "7a5432", "I": "4a4440"}
+	"a": "7a3a2a", "v": "8a7a5a", "i": "6a1e2a", "u": "7a5432", "I": "4a4440", "y": "4a6a9a", "j": "e8e2d0", "n": "5a5a7a", "S": "f2ead8"}
 const TUNIC_DARK := {"p": "6a4a26", "f": "2e3e54", "s": "2e4a20", "c": "b8ae96", "k": "7a5e18", "b": "3e444c", "t": "2a2036", "w": "362818",
 	"h": "5e1a22", "r": "7a4e30", "x": "7e8690", "m": "3a4624", "e": "6a3e18", "q": "46525e", "l": "3a2414", "d": "1a3638", "T": "182c4a",
-	"a": "4a2016", "v": "5a4e34", "i": "3a0e16", "u": "3a2414", "I": "26221e"}
+	"a": "4a2016", "v": "5a4e34", "i": "3a0e16", "u": "3a2414", "I": "26221e", "y": "2a3e5e", "j": "a89a70", "n": "34344a", "S": "c8b88a"}
 
 
 ## A hero's figure, standing at x (feet at yb, body at y) with body unit u, facing f (1 or -1),
@@ -35,6 +35,8 @@ static func hero(ci: CanvasItem, code: String, x: float, y: float, yb: float, u:
 	if code == "s":  # bow on the back
 		var a0 := PI * 0.6 if f > 0 else -PI * 0.4
 		ci.draw_arc(Vector2(x - f * u * 0.3, y - u * 0.05), u * 0.5, a0, a0 + PI * 0.8, 12, Color("6a4a22"), maxf(1.5, u * 0.12), true)
+	if code == "y" or code == "S":  # wings behind
+		_wings(ci, x, y, u, f, tm, code == "S")
 	if code == "a":  # a powder keg on his back
 		var kc := Vector2(x - f * u * 0.42, y - u * 0.05)
 		ci.draw_rect(Rect2(kc - Vector2(0.26, 0.34) * u, Vector2(0.52, 0.68) * u), Color("6a4422"))
@@ -42,12 +44,12 @@ static func hero(ci: CanvasItem, code: String, x: float, y: float, yb: float, u:
 			ci.draw_line(kc + Vector2(-0.26, k) * u, kc + Vector2(0.26, k) * u, Color("2a2a2a"), maxf(1.0, u * 0.08))
 	if code == "v":  # a sack of cobbles on his back
 		Paint.ellipse(ci, Vector2(x - f * u * 0.45, y + u * 0.05), u * 0.3, u * 0.36, Color("9a8a68"))
-	if not code in ["c", "q", "T", "i"]:  # legs
+	if not code in ["c", "q", "T", "i", "n", "S"]:  # legs
 		var lwid := maxf(2.0, u * 0.22)
 		ci.draw_line(Vector2(x - u * 0.15, y + u * 0.35), Vector2(x - u * 0.15 + walk * u * 0.28, yb + u * 0.85), dark, lwid)
 		ci.draw_line(Vector2(x + u * 0.15, y + u * 0.35), Vector2(x + u * 0.15 - walk * u * 0.28, yb + u * 0.85), dark, lwid)
 	var body: PackedVector2Array
-	if code in ["c", "q", "T", "i"]:   # robes to the ground
+	if code in ["c", "q", "T", "i", "n", "S"]:   # robes to the ground
 		body = PackedVector2Array([Vector2(x - u * 0.3, y - u * 0.35), Vector2(x + u * 0.3, y - u * 0.35), Vector2(x + u * 0.5, yb + u * 0.85), Vector2(x - u * 0.5, yb + u * 0.85)])
 	else:
 		body = PackedVector2Array([Vector2(x - u * 0.34, y - u * 0.35), Vector2(x + u * 0.34, y - u * 0.35), Vector2(x + u * 0.4, y + u * 0.45), Vector2(x - u * 0.4, y + u * 0.45)])
@@ -60,7 +62,7 @@ static func hero(ci: CanvasItem, code: String, x: float, y: float, yb: float, u:
 		Paint.glow(ci, Vector2(x, y - u * 0.7), u * 0.9, Color(1, 0.95, 0.7, 0.6))
 	if code == "f":
 		ci.draw_rect(Rect2(x - u * 0.34, y - u * 0.35, u * 0.68, u * 0.22), Color("9aa8b5"))
-	if not code in ["c", "q", "T", "i"]:
+	if not code in ["c", "q", "T", "i", "n", "S"]:
 		ci.draw_rect(Rect2(x - u * 0.38, y + u * 0.12, u * 0.76, u * 0.09), Color("3a2414"))
 	# head
 	ci.draw_circle(Vector2(x, y - u * 0.68), u * 0.38, Color("f0c9a0"))
@@ -70,6 +72,7 @@ static func hero(ci: CanvasItem, code: String, x: float, y: float, yb: float, u:
 	_held(ci, code, x, y, yb, u, f, tm)
 	_marsh(ci, code, x, y, yb, u, f, tm)
 	_siege_gear(ci, code, x, y, yb, u, f, tm)
+	_radiant_gear(ci, code, x, y, yb, u, f, tm)
 	return body
 
 
@@ -283,6 +286,9 @@ static func _held(ci: CanvasItem, code: String, x: float, y: float, yb: float, u
 static func site(ci: CanvasItem, kind: String, c: Vector2, owned: bool, tm: float, cell: Vector2i) -> void:
 	if kind == "beacon" or kind == "workshop":
 		siege_site(ci, kind, c, owned, tm, cell)
+		return
+	if kind == "chapel":
+		chapel(ci, c, owned, tm)
 		return
 	match kind:
 		"altar":   # a dark stone altar; a violet flame once freed, choked with vines until then
@@ -558,3 +564,84 @@ static func siege_site(ci: CanvasItem, kind: String, c: Vector2, owned: bool, tm
 			ci.draw_line(c + Vector2(0.3, -0.42) * T, c + Vector2(0.3, -0.75) * T, Color("4a3220"), 3.0)   # crane
 			ci.draw_line(c + Vector2(0.3, -0.75) * T, c + Vector2(0.62, -0.62) * T, Color("4a3220"), 2.5)
 			ci.draw_line(c + Vector2(0.6, -0.62) * T, c + Vector2(0.6, -0.4) * T, Color("c8bc9a"), 1.0)
+
+
+## Feathered wings behind a flyer, beating slowly; the Seraph's are larger and glow.
+static func _wings(ci: CanvasItem, x: float, y: float, u: float, f: float, tm: float, big: bool) -> void:
+	var span := u * (1.9 if big else 1.4)
+	var beat := sin(tm * (3.0 if big else 6.0)) * 0.35
+	var root := Vector2(x - f * u * 0.1, y - u * 0.25)
+	if big:
+		Paint.glow(ci, root + Vector2(0, -u * 0.3), span * 1.1, Color(1, 0.95, 0.7, 0.35))
+	for side in [-1.0, 1.0]:
+		var tip := root + Vector2(side * span, -u * (0.9 + beat * side * 0.3))
+		var low := root + Vector2(side * span * 0.75, u * (0.35 - beat * 0.4))
+		var wing := PackedVector2Array([root, tip, low])
+		ci.draw_colored_polygon(wing, Color("fffaf0") if big else Color("e8eef4"))
+		for k in 3:   # feather lines
+			var q := root.lerp(tip, 0.45 + k * 0.18)
+			ci.draw_line(q, q + Vector2(0, u * 0.35), Color(0.6, 0.6, 0.65, 0.6), maxf(1.0, u * 0.05))
+		ci.draw_polyline(PackedVector2Array([root, tip, low, root]), Color(0.45, 0.42, 0.4, 0.8), maxf(1.0, u * 0.06), true)
+
+
+## Chapter V heroes' gear: the Skylancer's lance, the Justicar's helm and sun shield, the
+## Spiriter's hood and spirit lights, the Seraph's halo and staff of light.
+static func _radiant_gear(ci: CanvasItem, code: String, x: float, y: float, yb: float, u: float, f: float, tm: float) -> void:
+	var w := maxf(1.5, u * 0.11)
+	match code:
+		"y":
+			var cap := PackedVector2Array()
+			for i in 11:
+				var a := PI + PI * i / 10.0
+				cap.append(Vector2(x, y - u * 0.74) + Vector2(cos(a), sin(a)) * u * 0.42)
+			Paint.vgrad_poly(ci, cap, Color("dfe8ee"), Color("7b8894"))
+			ci.draw_line(Vector2(x - f * u * 0.6, y + u * 0.3), Vector2(x + f * u * 1.4, y - u * 0.5), Color("c9a43c"), w)
+			ci.draw_colored_polygon(PackedVector2Array([Vector2(x + f * u * 1.4, y - u * 0.5), Vector2(x + f * u * 1.15, y - u * 0.5), Vector2(x + f * u * 1.3, y - u * 0.7)]), Color("eef2f6"))
+		"j":
+			var helm := PackedVector2Array()
+			for i in 13:
+				var a := PI * 0.9 + PI * 1.2 * i / 12.0
+				helm.append(Vector2(x, y - u * 0.7) + Vector2(cos(a), sin(a)) * u * 0.44)
+			Paint.vgrad_poly(ci, helm, Color("fff6dc"), Color("b8a66a"))
+			ci.draw_rect(Rect2(x - u * 0.25, y - u * 0.72, u * 0.5, u * 0.06), OUTLINE)
+			ci.draw_line(Vector2(x, y - u * 1.1), Vector2(x, y - u * 1.5), Color("e8b84a"), maxf(1.5, u * 0.12))
+			var sc := Vector2(x + f * u * 0.38, y + u * 0.05)
+			ci.draw_circle(sc, u * 0.36, Color("f2ead8"))
+			ci.draw_arc(sc, u * 0.36, 0, TAU, 16, Color("c9a43c"), maxf(1.0, u * 0.1), true)
+			for k in 8:   # the sun on his shield
+				var a := k * TAU / 8.0
+				ci.draw_line(sc + Vector2(cos(a), sin(a)) * u * 0.1, sc + Vector2(cos(a), sin(a)) * u * 0.26, Color("e8b84a"), maxf(1.0, u * 0.06))
+		"n":
+			var hood := PackedVector2Array()
+			for i in 11:
+				var a := PI * 1.05 + PI * 0.9 * i / 10.0
+				hood.append(Vector2(x, y - u * 0.8) + Vector2(cos(a), sin(a)) * u * 0.44)
+			ci.draw_colored_polygon(hood, Color("34344a"))
+			for k in 3:   # spirit lights circling him
+				var a := tm * 2.0 + k * TAU / 3.0
+				var p := Vector2(x + cos(a) * u * 0.8, y - u * 0.4 + sin(a) * u * 0.3)
+				Paint.glow(ci, p, u * 0.4, Color(0.6, 0.85, 1, 0.6))
+				ci.draw_circle(p, u * 0.09, Color("e6f8ff"))
+		"S":
+			var halo := Vector2(x, y - u * 1.25)
+			Paint.glow(ci, halo, u * 0.9, Color(1, 0.92, 0.6, 0.6))
+			Paint.ellipse_outline(ci, halo, u * 0.42, u * 0.13, Color("ffe08a"), maxf(1.5, u * 0.1))
+			ci.draw_line(Vector2(x + f * u * 0.55, yb + u * 0.85), Vector2(x + f * u * 0.55, y - u * 1.4), Color("e8d8a8"), w)
+			Paint.glow(ci, Vector2(x + f * u * 0.55, y - u * 1.45), u * 0.5, Color(1, 0.95, 0.75, 0.8))
+
+
+## A Chapel: a small white chapel with a bell tower and a golden glow; razed, a broken wall.
+static func chapel(ci: CanvasItem, c: Vector2, owned: bool, tm: float) -> void:
+	if owned:
+		ci.draw_rect(Rect2(c + Vector2(-0.3, 0.0) * T, Vector2(0.25, 0.28) * T), Color("8a8478"))
+		ci.draw_colored_polygon(PackedVector2Array([c + Vector2(-0.05, 0.28) * T, c + Vector2(-0.05, 0.05) * T, c + Vector2(0.12, 0.15) * T, c + Vector2(0.3, 0.28) * T]), Color("6e665c"))
+		return
+	Paint.glow(ci, c + Vector2(0, -0.1) * T, T * (0.55 + 0.04 * sin(tm * 2.0)), Color(1, 0.92, 0.6, 0.3))
+	Paint.hgrad_poly(ci, Paint.rect_pts(Rect2(c + Vector2(-0.32, -0.1) * T, Vector2(0.5, 0.4) * T)), Color("f2ead8"), Color("b8ae96"))
+	ci.draw_colored_polygon(PackedVector2Array([c + Vector2(-0.36, -0.08) * T, c + Vector2(-0.07, -0.36) * T, c + Vector2(0.22, -0.08) * T]), Color("8a3a2a"))
+	Paint.hgrad_poly(ci, Paint.rect_pts(Rect2(c + Vector2(0.14, -0.45) * T, Vector2(0.2, 0.75) * T)), Color("f2ead8"), Color("b8ae96"))
+	ci.draw_colored_polygon(PackedVector2Array([c + Vector2(0.12, -0.45) * T, c + Vector2(0.24, -0.66) * T, c + Vector2(0.36, -0.45) * T]), Color("8a3a2a"))
+	ci.draw_line(c + Vector2(0.24, -0.66) * T, c + Vector2(0.24, -0.8) * T, Color("e8b84a"), 2.0)
+	ci.draw_line(c + Vector2(0.19, -0.75) * T, c + Vector2(0.29, -0.75) * T, Color("e8b84a"), 2.0)
+	ci.draw_rect(Rect2(c + Vector2(-0.14, 0.08) * T, Vector2(0.12, 0.22) * T), Color("3a2a1a"))
+	ci.draw_circle(c + Vector2(0.24, -0.28) * T, T * 0.05, Color("c9a43c"))

@@ -520,11 +520,11 @@ func _random_save() -> SaveData:
 func _check_every_achievement_can_be_earned() -> void:
 	var s := SaveData.load_from(FILE + ".none")
 	var ids := []
-	for i in 40:
+	for i in 50:
 		ids.append("level_%02d" % (i + 1))
 		for m in [ids[i], SaveData.mission_id(ids[i], true)]:
 			s.best[m] = {"rank": "Brilliant", "kept": 5}
-	s.scores["level_01"] = 600000
+	s.scores["level_01"] = 2000000
 	for tree: String in Defs.SKILLS:
 		for sk: Dictionary in Defs.SKILLS[tree]:
 			s.skills[sk["id"]] = sk["max"]
@@ -556,6 +556,21 @@ func _check_every_achievement_can_be_earned() -> void:
 	var dusk := _ending("level_37", false)
 	dusk.dark = true
 	Achievements.check_battle(s, dusk, 37)
+
+	# Chapter V: the finale Brilliant (seven gems) and by night, Hallowed Fields untouched.
+	var fin := _ending("level_50", false)
+	fin.gold = 7000
+	fin.kills_by = {"y": 10}
+	fin.shield_waste = 1
+	fin.chants_broken = 5
+	fin.chapels_razed_wave = 3
+	fin.seraph_phase = 1
+	fin.best_ossuary = 4
+	fin.sunlance_best = 3
+	Achievements.check_battle(s, fin, 50)
+	Achievements.check_battle(s, _ending("level_50", true), 50)
+	Achievements.check_battle(s, _ending("level_44", false), 44)
+	Achievements.check_progress(s, ids)
 
 	var big := _ending("level_20", true)
 	big.gold = 2000

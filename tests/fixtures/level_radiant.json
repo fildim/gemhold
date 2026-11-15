@@ -1,0 +1,42 @@
+{
+ "id": "fixture_radiant",
+ "title": "Radiant Fixture",
+ "cols": 16,
+ "rows": 8,
+ "hp_mul": 1.0,
+ "legend": {"m": "moss", "f": "frost", "a": "ash", "M": "high moss", "F": "high frost", "A": "high ash", "L": "lair"},
+ "terrain": [
+  "mmmmmmmmmmmmmmmm",
+  "mmmmmmmmmmmmmmmm",
+  "mmmmmmmmmmmmmmLL",
+  "mmmmmmmmmmmmmmLL",
+  "mmmmmmmmmmmmmmmm",
+  "ffffffffffffffff",
+  "aaaaaaaaaaaaaaaa",
+  "aaaaaaaaaaaaaaaa"
+ ],
+ "trees": [
+  "................",
+  "................",
+  ".....H..........",
+  "................",
+  "................",
+  "................",
+  "................",
+  "................"
+ ],
+ "paths": [
+  [[-1, 3], [13, 3]],
+  [[-1, 7], [13, 7], [13, 3]]
+ ],
+ "path_info": [{"kind": "land"}, {"kind": "air"}],
+ "lair": {"cell": [14, 2], "size": [2, 2], "center": [15, 3]},
+ "sites": [
+  {"kind": "chapel", "cell": [8, 5]}
+ ],
+ "start": {"gold": 230, "mana": 60, "gems": 7},
+ "first_wave_delay": 30, "wave_gap": 24,
+ "site_cuts": 1,
+ "rules": [{"kind": "eclipse", "period": 20, "dark": 8}],
+ "waves": ["2p", "1y", "1n,1j"]
+}

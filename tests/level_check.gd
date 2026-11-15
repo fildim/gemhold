@@ -6,7 +6,7 @@ extends SceneTree
 ## Run: godot --headless --script res://tests/level_check.gd
 
 const MAIN := preload("res://scripts/main.gd")
-const FIXTURES := ["res://tests/fixtures/level_v2.json", "res://tests/fixtures/level_siege.json"]
+const FIXTURES := ["res://tests/fixtures/level_v2.json", "res://tests/fixtures/level_siege.json", "res://tests/fixtures/level_radiant.json"]
 const RULE_KINDS := ["tide", "dusk", "eclipse"]
 
 var fails := 0

@@ -22,7 +22,10 @@ const SKILL_ORDER := ["moss_dmg", "ash_dmg", "ash_dmg", "moss_dmg", "ash_ability
 	"ash_core", "frost_cold", "moss_keen", "land_veins", "land_springs", "frost_dread", "ash_cooling", "land_lantern",
 	# Chapter IV onward:
 	"sturdy", "sturdy", "land_heights", "sturdy", "moss_keen", "ash_memory", "frost_freeze", "land_veins", "land_springs",
-	"land_axes", "gem_magnet", "land_spoils", "land_lantern", "land_flood", "land_rites", "frost_dread", "ash_cooling", "gem_magnet", "land_lantern"]
+	"land_axes", "gem_magnet", "land_spoils", "land_lantern", "land_flood", "land_rites", "frost_dread", "ash_cooling", "gem_magnet", "land_lantern",
+	# Chapter V onward (tier III):
+	"moss_legend", "ash_legend", "den_fury", "frost_legend", "dragon_patience", "moss_legend", "ash_legend", "den_fury", "frost_legend",
+	"dragon_patience", "moss_legend", "ash_legend", "den_fury", "frost_legend", "moss_legend", "ash_legend", "frost_legend", "den_fury"]
 
 
 ## Skill points a player has banked before campaign lair `index` (0-based): about 2.4 stars a lair

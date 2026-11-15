@@ -144,6 +144,8 @@ func _draw_roads() -> void:
 	var layers := [[Color("4a3420"), 0.92], [Color("5c4128"), 0.84], [Color("a47e4e"), 0.72], [Color("b8925e"), 0.3]]
 	for li in layers.size():
 		for i in level.paths.size():
+			if level.path_kind[i] == "air":
+				continue   # flight lines are drawn by the board
 			for smp in _road_samples(i, 0.08):
 				var s: float = smp[0]
 				if _wet(i, smp[1], s):
@@ -153,6 +155,8 @@ func _draw_roads() -> void:
 				var c: Vector2 = (smp[1] + smp[2].orthogonal() * side) * T
 				draw_circle(c, T * layers[li][1] * 0.5 * (1.0 + 0.07 * wob), layers[li][0])
 	for i in level.paths.size():
+		if level.path_kind[i] == "air":
+			continue
 		for smp in _road_samples(i, 0.3):
 			var s: float = smp[0]
 			if _wet(i, smp[1], s):

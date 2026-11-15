@@ -1,6 +1,6 @@
 extends SceneTree
 ## Writes level files from compact specs (tools/lair_specs.gd): ground and water as rectangles,
-## raised tiles, roads, buildings, waves and rules; woods are scattered from a seed, never on
+## raised tiles, hallowed ground ("hallowed": [[x, y], ...]), roads, buildings, waves and rules; woods are scattered from a seed, never on
 ## roads, water, buildings, raised tiles or next to the lair. Edit a spec and run again:
 ##   godot --headless --path . -s res://tools/make_lairs.gd            (every spec)
 ##   godot --headless --path . -s res://tools/make_lairs.gd -- 21 25   (just those numbers)
@@ -54,13 +54,12 @@ func _build(s: Dictionary) -> Dictionary:
 		for k in p.size() - 1:
 			var a := Vector2i(p[k][0], p[k][1])
 			var b := Vector2i(p[k + 1][0], p[k + 1][1])
-			var step := Vector2i(signi(b.x - a.x), signi(b.y - a.y))
 			var q := a
-			while true:
+			while true:   # straight or diagonal (flight lines), one tile at a time
 				road[q] = true
 				if q == b:
 					break
-				q += step
+				q += Vector2i(signi(b.x - q.x), signi(b.y - q.y))
 	var sites := {}
 	for st: Dictionary in s.get("sites", []):
 		sites[Vector2i(st["cell"][0], st["cell"][1])] = true
@@ -74,6 +73,9 @@ func _build(s: Dictionary) -> Dictionary:
 			var t: String = grid[r][c]
 			var near_lair := absf(c - lc[0] - 0.5) <= 2.0 and absf(r - lc[1] - 0.5) <= 2.0
 			var by_road := road.has(v + Vector2i(1, 0)) or road.has(v - Vector2i(1, 0)) or road.has(v + Vector2i(0, 1)) or road.has(v - Vector2i(0, 1))
+			if v in (s.get("hallowed", []) as Array).map(func(x: Array) -> Vector2i: return Vector2i(x[0], x[1])):
+				line += "H"   # hallowed ground, kept clear of woods
+				continue
 			var ok := not road.has(v) and not sites.has(v) and t in ["m", "f", "a"] and not near_lair
 			var chance: float = s.get("woods_road", 0.25) if by_road else s.get("woods", 0.45)
 			if ok and (v in (s.get("woods_at", []) as Array).map(func(x: Array) -> Vector2i: return Vector2i(x[0], x[1])) or rng.randf() < chance):

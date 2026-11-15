@@ -1,0 +1,73 @@
+{
+ "id": "level_41",
+ "title": "Gryphon Aerie",
+ "cols": 16,
+ "rows": 10,
+ "hp_mul": 4.41,
+ "legend": {"A":"high ash","F":"high frost","L":"lair","M":"high moss","a":"ash","f":"frost","m":"moss"},
+ "terrain": [
+  "mmmmmmmmmmmmmmmm",
+  "mmmmmmmmmmmmmmmm",
+  "mmmmmMmmmmFmmmmm",
+  "fffffffmmmmmmmmm",
+  "fffffffmmmmmmLLm",
+  "fffffffmmmmmmLLm",
+  "fffffffmmmmmmmmm",
+  "mmmmmAmmmmMaaaaa",
+  "mmmmmmmmmmaaaaaa",
+  "mmmmmmmmmmaaaaaa"
+ ],
+ "trees": [
+  "..T..TTT.TT.T.T.",
+  "...........TT..T",
+  "..T......T.TTTTT",
+  "TTTT.T.....T....",
+  ".....T.T........",
+  ".T..TTT.........",
+  ".T.TT.....T.....",
+  "....T.........T.",
+  "...............T",
+  "...........TT.T."
+ ],
+ "paths": [
+  [[-1,1],[8,1],[8,4],[12,4]],
+  [[-1,8],[8,8],[8,5],[12,5]],
+  [[3,-1],[12,4]],
+  [[3,10],[12,5]]
+ ],
+ "lair": {"cell":[13,4],"center":[14,5],"size":[2,2]},
+ "sites": [
+  {"cell":[0,0],"kind":"mine"},
+  {"cell":[15,9],"kind":"well"}
+ ],
+ "start": {"gems":5,"gold":230,"mana":60},
+ "first_wave_delay": 30,
+ "wave_gap": 24,
+ "site_cuts": 3,
+ "waves": [
+  "8p",
+  "6f,2y",
+  "6p,4y",
+  "4f,2c,3y",
+  "2k,4y",
+  "6t,4y,2h",
+  "4f,2b,4y",
+  "3k,2c,4y",
+  "8p,6y,2h",
+  "4k,2w,4y",
+  "6t,6y,2c",
+  "4k,2b,6y",
+  "8f,6y,2h",
+  "5k,4y,2i",
+  "6k,8y,2b",
+  "6k,8y,4f,2h",
+  "1x,6k,6y",
+  "6k,10y,4f,2i"
+ ],
+ "path_info": [
+  {"kind":"land"},
+  {"kind":"land"},
+  {"kind":"air"},
+  {"kind":"air"}
+ ]
+}

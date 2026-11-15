@@ -54,7 +54,7 @@ func setup(lv: Level, s: GameSim, f: Font) -> void:
 ## light is lit for building (GameSim.is_lit), which is where the pool is brightest.
 func _build_fog() -> void:
 	_fog = null
-	if not sim.dark:
+	if not sim.can_dark():
 		return
 	var w := (level.cols + 2) * FOG_PX
 	var h := (level.rows + 2) * FOG_PX
@@ -81,9 +81,9 @@ func _build_fog() -> void:
 	_fog = ImageTexture.create_from_image(img)
 
 
-## How far night has come in: 1 on a night mission, fading in over a few seconds after Dusk.
+## How far night has come in: 1 on a night mission, fading over a few seconds as Dusk or an Eclipse comes and goes.
 func _night_k() -> float:
-	return clampf((sim.time - sim.dusk_t) / Defs.DUSK_FADE, 0.0, 1.0)
+	return sim.dark_k()
 
 
 func _draw() -> void:
@@ -111,6 +111,7 @@ func _draw() -> void:
 	for c: Vector2i in level.high:
 		_draw_high_shine(c, tm)
 	_draw_routes(tm)
+	_draw_sky(tm)
 	_draw_selection()
 	_draw_den_charges(tm)
 	for s: GameSim.Site in sim.sites.values():
@@ -134,7 +135,7 @@ func _draw() -> void:
 		if tw.beam2 != null:
 			_draw_beam(tw, tm, tw.beam2, tw.heat2)
 	var full := Rect2(0, 0, level.cols * T, level.rows * T)
-	if _fog != null:
+	if _fog != null and _night_k() > 0.001:
 		var k := _night_k()
 		draw_rect(full, Color(0.05, 0.07, 0.2, 0.22 * k))
 		draw_texture_rect_region(_fog, full, Rect2(FOG_PX, FOG_PX, level.cols * FOG_PX, level.rows * FOG_PX), Color(1, 1, 1, k))
@@ -258,6 +259,8 @@ func _draw_layer() -> void:
 		var x := (e.pos.x + e.knock.x * hitk) * T
 		var yb := (e.pos.y + e.knock.y * hitk) * T
 		_ground_marks(_layer, e, x, yb, u, true)
+		if sim.flying(e):   # in the air: the shadow stays on the ground
+			yb -= Defs.FLY_LIFT * T
 		var fr := HeroSprites.frame(e.code, HeroSprites.frame_of(tm * 10.0 * e.d["spd"] + e.bob))
 		var src: Rect2 = fr[0]
 		var k: float = u / float(fr[2])   # baked size -> drawn size
@@ -302,6 +305,9 @@ func _draw_enemy(e: GameSim.Enemy, tm: float) -> void:
 	var hitk := clampf(e.hit / 0.12, 0.0, 1.0)   # 1 just hit, fading to 0
 	var x := (e.pos.x + e.knock.x * hitk) * T
 	var yb := (e.pos.y + e.knock.y * hitk) * T
+	var ground_y := yb
+	var lift := Defs.FLY_LIFT * T if sim.flying(e) else 0.0
+	yb -= lift
 	var y := yb - bob
 	var code := e.code
 	var baked := HeroSprites.has(code)
@@ -313,7 +319,7 @@ func _draw_enemy(e: GameSim.Enemy, tm: float) -> void:
 		_draw_gems(Vector2(e.pos.x, e.pos.y - 0.3) * T, e.carry, 0.0)
 		return
 	if not baked:
-		_ground_marks(self, e, x, yb, u, false)
+		_ground_marks(self, e, x, ground_y, u, false)
 	if e.d.has("rage") and e.hp < e.max_hp * 0.5:  # raging
 		Paint.glow(self, Vector2(x, y - u * 0.3), u * 1.6, Color(1, 0.2, 0.1, 0.5))
 	if not baked:
@@ -349,10 +355,16 @@ func _draw_enemy(e: GameSim.Enemy, tm: float) -> void:
 		var fy := y - u * 1.75 + sin(sim.time * 14.0) * 1.5
 		draw_string_outline(font, Vector2(x - 10, fy), "!!", HORIZONTAL_ALIGNMENT_CENTER, 20, 18, 4, OUTLINE)
 		draw_string(font, Vector2(x - 10, fy), "!!", HORIZONTAL_ALIGNMENT_CENTER, 20, 18, Color("c9c0ff"))
-	_draw_gems(Vector2(e.pos.x, e.pos.y - e.d["r"] * 2.3 * HERO_SCALE - 0.08) * T, e.carry, 0.0)
+	_draw_gems(Vector2(e.pos.x, e.pos.y - e.d["r"] * 2.3 * HERO_SCALE - 0.08) * T - Vector2(0, lift), e.carry, 0.0)
+	if e.untouch > 0.0:   # a holy shield, or the Seraph landing: untouchable
+		Paint.glow(self, Vector2(x, y - u * 0.4), u * 2.2, Color(1, 0.95, 0.7, 0.5))
+		draw_arc(Vector2(x, y - u * 0.4), u * 1.3, 0, TAU, 24, Color(1, 0.92, 0.6, 0.85), 2.5, true)
+	if e.chant > 0.0:   # a Spiriter chanting: a ring closing in as the chant runs out
+		var ck := e.chant / Defs.CHANT_TIME
+		draw_arc(Vector2(x, yb + u * 0.9), u * (1.0 + 1.5 * ck), 0, TAU, 24, Color(0.6, 0.85, 1, 0.8), 2.5, true)
 	if e.hp < e.max_hp:
 		var w := maxf(16.0, u * 2.6)
-		var hy := y - u * float({"k": 1.8, "x": 1.8, "q": 2.6, "T": 2.6, "l": 2.1, "i": 2.0, "u": 2.9, "I": 5.0}.get(code, 1.65)) - 6.0
+		var hy := y - u * float({"k": 1.8, "x": 1.8, "q": 2.6, "T": 2.6, "l": 2.1, "i": 2.0, "u": 2.9, "I": 5.0, "S": 2.4, "j": 1.8, "n": 1.8}.get(code, 1.65)) - 6.0
 		draw_rect(Rect2(x - w / 2 - 1, hy - 1, w + 2, 6), Color(0, 0, 0, 0.7))
 		draw_rect(Rect2(x - w / 2, hy, w * e.hp / e.max_hp, 4), Color("6fd36f") if e.hp / e.max_hp > 0.4 else Color("e0503a"))
 
@@ -676,3 +688,24 @@ func _draw_paving() -> void:
 				draw_rect(r, Color(0.25, 0.22, 0.2, 0.6 * a), false, 1.0)
 				d += 0.12
 				n += 1
+
+
+## Flight lines (air roads) as faint dashed lines, and hallowed ground glowing pale gold while a
+## Chapel stands.
+func _draw_sky(tm: float) -> void:
+	for i in level.paths.size():
+		if level.path_kind[i] != "air":
+			continue
+		var total: float = level.paths[i]["total"]
+		var d := fmod(tm * 0.6, 0.5)
+		while d < total:
+			var a := level.path_pos(i, d) * T
+			var b := level.path_pos(i, minf(total, d + 0.22)) * T
+			draw_line(a, b, Color(0.9, 0.92, 1, 0.32), 2.0, true)
+			d += 0.5
+	if sim.hallow_on():
+		for c: Vector2i in level.hallowed:
+			var r := Rect2(Vector2(c) * T, Vector2(T, T)).grow(-3.0)
+			var pulse := 0.5 + 0.5 * sin(tm * 1.5 + c.x + c.y)
+			draw_rect(r, Color(1, 0.92, 0.6, 0.12 + 0.08 * pulse))
+			draw_rect(r, Color(1, 0.9, 0.55, 0.45), false, 1.5)

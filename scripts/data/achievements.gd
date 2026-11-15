@@ -22,6 +22,8 @@ const LIST: Array[Dictionary] = [
 	{"id": "chapter3", "name": "Lord of the Marches", "text": "Defend every lair of Chapter III."},
 	{"id": "beaten35", "name": "Past the Walls", "text": "Defend the first 35 lairs.", "stat": "beaten", "goal": 35},
 	{"id": "chapter4", "name": "Siegebreaker", "text": "Defend every lair of Chapter IV."},
+	{"id": "beaten45", "name": "The Last Ten", "text": "Defend the first 45 lairs.", "stat": "beaten", "goal": 45},
+	{"id": "chapter5", "name": "Light Extinguished", "text": "Defend all fifty lairs."},
 
 	# Ratings
 	{"id": "brilliant", "name": "Untouched", "text": "Win a lair Brilliant: no hero lays a hand on a gem."},
@@ -29,6 +31,9 @@ const LIST: Array[Dictionary] = [
 	{"id": "brilliant10", "name": "Spotless", "text": "Win 10 lairs Brilliant.", "stat": "brilliant", "goal": 10},
 	{"id": "brilliant15", "name": "Immaculate", "text": "Win 15 lairs Brilliant.", "stat": "brilliant", "goal": 15},
 	{"id": "brilliant25", "name": "Unblemished", "text": "Win 25 lairs Brilliant.", "stat": "brilliant", "goal": 25},
+	{"id": "brilliant40", "name": "Without a Scratch", "text": "Win 40 lairs Brilliant.", "stat": "brilliant", "goal": 40},
+	{"id": "final_brilliant", "name": "Not a Feather Touched", "text": "Win the Seraph's Descent Brilliant."},
+	{"id": "seven_kept", "name": "Seven Sealed", "text": "Win a lair with seven gems Brilliant."},
 	{"id": "all_brilliant", "name": "Perfectionist", "text": "Win every lair Brilliant."},
 	{"id": "wicked", "name": "Close Shave", "text": "Win a lair Wicked: a hero touched a gem, but none got away."},
 	{"id": "survived", "name": "Battered but Standing", "text": "Win a lair after losing gems."},
@@ -43,11 +48,15 @@ const LIST: Array[Dictionary] = [
 	{"id": "night10", "name": "Moonlit Reign", "text": "Win 10 night missions.", "stat": "nights", "goal": 10},
 	{"id": "night15", "name": "The Long Dark", "text": "Win 15 night missions.", "stat": "nights", "goal": 15},
 	{"id": "night25", "name": "Moon Over the Marsh", "text": "Win 25 night missions.", "stat": "nights", "goal": 25},
+	{"id": "night40", "name": "Forty Moons", "text": "Win 40 night missions.", "stat": "nights", "goal": 40},
+	{"id": "final_night", "name": "The Light Goes Out", "text": "Win the Seraph's Descent by night."},
 	{"id": "all_night", "name": "Eternal Night", "text": "Win every night mission."},
 	{"id": "night_brilliant", "name": "Moonlit Perfection", "text": "Win a night mission Brilliant.", "stat": "night_brilliant", "goal": 1},
 	{"id": "night_brilliant5", "name": "Unseen", "text": "Win 5 night missions Brilliant.", "stat": "night_brilliant", "goal": 5},
 	{"id": "night_brilliant10", "name": "Shadow Sovereign", "text": "Win 10 night missions Brilliant.", "stat": "night_brilliant", "goal": 10},
 	{"id": "night_brilliant20", "name": "Master of Darkness", "text": "Win 20 night missions Brilliant.", "stat": "night_brilliant", "goal": 20},
+	{"id": "night_brilliant35", "name": "Darker Still", "text": "Win 35 night missions Brilliant.", "stat": "night_brilliant", "goal": 35},
+	{"id": "night_brilliant50", "name": "Fifty Shades of Night", "text": "Win all 50 night missions Brilliant.", "stat": "night_brilliant", "goal": 50},
 	{"id": "night_thread", "name": "Thread by Moonlight", "text": "Win a night mission with a single gem left."},
 	{"id": "night_one", "name": "Lone Lantern", "text": "Win a night mission with one kind of tower."},
 	{"id": "night_final", "name": "Dawn Never Comes", "text": "Win the Hoard Throne by night."},
@@ -59,17 +68,22 @@ const LIST: Array[Dictionary] = [
 	{"id": "stars90", "name": "Night Sky", "text": "Earn 90 stars.", "stat": "stars", "goal": 90},
 	{"id": "stars120", "name": "Every Star in Heaven", "text": "Earn 120 stars.", "stat": "stars", "goal": 120},
 	{"id": "stars150", "name": "Starlit Marches", "text": "Earn 150 stars.", "stat": "stars", "goal": 150},
+	{"id": "stars200", "name": "Star Chart", "text": "Earn 200 stars.", "stat": "stars", "goal": 200},
+	{"id": "stars250", "name": "Firmament", "text": "Earn 250 stars.", "stat": "stars", "goal": 250},
+	{"id": "stars300", "name": "Every Star There Is", "text": "Earn all 300 stars.", "stat": "stars", "goal": 300},
 	{"id": "score3000", "name": "Worth Counting", "text": "Score 3,000 points in one battle."},
 	{"id": "score", "name": "High Roller", "text": "Score 6,000 points in one battle."},
 	{"id": "score10000", "name": "Treasure Keeper", "text": "Score 10,000 points in one battle."},
 	{"id": "score15000", "name": "Golden Tally", "text": "Score 15,000 points in one battle."},
 	{"id": "score20000", "name": "Beyond Counting", "text": "Score 20,000 points in one battle."},
 	{"id": "score30000", "name": "Flood of Gold", "text": "Score 30,000 points in one battle."},
+	{"id": "score40000", "name": "Dragon's Ransom", "text": "Score 40,000 points in one battle."},
 	{"id": "total10000", "name": "On the Board", "text": "Reach a total score of 10,000.", "stat": "total", "goal": 10000},
 	{"id": "total50000", "name": "Climbing the Ranks", "text": "Reach a total score of 50,000.", "stat": "total", "goal": 50000},
 	{"id": "total100000", "name": "Six Figures", "text": "Reach a total score of 100,000.", "stat": "total", "goal": 100000},
 	{"id": "total200000", "name": "Hall of Legends", "text": "Reach a total score of 200,000.", "stat": "total", "goal": 200000},
 	{"id": "total500000", "name": "Half a Million", "text": "Reach a total score of 500,000.", "stat": "total", "goal": 500000},
+	{"id": "total1000000", "name": "The Million", "text": "Reach a total score of 1,000,000.", "stat": "total", "goal": 1000000},
 
 	# Dark Arts
 	{"id": "arts1", "name": "First Lesson", "text": "Spend a skill point in Dark Arts.", "stat": "spent", "goal": 1},
@@ -77,6 +91,10 @@ const LIST: Array[Dictionary] = [
 	{"id": "arts20", "name": "Dark Scholar", "text": "Spend 20 skill points in Dark Arts."},
 	{"id": "arts40", "name": "Grand Warlock", "text": "Spend 40 skill points in Dark Arts.", "stat": "spent", "goal": 40},
 	{"id": "arts80", "name": "Archmage", "text": "Spend 80 skill points in Dark Arts.", "stat": "spent", "goal": 80},
+	{"id": "arts110", "name": "Arch-Lich", "text": "Spend 110 skill points in Dark Arts.", "stat": "spent", "goal": 110},
+	{"id": "tier3", "name": "Forbidden Knowledge", "text": "Learn a tier III Dark Art."},
+	{"id": "renown50", "name": "Name in Lights", "text": "Buy 50 ranks of Renown.", "stat": "renown", "goal": 50},
+	{"id": "renown150", "name": "Vanity", "text": "Buy all 150 ranks of Renown.", "stat": "renown", "goal": 150},
 	{"id": "arts59", "name": "Omniscient", "text": "Learn every Dark Art to its limit.", "stat": "spent", "goal": 59},
 	{"id": "branch_moss", "name": "Warlord", "text": "Fill the whole Warband Hut tree."},
 	{"id": "branch_frost", "name": "Necromancer", "text": "Fill the whole Bone Crypt tree."},
@@ -209,6 +227,13 @@ const LIST: Array[Dictionary] = [
 	{"id": "slain_u1", "name": "Kindling", "text": "Destroy 25 Trebuchets.", "stat": "slain_u", "goal": 25},
 	{"id": "slain_u2", "name": "Engine Graveyard", "text": "Destroy 250 Trebuchets.", "stat": "slain_u", "goal": 250},
 	{"id": "slain_I1", "name": "Belfry Breaker", "text": "Bring down the Iron Belfry.", "stat": "slain_I", "goal": 1},
+	{"id": "slain_y1", "name": "Clipped Wings", "text": "Slay 100 Skylancers.", "stat": "slain_y", "goal": 100},
+	{"id": "slain_y2", "name": "Grounded for Good", "text": "Slay 1,000 Skylancers.", "stat": "slain_y", "goal": 1000},
+	{"id": "slain_j1", "name": "Injustice", "text": "Slay 100 Justicars.", "stat": "slain_j", "goal": 100},
+	{"id": "slain_j2", "name": "Mistrial", "text": "Slay 1,000 Justicars.", "stat": "slain_j", "goal": 1000},
+	{"id": "slain_n1", "name": "Silent Hymns", "text": "Slay 100 Spiriters.", "stat": "slain_n", "goal": 100},
+	{"id": "slain_n2", "name": "No More Chanting", "text": "Slay 1,000 Spiriters.", "stat": "slain_n", "goal": 1000},
+	{"id": "slain_S1", "name": "Fallen Angel", "text": "Bring down the Seraph.", "stat": "slain_S", "goal": 1},
 
 	# Your weapons, all battles together
 	{"id": "by_moss1", "name": "Arrow Storm", "text": "Slay 100 heroes with Warband Huts.", "stat": "by_moss", "goal": 100},
@@ -327,11 +352,25 @@ const LIST: Array[Dictionary] = [
 	{"id": "night_dusk", "name": "Into the Dark", "text": "Win a lair where night falls during the battle."},
 	{"id": "beacons10", "name": "Lights Out", "text": "Raze 10 Signal Fires in all.", "stat": "beacons", "goal": 10},
 	{"id": "workshops10", "name": "Shut Down", "text": "Raze 10 Siege Workshops in all.", "stat": "workshops", "goal": 10},
+
+	# Chapter V: the Radiant Host
+	{"id": "skylancer10", "name": "Skeet Season", "text": "Slay 10 Skylancers in one battle."},
+	{"id": "shield_waste", "name": "Wasted Prayer", "text": "Make a Justicar spend his shield where no tower can reach him."},
+	{"id": "chant_broken5", "name": "Hymn Breaker", "text": "Break five Spiriters' chants in one battle."},
+	{"id": "chapel_first", "name": "Early Sacrilege", "text": "Raze every Chapel of a lair with hallowed ground before wave 5."},
+	{"id": "hallowed_none", "name": "Holy Ground Untouched", "text": "Win Hallowed Fields without building on hallowed ground."},
+	{"id": "seraph_no_raise", "name": "Stay Down", "text": "Slay the Seraph before her second rising."},
+	{"id": "chapels25", "name": "Desecrator", "text": "Raze 25 Chapels in all.", "stat": "chapels", "goal": 25},
+	{"id": "ossuary_burst", "name": "Bone Storm", "text": "Slay four heroes with one Ossuary volley."},
+	{"id": "sunlance3", "name": "Skewered", "text": "Burn three heroes at once with one Sunlance."},
+	{"id": "mastery_one_each", "name": "Six Paths", "text": "Raise each of the six masteries at least once."},
 ]
 
 const SCORE_GOAL := 6000
 ## The Hoard Throne, the finale of Chapter II (lair 20): "Flawless Finale" and "Dawn Never Comes" are earned there.
 const THRONE := "level_05"
+## The Seraph's Descent, the finale of the campaign (lair 50).
+const FINALE := "level_50"
 
 
 static func find(id: String) -> Dictionary:
@@ -373,7 +412,7 @@ static func record(save: SaveData, sim: GameSim) -> void:
 		save.add_stat("built_" + type, sim.built_count[type])
 	for s: GameSim.Site in sim.sites.values():
 		if s.owned:
-			var key: String = {"mine": "mines", "well": "wells", "camp": "camps", "altar": "altars", "beacon": "beacons", "workshop": "workshops"}.get(s.kind, "")
+			var key: String = {"mine": "mines", "well": "wells", "camp": "camps", "altar": "altars", "beacon": "beacons", "workshop": "workshops", "chapel": "chapels"}.get(s.kind, "")
 			if key != "":   # Sluice Gates are yours from the start: not counted
 				save.add_stat(key, 1)
 	for m: String in sim.masteries_built:
@@ -464,6 +503,13 @@ static func check_battle(save: SaveData, sim: GameSim, number: int) -> Array[Str
 	_try(save, got, "trebuchet_fast", sim.treb_fast > 0)
 	_try(save, got, "silence_proof", sim.silence_proof > 0)
 	_try(save, got, "pavior_early", sim.pavior_early > 0)
+	_try(save, got, "skylancer10", int(sim.kills_by.get("y", 0)) >= 10)
+	_try(save, got, "shield_waste", sim.shield_waste > 0)
+	_try(save, got, "chant_broken5", sim.chants_broken >= 5)
+	_try(save, got, "chapel_first", sim.chapels_razed_wave >= 0 and sim.chapels_razed_wave < 5)
+	_try(save, got, "seraph_no_raise", sim.seraph_phase >= 0 and sim.seraph_phase < 2)
+	_try(save, got, "ossuary_burst", sim.best_ossuary >= 4)
+	_try(save, got, "sunlance3", sim.sunlance_best >= 3)
 	if sim.won:
 		var rank := sim.rank()
 		var night := sim.level.night
@@ -495,9 +541,13 @@ static func check_battle(save: SaveData, sim: GameSim, number: int) -> Array[Str
 		_try(save, got, "dry_feet", sim.level.id == "level_21" and sim.water_kills == 0)
 		_try(save, got, "no_stun", _has_hero(sim.level, "a") and sim.stuns == 0)
 		_try(save, got, "night_dusk", sim.dusk_wave > 0 and sim.dark)
+		_try(save, got, "final_brilliant", rank == "Brilliant" and sim.level.id == FINALE)
+		_try(save, got, "final_night", night and sim.level.id == FINALE)
+		_try(save, got, "seven_kept", rank == "Brilliant" and sim.level.gems >= 7)
+		_try(save, got, "hallowed_none", sim.level.id == "level_44" and sim.built_hallowed == 0)
 		var score := sim.score(number)
 		_try(save, got, "score", score >= SCORE_GOAL)
-		for n in [3000, 10000, 15000, 20000, 30000]:
+		for n in [3000, 10000, 15000, 20000, 30000, 40000]:
 			_try(save, got, "score%d" % n, score >= n)
 		if number >= 3:
 			_try(save, got, "no_upgrades", sim.upgrades == 0)
@@ -538,6 +588,7 @@ static func values(save: SaveData, ids: Array) -> Dictionary:
 	v["stars"] = save.points_total()
 	v["total"] = save.total_score()
 	v["spent"] = save.points_spent()
+	v["renown"] = int(save.skills.get("renown", 0))
 	return v
 
 
@@ -558,13 +609,22 @@ static func check_progress(save: SaveData, ids: Array, per_chapter := 10) -> Arr
 		_try(save, got, "chapter3", v["beaten"] >= 3 * per_chapter)
 	if ids.size() >= 4 * per_chapter:
 		_try(save, got, "chapter4", v["beaten"] >= 4 * per_chapter)
+	if ids.size() >= 5 * per_chapter:
+		_try(save, got, "chapter5", v["beaten"] >= 5 * per_chapter)
+	_try(save, got, "mastery_one_each", ["longhouse", "lodge", "ossuary", "mausoleum", "twin", "sunlance"].all(func(m: String) -> bool: return save.has_achievement("mastery_" + m)))
+	var tier3 := false
+	for tree: String in Defs.SKILLS:
+		for sk: Dictionary in Defs.SKILLS[tree]:
+			tier3 = tier3 or (Defs.skill_tier(sk) == 3 and int(save.skills.get(sk["id"], 0)) > 0)
+	_try(save, got, "tier3", tier3)
 	_try(save, got, "all_brilliant", v["brilliant"] >= ids.size())
 	_try(save, got, "all_night", v["nights"] >= ids.size())
 	_try(save, got, "arts20", v["spent"] >= 20)
 	for tree: String in Defs.SKILLS:
 		var full := true
 		for sk: Dictionary in Defs.SKILLS[tree]:
-			full = full and int(save.skills.get(sk["id"], 0)) >= int(sk["max"])
+			if not Defs.SCORE_ONLY_SKILLS.has(sk["id"]):   # Renown is no Dark Art to master
+				full = full and int(save.skills.get(sk["id"], 0)) >= int(sk["max"])
 		_try(save, got, "branch_" + tree, full)
 	return got
 

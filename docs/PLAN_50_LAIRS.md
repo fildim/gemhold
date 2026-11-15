@@ -139,6 +139,8 @@ Twelve heroes and three bosses. Each has one rule, one counter, and a silhouette
 
 **Boss, lair 50: the Seraph** `S`: 5200 / 0.55 / 4 / 5 gems / 400. She flies. At 66% and 33% health she lands on the nearest road, is untouchable for 4 s, and raises the last 6 (then 8) slain heroes where she stands with half health (no bosses, boats or engines). Immune to Dread.
 
+**As built (Phase 4):** "untouchable" (Justicar's shield, the Seraph landing) means no damage of any kind lands, Meteor included; towers keep aiming at him, so a shield popped in a covered stretch wastes their shots. The Justicar's shield only rises on a hit he survives: a hit big enough to kill him outright from above 35% gets past it. The Seraph raises no flyers (they would have no road under them) besides no bosses, boats or engines, and once she has landed she stays on that road. Skylancers are `no_send` like the other flyers. On lairs with flyers but no air road, the generated flight lines run from each land road's start straight to the den.
+
 ### Implementation notes
 
 - Keep the pattern of `rally` for anything that spawns heroes mid-wave (boat crews, Belfry, Seraph): queue it, spawn next frame, and add to `wave_left` before the spawner's own removal is counted, or `_judge_wave` fires early.

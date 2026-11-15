@@ -71,6 +71,12 @@ const ENEMIES := {
 	"u": {"name": "Trebuchet", "hp": 700, "spd": 0.45, "gold": 45, "r": 0.4, "armor": 5, "cap": 0, "siege": true, "steady": true, "no_send": true},
 	"I": {"name": "the Iron Belfry", "hp": 4200, "spd": 0.38, "gold": 250, "r": 0.48, "armor": 8, "cap": 0, "belfry": true, "steady": true,
 		"spill": "4f,2k,1i", "boss": true, "no_send": true, "send_as": "k"},
+	# Chapter V: the Radiant Host
+	"y": {"name": "Skylancer", "hp": 150, "spd": 1.3, "gold": 14, "r": 0.24, "armor": 0, "cap": 1, "fly": true, "no_send": true},
+	"j": {"name": "Justicar", "hp": 420, "spd": 0.7, "gold": 28, "r": 0.27, "armor": 3, "cap": 2, "shield": true, "fearless": true},
+	"n": {"name": "Spiriter", "hp": 140, "spd": 1.0, "gold": 16, "r": 0.22, "armor": 0, "cap": 1, "chant": true},
+	"S": {"name": "the Seraph", "hp": 5200, "spd": 0.55, "gold": 400, "r": 0.45, "armor": 4, "cap": 5, "fly": true, "seraph": true, "fearless": true,
+		"boss": true, "no_send": true, "send_as": "k"},
 }
 
 ## Shown the first time each hero walks onto the map (see main.gd).
@@ -97,6 +103,10 @@ const HERO_TIPS := {
 	"i": "His censer smoke [b]silences towers[/b] near him: no ability, no battle-hardened bonus, slower fire. Out-range him from raised tiles; the den is never silenced.",
 	"u": "A siege engine. It stops when a tower comes in reach and [b]buries towers under rubble[/b], the strongest first. Tap a buried tower to clear it. It never takes gems.",
 	"I": "The Iron Belfry, a boss. Heroes walking in its shadow, just behind it, can't be targeted by towers (the Meteor still hits). Sappers jump out of it, and it unloads Footmen at your den.",
+	"y": "Flies straight for your den, over roads, water and Lava (the faint dashed line is his flight). Chill holds him only half as well. Gems he drops fall to the nearest road and roll home.",
+	"j": "Once, when he is badly hurt, a [b]holy shield[/b] makes him untouchable for a moment and heals him. Burst him down past it, or make him spend it where your towers can finish him. Dread doesn't touch him.",
+	"n": "When he takes a gem he doesn't run: he [b]chants at the cave mouth[/b] and vanishes with it. Dread or death breaks the chant. Den charges and Crypts by the den stop him.",
+	"S": "The Seraph, a boss who flies. Twice, as she weakens, she lands on a road, is untouchable for a moment and [b]raises the heroes you slew last[/b]. Dread doesn't touch her.",
 }
 
 const GUARD_RANGE := 1.2
@@ -174,9 +184,11 @@ const SITES := {
 		"text": "While it burns, waves come %d s sooner and barracks muster faster. Raze it for %d gold."},
 	"workshop": {"name": "Siege Workshop", "cut": 50, "bounty": 40,
 		"text": "Builds Trebuchets and rolls them onto the road while waves are coming. Raze it for %d gold."},
+	"chapel": {"name": "Chapel", "cut": 60, "bounty": 30, "heal": 10.0, "r": 2.0,
+		"text": "Heals heroes within %.1f tiles and keeps hallowed ground holy. Raze it for %d gold."},
 }
 ## Map buildings that belong to the heroes: razed (not freed) by cutting, and pay a bounty.
-const HERO_SITES := ["camp", "workshop", "beacon"]
+const HERO_SITES := ["camp", "workshop", "beacon", "chapel"]
 ## Buildings that send troops onto a road (a "path", "spawn" and "every" in the level file).
 const MUSTER_SITES := ["camp", "workshop"]
 
@@ -225,6 +237,7 @@ const SKILLS := {
 		{"id": "moss_keen", "name": "Keen Eyes", "text": "+10% damage to gem carriers", "max": 3, "tier": 2},
 		{"id": "mastery_longhouse", "name": "Mastery: Longhouse", "text": "Huts can become Longhouses (level IV)", "max": 1, "tier": 2},
 		{"id": "mastery_lodge", "name": "Mastery: Hunter's Lodge", "text": "Huts can become Hunter's Lodges (level IV)", "max": 1, "tier": 2},
+		{"id": "moss_legend", "name": "Legend of the Warband", "text": "+5% damage", "max": 5, "tier": 3},
 	],
 	"frost": [
 		{"id": "frost_dmg", "name": "Grave Chill", "text": "+10% damage", "max": 3},
@@ -237,6 +250,7 @@ const SKILLS := {
 		{"id": "frost_dread", "name": "Lingering Dread", "text": "Dread lasts 0.3 s longer", "max": 2, "tier": 2},
 		{"id": "mastery_ossuary", "name": "Mastery: Ossuary", "text": "Crypts can become Ossuaries (level IV)", "max": 1, "tier": 2},
 		{"id": "mastery_mausoleum", "name": "Mastery: Mausoleum", "text": "Crypts can become Mausoleums (level IV)", "max": 1, "tier": 2},
+		{"id": "frost_legend", "name": "Legend of the Crypt", "text": "+5% damage", "max": 5, "tier": 3},
 	],
 	"ash": [
 		{"id": "ash_dmg", "name": "Hotter Coals", "text": "+10% damage", "max": 3},
@@ -249,6 +263,7 @@ const SKILLS := {
 		{"id": "ash_cooling", "name": "Slow Cooling", "text": "Lava lasts 0.5 s longer", "max": 2, "tier": 2},
 		{"id": "mastery_twin", "name": "Mastery: Twin Flame", "text": "Shrines can become Twin Flames (level IV)", "max": 1, "tier": 2},
 		{"id": "mastery_sunlance", "name": "Mastery: Sunlance", "text": "Shrines can become Sunlances (level IV)", "max": 1, "tier": 2},
+		{"id": "ash_legend", "name": "Legend of the Flame", "text": "+5% damage", "max": 5, "tier": 3},
 	],
 	"den": [
 		{"id": "den_charge", "name": "Hoard's Wrath", "text": "+1 den charge", "max": 5},
@@ -258,6 +273,9 @@ const SKILLS := {
 		{"id": "meteor_dmg", "name": "Starfall", "text": "+25% meteor damage", "max": 3},
 		{"id": "gem_magnet", "name": "Gem Magnet", "text": "Loose gems roll home 20% faster", "max": 3, "tier": 2},
 		{"id": "sturdy", "name": "Sturdy Foundations", "text": "Stun, Rubble and Silence weigh 15% less", "max": 3, "tier": 2},
+		{"id": "den_fury", "name": "Hoard's Fury", "text": "Den bolts +20% damage", "max": 5, "tier": 3},
+		{"id": "dragon_patience", "name": "Dragon's Patience", "text": "+10 starting mana", "max": 3, "tier": 3},
+		{"id": "renown", "name": "Renown", "text": "+1% leaderboard score; no effect in battle", "max": 150, "tier": 3},
 	],
 	"land": [
 		{"id": "land_veins", "name": "Rich Veins", "text": "Gold mines pay +1 gold", "max": 3},
@@ -377,3 +395,27 @@ const BELFRY := {"cover": 1.5, "sapper": 12.0, "unload": "6f"}
 ## Dusk: the light fades in over this many seconds when night falls mid-battle.
 const DUSK_FADE := 3.0
 
+
+
+# ---------------------------------------------------------------- Chapter V: the Radiant Host
+
+## Flyers (Skylancer, Seraph) fly their air road at this height above the ground (view only) and
+## are chilled at FLY_CHILL of the slow; Lava does not reach them.
+const FLY_LIFT := 0.55
+const FLY_CHILL := 0.5
+## Justicar: once, below `below` of his health, a holy shield makes him untouchable for `dur` s and
+## heals him to `heal`.
+const JUSTICAR := {"below": 0.35, "dur": 2.5, "heal": 0.6}
+## Spiriter: chants this long at the cave mouth with a gem, then vanishes with it.
+const CHANT_TIME := 4.0
+## The Seraph: at each health share in `at` she lands on the nearest road, is untouchable for `dur`
+## s and raises that many of the last slain heroes (`raise`) at `hp` of their health.
+const SERAPH := {"at": [0.66, 0.33], "raise": [6, 8], "dur": 4.0, "hp": 0.5}
+## Hallowed ground: while any Chapel stands, towers on it have HALLOW_RANGE of their range and no ability.
+const HALLOW_RANGE := 0.8
+## Tier III: Legend +5% tower damage, Hoard's Fury +20% den damage, Dragon's Patience +10 starting mana,
+## Renown +1% score.
+const LEGEND_DMG := 0.05
+const FURY_DMG := 0.2
+const PATIENCE_MANA := 10
+const RENOWN_SCORE := 0.01

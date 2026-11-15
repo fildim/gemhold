@@ -1,0 +1,71 @@
+{
+ "id": "level_48",
+ "title": "Eclipse",
+ "cols": 16,
+ "rows": 10,
+ "hp_mul": 2.15,
+ "legend": {"A":"high ash","F":"high frost","L":"lair","M":"high moss","a":"ash","f":"frost","m":"moss"},
+ "terrain": [
+  "mmmmmmmmmmmmmmmm",
+  "mmmmmmmmmmmmmmmm",
+  "mmmmmmmmmmmmmmmm",
+  "mmFmmmmmmmmmmAmm",
+  "mmmmmmmLLmmmmmmm",
+  "mmmmmmmLLmmmmmmm",
+  "ffffffmmmmaaaaaa",
+  "ffffffMmmmaaaaaa",
+  "ffffffmmmmMaaaaa",
+  "ffffffmmmmaaaaaa"
+ ],
+ "trees": [
+  "T....TT.T.TT....",
+  "........T.T.....",
+  "...T.T...T......",
+  ".T.T.T..........",
+  ".TTT..........T.",
+  ".T...........T.T",
+  "T..T........T.TT",
+  "TTT..T.T.TTT..T.",
+  ".T.T.T...T.T.T..",
+  ".T..T.TT...T.T.."
+ ],
+ "paths": [
+  [[-1,1],[4,1],[4,4],[6,4]],
+  [[16,1],[11,1],[11,5],[9,5]],
+  [[8,10],[8,6]]
+ ],
+ "lair": {"cell":[7,4],"center":[8,5],"size":[2,2]},
+ "sites": [
+  {"cell":[0,9],"kind":"mine"},
+  {"cell":[15,9],"kind":"well"}
+ ],
+ "start": {"gems":5,"gold":230,"mana":60},
+ "first_wave_delay": 30,
+ "wave_gap": 24,
+ "site_cuts": 3,
+ "waves": [
+  "8p",
+  "6f,2y",
+  "6p,2n",
+  "4f,2j",
+  "2k,4y",
+  "6t,2n,2c",
+  "4f,2j,4y",
+  "3k,2n,2b",
+  "8p,6y,2h",
+  "4k,2w,2j",
+  "6t,4y,2n,2c",
+  "4k,2b,3j",
+  "8f,6y,3n",
+  "5k,4j,2h",
+  "6k,8y,2n,2c",
+  "6k,8f,4j,4y",
+  "1x,6k,4j,4n",
+  "6k,8y,4f,4j,2h",
+  "2x,6k,6y,4j",
+  "2x,8k,8y,4n"
+ ],
+ "rules": [
+  {"dark":25,"kind":"eclipse","period":70}
+ ]
+}
