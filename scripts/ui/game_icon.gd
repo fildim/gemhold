@@ -30,7 +30,7 @@ const ACH := {
 	"diver_meteor": "meteor", "altars10": "site:altar",
 	"chapter4": "banner", "sapper_keg": "hero:a", "no_stun": "hero:a", "rubble10": "hero:u", "trebuchet_fast": "hero:u",
 	"silence_proof": "hero:i", "pavior_early": "hero:v", "beacons10": "site:beacon", "workshops10": "site:workshop", "night_dusk": "moon",
-	"chapter5": "crown", "final_brilliant": "hero:S", "final_night": "moon", "seven_kept": "gem", "tier3": "book",
+	"chapter5": "crown", "final_brilliant": "hero:S", "final_night": "moon", "tier3": "book",
 	"skylancer10": "hero:y", "shield_waste": "hero:j", "chant_broken5": "hero:n", "chapel_first": "site:chapel", "hallowed_none": "site:chapel",
 	"seraph_no_raise": "hero:S", "chapels25": "site:chapel", "ossuary_burst": "tower:frost", "sunlance3": "tower:ash", "mastery_one_each": "towers",
 }

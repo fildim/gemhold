@@ -14,7 +14,7 @@ static func topics() -> Array:
 
 	# ------------------------------------------------------------ basics
 	t.append(_t("The basics", "Your goal",
-		"You are the dark lord. Your cave holds [b]5 gems[/b] (6 or 7 in a few late lairs), and self-righteous heroes walk the roads to steal them.\n\n"
+		"You are the dark lord. Your cave holds [b]5 gems[/b], and self-righteous heroes walk the roads to steal them.\n\n"
 		+ "A hero who reaches the cave grabs a gem and runs back the way he came. If he gets off the map, that gem is gone for good. Lose them all and the lair is plundered.\n\n"
 		+ "Stop them with towers along the roads, your den's bolts and your Meteor."))
 	t.append(_t("The basics", "Waves",
@@ -147,7 +147,7 @@ Where she falls, Fenwalkers and Divers rise." % [e["T"]["hp"], roundi(Defs.SURGE
 		"From lair 45. When he takes a gem he doesn't run: he [b]chants at the cave mouth for %d seconds[/b] (the shrinking blue ring) and vanishes with it. Dread or death breaks the chant; a Spiriter whose chant is broken runs like anyone else.
 \nDen charges and a Crypt with Dread near the den are your answer." % roundi(Defs.CHANT_TIME)))
 	t.append(_t("Heroes", "The Seraph",
-		"The boss of the Radiant Host (lair 50): [b]%d health[/b], armour %d, and she can carry 5 gems. She flies. At two thirds and one third of her health she [b]lands on the nearest road[/b], is untouchable for %d seconds and raises the last heroes you slew (six, then eight) at half health. Dread doesn't touch her.
+		"The boss of the Radiant Host (lair 50): [b]%d health[/b], armour %d, and she can carry 3 gems. She flies. At two thirds and one third of her health she [b]lands on the nearest road[/b], is untouchable for %d seconds and raises the last heroes you slew (six, then eight) at half health. Dread doesn't touch her.
 \nOnce she has landed she walks the road like anyone else." % [e["S"]["hp"], e["S"]["armor"], roundi(Defs.SERAPH["dur"])]))
 	t.append(_t("Heroes", "Heroes get stronger",
 		"Each wave's heroes are tougher than the last. The game also watches how you play: when you crush a wave far from the cave, the next heroes come back much tougher; when a wave gets close, only a little. Heroes falling quickly toughen the rest of their own wave too.\n\n"
@@ -190,8 +190,8 @@ A [b]Dark Altar[/b] is overgrown. Cut it free (%d mana) and towers within %.1f t
 \nSome tiles are [b]hallowed ground[/b] (they glow pale gold). Towers built on them have %d%% less range and no ability until [b]every Chapel[/b] in the lair is razed; then the glow goes out and they work in full." % [Defs.SITES["chapel"]["r"], Defs.SITES["chapel"]["cut"], Defs.SITES["chapel"]["bounty"], roundi((1.0 - Defs.HALLOW_RANGE) * 100)]))
 	t.append(_t("The Radiant Host", "Eclipse",
 		"On some lairs [b]the sun goes dark[/b] for a while, again and again. While it is dark you can only build where your den, towers, mines and wells give light, as on a night mission. Towers already built keep fighting.\n\nThe lair's night mission is dark all the time."))
-	t.append(_t("The Radiant Host", "Flight lines and seven gems",
-		"Flyers ignore the roads and take a [b]flight line[/b] (a faint dashed line) straight to your den. Nothing blocks building under it.\n\nA few lairs hold [b]6 or 7 gems[/b]: more to guard, more to lose. A Brilliant win is still no hero touching any of them."))
+	t.append(_t("The Radiant Host", "Flight lines",
+		"Flyers ignore the roads and take a [b]flight line[/b] (a faint dashed line) straight to your den. Nothing blocks building under it.\n\nOnly towers in reach of the line can hit a flyer, so build some along it and near the den."))
 
 	# ------------------------------------------------------------ your powers
 	t.append(_t("Your powers", "Mana",
@@ -281,5 +281,5 @@ const ICONS := {
 	"Sapper": ["hero:a"], "Pavior": ["hero:v"], "Inquisitor": ["hero:i"], "Trebuchet": ["hero:u"], "The Iron Belfry": ["hero:I"],
 	"Stunned, buried, silenced": ["hero:u"], "Signal Fires and Workshops": ["site:beacon", "site:workshop"], "Dusk": ["moon"],
 	"Skylancer": ["hero:y"], "Justicar": ["hero:j"], "Spiriter": ["hero:n"], "The Seraph": ["hero:S"],
-	"Chapels and hallowed ground": ["site:chapel"], "Eclipse": ["moon"], "Flight lines and seven gems": ["gem"],
+	"Chapels and hallowed ground": ["site:chapel"], "Eclipse": ["moon"], "Flight lines": ["hero:y"],
 }

@@ -98,7 +98,7 @@ Each is taught by a tip the first time it appears.
 - **Dusk**: at wave N a day mission turns to night (the existing light rules switch on, with a 3 s fade). The lair's night mission is dark from the start.
 - **Eclipse**: darkness comes and goes on a timer (`period`, `dark`).
 - **Hallowed ground** (`H` marks): towers standing on it have 20% less range and cannot use their ability until every Chapel in the lair is razed. The tiles glow pale gold until then.
-- **Seven gems**: `start.gems` 6 or 7 on a few lairs. More to guard, more to lose.
+- **Seven gems**: dropped (owner's decision, 2026-11-15): every lair keeps 5 gems. The format still accepts `start.gems` 5 to 7.
 
 ## 4. New heroes
 
@@ -137,7 +137,7 @@ Twelve heroes and three bosses. Each has one rule, one counter, and a silhouette
 | `j` | Justicar | 420 / 0.7 / 3 / 2 / 28 | Once, below 35% health, a holy shield makes him untouchable for 2.5 s and heals him to 60%. Immune to Dread | Burst him down past the shield, or pop it early and finish him in a covered stretch |
 | `n` | Spiriter | 140 / 1.0 / 0 / 1 / 16 | When he takes a gem he does not run: he chants for 4 s at the cave mouth and vanishes with it. Dread or death break the chant (a broken chant makes him run like anyone else) | Den charges, a Crypt with Dread by the den |
 
-**Boss, lair 50: the Seraph** `S`: 5200 / 0.55 / 4 / 5 gems / 400. She flies. At 66% and 33% health she lands on the nearest road, is untouchable for 4 s, and raises the last 6 (then 8) slain heroes where she stands with half health (no bosses, boats or engines). Immune to Dread.
+**Boss, lair 50: the Seraph** `S`: 5200 / 0.55 / 4 / 3 gems / 400 (5 gems in the first draft; 3 once every lair kept 5 gems, or one escape would end the lair). She flies. At 66% and 33% health she lands on the nearest road, is untouchable for 4 s, and raises the last 6 (then 8) slain heroes where she stands with half health (no bosses, boats or engines). Immune to Dread.
 
 **As built (Phase 4):** "untouchable" (Justicar's shield, the Seraph landing) means no damage of any kind lands, Meteor included; towers keep aiming at him, so a shield popped in a covered stretch wastes their shots. The Justicar's shield only rises on a hit he survives: a hit big enough to kill him outright from above 35% gets past it. The Seraph raises no flyers (they would have no road under them) besides no bosses, boats or engines, and once she has landed she stays on that road. Skylancers are `no_send` like the other flyers. On lairs with flyers but no air road, the generated flight lines run from each land road's start straight to the den.
 
@@ -311,12 +311,12 @@ Each lair turns one lever nobody has seen yet, then later lairs mix levers. Grid
 | 42 | Oathkeeper's Stair | 1 long | Justicar | 18 | One winding road: the question is where his shield gets spent |
 | 43 | The Chapel Road | 2 | Chapel | 19 | Two Chapels and a barracks: more to raze than mana allows |
 | 44 | Hallowed Fields | 2 | Hallowed ground | 19 | The best tiles are hallowed until both Chapels fall |
-| 45 | The Reliquary | 3 short | Spiriter, seven gems | 19 | Short roads and chanting thieves: den charges and Dread matter most here |
+| 45 | The Reliquary | 3 short | Spiriter | 19 | Short roads and chanting thieves: den charges and Dread matter most here |
 | 46 | Pilgrim's Flood | 1 land, 1 river, 1 air | Water, boats and flyers together | 20 | Three kinds of road at once |
 | 47 | The Sun Gate | 2 | Siege with the Host | 20 | Trebuchets guarded by Justicars; Inquisitors on hallowed ground |
 | 48 | Eclipse | 3 | Eclipse | 20 | Dark for 25 s in every 70 |
 | 49 | The Last Procession | 4 land, 1 river, 2 air | Every hero in the game | 22 | Each wave revisits one earlier chapter |
-| 50 | The Seraph's Descent | 3 land, 2 air | Seraph (boss) | 24 | Seven gems. Champions in waves 18 and 21, the Seraph in 24 |
+| 50 | The Seraph's Descent | 3 land, 2 air | Seraph (boss) | 24 | Champions in waves 18 and 21, the Seraph in 24 |
 
 **Music.** Decided 2026-11-13: lairs without a chosen track play no battle music. Change the fallback in `main.gd` (`MUSIC.get(level.id, "mountain")`) to silence. The owner is auditioning candidates in `Desktop/Gemhold/Music to try/new` (52 tracks on 2026-11-13, each with source and licence in `SOURCES.txt`: CC0, CC-BY or OGA-BY only). Some downloads are the site's preview encodes; when a track is chosen, fetch the best original from its source page before cutting it. Give a lair its track only when the owner names it, then follow the usual workflow (cut the loudest 150 s, -14 LUFS, credit, remove from the folder).
 
@@ -341,7 +341,7 @@ Each lair turns one lever nobody has seen yet, then later lairs mix levers. Grid
 - **Masteries:** one for building each of the six, `mastery_all` (all six in one battle), `mastery_one_each`, `ossuary_burst` (four heroes slain by one Ossuary volley), `twin_kills` (Twin Flame slays two heroes within a second), `sunlance3` (three heroes burning on one Sunlance), `hunter_champion` (a Hunter's Lodge lands the killing blow on a Champion), lifetime `masteries25`, `masteries100`.
 - **Water:** `sink1` Davy Jones (sink a Longboat before it lands), `sink_all` (win a river lair with no boat landing), `drowned100` lifetime crew drowned, `collapse_kill` (a hero dies swimming a collapsed bridge), `collapses25`, `sluice5` (five heroes slain by one surge), `dry_feet` (win Reedmere Ford with no hero slain in water), `diver_meteor` (slay a hidden Diver with a Meteor).
 - **Siege:** `sapper_keg` Own Goal (a Sapper's keg slays three heroes), `no_stun` (win a Sapper lair with no tower ever stunned), `rubble10` (clear 10 Rubbles in one battle), `trebuchet_fast` (destroy a Trebuchet before its first stone), `silence_proof` (slay an Inquisitor with a tower he was silencing), `pavior_early` (slay a Pavior before he paves three tiles), `belfry` Belfry Breaker.
-- **Radiant:** `skylancer10` (ten Skylancers in one battle), `shield_waste` (make a Justicar spend his shield outside every tower's range), `chant_broken5`, `chapel_first` (raze every Chapel before wave 5), `hallowed_none` (win Hallowed Fields without building on hallowed ground), `seven_kept` (win a seven-gem lair Brilliant), `seraph` Fallen Angel, `seraph_no_raise` (slay the Seraph before her second rising).
+- **Radiant:** `skylancer10` (ten Skylancers in one battle), `shield_waste` (make a Justicar spend his shield outside every tower's range), `chant_broken5`, `chapel_first` (raze every Chapel before wave 5), `hallowed_none` (win Hallowed Fields without building on hallowed ground), `seraph` Fallen Angel, `seraph_no_raise` (slay the Seraph before her second rising).
 - **Heroes slain, lifetime:** two tiers for each of the twelve new heroes (100 and 1,000; Longboats and Trebuchets 25 and 250) and one per boss.
 - **Land:** `altars10`, `chapels25`, `beacons10`, `workshops10`, `sluices50`.
 
@@ -379,7 +379,7 @@ Each phase ends with all tests green, the Guide and `DEVELOPMENT.md` updated, a 
 | **1 Feel** | G1 motion and G4 icons for what exists | Screenshots before and after; no frame-time loss on Android |
 | **2 The Drowned Marches** | Water, fords, bridges, river roads, Tide, routes; five heroes and the Tidecaller; Altar and Sluice; level IV and the six masteries; Dark Arts tier II and The Land; G2 biomes and water; lairs 21–30; their achievements | Bot wins 21–30 inside the margin targets; `tower_test` balance targets met |
 | **3 The Siegeworks** | Tower statuses; four heroes and the Iron Belfry; Signal Fire, Workshop; Dusk; G3 sprites, lights and status looks; lairs 31–40; achievements | As above, plus stable frame time at lair 40 on a phone |
-| **4 The Radiant Host** | Flyers and air roads; three heroes and the Seraph; Chapel, hallowed ground, Eclipse, seven gems; Dark Arts tier III; lairs 41–50; the remaining achievements; chapter map art | Bot wins 41–50; the whole campaign difficulty curve printed and smooth |
+| **4 The Radiant Host** | Flyers and air roads; three heroes and the Seraph; Chapel, hallowed ground, Eclipse; Dark Arts tier III; lairs 41–50; the remaining achievements; chapter map art | Bot wins 41–50; the whole campaign difficulty curve printed and smooth |
 
 Phase 1 can run alongside Phase 0. Phases 2–4 are in order because each chapter's lairs reuse the systems of the one before.
 
@@ -403,3 +403,4 @@ Not part of this plan; they need decisions or new backend rules.
 6. **Dark Arts tiers**: decided 2026-11-13: they open with chapters, not stars: The Land with Chapter II, tier II with Chapter III, tier III with Chapter V (§7).
 7. **Spells**: decided 2026-11-13: no new spells; Nightmare and Frenzy removed (§6).
 8. **Renown**: decided 2026-11-15: no score-only skill; Renown removed (§7).
+9. **Seven gems**: decided 2026-11-15: every lair has 5 gems (§3.6).

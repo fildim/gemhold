@@ -557,7 +557,7 @@ func _check_every_achievement_can_be_earned() -> void:
 	dusk.dark = true
 	Achievements.check_battle(s, dusk, 37)
 
-	# Chapter V: the finale Brilliant (seven gems) and by night, Hallowed Fields untouched.
+	# Chapter V: the finale Brilliant and by night, Hallowed Fields untouched.
 	var fin := _ending("level_50", false)
 	fin.gold = 7000
 	fin.kills_by = {"y": 10}

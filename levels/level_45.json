@@ -3,7 +3,7 @@
  "title": "The Reliquary",
  "cols": 16,
  "rows": 10,
- "hp_mul": 3.06,
+ "hp_mul": 2.85,
  "legend": {"A":"high ash","F":"high frost","L":"lair","M":"high moss","a":"ash","f":"frost","m":"moss"},
  "terrain": [
   "mmmmmmmmmaaaaaaa",
@@ -39,7 +39,7 @@
   {"cell":[0,9],"kind":"mine"},
   {"cell":[15,0],"kind":"well"}
  ],
- "start": {"gems":7,"gold":230,"mana":60},
+ "start": {"gems":5,"gold":230,"mana":60},
  "first_wave_delay": 30,
  "wave_gap": 24,
  "site_cuts": 3,

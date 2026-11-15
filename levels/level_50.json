@@ -43,7 +43,7 @@
   {"cell":[0,9],"kind":"mine"},
   {"cell":[15,0],"kind":"well"}
  ],
- "start": {"gems":7,"gold":230,"mana":60},
+ "start": {"gems":5,"gold":230,"mana":60},
  "first_wave_delay": 30,
  "wave_gap": 24,
  "site_cuts": 3,

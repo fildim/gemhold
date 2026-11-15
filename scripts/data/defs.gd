@@ -75,7 +75,7 @@ const ENEMIES := {
 	"y": {"name": "Skylancer", "hp": 150, "spd": 1.3, "gold": 14, "r": 0.24, "armor": 0, "cap": 1, "fly": true, "no_send": true},
 	"j": {"name": "Justicar", "hp": 420, "spd": 0.7, "gold": 28, "r": 0.27, "armor": 3, "cap": 2, "shield": true, "fearless": true},
 	"n": {"name": "Spiriter", "hp": 140, "spd": 1.0, "gold": 16, "r": 0.22, "armor": 0, "cap": 1, "chant": true},
-	"S": {"name": "the Seraph", "hp": 5200, "spd": 0.55, "gold": 400, "r": 0.45, "armor": 4, "cap": 5, "fly": true, "seraph": true, "fearless": true,
+	"S": {"name": "the Seraph", "hp": 5200, "spd": 0.55, "gold": 400, "r": 0.45, "armor": 4, "cap": 3, "fly": true, "seraph": true, "fearless": true,
 		"boss": true, "no_send": true, "send_as": "k"},
 }
 

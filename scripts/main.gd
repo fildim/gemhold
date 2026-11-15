@@ -270,7 +270,7 @@ func _process(delta: float) -> void:
 
 
 ## Tips for the rules of Chapter III, each shown once (Prefs "rule_tip_<key>").
-const RULE_TIPS := ["ford", "bridge", "tide", "routes", "mastery", "dusk", "rubble", "stun", "silence", "eclipse", "hallowed", "air", "gems"]
+const RULE_TIPS := ["ford", "bridge", "tide", "routes", "mastery", "dusk", "rubble", "stun", "silence", "eclipse", "hallowed", "air"]
 var _rule_key := ""
 
 
@@ -320,9 +320,6 @@ func _rule_tip_for(k: String) -> Array:
 			if level.path_kind.has("air"):
 				var i := level.path_kind.find("air")
 				return ["[b]A flight line.[/b] Flyers come this way straight over the land, ignoring the roads. Only towers within reach of the dashed line can hit them.", _cell_rect(level.path_pos(i, 2.0) - Vector2(0.75, 0.75), Vector2(1.5, 1.5))]
-		"gems":
-			if level.gems > 5:
-				return ["[b]%d gems[/b] in this cave: more to guard, and more to lose." % level.gems, _cell_rect(level.lair_center - Vector2(1.0, 1.0), Vector2(2.0, 2.0))]
 		"rubble", "stun", "silence":
 			for tw: GameSim.Tower in sim.towers.values():
 				if k == "rubble" and tw.rubble > 0.0:

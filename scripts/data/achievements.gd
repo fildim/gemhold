@@ -33,7 +33,6 @@ const LIST: Array[Dictionary] = [
 	{"id": "brilliant25", "name": "Unblemished", "text": "Win 25 lairs Brilliant.", "stat": "brilliant", "goal": 25},
 	{"id": "brilliant40", "name": "Without a Scratch", "text": "Win 40 lairs Brilliant.", "stat": "brilliant", "goal": 40},
 	{"id": "final_brilliant", "name": "Not a Feather Touched", "text": "Win the Seraph's Descent Brilliant."},
-	{"id": "seven_kept", "name": "Seven Sealed", "text": "Win a lair with seven gems Brilliant."},
 	{"id": "all_brilliant", "name": "Perfectionist", "text": "Win every lair Brilliant."},
 	{"id": "wicked", "name": "Close Shave", "text": "Win a lair Wicked: a hero touched a gem, but none got away."},
 	{"id": "survived", "name": "Battered but Standing", "text": "Win a lair after losing gems."},
@@ -541,7 +540,6 @@ static func check_battle(save: SaveData, sim: GameSim, number: int) -> Array[Str
 		_try(save, got, "night_dusk", sim.dusk_wave > 0 and sim.dark)
 		_try(save, got, "final_brilliant", rank == "Brilliant" and sim.level.id == FINALE)
 		_try(save, got, "final_night", night and sim.level.id == FINALE)
-		_try(save, got, "seven_kept", rank == "Brilliant" and sim.level.gems >= 7)
 		_try(save, got, "hallowed_none", sim.level.id == "level_44" and sim.built_hallowed == 0)
 		var score := sim.score(number)
 		_try(save, got, "score", score >= SCORE_GOAL)

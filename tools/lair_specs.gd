@@ -234,7 +234,7 @@ const LAIRS := [
 		"waves": ["8p", "6f,2c", "6p,2y", "4f,2j", "2k,2n", "6t,4y", "4f,2j,2i", "3k,2b,2n", "8p,4y,2j", "4k,2w,2i",
 			"6t,4n,2c", "4k,2b,3j", "8f,4y,3i", "5k,3j,2n", "6k,4y,4j", "6k,8f,4i,2c", "1x,6k,4j,4n", "6k,6j,4y,2i", "2x,6k,4j,6y,2i"]},
 
-	{"n": 45, "title": "The Reliquary", "lair": [7, 4], "seed": 4505, "site_cuts": 3, "hp_mul": 2.7, "gems": 7,
+	{"n": 45, "title": "The Reliquary", "lair": [7, 4], "seed": 4505, "site_cuts": 3, "hp_mul": 2.7,
 		"ground": [["f", 0, 6, 6, 9], ["a", 9, 0, 15, 3]],
 		"high": [[4, 3, "M"], [11, 4, "F"], [6, 1, "A"], [9, 7, "M"]],
 		"paths": [[[-1, 4], [6, 4]], [[16, 5], [9, 5]], [[7, -1], [7, 3]]],
@@ -287,7 +287,7 @@ const LAIRS := [
 			"6f,4a,2v", "4k,2i,4a", "2u,4k,2v", "1I,4k,6a",
 			"6p,6y", "4k,4j,2c", "6f,6n,2j", "4k,8y,4j", {"heroes": "1x,6k,6y,4j,4n,2u,2l", "cargo": {"4": "2k,2c"}}]},
 
-	{"n": 50, "title": "The Seraph's Descent", "lair": [7, 6], "seed": 5010, "site_cuts": 3, "hp_mul": 2.9, "gems": 7,
+	{"n": 50, "title": "The Seraph's Descent", "lair": [7, 6], "seed": 5010, "site_cuts": 3, "hp_mul": 2.9,
 		"ground": [["f", 0, 0, 5, 1], ["a", 10, 8, 15, 9]],
 		"high": [[5, 4, "F"], [10, 5, "M"], [9, 2, "A"], [3, 5, "M"], [13, 8, "F"]],
 		"paths": [[[-1, 2], [4, 2], [4, 6], [6, 6]], [[16, 2], [11, 2], [11, 7], [9, 7]], [[7, -1], [7, 1], [8, 1], [8, 5]],
