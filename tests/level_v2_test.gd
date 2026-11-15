@@ -43,6 +43,16 @@ func _loader() -> void:
 	_check(sim.cell_info(Vector2i(5, 2))["title"] == "Shallows", "shallows tile panel")
 	_check(sim.preview_range(Vector2i(5, 2)) == 0.0, "no range preview on water")
 	_check(sim.do_action("build:moss", Vector2i(5, 2)) != "", "building on water fails")
+	# "night_hp" sets the night mission's hero health (Defs.NIGHT_HP when the file has none).
+	_check(is_equal_approx(lv.night_hp, Defs.NIGHT_HP), "night_hp defaults to NIGHT_HP")
+	var d: Dictionary = (load(FIXTURE) as JSON).data.duplicate(true)
+	d["night_hp"] = 0.6
+	var nl := Level.new()
+	nl._parse(d)
+	nl.night = true
+	var ns := GameSim.new(nl)
+	ns._spawn("p", 0, 0.0)
+	_check(is_equal_approx(nl.night_hp, 0.6) and is_equal_approx(ns.enemies[-1].max_hp, Defs.ENEMIES["p"]["hp"] * nl.hp_mul * 0.6), "night_hp is read and used at night: %.1f" % ns.enemies[-1].max_hp)
 
 
 func _routes() -> void:

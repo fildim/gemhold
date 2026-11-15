@@ -787,7 +787,7 @@ func show_intro(level: Level, number: int, best_rank: String, night_open := fals
 			txt += "   [color=#e8b84a]Night best: %s[/color]" % night_best
 		buttons.append(["Night mission", night_pressed])
 	else:
-		txt += "\n[color=#6f7aa8]Clear it Brilliant to unlock its night mission.[/color]"
+		txt += "\n[color=#6f7aa8]Lose no gem to unlock its night mission.[/color]"
 	buttons.append(["Map", map_pressed])
 	_show_card(level.title, txt, buttons)
 

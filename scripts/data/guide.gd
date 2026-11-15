@@ -27,7 +27,7 @@ static func topics() -> Array:
 		+ "[color=#e8b84a]★★[/color] [b]Wicked[/b]: none lost, but a hero touched one.\n"
 		+ "[color=#e8b84a]★★★[/color] [b]Brilliant[/b]: no hero ever touched a gem.\n\n"
 		+ "The stars next to the gem count at the top show the best rating still within reach in this battle; a message tells you the moment it slips.\n\n"
-		+ "Stars are your skill points for Dark Arts. Only your best rating on each lair counts, so replay a lair to earn the stars you missed. A Brilliant win also opens that lair's night mission."))
+		+ "Stars are your skill points for Dark Arts. Only your best rating on each lair counts, so replay a lair to earn the stars you missed. A win with no gem lost (Wicked or Brilliant) also opens that lair's night mission."))
 	t.append(_t("The basics", "Speed and pause",
 		"[b]1× / 2×[/b] runs the battle at double speed when a wave is easy.\n\n[b]Pause[/b] stops everything; on a phone the back button pauses too. You can still tap tiles and read their panels while paused.
 
@@ -87,22 +87,22 @@ With a keyboard there are [b]shortcuts[/b]: %s pauses, %s changes speed, %s call
 		+ "[b]Footman[/b]: sturdier, with a little armour (%d). %d health.\n\n" % [e["f"]["armor"], e["f"]["hp"]]
 		+ "[b]Scout[/b]: fast and fragile. He reaches the cave before your towers notice. Slow him with a Crypt."))
 	t.append(_t("Heroes", "Cleric",
-		"Heals the heroes around him while he walks. A group with a Cleric in it lasts much longer.\n\nYour towers shoot Clerics before ordinary heroes, but make sure something reaches him early."))
+		"Heals the heroes around him while he walks. A group with a Cleric in it lasts much longer.\n\nYour towers shoot Clerics before ordinary heroes, but make sure something reaches him early. He does not heal boats, siege engines or flyers."))
 	t.append(_t("Heroes", "Knight",
 		"Slow, very tough ([b]%d health[/b]) and armoured (%d). He carries [b]2 gems[/b].\n\n" % [e["k"]["hp"], e["k"]["armor"]]
 		+ "Arrows barely scratch him. Cinder Shrines ignore armour, and the Meteor does too. A Crypt keeps him in range long enough to burn."))
 	t.append(_t("Heroes", "Shieldbearer",
 		"Arrives from the fifth lair. Heroes within %.1f tiles of him take %d%% less damage (not him, and not from beams, the den or the Meteor).\n\n"
 		% [Defs.GUARD_RANGE, roundi(e["b"]["guard"] * 100)]
-		+ "Kill him first and the whole group goes soft. Towers already aim for him before ordinary heroes."))
+		+ "Kill him first and the whole group goes soft. Towers already aim for him before ordinary heroes. His shield does not reach boats, siege engines or flyers."))
 	t.append(_t("Heroes", "Cutpurse",
 		"Arrives from the fourth lair. Fast, fragile, and carries [b]2 gems[/b]. Losing one Cutpurse can cost you a whole Brilliant rating.\n\nCrypts and the den's bolts are your best answer."))
 	t.append(_t("Heroes", "Warden",
-		"Arrives from the fifth lair. His lantern [b]clears slow and Dread[/b] from every hero near him, himself included.\n\nCrypts do little around a Warden. Kill him first, then the chill works again."))
+		"Arrives from the fifth lair. His lantern [b]clears slow and Dread[/b] from every hero near him, himself included.\n\nCrypts do little around a Warden. Kill him first, then the chill works again. His lantern does not reach boats, siege engines or flyers."))
 	t.append(_t("Heroes", "Herald",
 		"Arrives from the eleventh lair. Heroes within %.1f tiles of his banner, himself included, march [b]%d%% faster[/b]. The gold ring around his feet shows how far it reaches.\n\n"
 		% [Defs.HASTE_RANGE, roundi(e["h"]["haste"] * 100)]
-		+ "A group with a Herald runs past towers that would have held it. Towers aim for him before ordinary heroes; a Crypt's chill still works on his followers."))
+		+ "A group with a Herald runs past towers that would have held it. Towers aim for him before ordinary heroes; a Crypt's chill still works on his followers. His banner does not reach boats, siege engines or flyers."))
 	t.append(_t("Heroes", "Berserker",
 		"Arrives from the thirteenth lair. Tough and unarmoured, but once he drops [b]below half health he runs %.0f× as fast[/b] and glows red.\n\n" % e["r"]["rage"]
 		+ "Don't start on a Berserker just before the cave. Hit him early, or hard enough to finish him in one stretch: Crypts and heated Shrine beams."))
@@ -238,7 +238,7 @@ A [b]Dark Altar[/b] is overgrown. Cut it free (%d mana) and towers within %.1f t
 "
 		+ "Tower skills apply to towers you build after buying them. [b]Refund all points[/b] any time to try a different plan."))
 	t.append(_t("Progress", "Night missions",
-		"Win a lair [b]Brilliant[/b] and its night mission opens (the moon on the map).\n\n"
+		"Win a lair without losing a gem ([b]Wicked[/b] or [b]Brilliant[/b]) and its night mission opens (the moon on the map).\n\n"
 		+ "Same lair, in darkness: you can only build where you can see. Your cave, towers, mines and wells light the ground around them, so each tower you build opens room for the next.\n\nNight missions earn their own stars."))
 	t.append(_t("Progress", "Score and Hall of Fame",
 		"Every won battle scores points:\n\n"

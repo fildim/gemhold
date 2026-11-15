@@ -84,9 +84,9 @@ static func mission_id(level_id: String, night: bool) -> String:
 	return level_id + (":night" if night else "")
 
 
-## A level's night mission opens once the day mission is cleared Brilliant.
+## A level's night mission opens once the day mission is won with no gem lost (Wicked or Brilliant).
 func night_unlocked(level_id: String) -> bool:
-	return best_rank(level_id) == "Brilliant"
+	return best_rank(level_id) in ["Wicked", "Brilliant"]
 
 
 func best_rank(level_id: String) -> String:

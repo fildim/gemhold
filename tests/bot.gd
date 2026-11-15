@@ -3,7 +3,8 @@ extends RefCounted
 ## A simple player for headless tests: builds on every free tile next to a road, closest to the
 ## lair first, then upgrades (clearing rubble first); razes barracks, workshops and Signal Fires before
 ## spending mana on anything else; casts the
-## Meteor whenever it can and picks up all loot. It plays much better than a person (it never
+## Meteor whenever it can and picks up all loot. In the dark, when its lit spots are full and gold
+## piles up, it builds a stepping-stone tower towards the dark ones. It plays much better than a person (it never
 ## hesitates), so a win only shows a level is winnable.
 
 ## The Dark Arts the bot plays with are the standard ones for each lair (scripts/data/loadout.gd).
@@ -19,8 +20,9 @@ static func skills(points: int, beaten := 1000) -> Dictionary:
 
 
 ## Plays the battle to the end (or 1200 s) and returns the finished sim. A non-zero seed changes
-## the luck (loot, Dread, Lava) for the same battle.
-static func play(lv: Level, skill_ranks: Dictionary, seed := 0) -> GameSim:
+## the luck (loot, Dread, Lava) for the same battle. The style sets which tiles it builds on first:
+## "near" closest to the lair, "far" earliest along a land road, "mid" halfway along one.
+static func play(lv: Level, skill_ranks: Dictionary, seed := 0, style := "near") -> GameSim:
 	var sim := GameSim.new(lv, skill_ranks)
 	if OS.has_environment("BOT_TRACE"):   # print what the battle announces, for debugging a lair
 		sim.toast.connect(func(t: String) -> void: print("%.1f w%d %s" % [sim.time, sim.wave, t]))
@@ -36,12 +38,23 @@ static func play(lv: Level, skill_ranks: Dictionary, seed := 0) -> GameSim:
 				if lv.road.has(v + d):
 					spots.append(v)
 					break
-	spots.sort_custom(func(a: Vector2i, b: Vector2i) -> bool: return Vector2(a).distance_to(lv.lair_center) < Vector2(b).distance_to(lv.lair_center))
+	if style == "near":
+		spots.sort_custom(func(a: Vector2i, b: Vector2i) -> bool: return Vector2(a).distance_to(lv.lair_center) < Vector2(b).distance_to(lv.lair_center))
+	else:
+		# How far along a land road each spot lies, as a share of that road (the earliest road wins).
+		var share := {}
+		for v in spots:
+			var best := INF
+			for r: int in lv.land_roads:
+				best = minf(best, lv.nearest_dist(r, Vector2(v) + Vector2(0.5, 0.5)) / float(lv.paths[r]["total"]))
+			share[v] = best if style == "far" else absf(best - 0.5)
+		spots.sort_custom(func(a: Vector2i, b: Vector2i) -> bool: return share[a] < share[b])
 	var t := 0.0
 	var dt := 0.05
 	while not sim.over and t < 1200.0:
 		# Take the first thing each tile offers (cut, build, upgrade); never sell.
 		var uncut := sim.sites.values().any(func(s: GameSim.Site) -> bool: return not s.owned and Defs.HERO_SITES.has(s.kind))
+		var grew := false   # built or upgraded something this pass
 		for v in sim.sites.keys() + spots:
 			var acts: Array = sim.cell_info(v)["actions"]
 			for a: Dictionary in acts:
@@ -52,11 +65,15 @@ static func play(lv: Level, skill_ranks: Dictionary, seed := 0) -> GameSim:
 				if a["id"].begins_with("master:"):
 					# Take a mastery when offered, alternating A and B from tile to tile.
 					var opts := acts.filter(func(x: Dictionary) -> bool: return x["id"].begins_with("master:"))
-					sim.do_action(opts[(v.x + v.y) % opts.size()]["id"], v)
+					if sim.do_action(opts[(v.x + v.y) % opts.size()]["id"], v) == "":
+						grew = true
 					break
 				if a["id"] != "sell":
-					sim.do_action(a["id"], v)
+					if sim.do_action(a["id"], v) == "" and (a["id"].begins_with("build:") or a["id"] == "upgrade"):
+						grew = true
 					break
+		if sim.dark and not grew and sim.gold >= 250:
+			_step_into_dark(sim, spots)
 		_collapse(sim)
 		if sim.can_meteor() and not sim.enemies.is_empty():
 			sim.cast_meteor(sim.enemies[0].pos)
@@ -88,6 +105,36 @@ static func pick_lairs(args: PackedStringArray, per_chapter := 10) -> Array:
 	if picks.is_empty() and args.is_empty():
 		picks.assign(range(count))
 	return [picks, whole]
+
+
+## In the dark, with gold to spare and nothing left to build or upgrade on its lit spots: build one
+## stepping-stone tower on the buildable tile closest to the first spot (in the bot's order) that
+## is still dark and free, so its light reaches further.
+static func _step_into_dark(sim: GameSim, spots: Array[Vector2i]) -> void:
+	var goal := Vector2i(-1, -1)
+	for v in spots:
+		if not sim.is_lit(v) and not sim.towers.has(v) and not sim.sites.has(v):
+			goal = v
+			break
+	if goal.x < 0:
+		return
+	var best_id := ""
+	var best_cell := Vector2i(-1, -1)
+	var best_d := INF
+	for c in sim.level.cols:
+		for r in sim.level.rows:
+			var v := Vector2i(c, r)
+			var d := Vector2(v).distance_to(Vector2(goal))
+			if d >= best_d:
+				continue
+			for a: Dictionary in sim.cell_info(v)["actions"]:
+				if a["id"].begins_with("build:"):
+					best_id = a["id"]
+					best_cell = v
+					best_d = d
+					break
+	if best_id != "":
+		sim.do_action(best_id, best_cell)
 
 
 ## A sluice is worth opening when a boat or at least three heroes are in the water on its road.

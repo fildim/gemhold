@@ -3,7 +3,7 @@
  "title": "The Chapel Road",
  "cols": 16,
  "rows": 10,
- "hp_mul": 3.23,
+ "hp_mul": 3.14,
  "legend": {"A":"high ash","F":"high frost","L":"lair","M":"high moss","a":"ash","f":"frost","m":"moss"},
  "terrain": [
   "mmmmmmmmmmmmmmmm",

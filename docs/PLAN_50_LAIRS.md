@@ -404,3 +404,4 @@ Not part of this plan; they need decisions or new backend rules.
 7. **Spells**: decided 2026-11-13: no new spells; Nightmare and Frenzy removed (§6).
 8. **Renown**: decided 2026-11-15: no score-only skill; Renown removed (§7).
 9. **Seven gems**: decided 2026-11-15: every lair has 5 gems (§3.6).
+10. **Night missions**: 2026-11-15: night missions open on Wicked or better.

@@ -471,7 +471,7 @@ func _spawn(code: String, path := -1, dist := 0.0, w := 0) -> void:
 	e.d = d
 	var mul := level.hp_mul * (1.0 + Defs.WAVE_HP_SCALE * maxi(0, wave - 1)) * threat
 	if level.night:
-		mul *= Defs.NIGHT_HP
+		mul *= level.night_hp
 	e.hp = d["hp"] * mul
 	e.max_hp = e.hp
 	var rivers: Array = level.wave_rivers[w - 1] if w > 0 and w <= level.wave_rivers.size() else []
@@ -647,7 +647,7 @@ func _update_enemies(dt: float) -> void:
 		if zm != 1.0:
 			sp *= zm
 		for o: Enemy in heralds:
-			if not e.swim and o.pos.distance_to(e.pos) <= Defs.HASTE_RANGE:
+			if not e.swim and not aloof(e) and o.pos.distance_to(e.pos) <= Defs.HASTE_RANGE:
 				sp *= 1.0 + float(o.d["haste"])
 				break
 		if e.fear > 0.0:
@@ -704,12 +704,12 @@ func _update_enemies(dt: float) -> void:
 		e.pos = p
 		if e.d.has("ward"):
 			for o: Enemy in enemies:
-				if o.hp > 0.0 and o.pos.distance_to(e.pos) <= float(e.d["ward"]):
+				if o.hp > 0.0 and not aloof(o) and o.pos.distance_to(e.pos) <= float(e.d["ward"]):
 					o.slow = 0.0
 					o.fear = 0.0
 		if e.d.has("heal"):
 			for o: Enemy in enemies:
-				if o != e and o.hp > 0.0 and o.hp < o.max_hp and o.pos.distance_to(e.pos) < 1.5:
+				if o != e and o.hp > 0.0 and o.hp < o.max_hp and not aloof(o) and o.pos.distance_to(e.pos) < 1.5:
 					o.hp = minf(o.max_hp, o.hp + float(e.d["heal"]) * dt)
 		if e.carry < int(e.d["cap"]):
 			for g: Drop in drops:
@@ -1574,6 +1574,8 @@ func _lava(tw: Tower, at: Vector2) -> void:
 
 ## Damage reduction from the strongest living Shieldbearer next to e (never from itself).
 func _guard(e: Enemy) -> float:
+	if aloof(e):
+		return 0.0   # boats, engines and flyers are out of a Shieldbearer's reach
 	var g := 0.0
 	for o: Enemy in enemies:
 		if o != e and o.hp > 0.0 and o.d.has("guard") and o.pos.distance_to(e.pos) <= Defs.GUARD_RANGE:
@@ -2215,7 +2217,7 @@ func gems_left() -> int:
 
 
 ## Three tiers of clearance: Survived (gems lost), Wicked (none lost, but a hero touched one)
-## and Brilliant (no hero ever touched a gem). Brilliant unlocks the level's night mission.
+## and Brilliant (no hero ever touched a gem). Wicked or Brilliant (no gem lost) unlocks the level's night mission.
 func rank() -> String:
 	if not won:
 		return "Plundered"
@@ -2264,6 +2266,13 @@ func dark_k() -> float:
 ## Is e in the air: a flyer that has not come down onto a road.
 func flying(e: Enemy) -> bool:
 	return e.d.has("fly") and not e.grounded
+
+
+## Does e stand apart from the support heroes: boats and siege engines (steady) and flyers still in
+## the air get no haste from a Herald, no heal from a Cleric, no guard from a Shieldbearer and no
+## ward from a Warden.
+func aloof(e: Enemy) -> bool:
+	return e.d.has("steady") or flying(e)
 
 
 ## A Spiriter finished his chant: he vanishes with the gems he holds (they are lost).

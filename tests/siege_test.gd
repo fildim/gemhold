@@ -2,7 +2,8 @@ extends SceneTree
 ## Chapter IV rules on tests/fixtures/level_siege.json: Sappers stun towers (not on raised tiles) and
 ## their kegs, Paviors pave, Inquisitors silence, Trebuchets bury towers under Rubble and retreat,
 ## the Iron Belfry's cover, Sappers, unloading and spill, Sturdy Foundations, the Signal Fire, the
-## Siege Workshop and Dusk.
+## Siege Workshop and Dusk, and the support heroes (Herald, Cleric, Shieldbearer, Warden) not
+## reaching siege engines or flyers.
 ## Run: godot --headless --script res://tests/siege_test.gd
 
 const FIXTURE := "res://tests/fixtures/level_siege.json"
@@ -17,6 +18,7 @@ func _init() -> void:
 	_trebuchet()
 	_belfry()
 	_sites_and_dusk()
+	_aloof()
 	print("siege_test: %s" % ("all passed" if fails == 0 else "%d failed" % fails))
 	quit(0 if fails == 0 else 1)
 
@@ -211,6 +213,69 @@ func _sites_and_dusk() -> void:
 	lv.night = true
 	var night := GameSim.new(lv)
 	_check(night.dark and night.dusk_wave == 0, "the night mission is dark from the start")
+
+
+## A Trebuchet (steady), a Skylancer (in the air) and a Peasant stand by a support hero: only the
+## Peasant gets the help.
+func _aloof() -> void:
+	# Herald: the Peasant marches faster than without him; the engine and the flyer do not.
+	var plain := _sim()
+	var hasted := _sim()
+	var before := {}
+	var after := {}
+	for s: GameSim in [plain, hasted]:
+		if s == hasted:
+			_hero(s, "h", 3.0).hp = 99999.0
+		for code: String in ["u", "y", "p"]:
+			_hero(s, code, 3.0)
+		s._update_enemies(0.2)
+	for e: GameSim.Enemy in plain.enemies:
+		before[e.code] = e.dist
+	for e: GameSim.Enemy in hasted.enemies:
+		after[e.code] = e.dist
+	_check(after["p"] > before["p"] + 0.01, "a Herald hastes a Peasant")
+	_check(is_equal_approx(after["u"], before["u"]), "but not a Trebuchet")
+	_check(is_equal_approx(after["y"], before["y"]), "nor a flyer")
+	# Cleric: heals the Peasant only.
+	var sim := _sim()
+	_hero(sim, "c", 3.0).hp = 99999.0
+	var hurt := {}
+	for code: String in ["u", "y", "p"]:
+		var e := _hero(sim, code, 3.0)
+		e.hp = e.max_hp * 0.5
+		hurt[code] = e
+	sim._update_enemies(0.2)
+	_check(hurt["p"].hp > hurt["p"].max_hp * 0.5, "a Cleric heals a Peasant")
+	_check(is_equal_approx(hurt["u"].hp, hurt["u"].max_hp * 0.5), "but not a Trebuchet")
+	_check(is_equal_approx(hurt["y"].hp, hurt["y"].max_hp * 0.5), "nor a flyer")
+	# Shieldbearer: guards the Peasant only.
+	var s2 := _sim()
+	_hero(s2, "b", 3.0)
+	var u := _hero(s2, "u", 3.0)
+	var y := _hero(s2, "y", 3.0)
+	var p := _hero(s2, "p", 3.0)
+	_check(s2._guard(p) > 0.0, "a Shieldbearer guards a Peasant")
+	_check(s2._guard(u) == 0.0, "but not a Trebuchet")
+	_check(s2._guard(y) == 0.0, "nor a flyer")
+	# Warden: clears the Peasant's slow and Dread only.
+	var s3 := _sim()
+	_hero(s3, "w", 3.0).hp = 99999.0
+	var chilled := {}
+	for code: String in ["u", "y", "p"]:
+		var e := _hero(s3, code, 3.0)
+		e.slow = 5.0
+		e.fear = 5.0
+		chilled[code] = e
+	s3._update_enemies(0.05)
+	_check(chilled["p"].slow == 0.0 and chilled["p"].fear == 0.0, "a Warden clears a Peasant's slow and Dread")
+	_check(chilled["u"].slow > 0.0 and chilled["u"].fear > 0.0, "but not a Trebuchet's")
+	_check(chilled["y"].slow > 0.0 and chilled["y"].fear > 0.0, "nor a flyer's")
+	# The Seraph, once come down onto a road, is no longer aloof.
+	var s4 := _sim()
+	var sr := _hero(s4, "S", 3.0)
+	_check(s4.aloof(sr), "the Seraph in the air is aloof")
+	sr.grounded = true
+	_check(not s4.aloof(sr), "and not once she has come down")
 
 
 func _check(cond: bool, what: String) -> void:

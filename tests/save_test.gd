@@ -227,8 +227,10 @@ func _init() -> void:
 	rk.won = false
 	_check(rk.rank() == "Plundered", "a loss is Plundered")
 	var ns := SaveData.load_from(FILE + ".none")
+	ns.record(0, "level_01", "Survived", 20, true)
+	_check(not ns.night_unlocked("level_01"), "Survived does not unlock night")
 	ns.record(0, "level_01", "Wicked", 20, true)
-	_check(not ns.night_unlocked("level_01"), "Wicked does not unlock night")
+	_check(ns.night_unlocked("level_01"), "Wicked unlocks night")
 	ns.record(0, "level_01", "Brilliant", 20, true)
 	_check(ns.night_unlocked("level_01"), "Brilliant unlocks night")
 	ns.record(0, SaveData.mission_id("level_01", true), "Survived", 15, true)

@@ -189,14 +189,17 @@ const LAIRS := [
 			"6t,4a,2i,2c", "2u,4k,2b", "8f,6a,3v", "5k,4i,2h", "6k,8a,2v,2c", "2u,6k,8f,4i", "1x,6k,4i,4v", "6k,8a,4f,4i,2h",
 			"8r,6k,4a,2c", "2u,6k,6i,4b", "1x,8k,8a,4v", "2x,8k,6i,8a,2u"]},
 
-	{"n": 40, "title": "The Iron Belfry", "lair": [13, 4], "seed": 4010, "site_cuts": 3, "hp_mul": 3.0,
+	{"n": 40, "title": "The Iron Belfry", "lair": [13, 4], "seed": 4010, "site_cuts": 3, "hp_mul": 2.45,
 		"ground": [["f", 0, 0, 15, 1], ["a", 0, 9, 15, 9]],
 		"high": [[7, 4, "F"], [11, 4, "M"], [15, 7, "A"], [1, 7, "M"]],
 		"paths": [[[-1, 8], [10, 8], [10, 6], [3, 6], [3, 2], [12, 2], [12, 4]], [[16, 8], [14, 8], [14, 6]]],
 		"sites": [{"kind": "mine", "cell": [0, 4]}, {"kind": "well", "cell": [15, 0]}],
-		"waves": ["8p", "6f,2a", {"heroes": "1u,4p", "roads": [1]}, "4f,2i,2a", {"heroes": "2k,4a", "roads": [0]}, {"heroes": "1u,4f", "roads": [1]},
-			"6t,2v,2c", "4f,2i,4a", {"heroes": "2u,3k", "roads": [1]}, "8p,6a,2h", {"heroes": "4k,2w,2i", "roads": [0]}, {"heroes": "2u,4f,2b", "roads": [1]},
-			"6t,4a,2i,2c", "4k,2b,3i", {"heroes": "2u,4k", "roads": [1]}, "8f,6a,3v", "5k,4i,2h", {"heroes": "3u,4k,2b", "roads": [1]},
+		"waves": [{"heroes": "8p", "roads": [0]}, {"heroes": "6f,2a", "roads": [0]}, {"heroes": "1u,4p", "roads": [1]}, {"heroes": "4f,2i,2a", "roads": [0]},
+			{"heroes": "2k,4a", "roads": [0]}, {"heroes": "1u,4f", "roads": [1]},
+			{"heroes": "6t,2v,2c", "roads": [0]}, {"heroes": "4f,2i,4a", "roads": [0]}, {"heroes": "2u,3k", "roads": [1]}, {"heroes": "8p,6a,2h", "roads": [0]},
+			{"heroes": "4k,2w,2i", "roads": [0]}, {"heroes": "2u,4f,2b", "roads": [1]},
+			{"heroes": "6t,4a,2i,2c", "roads": [0]}, {"heroes": "4k,2b,3i", "roads": [0]}, {"heroes": "2u,4k", "roads": [1]}, {"heroes": "8f,6a,3v", "roads": [0]},
+			{"heroes": "5k,4i,2h", "roads": [0]}, {"heroes": "3u,4k,2b", "roads": [1]},
 			{"heroes": "3u,2k", "roads": [1]}, {"heroes": "1I,6k,4i,8a,4f", "roads": [0]}]},
 
 	# ------------------------------------------------------------ Chapter V: the Radiant Host
@@ -217,7 +220,7 @@ const LAIRS := [
 		"waves": ["8p", "6f,1j", "6p,2c,1j", "4f,2b,2j", "2k,2j", "6t,2j,2h", "4f,2w,3j", "3k,2j,2c", "8p,4i,2j", "4k,3j",
 			"6t,4a,3j", "4k,2b,4j", "8f,4v,3j", "5k,4j,2c", "6k,4j,2h,2i", "6k,8f,5j", "1x,6k,6j", "2x,6k,6j,2c"]},
 
-	{"n": 43, "title": "The Chapel Road", "lair": [13, 4], "seed": 4303, "site_cuts": 3, "hp_mul": 2.6,
+	{"n": 43, "title": "The Chapel Road", "lair": [13, 4], "seed": 4303, "site_cuts": 3, "hp_mul": 3.14,
 		"ground": [["f", 6, 3, 9, 6], ["a", 0, 8, 6, 9]],
 		"high": [[8, 1, "M"], [8, 8, "F"], [3, 4, "A"]],
 		"paths": [[[-1, 2], [11, 2], [11, 4], [12, 4]], [[-1, 7], [11, 7], [11, 5], [12, 5]]],
