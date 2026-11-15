@@ -207,7 +207,7 @@ const LOOT_COIN_MUL := 1.4    # a coin is worth this times the hero's bounty, gr
 const LOOT_COIN_BONUS := 4    # plus this flat amount, so even small heroes drop a worthwhile coin
 
 ## Night levels: you can only build on lit tiles. Radii in tiles.
-## Night missions unlock when a level is won with no gem lost (Wicked or Brilliant).
+## Night missions unlock when a level is cleared Brilliant.
 const LIGHT := {"lair": 2.3, "tower": 1.7}
 ## Darkness is the night mission's challenge, so its heroes are this much less tough than by day.
 const NIGHT_HP := 0.85

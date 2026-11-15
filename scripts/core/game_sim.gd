@@ -2217,7 +2217,7 @@ func gems_left() -> int:
 
 
 ## Three tiers of clearance: Survived (gems lost), Wicked (none lost, but a hero touched one)
-## and Brilliant (no hero ever touched a gem). Wicked or Brilliant (no gem lost) unlocks the level's night mission.
+## and Brilliant (no hero ever touched a gem). Brilliant unlocks the level's night mission.
 func rank() -> String:
 	if not won:
 		return "Plundered"

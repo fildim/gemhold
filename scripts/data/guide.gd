@@ -27,7 +27,7 @@ static func topics() -> Array:
 		+ "[color=#e8b84a]★★[/color] [b]Wicked[/b]: none lost, but a hero touched one.\n"
 		+ "[color=#e8b84a]★★★[/color] [b]Brilliant[/b]: no hero ever touched a gem.\n\n"
 		+ "The stars next to the gem count at the top show the best rating still within reach in this battle; a message tells you the moment it slips.\n\n"
-		+ "Stars are your skill points for Dark Arts. Only your best rating on each lair counts, so replay a lair to earn the stars you missed. A win with no gem lost (Wicked or Brilliant) also opens that lair's night mission."))
+		+ "Stars are your skill points for Dark Arts. Only your best rating on each lair counts, so replay a lair to earn the stars you missed. A Brilliant win also opens that lair's night mission."))
 	t.append(_t("The basics", "Speed and pause",
 		"[b]1× / 2×[/b] runs the battle at double speed when a wave is easy.\n\n[b]Pause[/b] stops everything; on a phone the back button pauses too. You can still tap tiles and read their panels while paused.
 
@@ -238,7 +238,7 @@ A [b]Dark Altar[/b] is overgrown. Cut it free (%d mana) and towers within %.1f t
 "
 		+ "Tower skills apply to towers you build after buying them. [b]Refund all points[/b] any time to try a different plan."))
 	t.append(_t("Progress", "Night missions",
-		"Win a lair without losing a gem ([b]Wicked[/b] or [b]Brilliant[/b]) and its night mission opens (the moon on the map).\n\n"
+		"Win a lair [b]Brilliant[/b] and its night mission opens (the moon on the map).\n\n"
 		+ "Same lair, in darkness: you can only build where you can see. Your cave, towers, mines and wells light the ground around them, so each tower you build opens room for the next.\n\nNight missions earn their own stars."))
 	t.append(_t("Progress", "Score and Hall of Fame",
 		"Every won battle scores points:\n\n"
