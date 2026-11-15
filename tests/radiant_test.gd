@@ -1,7 +1,7 @@
 extends SceneTree
 ## Chapter V rules on tests/fixtures/level_radiant.json: flyers on air roads (no road tiles, half
 ## chill, over Lava, gems falling to the nearest road), the Justicar's shield, the Spiriter's chant,
-## the Seraph's landings, the Chapel and hallowed ground, the Eclipse, seven gems and tier III skills.
+## the Seraph's landings, the Chapel and hallowed ground, the Eclipse, seven gems and tier III skills (Legends, Hoard's Fury, Dragon's Patience).
 ## Run: godot --headless --script res://tests/radiant_test.gd
 
 const FIXTURE := "res://tests/fixtures/level_radiant.json"
@@ -161,17 +161,11 @@ func _eclipse() -> void:
 
 
 func _tier3() -> void:
-	var sim := GameSim.new(Level.load_from(FIXTURE), {"moss_legend": 5, "den_fury": 5, "dragon_patience": 3, "renown": 50})
+	var sim := GameSim.new(Level.load_from(FIXTURE), {"moss_legend": 5, "den_fury": 5, "dragon_patience": 3})
 	_check(is_equal_approx(sim.mana, sim.level.start_mana + 30.0), "Dragon's Patience: more starting mana")
 	sim.do_action("build", Vector2i(3, 4))
 	var tw: GameSim.Tower = sim.towers[Vector2i(3, 4)]
 	_check(is_equal_approx(tw.dmg_mul, 1.25), "Legend: +25% damage")
-	sim.won = true
-	sim.gold = 300
-	var plain := _sim()
-	plain.won = true
-	plain.gold = 300
-	_check(sim.score(1) == roundi(plain.score(1) * 1.5) or absi(sim.score(1) - roundi(plain.score(1) * 1.5)) <= 1, "Renown: +50% score")
 	_check(Defs.skill_gate("moss_legend") == 40, "tier III opens with Chapter V")
 
 

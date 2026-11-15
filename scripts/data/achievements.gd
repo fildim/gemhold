@@ -93,8 +93,6 @@ const LIST: Array[Dictionary] = [
 	{"id": "arts80", "name": "Archmage", "text": "Spend 80 skill points in Dark Arts.", "stat": "spent", "goal": 80},
 	{"id": "arts110", "name": "Arch-Lich", "text": "Spend 110 skill points in Dark Arts.", "stat": "spent", "goal": 110},
 	{"id": "tier3", "name": "Forbidden Knowledge", "text": "Learn a tier III Dark Art."},
-	{"id": "renown50", "name": "Name in Lights", "text": "Buy 50 ranks of Renown.", "stat": "renown", "goal": 50},
-	{"id": "renown150", "name": "Vanity", "text": "Buy all 150 ranks of Renown.", "stat": "renown", "goal": 150},
 	{"id": "arts59", "name": "Omniscient", "text": "Learn every Dark Art to its limit.", "stat": "spent", "goal": 59},
 	{"id": "branch_moss", "name": "Warlord", "text": "Fill the whole Warband Hut tree."},
 	{"id": "branch_frost", "name": "Necromancer", "text": "Fill the whole Bone Crypt tree."},
@@ -588,7 +586,6 @@ static func values(save: SaveData, ids: Array) -> Dictionary:
 	v["stars"] = save.points_total()
 	v["total"] = save.total_score()
 	v["spent"] = save.points_spent()
-	v["renown"] = int(save.skills.get("renown", 0))
 	return v
 
 
@@ -623,8 +620,7 @@ static func check_progress(save: SaveData, ids: Array, per_chapter := 10) -> Arr
 	for tree: String in Defs.SKILLS:
 		var full := true
 		for sk: Dictionary in Defs.SKILLS[tree]:
-			if not Defs.SCORE_ONLY_SKILLS.has(sk["id"]):   # Renown is no Dark Art to master
-				full = full and int(save.skills.get(sk["id"], 0)) >= int(sk["max"])
+			full = full and int(save.skills.get(sk["id"], 0)) >= int(sk["max"])
 		_try(save, got, "branch_" + tree, full)
 	return got
 

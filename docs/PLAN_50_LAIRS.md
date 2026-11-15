@@ -175,7 +175,7 @@ Balance targets, measured with `tests/tower_test.gd` (extend it with level IV ro
 
 ## 7. Dark Arts v2
 
-Today there are 59 points to spend and 120 stars to earn, so a thorough player already runs out of things to buy. With 50 lairs there are 300 stars; a typical player (2.4 per lair) holds about 120 by the finale. The new tree holds 139 points of power plus a score-only sink.
+Today there are 59 points to spend and 120 stars to earn, so a thorough player already runs out of things to buy. With 50 lairs there are 300 stars; a typical player (2.4 per lair) holds about 120 by the finale. The new tree holds 133 points of power.
 
 **Screen:** five trees no longer fit as columns with big text. Use one tab per tree (Huts, Crypts, Shrines, The Hoard, The Land); each tab lists its skills as large buttons in tier sections. A locked tier shows its header ("Opens in Chapter III") with the skills dimmed, so the player sees what is coming. Keep Refund all.
 
@@ -224,9 +224,8 @@ Today there are 59 points to spend and 120 stars to earn, so a thorough player a
 | Huts / Crypts / Shrines | Legend (one per tree) | +5% damage | 5 each |
 | Hoard | Hoard's Fury | Den bolts +20% damage | 5 |
 | Hoard | Dragon's Patience | +10 starting mana | 3 |
-| Hoard | Renown | +1% leaderboard score; no effect on battles | 150 |
 
-Totals: 59 + 31 (tier II) + 20 (The Land) + 23 (tier III) = 133, plus Renown. `SaveData._skill_max` already ignores unknown ids, so old saves load. A skill's gate is checked in `can_buy` against `SaveData.lairs_beaten()` (`Defs.TIER_BEATEN`, `Defs.TREE_BEATEN`, done in Phase 0); beaten lairs stay beaten, so a refund never locks a tier. When a tier opens, the map shows a Dark Arts spotlight tip once (its own Prefs key). The achievement "Omniscient" (`arts59`) must count the real total without Renown.
+Totals: 59 + 31 (tier II) + 20 (The Land) + 23 (tier III) = 133. `SaveData._skill_max` already ignores unknown ids, so old saves load. A skill's gate is checked in `can_buy` against `SaveData.lairs_beaten()` (`Defs.TIER_BEATEN`, `Defs.TREE_BEATEN`, done in Phase 0); beaten lairs stay beaten, so a refund never locks a tier. When a tier opens, the map shows a Dark Arts spotlight tip once (its own Prefs key). The achievement "Omniscient" (`arts59`) counts the real total. **Renown** (a score-only sink of 150 ranks) was built in Phase 4 and removed by the owner on 2026-11-15, with its achievements.
 
 Update `Bot.SKILL_ORDER` and `Bot.points_before` in `tests/bot.gd` to buy tier II and III skills at the pace of a 2.4-star player, once their chapter is reached (`Bot.skills(points, beaten)` already passes over shut tiers), and teach the bot to: take a mastery when offered (alternate A and B by tile), collapse bridges when no Diver is in the wave, use Sluices on boats, clear Rubble, and raze Chapels and Signal Fires before woods.
 
@@ -331,14 +330,14 @@ Each lair turns one lever nobody has seen yet, then later lairs mix levers. Grid
 | `brilliant_last`, `night_final` | Check `number >= 20` | Check the real last lair; players who hold them keep them; reword to "the Hoard Throne" and add new ones for lair 50 |
 | `stars120` | "Earn all 120 stars" | "Earn 120 stars" |
 | `night_brilliant20` | "all twenty night missions" | "20 night missions" |
-| `arts59` | Goal 59 is the old tree | Goal = every skill except Renown, computed from `Defs.SKILLS` |
+| `arts59` | Goal 59 is the old tree | Goal = every skill, computed from `Defs.SKILLS` |
 | `all_brilliant`, `all_night` | Now mean all 50: fine, keep | none |
 
 ### New (about 80; ids are suggestions)
 
 - **Campaign:** `beaten25` Halfway to Dominion, `chapter3` Lord of the Marches, `beaten35`, `chapter4` Siegebreaker, `beaten45`, `chapter5` Light Extinguished (all fifty), `brilliant25`, `brilliant40`, `night25`, `night40`, `night_brilliant35`, `night_brilliant50` Fifty Shades of Night, `final_brilliant` Not a Feather Touched (lair 50 Brilliant), `final_night` (lair 50 by night).
 - **Stars and score:** `stars150`, `stars200`, `stars250`, `stars300` Every Star There Is; `score30000`, `score40000`; `total500000`, `total1000000`.
-- **Dark Arts:** `arts80`, `arts110`, `branch_land` Landlord, `tier3` Forbidden Knowledge (buy a tier III skill), `renown50`, `renown150` Vanity.
+- **Dark Arts:** `arts80`, `arts110`, `branch_land` Landlord, `tier3` Forbidden Knowledge (buy a tier III skill).
 - **Masteries:** one for building each of the six, `mastery_all` (all six in one battle), `mastery_one_each`, `ossuary_burst` (four heroes slain by one Ossuary volley), `twin_kills` (Twin Flame slays two heroes within a second), `sunlance3` (three heroes burning on one Sunlance), `hunter_champion` (a Hunter's Lodge lands the killing blow on a Champion), lifetime `masteries25`, `masteries100`.
 - **Water:** `sink1` Davy Jones (sink a Longboat before it lands), `sink_all` (win a river lair with no boat landing), `drowned100` lifetime crew drowned, `collapse_kill` (a hero dies swimming a collapsed bridge), `collapses25`, `sluice5` (five heroes slain by one surge), `dry_feet` (win Reedmere Ford with no hero slain in water), `diver_meteor` (slay a hidden Diver with a Meteor).
 - **Siege:** `sapper_keg` Own Goal (a Sapper's keg slays three heroes), `no_stun` (win a Sapper lair with no tower ever stunned), `rubble10` (clear 10 Rubbles in one battle), `trebuchet_fast` (destroy a Trebuchet before its first stone), `silence_proof` (slay an Inquisitor with a tower he was silencing), `pavior_early` (slay a Pavior before he paves three tiles), `belfry` Belfry Breaker.
@@ -403,3 +402,4 @@ Not part of this plan; they need decisions or new backend rules.
 5. **Plunder** (§5): the cap of +5 gold is a starting value; the owner may want it higher once the bot's end-of-lair gold is measured.
 6. **Dark Arts tiers**: decided 2026-11-13: they open with chapters, not stars: The Land with Chapter II, tier II with Chapter III, tier III with Chapter V (§7).
 7. **Spells**: decided 2026-11-13: no new spells; Nightmare and Frenzy removed (§6).
+8. **Renown**: decided 2026-11-15: no score-only skill; Renown removed (§7).

@@ -222,8 +222,6 @@ const NIGHT_HP := 0.85
 const TIER_BEATEN := {1: 0, 2: 20, 3: 40}
 const TREE_BEATEN := {"land": 10}
 const LAIRS_PER_CHAPTER := 10
-## Skills that only add score and are not counted as "learning every Dark Art".
-const SCORE_ONLY_SKILLS := ["renown"]
 ## Tree ids in the order the Dark Arts tabs show them.
 const SKILL_TREES := ["moss", "frost", "ash", "den", "land"]
 const SKILLS := {
@@ -275,7 +273,6 @@ const SKILLS := {
 		{"id": "sturdy", "name": "Sturdy Foundations", "text": "Stun, Rubble and Silence weigh 15% less", "max": 3, "tier": 2},
 		{"id": "den_fury", "name": "Hoard's Fury", "text": "Den bolts +20% damage", "max": 5, "tier": 3},
 		{"id": "dragon_patience", "name": "Dragon's Patience", "text": "+10 starting mana", "max": 3, "tier": 3},
-		{"id": "renown", "name": "Renown", "text": "+1% leaderboard score; no effect in battle", "max": 150, "tier": 3},
 	],
 	"land": [
 		{"id": "land_veins", "name": "Rich Veins", "text": "Gold mines pay +1 gold", "max": 3},
@@ -313,13 +310,12 @@ static func skill_gate(id: String) -> int:
 	return maxi(int(TIER_BEATEN.get(skill_tier(sk), 0)), int(TREE_BEATEN.get(sk["tree"], 0)))
 
 
-## Every rank of every skill that does something in battle: what "learn every Dark Art" means.
+## Every rank of every skill: what "learn every Dark Art" means.
 static func skill_points_all() -> int:
 	var n := 0
 	for tree: String in SKILLS:
 		for sk: Dictionary in SKILLS[tree]:
-			if not SCORE_ONLY_SKILLS.has(sk["id"]):
-				n += int(sk["max"])
+			n += int(sk["max"])
 	return n
 
 
@@ -413,9 +409,7 @@ const CHANT_TIME := 4.0
 const SERAPH := {"at": [0.66, 0.33], "raise": [6, 8], "dur": 4.0, "hp": 0.5}
 ## Hallowed ground: while any Chapel stands, towers on it have HALLOW_RANGE of their range and no ability.
 const HALLOW_RANGE := 0.8
-## Tier III: Legend +5% tower damage, Hoard's Fury +20% den damage, Dragon's Patience +10 starting mana,
-## Renown +1% score.
+## Tier III: Legend +5% tower damage, Hoard's Fury +20% den damage, Dragon's Patience +10 starting mana.
 const LEGEND_DMG := 0.05
 const FURY_DMG := 0.2
 const PATIENCE_MANA := 10
-const RENOWN_SCORE := 0.01

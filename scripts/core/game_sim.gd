@@ -2206,7 +2206,6 @@ func score(number: int) -> int:
 	pts += [0, 0, 500, 1000][SaveData.RANKS.find(rank())]
 	pts += 5.0 * skipped + gold
 	pts *= 1.0 + 0.1 * (number - 1)
-	pts *= 1.0 + Defs.RENOWN_SCORE * skill("renown")   # Renown: score only
 	if level.night:
 		pts *= 1.5
 	return roundi(pts)

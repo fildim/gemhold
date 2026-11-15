@@ -30,7 +30,7 @@ const ACH := {
 	"diver_meteor": "meteor", "altars10": "site:altar",
 	"chapter4": "banner", "sapper_keg": "hero:a", "no_stun": "hero:a", "rubble10": "hero:u", "trebuchet_fast": "hero:u",
 	"silence_proof": "hero:i", "pavior_early": "hero:v", "beacons10": "site:beacon", "workshops10": "site:workshop", "night_dusk": "moon",
-	"chapter5": "crown", "final_brilliant": "hero:S", "final_night": "moon", "seven_kept": "gem", "tier3": "book", "renown50": "trophy", "renown150": "trophy",
+	"chapter5": "crown", "final_brilliant": "hero:S", "final_night": "moon", "seven_kept": "gem", "tier3": "book",
 	"skylancer10": "hero:y", "shield_waste": "hero:j", "chant_broken5": "hero:n", "chapel_first": "site:chapel", "hallowed_none": "site:chapel",
 	"seraph_no_raise": "hero:S", "chapels25": "site:chapel", "ossuary_burst": "tower:frost", "sunlance3": "tower:ash", "mastery_one_each": "towers",
 }
@@ -52,7 +52,7 @@ const HOARD := {"den_charge": "orb", "hoard_gold": "coins", "hoard_mana": "potio
 	"gem_magnet": "gem", "sturdy": "hill",
 	"land_veins": "site:mine", "land_springs": "site:well", "land_axes": "tree", "land_heights": "hill", "land_spoils": "site:camp",
 	"land_lantern": "spark", "land_flood": "site:sluice", "land_rites": "site:altar",
-	"den_fury": "orb", "dragon_patience": "potion", "renown": "trophy"}
+	"den_fury": "orb", "dragon_patience": "potion"}
 
 
 static func make(k: String, px: float, on := true) -> GameIcon:

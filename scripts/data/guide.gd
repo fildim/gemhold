@@ -222,7 +222,7 @@ A [b]Dark Altar[/b] is overgrown. Cut it free (%d mana) and towers within %.1f t
 	t.append(_t("Progress", "Dark Arts",
 		"Your skills, opened from the map. [b]Every star is a skill point.[/b]\n\n"
 		+ "Each tower kind has its own tab: damage, attack speed, range, faster ranks and a stronger ability. [b]The Hoard[/b] tab gives your den more charges, every battle more starting gold, more mana or faster mana (Mana Spring), and the Meteor more damage.\n\n"
-		+ "More skills open as the campaign goes on: [b]The Land[/b] (mines, wells, cutting, raised tiles, Sluices and Altars) with Chapter II, and [b]tier II[/b] of every tree and the masteries with Chapter III (Sturdy Foundations in The Hoard helps against siege heroes), and [b]tier III[/b] with Chapter V: a Legend skill for each tower, Hoard's Fury for the den, Dragon's Patience for starting mana, and Renown, which only adds to your leaderboard score. A tier that is still shut shows which chapter opens it.
+		+ "More skills open as the campaign goes on: [b]The Land[/b] (mines, wells, cutting, raised tiles, Sluices and Altars) with Chapter II, and [b]tier II[/b] of every tree and the masteries with Chapter III (Sturdy Foundations in The Hoard helps against siege heroes), and [b]tier III[/b] with Chapter V: a Legend skill for each tower, Hoard's Fury for the den and Dragon's Patience for starting mana. A tier that is still shut shows which chapter opens it.
 
 "
 		+ "Tower skills apply to towers you build after buying them. [b]Refund all points[/b] any time to try a different plan."))
