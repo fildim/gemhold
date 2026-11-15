@@ -63,8 +63,17 @@ static func topics() -> Array:
 		"Towers grow battle-hardened from the damage they deal. It is not shown (the gold numeral at a tower's foot is its upgrade level), but it happens three times, each adding %d%% damage.\n\n" % roundi(Defs.RANK_DMG * 100)
 		+ "A fully battle-hardened tower that is also [b]upgraded to level III[/b] unlocks its ability: Volley (Hut), Dread (Crypt) or Lava (Shrine). Its name flashes over the tower and a violet ring appears. Dark Arts can make each ability stronger.\n\n"
 		+ "Towers that see a lot of action harden fastest, so upgrade the ones at the busy spots."))
+	t.append(_t("Towers", "Level IV: masteries",
+		"A tower that is [b]level III and has learned its ability[/b] can be raised once more, for %d gold, into one of two [b]masteries[/b]. Each mastery must first be learned in Dark Arts (tier II, from Chapter III). Tap the tower to choose; [b]the choice is final[/b] for that tower.\n\n" % hut["cost"][3]
+		+ "[color=#8fb35a][b]Longhouse[/b][/color] (Hut): every shot is three arrows at up to three heroes. For crowds.\n"
+		+ "[color=#8fb35a][b]Hunter's Lodge[/b][/color] (Hut): one heavy javelin that ignores armour, aimed at the healthiest hero, and [b]marks[/b] him for %d seconds: everything hits him %d%% harder. For Knights and bosses.\n\n" % [roundi(Defs.LODGE["mark"]), roundi(Defs.LODGE["mark_dmg"] * 100)]
+		+ "[color=#9fd8f0][b]Ossuary[/b][/color] (Crypt): stores a bolt every reload even with no hero in sight, up to %d (the skulls on its roof light up), then looses them at different heroes, unchilled ones first.\n" % Defs.OSSUARY["charges"]
+		+ "[color=#9fd8f0][b]Mausoleum[/b][/color] (Crypt): each bolt bursts, chilling and hurting every hero within %.1f tiles, and Dread rolls for each of them.\n\n" % Defs.MAUSOLEUM["r"]
+		+ "[color=#ff8a3a][b]Twin Flame[/b][/color] (Shrine): two beams on two heroes, each heating up on its own.\n"
+		+ "[color=#ff8a3a][b]Sunlance[/b][/color] (Shrine): the beam burns on through its hero and every hero on the line behind him, and keeps part of its heat when it changes target.\n\n"
+		+ "[b]Plunder:[/b] a level IV Hut, whichever mastery, loots what it kills: +1 gold on its first kill, +2 on the next, up to [b]+%d a kill[/b]. The count is lost if you sell it." % Defs.PLUNDER_MAX))
 	t.append(_t("Towers", "Who towers shoot",
-		"Towers always pick, in this order:\n\n1. a hero [b]carrying a gem[/b]\n2. a [b]support hero[/b] (Cleric, Shieldbearer, Warden, Herald)\n3. whoever has the [b]least health[/b] left\n\nSo a thief running home is never ignored, and healers and protectors die first."))
+		"Towers always pick, in this order:\n\n1. a hero [b]carrying a gem[/b]\n2. a [b]support hero[/b] (Cleric, Shieldbearer, Warden, Herald, Engineer, Rainbringer, Sapper, Pavior)\n3. whoever has the [b]least health[/b] left\n\nSo a thief running home is never ignored, and healers and protectors die first. Heroes they can't see are skipped: a Diver under water, and anyone in the Iron Belfry's shadow."))
 
 	# ------------------------------------------------------------ heroes
 	t.append(_t("Heroes", "Gem carriers",
@@ -239,7 +248,7 @@ A [b]Dark Altar[/b] is overgrown. Cut it free (%d mana) and towers within %.1f t
 		+ "The [b]Hall of Fame[/b] on the map has the online leaderboard (the total and every lair, day and night: tap the board's name to pick one, tap a player to see their lairs), your [b]achievements[/b], and an optional account. Sign in to put your name on the board and to keep your scores and achievements on any device. Resetting progress keeps achievements and best scores."))
 	t.append(_t("Progress", "Online races",
 		"In the Hall of Fame, [b]Race[/b] pits you against a friend. One of you hosts a race on a lair (or its night mission, once you have opened it) and gets a code; the other types the code in, and the race begins for both at once.\n\n"
-		+ "You play the same lair with the same heroes and [b]no Dark Arts skills[/b], so it is fair. A badge on the map shows your rival's wave and gems.\n\n"
+		+ "You play the same lair with the same heroes and [b]the same Dark Arts skills[/b]: a standard set for that lair instead of your own, so it is fair. A badge on the map shows your rival's wave and gems.\n\n"
 		+ "[b]Attack your rival:[/b] every [b]%d heroes[/b] you slay sends one like the last onto their road, and [b]Send heroes[/b] (in place of Pause) buys more with gold.\n\n" % Defs.RACE_KILL_SEND
 		+ "[b]The race ends for both[/b] the moment one of you clears the last wave or falls. Clear it first and you win; fall, and your rival wins. If you both clear it within a moment of each other, each second sooner is worth [b]%d points[/b] on top of the score, and the most points win. Leaving a race counts as a loss.\n\n" % Defs.RACE_TIME_BONUS
 		+ "Every race goes on your record: the [b]Races[/b] leaderboard ranks players by wins. Races need an account and don't change your campaign or lair scores."))
@@ -282,4 +291,8 @@ const ICONS := {
 	"Stunned, buried, silenced": ["hero:u"], "Signal Fires and Workshops": ["site:beacon", "site:workshop"], "Dusk": ["moon"],
 	"Skylancer": ["hero:y"], "Justicar": ["hero:j"], "Spiriter": ["hero:n"], "The Seraph": ["hero:S"],
 	"Chapels and hallowed ground": ["site:chapel"], "Eclipse": ["moon"], "Flight lines": ["hero:y"],
+	"Level IV: masteries": ["tower:moss", "tower:frost", "tower:ash"], "Who towers shoot": ["towers"],
+	"Fenwalker": ["hero:m"], "Engineer": ["hero:e"], "Rainbringer": ["hero:q"], "Longboat": ["hero:l"], "Diver": ["hero:d"],
+	"The Tidecaller": ["hero:T"], "Fords and bridges": ["hero:m"], "The tide": ["hero:T"], "Wave routes": ["banner"],
+	"Sluice Gates and Dark Altars": ["site:sluice", "site:altar"],
 }

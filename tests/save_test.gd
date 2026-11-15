@@ -575,6 +575,7 @@ func _check_every_achievement_can_be_earned() -> void:
 	var big := _ending("level_20", true)
 	big.gold = 2000
 	big.kills = 300
+	big.den_kills = 30
 	big.best_meteor = 12
 	big.meteors = 10
 	big.woods_cut = 25
@@ -638,6 +639,7 @@ func _check_every_achievement_can_be_earned() -> void:
 	b.kills_by = {"p": 12}
 	b.kills_tower = {"moss": 7}
 	b.meteor_kills = 2
+	b.den_kills = 3
 	b.built_count = {"ash": 4}
 	Achievements.record(r, b)
 	_check(int(r.stats["slain_p"]) == 12 and int(r.stats["by_moss"]) == 7 and int(r.stats["den_kills"]) == 3 and int(r.stats["built_ash"]) == 4, "a battle is added to the lifetime stats")

@@ -737,8 +737,13 @@ func show_intro(level: Level, number: int, best_rank: String, night_open := fals
 ## score is this battle's (GameSim.score), best_before the mission's best until now; earned lists new
 ## achievement ids.
 func show_end(sim: GameSim, has_next: bool, new_best: bool, new_stars := 0, free_points := 0, night_opened := false,
-		score := 0, best_before := 0, earned_ach: Array[String] = []) -> void:
+		score := 0, best_before := 0, earned_ach: Array[String] = [], finale := false) -> void:
 	var txt := ""
+	if finale:   # the last lair of the campaign is won
+		txt = "[b]The Seraph has fallen and the last of the heroes are gone. Every road to your hoard lies quiet: the realm is yours, dark lord.[/b]
+[color=#a8977c]Stars and night missions you missed still wait on the map.[/color]
+
+"
 	if not sim.won:
 		txt = "Heroes carried off every gem by wave %d.\n\n" % sim.wave
 	var earned := maxi(0, SaveData.RANKS.find(sim.rank()))
@@ -770,7 +775,7 @@ func show_end(sim: GameSim, has_next: bool, new_best: bool, new_stars := 0, free
 		buttons.append(["Next lair", next_level_pressed])
 	buttons.append(["Play again", restart_pressed])
 	buttons.append(["Map", map_pressed])
-	_show_card("The hoard holds" if sim.won else "The hoard is empty", txt, buttons)
+	_show_card("The realm is yours" if finale else "The hoard holds" if sim.won else "The hoard is empty", txt, buttons)
 
 
 ## The rival's badge in the map's top-left corner during an online race (Online.race_progress);

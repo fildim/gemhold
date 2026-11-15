@@ -316,7 +316,7 @@ const LIST: Array[Dictionary] = [
 	{"id": "race_loss", "name": "Good Sport", "text": "Lose an online race.", "stat": "race_losses", "goal": 1},
 	{"id": "race_draw", "name": "Dead Heat", "text": "Draw an online race.", "stat": "race_draws", "goal": 1},
 
-	# Chapter III: masteries, spells and water
+	# Chapter III: masteries and water
 	{"id": "mastery_longhouse", "name": "Hall of Arrows", "text": "Raise a Longhouse."},
 	{"id": "mastery_lodge", "name": "The Hunt Is On", "text": "Raise a Hunter's Lodge."},
 	{"id": "mastery_ossuary", "name": "Bone Store", "text": "Raise an Ossuary."},
@@ -430,12 +430,9 @@ static func _has_hero(lv: Level, code: String) -> bool:
 	return false
 
 
-## Slain by neither a tower nor a meteor: the den's bolts.
+## Heroes the den's bolts slew (not drowned crews, kegs or Sluice surges).
 static func _den_kills(sim: GameSim) -> int:
-	var n := sim.kills - sim.meteor_kills
-	for type: String in sim.kills_tower:
-		n -= int(sim.kills_tower[type])
-	return n
+	return sim.den_kills
 
 
 ## After a battle (already recorded in the save, stats included). number is the lair's place in
@@ -445,7 +442,10 @@ static func check_battle(save: SaveData, sim: GameSim, number: int) -> Array[Str
 	var kinds := sim.built.size()
 	var razed := 0
 	var owned := 0
+	var touched := 0   # buildings cut at least once (a Sluice Gate is yours from the start: not counted)
 	for s: GameSim.Site in sim.sites.values():
+		if s.kind != "sluice" and (s.owned or s.cuts_left < s.cuts):
+			touched += 1
 		if s.owned:
 			owned += 1
 			if s.kind == "camp":
@@ -524,7 +524,7 @@ static func check_battle(save: SaveData, sim: GameSim, number: int) -> Array[Str
 		_try(save, got, "night_final", night and sim.level.id == THRONE)
 		_try(save, got, "last_gem", last_gem)
 		_try(save, got, "landlord", sim.sites.size() >= 3 and owned == sim.sites.size())
-		_try(save, got, "no_sites", sim.sites.size() >= 3 and owned == 0)
+		_try(save, got, "no_sites", sim.sites.size() >= 3 and touched == 0)
 		_try(save, got, "hill", sim.level.high.size() >= 3 and on_high == sim.level.high.size())
 		_try(save, got, "rich", sim.gold >= 1000)
 		_try(save, got, "rich1500", sim.gold >= 1500)

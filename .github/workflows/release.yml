@@ -49,6 +49,10 @@ jobs:
           ./godot --headless --script res://tests/level_check.gd
           ./godot --headless --script res://tests/save_test.gd
           ./godot --headless --script res://tests/tutorial_test.gd
+          ./godot --headless --script res://tests/level_v2_test.gd
+          ./godot --headless --script res://tests/water_test.gd
+          ./godot --headless --script res://tests/siege_test.gd
+          ./godot --headless --script res://tests/radiant_test.gd
 
       - name: Export Windows, Linux and macOS
         run: |

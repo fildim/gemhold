@@ -247,7 +247,9 @@ var early_calls := 0
 var skipped := 0          # seconds of wave countdown skipped by calling early
 var abilities := 0        # times a tower learned its ability
 var learned := {}         # tower type -> true once one of that type learned its ability
-var kills_tower := {}     # tower type -> heroes it slew (the rest fell to the den and meteors)
+var kills_tower := {}     # tower type -> heroes it slew
+var den_kills := 0        # heroes the den's bolts slew
+var race_kills := 0       # online race: kills counted toward the next hero sent (drowned crews included)
 var meteors := 0          # meteors cast
 var meteor_kills := 0     # heroes meteors slew
 var towers_built := 0
@@ -392,8 +394,9 @@ func update(dt: float) -> void:
 	_update_fx(dt)
 	if lost >= level.gems:
 		_end(false)
-	elif wave >= level.waves.size() and queue.is_empty() and enemies.is_empty():
-		# No hero is left to take them, so gems still rolling home count as home now.
+	elif wave >= level.waves.size() and queue.is_empty() and _rally.is_empty() and enemies.all(func(e: Enemy) -> bool: return e.retreat):
+		# No hero is left to take them (an engine rolling away never comes back, so the battle does
+		# not wait for it), so gems still rolling home count as home now.
 		for g: Drop in drops:
 			home += g.n
 		drops.clear()
@@ -1369,7 +1372,10 @@ func _update_shots(dt: float) -> void:
 
 ## One hit of a shot on one hero: damage, then chill, Dread and a Hunter's mark.
 func _strike(s: Shot, e: Enemy, dmg: float) -> void:
+	var before := kills
 	hurt(e, dmg, s.pierce, s.src, s.ap)
+	if s.kind == "den":
+		den_kills += kills - before
 	if s.mark > 0.0:
 		e.mark = s.mark
 	if s.slow > 0.0 and not e.d.has("steady"):
@@ -1463,8 +1469,7 @@ func hurt(e: Enemy, dmg: float, pierce := false, src: Tower = null, ap := 0) -> 
 		kills_by[e.code] = int(kills_by.get(e.code, 0)) + 1
 		if src != null:
 			kills_tower[src.type] = int(kills_tower.get(src.type, 0)) + 1
-		if race_on and kills % Defs.RACE_KILL_SEND == 0:
-			race_sends += String(e.d.get("send_as", e.code))
+		_race_kill(e.code)
 		var paid := int(e.d["gold"])
 		if src != null and src.mastery == "twin":
 			if time - twin_t <= 1.0:
@@ -1497,6 +1502,7 @@ func hurt(e: Enemy, dmg: float, pierce := false, src: Tower = null, ap := 0) -> 
 				kills += 1
 				drowned += 1
 				kills_by[code] = int(kills_by.get(code, 0)) + 1
+				_race_kill(code)
 			_text(e.pos + Vector2(0, -0.8), "%d drowned" % e.crew.size(), Color("9fd8f0"))
 			e.crew.clear()
 		if e.carry > 0:
@@ -1540,6 +1546,16 @@ func hurt(e: Enemy, dmg: float, pierce := false, src: Tower = null, ap := 0) -> 
 			_text(e.pos + Vector2(0, -0.8), "Rally!", Color("ff9a7a"))
 		if src != null and src.type == "ash" and src.has_ability() and rng.randf() < Defs.ABILITIES["ash"]["chance"]:
 			_lava(src, e.pos)
+
+
+## Online race: every RACE_KILL_SEND heroes slain (a drowned crew counts hero by hero) sends one
+## like the last onto the rival's road.
+func _race_kill(code: String) -> void:
+	if not race_on:
+		return
+	race_kills += 1
+	if race_kills % Defs.RACE_KILL_SEND == 0:
+		race_sends += String(Defs.ENEMIES[code].get("send_as", code))
 
 
 ## Lava: a pool of burning ground where a Cinder Shrine killed a hero.
@@ -1902,14 +1918,14 @@ Refilling: ready in %d s." % ceili(s.t), "actions": []}
 	match s.kind:
 		"mine":
 			if s.owned:
-				return {"title": d["name"], "text": "Yours. Earns %d gold every %d s." % [d["gold"], int(d["every"])], "actions": []}
+				return {"title": d["name"], "text": "Yours. Earns %d gold every %d s." % [d["gold"] + skill("land_veins"), int(d["every"])], "actions": []}
 			cut["label"] = "Cut free"
-			return {"title": d["name"], "text": d["text"] % [d["gold"], int(d["every"])] + more, "actions": [cut]}
+			return {"title": d["name"], "text": d["text"] % [d["gold"] + skill("land_veins"), int(d["every"])] + more, "actions": [cut]}
 		"well":
 			if s.owned:
-				return {"title": d["name"], "text": "Yours. +%.1f mana per second." % d["regen"], "actions": []}
+				return {"title": d["name"], "text": "Yours. +%.1f mana per second." % (d["regen"] + 0.1 * skill("land_springs")), "actions": []}
 			cut["label"] = "Cut free"
-			return {"title": d["name"], "text": d["text"] % d["regen"] + more, "actions": [cut]}
+			return {"title": d["name"], "text": d["text"] % (d["regen"] + 0.1 * skill("land_springs")) + more, "actions": [cut]}
 	if s.owned:
 		var ruin: String = {"camp": "Ruined barracks", "workshop": "Ruined workshop", "beacon": "Cold ashes"}.get(s.kind, "Ruins")
 		return {"title": ruin, "text": "Nothing left but ash.", "actions": []}

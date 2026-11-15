@@ -41,6 +41,7 @@ var _hero_tip := ""           # hero code the tip on screen introduces, or ""
 var guide: Control            # the player's guide, opened from the map
 var _arts_spent := -1         # skill points spent when the Dark Arts tip opened
 var _arts_intro := false      # the Dark Arts intro tip is up
+var _tier_tip := 0            # the lairs-beaten gate whose "new Dark Arts" tip is up, or 0
 var _race_intro := false      # a race walkthrough tip is up (Prefs "race_tip": the next one to show)
 var online: Online            # the optional account and leaderboard
 var hall: Control             # Hall of Fame: leaderboard, achievements, account
@@ -179,7 +180,7 @@ func _load_level(i: int) -> void:
 
 
 func _new_battle() -> void:
-	sim = GameSim.new(level, save.skills if race.is_empty() else {})   # races are fair: no Dark Arts
+	sim = GameSim.new(level, save.skills if race.is_empty() else Loadout.for_lair(level_index))   # races are fair: both get the lair's standard skills
 	sim.toast.connect(hud.toast)
 	sim.ended.connect(_on_ended)
 	sim.sound.connect(Sfx.play)
@@ -421,6 +422,10 @@ func _on_tip_ok() -> void:
 		return
 	if not on_map and tutorial:
 		tutorial.dismiss()
+	elif _tier_tip > 0:
+		for gate: int in [10, 20, 40]:   # the gates below it are covered too
+			if gate <= _tier_tip:
+				Prefs.set_value("tier_tip_%d" % gate, true)
 	elif _race_intro:
 		Prefs.set_value("race_tip", int(Prefs.get_value("race_tip", 0)) + 1)
 	elif _arts_intro:
@@ -435,6 +440,11 @@ func _on_tip_ok() -> void:
 func _on_tip_skip() -> void:
 	if on_map and _race_intro:
 		Prefs.set_value("race_tip", RACE_TIPS.size())
+		spot.hide_tip()
+		return
+	if on_map and _tier_tip > 0:
+		for gate: int in [10, 20, 40]:
+			Prefs.set_value("tier_tip_%d" % gate, true)
 		spot.hide_tip()
 		return
 	if not on_map and (_site_tip != "" or _hero_tip != "" or _rule_key != ""):
@@ -454,9 +464,20 @@ func _on_tip_skip() -> void:
 		tutorial = null
 	Prefs.set_value("tutorial_done", true)
 	Prefs.set_value("arts_tip", 2)
+	for gate: int in [10, 20, 40]:
+		Prefs.set_value("tier_tip_%d" % gate, true)
 	Prefs.set_value("arts_intro", true)
 	Prefs.set_value("race_tip", RACE_TIPS.size())
 	spot.hide_tip()
+
+
+## Shown once on the map when the campaign opens new Dark Arts (Defs.TREE_BEATEN, Defs.TIER_BEATEN),
+## keyed by lairs beaten (Prefs "tier_tip_<gate>").
+const TIER_TIPS := {
+	10: "[b]Chapter II opens The Land[/b], a new Dark Arts tab: richer mines and wells, cheaper cuts, higher raised tiles. Tap [b]Dark Arts[/b] to see it.",
+	20: "[b]Chapter III opens tier II[/b] of every Dark Arts tree, with the [b]masteries[/b]: learn one and a battle-hardened level III tower can be raised to level IV. Tap [b]Dark Arts[/b].",
+	40: "[b]Chapter V opens tier III[/b] of Dark Arts: a Legend skill for each tower, Hoard's Fury for your den and Dragon's Patience for mana. Tap [b]Dark Arts[/b].",
+}
 
 
 ## The Dark Arts tips, on the level map. The first time Dark Arts opens, a tip explains it
@@ -465,6 +486,7 @@ func _on_tip_skip() -> void:
 func _arts_tip() -> void:
 	var stage: int = Prefs.get_value("arts_tip", 0)
 	_arts_intro = false
+	_tier_tip = 0
 	if _race_tip():
 		return
 	if not select.visible or guide.visible or hall.visible:
@@ -474,6 +496,13 @@ func _arts_tip() -> void:
 		_arts_intro = true
 		spot.show_tip(skill_tree.INTRO, Rect2(), true)
 		return
+	if stage >= 2 and not skill_tree.visible:
+		# New Dark Arts opened with the campaign: say so once, for the newest gate reached.
+		for gate: int in [40, 20, 10]:
+			if save.lairs_beaten() >= gate and not Prefs.get_value("tier_tip_%d" % gate, false):
+				_tier_tip = gate
+				spot.show_tip(TIER_TIPS[gate], select.skills_rect(), true, "No more tips")
+				return
 	if stage >= 2:
 		spot.hide_tip()
 		return
@@ -616,7 +645,7 @@ func _on_ended(won: bool) -> void:
 	online.sync(save)
 	var night_opened := not had_night and save.night_unlocked(level.id)
 	hud.show_end(sim, level_index + 1 < LEVELS.size(), new_best, save.stars(mission) - stars_before, save.points_free(), night_opened,
-		score, old_score, got)
+		score, old_score, got, won and level_index + 1 == LEVELS.size())
 
 
 ## Android back button: close the panel, cancel the meteor, or pause. On the map it closes the
@@ -662,7 +691,7 @@ func _announce(ids: Array[String]) -> void:
 
 # ---------------------------------------------------------------- online race
 
-## A race has begun (from the Hall of Fame): play its lair (by day or night) at once, without Dark Arts.
+## A race has begun (from the Hall of Fame): play its lair (by day or night) at once, both with the lair's standard Dark Arts (Loadout).
 func _start_race(r: Dictionary, side: String) -> void:
 	var i := _ids.find(r["level"])
 	if i < 0:
@@ -792,7 +821,7 @@ func _on_send(code: String) -> void:
 const RACE_TIPS := [
 	["host", "[b]Race a friend![/b] Pick a lair (night missions you have opened are there too) and tap [b]Host a race[/b]. You get a 5-letter code to give your friend."],
 	["join", "Got a code from a friend? Type it here and tap [b]Join[/b]. The race starts for both of you at once."],
-	["", "[b]In the race[/b] you both play the same lair with no Dark Arts. Every %d heroes you slay sends one to your rival, and [b]Send heroes[/b] (where Pause was) buys more with gold. The moment one of you clears the last wave or falls, the race is over: clear it first to win. Leaving counts as a loss." % Defs.RACE_KILL_SEND],
+	["", "[b]In the race[/b] you both play the same lair with the same Dark Arts: a standard set for that lair, not your own. Every %d heroes you slay sends one to your rival, and [b]Send heroes[/b] (where Pause was) buys more with gold. The moment one of you clears the last wave or falls, the race is over: clear it first to win. Leaving counts as a loss." % Defs.RACE_KILL_SEND],
 ]
 
 

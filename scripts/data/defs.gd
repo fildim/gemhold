@@ -279,7 +279,7 @@ const SKILLS := {
 		{"id": "land_springs", "name": "Deep Springs", "text": "Mana wells give +0.1 mana per second", "max": 3},
 		{"id": "land_axes", "name": "Sharp Axes", "text": "Cuts cost 10% less mana", "max": 3},
 		{"id": "land_heights", "name": "Commanding Heights", "text": "Raised tiles give +0.1 more range", "max": 2},
-		{"id": "land_spoils", "name": "Spoils of War", "text": "Razing a barracks pays +15 gold", "max": 2},
+		{"id": "land_spoils", "name": "Spoils of War", "text": "Razing a hero building pays +15 gold", "max": 2},
 		{"id": "land_lantern", "name": "Lantern Oil", "text": "Lights reach 0.3 tiles further at night", "max": 3},
 		{"id": "land_flood", "name": "Floodmaster", "text": "Sluices recharge 20% faster; collapsing a bridge costs 5 mana less", "max": 2},
 		{"id": "land_rites", "name": "Black Rites", "text": "Dark Altars give +5% more damage", "max": 2},

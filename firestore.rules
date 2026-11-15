@@ -23,7 +23,7 @@ service cloud.firestore {
         && request.resource.data.total is int
         && request.resource.data.total >= 0 && request.resource.data.total <= 10000000
         && request.resource.data.stars is int
-        && request.resource.data.stars >= 0 && request.resource.data.stars <= 200
+        && request.resource.data.stars >= 0 && request.resource.data.stars <= 300
         && request.resource.data.scores is map && request.resource.data.scores.size() <= 150
         && request.resource.data.ach is list && request.resource.data.ach.size() <= 500
         && request.resource.data.updated == request.time;

@@ -108,6 +108,7 @@ func _draw() -> void:
 	for pl: GameSim.Pool in sim.pools:
 		_draw_pool(pl, tm)
 	_draw_paving()
+	_draw_water_state(tm)
 	for c: Vector2i in level.high:
 		_draw_high_shine(c, tm)
 	_draw_routes(tm)
@@ -344,6 +345,14 @@ func _draw_enemy(e: GameSim.Enemy, tm: float) -> void:
 		var sp := Vector2(x - f * u * 0.42, y - u * 0.5 - e.fuse * u * 0.3)
 		Paint.glow(self, sp, u * (0.6 + 0.2 * sin(tm * 30.0)), Color(1, 0.7, 0.2, 0.9))
 		draw_circle(sp, u * 0.12, Color("fff2c0"))
+	if e.soak > 0.0 and not sim.in_water(e):   # soaked: drips fall from him for a few seconds
+		for k in 3:
+			var q := fmod(tm * 1.6 + k / 3.0 + e.bob, 1.0)
+			draw_circle(Vector2(x + (k - 1) * u * 0.45, y - u * 0.2 + q * u * 1.1), maxf(1.5, u * 0.09), Color(0.6, 0.85, 1, 0.85 * (1.0 - q)))
+	if e.work > 0.0:   # an Engineer rebuilding a bridge: a ring filling up over him
+		var c := Vector2(x, y - u * 2.2)
+		draw_circle(c, u * 0.55, Color(0, 0, 0, 0.55))
+		draw_arc(c, u * 0.55, -PI / 2, -PI / 2 + TAU * clampf(e.work / Defs.ENGINEER_FIX, 0.0, 1.0), 20, Color("ff9a7a"), 3.0, true)
 	if e.mark > 0.0:   # marked by a Hunter's Lodge
 		draw_arc(Vector2(x, y - u * 0.2), u * 1.1, 0, TAU, 20, Color(1, 0.3, 0.25, 0.8), 2.0, true)
 	if e.slow > 0.0:
@@ -688,6 +697,44 @@ func _draw_paving() -> void:
 				draw_rect(r, Color(0.25, 0.22, 0.2, 0.6 * a), false, 1.0)
 				d += 0.12
 				n += 1
+
+
+## What the water is doing right now: fords drowned by the high tide (deep blue, with ripples), and
+## planks an Engineer has laid over a ford (they fade as they rot).
+func _draw_water_state(tm: float) -> void:
+	var k := 0.0   # 0 low tide .. 1 high tide, rising and falling over a second
+	if sim.tide.x > 0.0:
+		var t := fmod(sim.time, sim.tide.x)
+		var rise: float = sim.tide.x - sim.tide.y
+		k = clampf(t - rise, 0.0, 1.0) if t >= rise else clampf(1.0 - t, 0.0, 1.0) if sim.time >= sim.tide.x else 0.0
+	for i in level.crossing_cells.size():
+		if level.crossing_kind[i] != "ford":
+			continue
+		if k > 0.0:
+			for c: Vector2i in level.crossing_cells[i]:
+				var r := Rect2(Vector2(c) * T, Vector2(T, T))
+				draw_rect(r, Color(0.07, 0.22, 0.42, 0.62 * k))
+				for j in 2:
+					var q := fmod(tm * 0.5 + j * 0.5 + Paint.hash01(c.x, c.y, j), 1.0)
+					Paint.ellipse_outline(self, r.get_center() + Vector2((Paint.hash01(c.x, c.y, j + 4) - 0.5) * T * 0.5, (j - 0.5) * T * 0.3),
+						T * (0.12 + 0.25 * q), T * (0.05 + 0.1 * q), Color(0.75, 0.9, 1, 0.5 * k * (1.0 - q)), 1.5)
+	if sim.planks.is_empty():
+		return
+	for p in level.paths.size():
+		for z: Dictionary in level.zones[p]:
+			if z["kind"] != "ford":
+				continue
+			var d: float = z["from"]
+			while d < float(z["to"]):
+				var at := level.path_pos(p, d)
+				var idx: int = level.crossings.get(Vector2i(floori(at.x), floori(at.y)), -1)
+				var left: float = float(sim.planks.get(idx, -1.0)) - sim.time
+				if idx >= 0 and left > 0.0:
+					var dir := (level.path_pos(p, d + 0.05) - at).normalized()
+					var n := dir.orthogonal()
+					var a := clampf(left / 4.0, 0.0, 1.0)
+					draw_line((at - n * 0.3) * T, (at + n * 0.3) * T, Color(Color("8a6238") if int(d * 8.0) % 2 else Color("9c7244"), a), T * 0.1)
+				d += 0.125
 
 
 ## Flight lines (air roads) as faint dashed lines, and hallowed ground glowing pale gold while a

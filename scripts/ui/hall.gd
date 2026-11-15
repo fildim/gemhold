@@ -492,7 +492,7 @@ func _delete() -> void:
 
 # ---------------------------------------------------------------- race
 # One player hosts a race on a lair and gets a code; the rival types it in to join, and the race
-# begins for both: same lair, same heroes, no Dark Arts. See Online (races) and main.gd.
+# begins for both: same lair, same heroes, the same standard Dark Arts. See Online (races) and main.gd.
 
 func _build_race() -> Control:
 	var scroll := ScrollContainer.new()
@@ -536,7 +536,7 @@ func _refresh_race() -> void:
 			_cancel_race()
 			_refresh_race())
 		return
-	_label(_race, "You both play the same lair at the same time (by day, or at night once you have opened it), with the same heroes and no Dark Arts skills. Slaying heroes and spending gold sends heroes onto your rival's road. The race ends for both the moment one of you clears the last wave or falls: clear it first to win. Every race counts on the Races leaderboard.", 24, Hud.DIM)
+	_label(_race, "You both play the same lair at the same time (by day, or at night once you have opened it), with the same heroes and the same Dark Arts skills (a standard set for that lair, not your own). Slaying heroes and spending gold sends heroes onto your rival's road. The race ends for both the moment one of you clears the last wave or falls: clear it first to win. Every race counts on the Races leaderboard.", 24, Hud.DIM)
 	var host := HBoxContainer.new()
 	_race_rows["host"] = host
 	host.add_theme_constant_override("separation", 10)
