@@ -4,6 +4,7 @@ extends SceneTree
 ##   godot --path . -s tests/perf.gd -- scen=day quality=detailed w=1720 h=720 secs=20
 ## Every option can also be given as an environment variable PERF_<NAME> (PERF_SCEN=day, ...).
 ##   scen     day | tide | siege | night | race       (see SCENES)
+##   lair     a campaign number (1 to 50) to play instead of the scenario's lair
 ##   quality  detailed | light | auto                 (Prefs "graphics" for this run)
 ##   w, h     window size in pixels (default 1720x720); vsync is off, the frame rate uncapped
 ##   secs     length of the measured window (default 20), after `warm` seconds (default 3)
@@ -108,7 +109,7 @@ func _prepare() -> void:
 	main.save.unlocked = 50
 	seed(1234)
 	var scen := _o("scen", "day")
-	var idx: int = SCENES.get(scen, 11)
+	var idx: int = int(_o("lair", "")) - 1 if _o("lair", "") != "" else SCENES.get(scen, 11)
 	if scen == "race":   # what main._start_race does, without the network
 		main.race = {"code": "PERF", "side": "h", "rival": Online.race_progress(), "t0": Time.get_ticks_msec(), "got": 0}
 		main._race_busy = true   # no reports or polls

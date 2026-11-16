@@ -3,8 +3,8 @@
  "title": "The Long Siege",
  "cols": 16,
  "rows": 10,
- "hp_mul": 1.13,
- "race_hp": 0.7,
+ "hp_mul": 1.27,
+ "race_hp": 0.61,
  "legend": {"A":"high ash","F":"high frost","L":"lair","M":"high moss","a":"ash","f":"frost","m":"moss"},
  "terrain": [
   "mmmmmmmmmmmmmmmm",

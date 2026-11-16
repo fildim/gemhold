@@ -134,6 +134,10 @@ const THREAT := {"easy": 0.45, "hard": 0.7, "up_max": 0.4, "up_easy": 0.1, "up_m
 	"up_close": 0.03, "up_touched": 0.01, "max": 4.0,
 	"rich": 250, "per_gold": 0.0005, "rich_max": 0.25}
 const DROP_SPEED := 0.7      # dropped gems roll home along the road at this many tiles/s
+## A hero carrying gems walks CARRY_SLOW slower for each gem, never more than CARRY_SLOW_MAX slower
+## (GameSim.pace). Flyers too; a boat carries no gems itself.
+const CARRY_SLOW := 0.10
+const CARRY_SLOW_MAX := 0.5
 
 ## Road zones (Level.zones, GameSim._zone_mul): hero speed factors. A ford is road over shallows;
 ## swimming is a flooded ford or a collapsed bridge; paving is laid by a Pavior.

@@ -3,8 +3,8 @@
  "title": "Censer Vale",
  "cols": 16,
  "rows": 10,
- "hp_mul": 2.88,
- "race_hp": 0.4,
+ "hp_mul": 3.28,
+ "race_hp": 0.40,
  "legend": {"A":"high ash","F":"high frost","L":"lair","M":"high moss","a":"ash","f":"frost","m":"moss"},
  "terrain": [
   "mmmmmmaaaaaaaaaa",

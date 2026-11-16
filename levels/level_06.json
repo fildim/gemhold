@@ -4,7 +4,7 @@
  "intro": "The crusade is broken, so the kingdoms send their fastest instead. One long causeway winds through the marsh to your den, and scouts and cutpurses race down it in swarms. Line the road with Warband Huts on the moss, and raze the barracks in the south-west before it adds runners of its own.",
  "cols": 16,
  "rows": 10,
- "hp_mul": 1.43,
+ "hp_mul": 1.54,
  "legend": {"m": "moss", "f": "frost", "a": "ash", "M": "high moss", "F": "high frost", "A": "high ash", "L": "lair"},
  "terrain": [
   "mmmmmmmmffffffff",

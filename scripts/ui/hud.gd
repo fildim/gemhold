@@ -891,6 +891,34 @@ func show_end(sim: GameSim, has_next: bool, new_best: bool, new_stars := 0, free
 	buttons.append(["Play again", restart_pressed])
 	buttons.append(["Map", map_pressed])
 	_show_card("The realm is yours" if finale else "The hoard holds" if sim.won else "The hoard is empty", txt, buttons)
+	if sim.won and Ads.enabled() and Ads.rewarded_ready() and Ads.ad_free_wins() == 0:
+		_add_reward_button()
+
+
+## Android Play build: an optional rewarded ad under the win card's buttons that buys a break
+## from ads (Ads.REWARD_WINS wins). Left out when the card would not fit the screen.
+func _add_reward_button() -> void:
+	var b := Button.new()
+	b.text = "Watch an ad: no ads for %d wins" % Ads.REWARD_WINS
+	b.focus_mode = Control.FOCUS_NONE
+	b.custom_minimum_size = Vector2(0, 40)
+	b.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	b.add_theme_font_size_override("font_size", 20)
+	b.add_theme_color_override("font_color", DIM)
+	b.pressed.connect(func() -> void:
+		b.disabled = true
+		Ads.show_rewarded(func(earned: bool) -> void:
+			if not is_instance_valid(b):
+				return
+			if earned:
+				b.text = "No ads for the next %d wins" % Ads.REWARD_WINS
+			else:
+				b.disabled = not Ads.rewarded_ready()))
+	_card_box.add_child(b)
+	var card := _card_box.get_parent() as Control
+	(func() -> void:   # once the card is laid out (the text's height depends on its width)
+		if is_instance_valid(b) and card.get_combined_minimum_size().y > _overlay.size.y:
+			b.queue_free()).call_deferred()   # keep the card's own buttons on a small screen
 
 
 ## The rival's badge in the map's top-left corner during an online race (Online.race_progress);

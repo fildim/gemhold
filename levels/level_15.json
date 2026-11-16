@@ -4,8 +4,8 @@
  "intro": "The heroes rally at a drowned abbey and march out with their whole support: Clerics, Shieldbearers, Wardens and Heralds, down three roads. Each road has its own way of making the heroes on it harder to kill. The mine and well here take three cuts each.",
  "cols": 16,
  "rows": 10,
- "hp_mul": 3.18,
- "race_hp": 0.4,
+ "hp_mul": 3.07,
+ "race_hp": 0.42,
  "legend": {"m": "moss", "f": "frost", "a": "ash", "M": "high moss", "F": "high frost", "A": "high ash", "L": "lair"},
  "terrain": [
   "aaaaaammmmmmmmmm",

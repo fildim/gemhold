@@ -3,8 +3,8 @@
  "title": "The Workshops",
  "cols": 16,
  "rows": 10,
- "hp_mul": 1.55,
- "race_hp": 0.75,
+ "hp_mul": 1.84,
+ "race_hp": 0.70,
  "legend": {"A":"high ash","F":"high frost","L":"lair","M":"high moss","a":"ash","f":"frost","m":"moss"},
  "terrain": [
   "fffffffmmmmmmmmm",

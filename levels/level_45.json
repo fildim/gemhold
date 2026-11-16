@@ -3,8 +3,8 @@
  "title": "The Reliquary",
  "cols": 16,
  "rows": 10,
- "hp_mul": 2.85,
- "race_hp": 0.65,
+ "hp_mul": 3.34,
+ "race_hp": 0.58,
  "legend": {"A":"high ash","F":"high frost","L":"lair","M":"high moss","a":"ash","f":"frost","m":"moss"},
  "terrain": [
   "mmmmmmmmmaaaaaaa",

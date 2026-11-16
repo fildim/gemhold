@@ -88,6 +88,17 @@ func _build(hud: Control) -> void:
 	_build_graphics(hud, box)
 	if Keys.available():
 		_build_keys(hud, box)
+	if Ads.enabled() and Ads.privacy_options_required():   # Android Play build, where the law asks for it
+		var privacy := Button.new()
+		privacy.text = "Privacy choices"
+		privacy.focus_mode = Control.FOCUS_NONE
+		privacy.custom_minimum_size = Vector2(0, 52)
+		privacy.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+		privacy.add_theme_font_size_override("font_size", 24)
+		privacy.pressed.connect(func() -> void:
+			queue_free()
+			Ads.show_privacy_options())
+		box.add_child(privacy)
 	var close := Button.new()
 	close.text = "Close"
 	close.focus_mode = Control.FOCUS_NONE

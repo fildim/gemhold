@@ -3,7 +3,8 @@
  "title": "Oathkeeper's Stair",
  "cols": 16,
  "rows": 10,
- "hp_mul": 4.34,
+ "hp_mul": 4.72,
+ "race_hp": 0.59,
  "legend": {"A":"high ash","F":"high frost","L":"lair","M":"high moss","a":"ash","f":"frost","m":"moss"},
  "terrain": [
   "fffffffffffmmmmm",

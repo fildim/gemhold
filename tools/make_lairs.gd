@@ -1,7 +1,9 @@
 extends SceneTree
 ## Writes level files from compact specs (tools/lair_specs.gd): ground and water as rectangles,
 ## raised tiles, hallowed ground ("hallowed": [[x, y], ...]), roads, buildings, waves and rules; woods are scattered from a seed, never on
-## roads, water, buildings, raised tiles or next to the lair. Edit a spec and run again:
+## roads, water, buildings, raised tiles or next to the lair. "dry": [[letter, x, y], ...] lays open
+## ground over water after the woods (where water would crowd a walking road: WATER_BESIDE_ROAD is
+## checked for every lair and reported). Edit a spec and run again:
 ##   godot --headless --path . -s res://tools/make_lairs.gd            (every spec)
 ##   godot --headless --path . -s res://tools/make_lairs.gd -- 21 25   (just those numbers)
 ## Then check with tests/level_check.gd. hp_mul is tuned afterwards with tests/difficulty.gd and
@@ -10,6 +12,7 @@ extends SceneTree
 ## tests/race_test.gd) are kept too.
 
 const SPECS := preload("res://tools/lair_specs.gd")
+const WATER_BESIDE_ROAD := 2
 const LEGEND := {"m": "moss", "f": "frost", "a": "ash", "M": "high moss", "F": "high frost", "A": "high ash", "L": "lair"}
 
 
@@ -94,6 +97,40 @@ func _build(s: Dictionary) -> Dictionary:
 			else:
 				line += "."
 		trees.append(line)
+	# Dry ground laid over water after the woods are scattered, so the woods elsewhere stay where
+	# they were and the new ground is open: [letter, x, y]. Used where water crowded a road.
+	for dc: Array in s.get("dry", []):
+		grid[dc[2]][dc[1]] = dc[0]
+	# The water rule (tests/level_check.gd, which also lists the owner's exceptions): of the tiles
+	# around a walking-road tile that are not road, at most WATER_BESIDE_ROAD may be water.
+	var info: Array = s.get("path_info", [])
+	var walk := {}
+	var on_road := {}   # land and river road tiles (air roads mark none)
+	for i in s["paths"].size():
+		var kind: String = info[i].get("kind", "land") if i < info.size() else "land"
+		var p: Array = s["paths"][i]
+		for k in p.size() - 1:
+			var q := Vector2i(p[k][0], p[k][1])
+			var b := Vector2i(p[k + 1][0], p[k + 1][1])
+			while true:
+				if kind != "air":
+					on_road[q] = true
+				if kind == "land":
+					walk[q] = true
+				if q == b:
+					break
+				q += Vector2i(signi(b.x - q.x), signi(b.y - q.y))
+	for v: Vector2i in walk:
+		if v.x < 0 or v.y < 0 or v.x >= cols or v.y >= rows:
+			continue
+		var n := 0
+		for dy in [-1, 0, 1]:
+			for dx in [-1, 0, 1]:
+				var o: Vector2i = v + Vector2i(dx, dy)
+				if o != v and o.x >= 0 and o.y >= 0 and o.x < cols and o.y < rows and not on_road.has(o) and grid[o.y][o.x] in ["o", "w"]:
+					n += 1
+		if n > WATER_BESIDE_ROAD:
+			print("  lair %d: road tile %s has %d water tiles beside it (at most %d, unless level_check allows it)" % [s["n"], v, n, WATER_BESIDE_ROAD])
 	var out := {
 		"id": "level_%02d" % s["n"], "title": s["title"], "cols": cols, "rows": rows, "hp_mul": s.get("hp_mul", 2.2),
 		"legend": LEGEND,

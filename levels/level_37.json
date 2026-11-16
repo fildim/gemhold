@@ -3,7 +3,7 @@
  "title": "Duskwall",
  "cols": 16,
  "rows": 10,
- "hp_mul": 3.04,
+ "hp_mul": 3.51,
  "legend": {"A":"high ash","F":"high frost","L":"lair","M":"high moss","a":"ash","f":"frost","m":"moss"},
  "terrain": [
   "mmmmmmmmmmaaaaaa",

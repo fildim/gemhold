@@ -3,7 +3,8 @@
  "title": "Powder Road",
  "cols": 16,
  "rows": 10,
- "hp_mul": 3.83,
+ "hp_mul": 4.09,
+ "race_hp": 0.48,
  "legend": {"A":"high ash","F":"high frost","L":"lair","M":"high moss","a":"ash","f":"frost","m":"moss"},
  "terrain": [
   "mmmmmmmmmmmaaaaa",

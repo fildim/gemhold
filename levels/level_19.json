@@ -4,7 +4,7 @@
  "intro": "Your den lies at the bottom of the vale, and four short roads drop into it from every side. Every kind of hero comes, Champions too, and two barracks keep the roads busy. Four raised tiles sit between the roads.",
  "cols": 16,
  "rows": 10,
- "hp_mul": 3.38,
+ "hp_mul": 3.58,
  "race_hp": 0.45,
  "legend": {"m": "moss", "f": "frost", "a": "ash", "M": "high moss", "F": "high frost", "A": "high ash", "L": "lair"},
  "terrain": [

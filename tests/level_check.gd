@@ -1,6 +1,7 @@
 extends SceneTree
 ## Checks every campaign level file (and the level-format fixtures in tests/fixtures) for layout
-## mistakes: grid sizes, woods on roads, sites on roads, roads that don't end beside the lair, and
+## mistakes: grid sizes, woods on roads, sites on roads, roads that don't end beside the lair,
+## water crowding a walking road (WATER_BESIDE_ROAD), and
 ## the level format v2 keys (water, river and air roads, wave routes and cargo, hallowed ground,
 ## lair rules, gem count).
 ## Run: godot --headless --script res://tests/level_check.gd
@@ -8,6 +9,18 @@ extends SceneTree
 const MAIN := preload("res://scripts/main.gd")
 const FIXTURES := ["res://tests/fixtures/level_v2.json", "res://tests/fixtures/level_siege.json", "res://tests/fixtures/level_radiant.json"]
 const RULE_KINDS := ["tide", "dusk", "eclipse"]
+## Nothing is built on water, so wide water hugging a road leaves no room for towers: of the 8
+## tiles around a tile of a walking road (fords and bridges included; river and air roads are
+## exempt), those that are not road themselves may hold at most this many water tiles, shallows
+## and deep water together.
+const WATER_BESIDE_ROAD := 2
+## Spots the owner decides on, where the rule cannot hold without breaking a boat road or a
+## bridge: level id -> {road tile: water tiles allowed beside it}. Nothing else may exceed the cap.
+## Both are walking bridges over a river two tiles wide (deep water above and below each plank).
+const WATER_BESIDE_EXCEPTIONS := {
+	"level_22": {Vector2i(7, 1): 4, Vector2i(8, 1): 4, Vector2i(7, 8): 4, Vector2i(8, 8): 4},   # Twin Bridges
+	"level_29": {Vector2i(5, 7): 4, Vector2i(6, 7): 4},   # The Flooded Abbey, the west road's bridge
+}
 
 var fails := 0
 
@@ -113,7 +126,46 @@ func _check_file(path: String) -> void:
 		if rule is Dictionary and rule.get("kind", "") == "dusk":
 			var dw := int(rule.get("wave", 0))
 			_check(dw >= 2 and dw <= lv.waves.size(), "%s: dusk falls at wave %d, which is not a later wave of the lair" % [lv.id, dw])
+	if MAIN.LEVELS.has(path):
+		var allowed: Dictionary = WATER_BESIDE_EXCEPTIONS.get(lv.id, {})
+		for c: Vector2i in walk_tiles(lv):
+			var n := water_beside(lv, c)
+			var cap: int = allowed.get(c, WATER_BESIDE_ROAD)
+			_check(n <= cap, "%s: road tile %s has %d water tiles beside it (at most %d)" % [lv.id, c, n, cap])
+		for c: Vector2i in allowed:   # an exception that is no longer needed should go
+			_check(water_beside(lv, c) > WATER_BESIDE_ROAD, "%s: the exception at %s is no longer needed" % [lv.id, c])
 	print("%s ok: %d roads, %d sites, %d waves" % [lv.id, lv.paths.size(), lv.sites.size(), lv.waves.size()])
+
+
+## The tiles of the walking (land) roads: river and air roads are exempt from the water rule.
+static func walk_tiles(lv: Level) -> Dictionary:
+	var out := {}
+	for i in lv.waypoints.size():
+		if lv.path_kind[i] != "land":
+			continue
+		var wp: Array = lv.waypoints[i]
+		for k in wp.size() - 1:
+			var p: Vector2i = wp[k]
+			var b: Vector2i = wp[k + 1]
+			while true:
+				if lv.in_bounds(p):
+					out[p] = true
+				if p == b:
+					break
+				p += Vector2i(signi(b.x - p.x), signi(b.y - p.y))
+	return out
+
+
+## How many of the tiles around road tile c (road tiles of any road not counted) are water,
+## shallows or deep.
+static func water_beside(lv: Level, c: Vector2i) -> int:
+	var n := 0
+	for dy in [-1, 0, 1]:
+		for dx in [-1, 0, 1]:
+			var o: Vector2i = c + Vector2i(dx, dy)
+			if o != c and lv.in_bounds(o) and not lv.road.has(o) and lv.is_water(o):
+				n += 1
+	return n
 
 
 func _check(cond: bool, what: String) -> void:

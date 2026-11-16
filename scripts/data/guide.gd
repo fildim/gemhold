@@ -82,6 +82,7 @@ With a keyboard there are [b]shortcuts[/b]: %s pauses, %s changes speed, %s call
 	# ------------------------------------------------------------ heroes
 	t.append(_t("Heroes", "Gem carriers",
 		"A hero with a gem glows red and runs for the edge of the map. Every tower turns on him.\n\n"
+		+ ("Gems are heavy: a hero is [b]%d%% slower[/b] for each gem he carries.\n\n" % roundi(Defs.CARRY_SLOW * 100.0))
 		+ "[b]Kill him[/b] and his gems fall to the road and roll home on their own. But any hero on that road with room to carry will turn and go for them, even walking back the way he came.\n\n"
 		+ "So kill carriers where your towers also cover the road behind them."))
 	t.append(_t("Heroes", "Peasant, Footman, Scout",

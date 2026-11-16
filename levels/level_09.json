@@ -4,7 +4,7 @@
  "intro": "One road climbs the ridge, doubling back on itself three times, so towers in the middle can cover two stretches at once. Cutpurses join the heroes here: quick, and each one carries off two gems. The barracks in the north-east keeps sending them, and from here on a building can take more than one cut.",
  "cols": 16,
  "rows": 10,
- "hp_mul": 1.61,
+ "hp_mul": 1.67,
  "race_hp": 0.75,
  "legend": {"m": "moss", "f": "frost", "a": "ash", "M": "high moss", "F": "high frost", "A": "high ash", "L": "lair"},
  "terrain": [

@@ -767,7 +767,6 @@ func _paint_badge(ci: CanvasItem, c: Vector2, lv: int) -> void:
 func _draw_layer() -> void:
 	if sim == null or not HeroSprites.ready():
 		return
-	var tm := sim.time
 	for e: GameSim.Enemy in _es:
 		if e.hidden or not HeroSprites.has(e.code):
 			continue
@@ -777,7 +776,7 @@ func _draw_layer() -> void:
 		var yb := (e.pos.y + e.knock.y * hitk) * T
 		if sim.flying(e):   # in the air: the shadow stays on the ground
 			yb -= Defs.FLY_LIFT * T
-		var fr := HeroSprites.frame(e.code, HeroSprites.frame_of(tm * 10.0 * e.d["spd"] + e.bob))
+		var fr := HeroSprites.frame(e.code, HeroSprites.frame_of(e.stride * 10.0 + e.bob))
 		var src: Rect2 = fr[0]
 		var k: float = u / float(fr[2])   # baked size -> drawn size
 		var dst := Rect2(x - fr[1].x * k, yb - fr[1].y * k, src.size.x * k, src.size.y * k)
@@ -823,7 +822,7 @@ func _ground_marks(ci: CanvasItem, e: GameSim.Enemy, x: float, yb: float, u: flo
 func _draw_enemy(e: GameSim.Enemy, tm: float) -> void:
 	var u: float = e.d["r"] * T * HERO_SCALE
 	var f := float(e.face)
-	var cyc: float = tm * 10.0 * e.d["spd"] + e.bob
+	var cyc: float = e.stride * 10.0 + e.bob
 	var walk := sin(cyc)
 	var bob := absf(cos(cyc)) * u * 0.08
 	var hitk := clampf(e.hit / 0.12, 0.0, 1.0)   # 1 just hit, fading to 0

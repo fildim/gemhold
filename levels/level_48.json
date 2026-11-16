@@ -3,7 +3,7 @@
  "title": "Eclipse",
  "cols": 16,
  "rows": 10,
- "hp_mul": 2.15,
+ "hp_mul": 2.32,
  "legend": {"A":"high ash","F":"high frost","L":"lair","M":"high moss","a":"ash","f":"frost","m":"moss"},
  "terrain": [
   "mmmmmmmmmmmmmmmm",

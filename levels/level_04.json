@@ -4,7 +4,8 @@
  "intro": "Shieldbearers and Wardens march here. Shieldbearers guard the heroes around them, and Wardens' lanterns burn away slow and Dread. The barracks in the west takes two cuts to raze and keeps sending Cutpurses until you do. The raised tiles take any tower and let it see further.",
  "cols": 16,
  "rows": 10,
- "hp_mul": 1.94,
+ "hp_mul": 2.20,
+ "race_hp": 0.49,
  "legend": {"m": "moss", "f": "frost", "a": "ash", "M": "high moss", "F": "high frost", "A": "high ash", "L": "lair"},
  "terrain": [
   "mmmmmffffffaaaaa",

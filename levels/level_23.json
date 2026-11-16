@@ -3,7 +3,7 @@
  "title": "Rainmoor",
  "cols": 16,
  "rows": 10,
- "hp_mul": 4.03,
+ "hp_mul": 4.30,
  "legend": {"A":"high ash","F":"high frost","L":"lair","M":"high moss","a":"ash","f":"frost","m":"moss"},
  "terrain": [
   "fffaaaaaaaaaaaaa",

@@ -4,7 +4,7 @@
  "intro": "Three roads meet at the head of one long bridge, and the bridge runs straight into your den. Everything that crosses must pass the same stones: hold the bridge, but don't let the three roads bleed you before the heroes reach it.",
  "cols": 16,
  "rows": 10,
- "hp_mul": 3.76,
+ "hp_mul": 4.22,
  "race_hp": 0.4,
  "legend": {"m": "moss", "f": "frost", "a": "ash", "M": "high moss", "F": "high frost", "A": "high ash", "L": "lair"},
  "terrain": [

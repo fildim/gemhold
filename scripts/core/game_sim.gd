@@ -60,6 +60,7 @@ class Enemy:
 	var grounded := false # a flyer that has come down onto a road (the Seraph after landing)
 	var hit := 0.0        # seconds of hit flash left (view only)
 	var knock := Vector2.ZERO   # small knock-back offset in tiles from the last hit (view only)
+	var stride := 0.0     # tiles walked at its own pace (GameSim.pace), for the walk cycle (view only)
 
 
 class Tower:
@@ -636,6 +637,7 @@ func _update_enemies(dt: float) -> void:
 			e.surge_t -= dt
 			if e.surge_t <= 0.0:
 				_surge(e)
+		e.stride += pace(e) * dt
 		if e.d.has("sapper") and _sapper(e, dt):
 			continue   # off the road, running at a tower or lighting his keg
 		if e.d.has("belfry") and not e.retreat:
@@ -643,7 +645,7 @@ func _update_enemies(dt: float) -> void:
 			if e.sling <= 0.0:   # a Sapper jumps out
 				e.sling = Defs.BELFRY["sapper"]
 				_rally.append({"codes": ["a"], "path": e.path, "dist": maxf(0.0, e.dist - 0.4), "wave": e.wave})
-		var sp: float = e.d["spd"] * ((1.0 - e.slow_amt) if e.slow > 0.0 else 1.0)
+		var sp := pace(e)
 		if e.d.has("siege") and _siege(e, dt):
 			sp = 0.0
 		if e.chant > 0.0:
@@ -769,10 +771,18 @@ func sturdy_mul() -> float:
 	return 1.0 - Defs.STURDY * skill("sturdy")
 
 
+## A hero's own walking speed in tiles a second: his base speed, held back by chill and by the
+## gems he carries (Defs.CARRY_SLOW each, at most CARRY_SLOW_MAX). The ground (_zone_mul), Herald
+## haste, Berserker rage and the like multiply on top of it.
+func pace(e: Enemy) -> float:
+	var chill := (1.0 - e.slow_amt) if e.slow > 0.0 else 1.0
+	return float(e.d["spd"]) * chill * (1.0 - minf(Defs.CARRY_SLOW_MAX, Defs.CARRY_SLOW * e.carry))
+
+
 ## Moves e off the road toward `to` at its own speed; true once it is within `stop` tiles of it.
 func _walk_to(e: Enemy, to: Vector2, stop: float, dt: float) -> bool:
 	var gap := to - e.pos
-	var sp: float = e.d["spd"] * ((1.0 - e.slow_amt) if e.slow > 0.0 else 1.0) * dt
+	var sp := pace(e) * dt
 	if gap.length() <= stop + sp:
 		if stop <= 0.0:
 			e.pos = to

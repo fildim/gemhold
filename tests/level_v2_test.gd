@@ -15,6 +15,7 @@ func _init() -> void:
 	_loader()
 	_routes()
 	_zones()
+	_carry()
 	_old_levels()
 	_skills()
 	_picker()
@@ -134,6 +135,27 @@ func _zones() -> void:
 	_check(sim.pools.size() == pools + 1, "lava on land")
 
 
+## A hero carrying gems walks Defs.CARRY_SLOW slower per gem, never more than CARRY_SLOW_MAX slower.
+func _carry() -> void:
+	var sim := GameSim.new(Level.load_from(MAIN.LEVELS[0]))   # Mossfold Pass: dry land roads
+	var walked := []
+	for n in [0, 1, 2, 9]:
+		var e := _hero(sim, "f", 0, 5.0)
+		e.dir = -1   # running home, out of reach of the den
+		e.carry = n
+		sim.enemies = [e]
+		var before := e.dist
+		for k in 10:
+			sim._update_enemies(0.05)
+		walked.append(before - e.dist)
+	_check(walked[0] > 0.0, "a hero walks: %.4f" % walked[0])
+	_check(is_equal_approx(walked[1] / walked[0], 0.9) and is_equal_approx(walked[2] / walked[0], 0.8), "0, 1, 2 gems walk 1 : %.3f : %.3f" % [walked[1] / walked[0], walked[2] / walked[0]])
+	_check(is_equal_approx(walked[3] / walked[0], 1.0 - Defs.CARRY_SLOW_MAX), "carrying slows by at most half: %.3f" % (walked[3] / walked[0]))
+	var k := _hero(sim, "k", 0, 5.0)
+	k.carry = 2
+	k.slow = 1.0
+	k.slow_amt = 0.5
+	_check(is_equal_approx(sim.pace(k), float(Defs.ENEMIES["k"]["spd"]) * 0.5 * 0.8), "chill and gems multiply: %.4f" % sim.pace(k))
 func _hero(sim: GameSim, code: String, path: int, dist: float) -> GameSim.Enemy:
 	var e := GameSim.Enemy.new()
 	e.code = code

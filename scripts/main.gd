@@ -29,6 +29,7 @@ var sim: GameSim
 const SHAKE_TIME := 0.35
 const SHAKE_PX := 7.0
 var _shake := 0.0         # seconds of screen shake left
+var _ad_due := false      # an interstitial shows when the player leaves this win card (Ads.on_win)
 var speed := 1
 var paused := false
 var started := false
@@ -70,9 +71,10 @@ func _ready() -> void:
 	hud.popup_closed.connect(_deselect)
 	hud.start_pressed.connect(func() -> void: started = true)
 	hud.night_pressed.connect(_start_night)
-	hud.restart_pressed.connect(_restart)
-	hud.next_level_pressed.connect(func() -> void: _choose(level_index + 1))
-	hud.map_pressed.connect(_show_map)
+	hud.restart_pressed.connect(func() -> void: _after_ad(_restart))
+	hud.next_level_pressed.connect(func() -> void: _after_ad(func() -> void: _choose(level_index + 1)))
+	hud.map_pressed.connect(func() -> void: _after_ad(_show_map))
+	Ads.start(self)   # Android Play build only: consent, then ads (scripts/core/ads.gd)
 	spot = preload("res://scripts/ui/spotlight.gd").new()
 	$UI.add_child(spot)
 	spot.setup(hud)
@@ -629,6 +631,7 @@ func _on_meteor() -> void:
 func _on_ended(won: bool) -> void:
 	Sfx.set_beams(0)
 	Sfx.play("win" if won else "lose")
+	var tutorial_win := won and tutorial != null   # the tutorial's win never brings an ad
 	if won and tutorial:
 		tutorial.finish()   # beat the first lair: no more tips
 		tutorial = null
@@ -651,9 +654,21 @@ func _on_ended(won: bool) -> void:
 	got.append_array(Achievements.check_progress(save, _ids))
 	save.save()
 	online.sync(save)
+	_ad_due = won and not tutorial_win and Ads.on_win()   # counted after the win is saved
 	var night_opened := not had_night and save.night_unlocked(level.id)
 	hud.show_end(sim, level_index + 1 < LEVELS.size(), new_best, save.stars(mission) - stars_before, save.points_free(), night_opened,
 		score, old_score, got, won and level_index + 1 == LEVELS.size())
+
+
+## Leaving the win card (Next lair, Play again, Map): the interstitial first if one is due, then
+## `next`. Without an ad (none due, none loaded, offline) `next` runs at once.
+func _after_ad(next: Callable) -> void:
+	if not _ad_due or Ads.ad_free_wins() > 0:   # none due, or the rewarded ad was just watched
+		_ad_due = false
+		next.call()
+		return
+	_ad_due = false
+	Ads.show_interstitial(next)
 
 
 ## Android back button: close the panel, cancel the meteor, or pause. On the map it closes the

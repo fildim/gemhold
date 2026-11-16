@@ -3,8 +3,8 @@
  "title": "The Flooded Abbey",
  "cols": 16,
  "rows": 10,
- "hp_mul": 3.49,
- "race_hp": 0.45,
+ "hp_mul": 3.66,
+ "race_hp": 0.51,
  "legend": {"A":"high ash","F":"high frost","L":"lair","M":"high moss","a":"ash","f":"frost","m":"moss"},
  "terrain": [
   "wwwwwmmmmmmmmmaa",
