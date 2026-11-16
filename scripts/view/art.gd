@@ -134,18 +134,33 @@ static func crypt(ci: CanvasItem, x: float, y: float, s: float, lv: int, flash: 
 		ci.draw_colored_polygon(PackedVector2Array([Vector2(x, cy - s * 0.1), Vector2(x + s * 0.05, cy), Vector2(x, cy + s * 0.1), Vector2(x - s * 0.05, cy)]), Color("d8f6ff"))
 
 
-static func shrine(ci: CanvasItem, x: float, y: float, s: float, lv: int, flash: bool, tm: float, p: Vector2) -> void:
+## The Shrine's three runes as line ends (a, b, a, b, ...), and their colour as they pulse.
+static func rune_lines(x: float, y: float, s: float, lv: int) -> PackedVector2Array:
+	var top := y + s * 0.2 - s * (0.5 + lv * 0.07)
+	return PackedVector2Array([Vector2(x, top + s * 0.18), Vector2(x, y + s * 0.1),
+		Vector2(x - s * 0.07, top + s * 0.3), Vector2(x + s * 0.07, top + s * 0.38),
+		Vector2(x + s * 0.07, top + s * 0.3), Vector2(x - s * 0.07, top + s * 0.38)])
+
+
+static func rune_color(tm: float, p: Vector2) -> Color:
+	var pulse := 0.55 + 0.45 * sin(tm * 4.0 + p.y)
+	return Color(1, (120 + pulse * 60) / 255.0, 40 / 255.0, 0.5 + pulse * 0.4)
+
+
+## runes false leaves out the three glowing runes (the board draws them over a baked shrine, so
+## their pulse stays smooth: rune_lines).
+static func shrine(ci: CanvasItem, x: float, y: float, s: float, lv: int, flash: bool, tm: float, p: Vector2, runes := true) -> void:
 	var h := s * (0.5 + lv * 0.07)
 	var top := y + s * 0.2 - h
 	if lv >= 2:
 		for d in [-1.0, 1.0]:
 			ci.draw_colored_polygon(PackedVector2Array([Vector2(x + d * s * 0.2, y + s * 0.24), Vector2(x + d * s * 0.34, y - s * 0.08), Vector2(x + d * s * 0.27, y + s * 0.24)]), Color("24140f"))
 	Paint.hgrad_poly(ci, PackedVector2Array([Vector2(x - s * 0.2, y + s * 0.24), Vector2(x - s * 0.13, top + s * 0.08), Vector2(x + s * 0.13, top + s * 0.08), Vector2(x + s * 0.2, y + s * 0.24)]), Color("4a2c26"), Color("120a08"))
-	var pulse := 0.55 + 0.45 * sin(tm * 4.0 + p.y)
-	var rune := Color(1, (120 + pulse * 60) / 255.0, 40 / 255.0, 0.5 + pulse * 0.4)
-	ci.draw_line(Vector2(x, top + s * 0.18), Vector2(x, y + s * 0.1), rune, 2.0)
-	ci.draw_line(Vector2(x - s * 0.07, top + s * 0.3), Vector2(x + s * 0.07, top + s * 0.38), rune, 2.0)
-	ci.draw_line(Vector2(x + s * 0.07, top + s * 0.3), Vector2(x - s * 0.07, top + s * 0.38), rune, 2.0)
+	if runes:
+		var rl := rune_lines(x, y, s, lv)
+		var col := rune_color(tm, p)
+		for i in range(0, rl.size(), 2):
+			ci.draw_line(rl[i], rl[i + 1], col, 2.0)
 	# brazier and flame
 	ci.draw_colored_polygon(PackedVector2Array([Vector2(x - s * 0.19, top + s * 0.08), Vector2(x + s * 0.19, top + s * 0.08), Vector2(x + s * 0.13, top + s * 0.15), Vector2(x - s * 0.13, top + s * 0.15)]), Color("2a1a14"))
 	Paint.glow(ci, Vector2(x, top), s * (0.55 if flash else 0.38), Color(1, 0.48, 0.16, 0.55))

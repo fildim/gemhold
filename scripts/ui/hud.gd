@@ -78,6 +78,12 @@ var _sound: Button
 var _map_arms := 0
 var _rating: Label
 var _rating_was := ""
+var _rating_shown := ""      # the rating the label shows (it changes rarely; refresh runs every frame)
+var _fps: Label             # the frame rate, in a corner of the map (Settings > Show frame rate)
+var _fps_t := 0.0
+var _fps_frames := 0
+var _keys_shown := ""        # the shortcut keys the tooltips were last set for
+var _boss_shown: Object      # the boss whose name the bar shows
 
 
 func _ready() -> void:
@@ -95,6 +101,7 @@ func _ready() -> void:
 	_build_popup()
 	_build_toast()
 	_build_overlay()
+	_build_fps()
 	resized.connect(_layout)
 	_layout()
 
@@ -402,6 +409,8 @@ func relayout() -> void:
 func set_battle_visible(on: bool) -> void:
 	_top.visible = on
 	_bottom.visible = on
+	if _fps and not on:
+		_fps.visible = false
 	if not on:
 		_boss_box.visible = false
 	if not on:
@@ -443,9 +452,15 @@ func refresh(sim: GameSim, armed: bool, speed: int, paused: bool) -> void:
 		_tide.queue_redraw()
 	_show_boss(sim)
 	if Keys.available():
-		for pair: Array in [[_pause, "pause"], [_speed, "speed"], [_next, "next"], [_meteor, "meteor"], [_cut, "cut"]]:
-			pair[0].tooltip_text = "Key: %s (change it in Settings)" % Keys.name_of(pair[1])
+		var shown := ""
+		for a: String in ["pause", "speed", "next", "meteor", "cut"]:
+			shown += Keys.name_of(a) + ","
+		if shown != _keys_shown:   # only when a key was changed
+			_keys_shown = shown
+			for pair: Array in [[_pause, "pause"], [_speed, "speed"], [_next, "next"], [_meteor, "meteor"], [_cut, "cut"]]:
+				pair[0].tooltip_text = "Key: %s (change it in Settings)" % Keys.name_of(pair[1])
 	_show_rating(sim.rating_now())
+	_show_fps()
 	if sim.wave < sim.level.waves.size():
 		var s := int(ceil(sim.timer))
 		_next.disabled = false
@@ -461,6 +476,9 @@ func refresh(sim: GameSim, armed: bool, speed: int, paused: bool) -> void:
 	_pause.text = "Resume" if paused else "Pause"
 	for a in _popup_actions:
 		var short: bool = (a["gold"] > 0 and sim.gold < a["gold"]) or (a["mana"] > 0 and sim.mana < a["mana"])
+		if a.get("short") == short:
+			continue   # a theme override re-themes the button: only when it changes
+		a["short"] = short
 		var col := POOR if short else BONE
 		for c in ["font_color", "font_hover_color", "font_pressed_color"]:
 			a["button"].add_theme_color_override(c, col)
@@ -476,17 +494,24 @@ func _show_boss(sim: GameSim) -> void:
 			break
 	_boss_box.visible = boss != null
 	if boss == null:
+		_boss_shown = null
 		return
-	var bn := String(boss.d["name"])
-	_boss_name.text = bn.left(1).to_upper() + bn.substr(1)
 	_boss_bar.max_value = boss.max_hp
 	_boss_bar.value = boss.hp
+	if boss == _boss_shown:
+		return   # name, size and place stay as they were
+	_boss_shown = boss
+	var bn := String(boss.d["name"])
+	_boss_name.text = bn.left(1).to_upper() + bn.substr(1)
 	_boss_box.reset_size()
 	_boss_box.position = Vector2(map_area.position.x + (map_area.size.x - _boss_box.size.x) / 2.0, map_area.position.y + 8)
 
 
 ## The rating the battle is heading for, as stars, with a message the moment it slips.
 func _show_rating(r: String) -> void:
+	if r == _rating_shown:
+		return
+	_rating_shown = r
 	var stars := maxi(1, SaveData.RANKS.find(r))
 	_rating.text = "★".repeat(stars) + " " + r
 	_rating.add_theme_color_override("font_color", {"Brilliant": GOLD, "Wicked": Color("e0a050"), "Survived": POOR}.get(r, BONE))
@@ -498,6 +523,38 @@ func _show_rating(r: String) -> void:
 ## Forget the last rating, so a fresh battle does not report a change.
 func reset_rating() -> void:
 	_rating_was = ""
+	_rating_shown = ""
+	_boss_shown = null
+
+
+## The frame rate in the map's top left corner, when Settings > Show frame rate is on: a quiet
+## number, updated twice a second, for checking a phone.
+func _build_fps() -> void:
+	_fps = Label.new()
+	_fps.visible = false
+	_fps.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_fps.add_theme_font_override("font", bold_font)
+	_fps.add_theme_font_size_override("font_size", 18)
+	_fps.add_theme_color_override("font_color", Color(DIM, 0.85))
+	_fps.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.8))
+	_fps.add_theme_constant_override("outline_size", 4)
+	add_child(_fps)
+
+
+func _show_fps() -> void:
+	var on: bool = Prefs.get_value("show_fps", false) and _top.visible
+	_fps.visible = on
+	if not on:
+		_fps_t = 0.0
+		_fps_frames = 0
+		return
+	_fps_frames += 1
+	_fps_t += get_process_delta_time()
+	if _fps_t >= 0.5:
+		_fps.text = "%d fps" % roundi(_fps_frames / _fps_t)
+		_fps_t = 0.0
+		_fps_frames = 0
+		_fps.position = map_area.position + Vector2(6, 4)
 
 
 # ---------------------------------------------------------------- tile panel

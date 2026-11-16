@@ -189,6 +189,7 @@ func _new_battle() -> void:
 	sim.burst.connect(func(kind: String, _p: Vector2, _c: String) -> void:
 		if kind == "meteor" and Prefs.get_value("shake", true):
 			_shake = SHAKE_TIME)
+	Quality.reset_watch()
 	_shake = 0.0
 	tutorial = Tutorial.new() if Tutorial.wanted(level_index, night) and race.is_empty() else null
 	hud.reset_rating()
@@ -257,6 +258,8 @@ func _process(delta: float) -> void:
 		for i in speed:
 			sim.update(dt)
 	var running := started and not paused and not sim.over and tip == ""
+	if running and Quality.watch(delta):   # Auto: battles run slow here, so the picture gets lighter
+		hud.toast("Graphics set to Light for smoother play")
 	var beams := 0
 	if running:
 		for tw: GameSim.Tower in sim.towers.values():

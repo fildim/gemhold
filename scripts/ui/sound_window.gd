@@ -1,7 +1,7 @@
 class_name SoundWindow
 extends Control
-## The Settings window: a slider for effects and one for music, the screen shake switch and, with a
-## keyboard, the battle shortcuts (Keys),
+## The Settings window: a slider for effects and one for music, the screen shake and frame rate
+## switches, Graphics (Quality: Auto, Detailed, Light) and, with a keyboard, the battle shortcuts (Keys),
 ## opened from the Settings button on the map and in battle. Covers its host with a dim backdrop; tapping outside the card or
 ## Close shuts it. Changes apply and save at once.
 
@@ -48,7 +48,7 @@ func _build(hud: Control) -> void:
 	card.add_theme_stylebox_override("panel", hud._box(Hud.PANEL, Hud.GOLD, 2, 12, 28))
 	center.add_child(card)
 	var box := VBoxContainer.new()
-	box.add_theme_constant_override("separation", 18)
+	box.add_theme_constant_override("separation", 12)
 	card.add_child(box)
 	var h := Label.new()
 	h.text = "Settings"
@@ -70,7 +70,22 @@ func _build(hud: Control) -> void:
 	shake.add_theme_font_size_override("font_size", 30)
 	shake.custom_minimum_size = Vector2(0, 60)
 	shake.toggled.connect(func(on: bool) -> void: Prefs.set_value("shake", on))
-	box.add_child(shake)
+	var toggles := HBoxContainer.new()   # screen shake and the frame rate share a row
+	toggles.add_theme_constant_override("separation", 12)
+	box.add_child(toggles)
+	shake.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	toggles.add_child(shake)
+	var fps := CheckButton.new()
+	fps.text = "Show frame rate"
+	fps.button_pressed = Prefs.get_value("show_fps", false)
+	fps.focus_mode = Control.FOCUS_NONE
+	fps.add_theme_font_override("font", hud.bold_font)
+	fps.add_theme_font_size_override("font_size", 30)
+	fps.custom_minimum_size = Vector2(0, 60)
+	fps.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	fps.toggled.connect(func(on: bool) -> void: Prefs.set_value("show_fps", on))
+	toggles.add_child(fps)
+	_build_graphics(hud, box)
 	if Keys.available():
 		_build_keys(hud, box)
 	var close := Button.new()
@@ -81,6 +96,49 @@ func _build(hud: Control) -> void:
 	close.add_theme_font_size_override("font_size", 26)
 	close.pressed.connect(queue_free)
 	box.add_child(close)
+
+
+## Graphics: Auto (Detailed on a computer, Light on a phone, and Light if battles run slow),
+## Detailed or Light (Quality). Applies at once.
+func _build_graphics(hud: Control, box: VBoxContainer) -> void:
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 12)
+	box.add_child(row)
+	var name_l := Label.new()
+	name_l.text = "Graphics"
+	name_l.custom_minimum_size = Vector2(130, 0)
+	name_l.add_theme_font_override("font", hud.bold_font)
+	name_l.add_theme_font_size_override("font_size", 30)
+	row.add_child(name_l)
+	var group := ButtonGroup.new()
+	var buttons := {}
+	for c: String in Quality.CHOICES:
+		var b := Button.new()
+		b.text = c.capitalize()
+		b.toggle_mode = true
+		b.button_group = group
+		b.button_pressed = Quality.choice() == c
+		b.focus_mode = Control.FOCUS_NONE
+		b.custom_minimum_size = Vector2(150, 52)
+		b.add_theme_font_size_override("font_size", 26)
+		b.pressed.connect(func() -> void:
+			Quality.set_choice(c)
+			_show_graphics(buttons))
+		row.add_child(b)
+		buttons[c] = b
+	_show_graphics(buttons)
+
+
+## The chosen setting in gold; Auto also says what it picked.
+func _show_graphics(buttons: Dictionary) -> void:
+	for c: String in buttons:
+		var b: Button = buttons[c]
+		var on := Quality.choice() == c
+		b.text = c.capitalize()
+		if c == Quality.AUTO and on:
+			b.text = "Auto: " + ("Light" if Quality.light() else "Detailed")
+		for k in ["font_color", "font_hover_color", "font_pressed_color"]:
+			b.add_theme_color_override(k, Hud.GOLD if on else Hud.BONE)
 
 
 ## The Keyboard section: one button per shortcut showing its key. Click it, then press the new key

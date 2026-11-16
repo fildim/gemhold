@@ -33,6 +33,8 @@ static func topics() -> Array:
 
 [b]Settings[/b] (on the map and in battle) sets the volume of effects and music, and turns the screen shake of a Meteor on or off.
 
+[b]Graphics[/b] in Settings: [b]Detailed[/b] draws everything, [b]Light[/b] draws a simpler picture so slower phones stay smooth, and [b]Auto[/b] picks for you (Light on phones, and Light if battles run slow). [b]Show frame rate[/b] puts a small frames-per-second number in the corner of the map.
+
 With a keyboard there are [b]shortcuts[/b]: %s pauses, %s changes speed, %s calls the next wave, %s readies the Meteor and %s cuts woods. Change any of them under [b]Keyboard[/b] in Settings." % [Keys.name_of("pause"), Keys.name_of("speed"), Keys.name_of("next"), Keys.name_of("meteor"), Keys.name_of("cut")]))
 
 	# ------------------------------------------------------------ towers

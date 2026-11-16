@@ -35,7 +35,7 @@ func setup(sim: GameSim, tunic: Dictionary) -> void:
 
 
 func _emitter() -> CPUParticles2D:
-	if _pool.size() < MAX_EMITTERS:
+	if _pool.size() < (MAX_EMITTERS / 2 if Quality.light() else MAX_EMITTERS):
 		var p := CPUParticles2D.new()
 		p.one_shot = true
 		p.emitting = false
@@ -58,8 +58,9 @@ func _shoot(at: Vector2, amount: int, life: float, col: Color, spread: float, sp
 	var p := _emitter()
 	p.emitting = false
 	p.position = at
-	p.amount = mini(amount, MAX_AMOUNT)
-	p.lifetime = life
+	var lite := Quality.light()   # Light: half the particles, a little shorter lived
+	p.amount = maxi(2, mini(amount, MAX_AMOUNT) / (2 if lite else 1))
+	p.lifetime = life * (0.8 if lite else 1.0)
 	p.explosiveness = 1.0
 	p.direction = Vector2(0, -1) if up else Vector2(1, 0)
 	p.spread = spread

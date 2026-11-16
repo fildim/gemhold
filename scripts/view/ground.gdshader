@@ -118,10 +118,13 @@ void fragment() {
 	} else if (biome == 4) {   // the radiant host: sunlit, pale gold-white fields
 		ground = mix(ground, vec3(dot(ground, vec3(0.33))) * vec3(1.25, 1.15, 0.9), 0.4) * 1.08;
 	}
-	// Water: deep pools dark and still, shallows murky over sand, a pale rim where it meets land.
+	// Water: deep pools dark and still, shallows a clear, lighter blue-green with sand showing
+	// through in patches (so they read as water, not as grey ground), a pale rim where it meets land.
 	vec2 w = water(p);
 	vec3 deep = mix(vec3(0.07, 0.17, 0.2), vec3(0.11, 0.24, 0.27), fbm(p * 1.2 + 9.0));
-	vec3 shal = mix(vec3(0.27, 0.33, 0.27), vec3(0.36, 0.42, 0.33), fbm(p * 2.2 + 4.0));
+	vec3 shal = mix(vec3(0.17, 0.40, 0.43), vec3(0.25, 0.50, 0.51), fbm(p * 2.2 + 4.0));
+	shal = mix(shal, vec3(0.56, 0.53, 0.38), smoothstep(0.5, 0.78, fbm(p * 1.7 + 13.0)) * 0.38);   // sandy bottom
+	shal *= 0.94 + 0.12 * noise(p * 7.0);
 	vec3 wet = mix(shal, deep, clamp(w.x / max(w.x + w.y, 0.001), 0.0, 1.0));
 	float wa = clamp(w.x + w.y, 0.0, 1.0);
 	ground = mix(ground * (1.0 - 0.35 * smoothstep(0.0, 0.5, wa)), wet, smoothstep(0.35, 0.65, wa));
