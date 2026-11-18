@@ -287,6 +287,11 @@ func _init() -> void:
 	_check(sf.cut_random_woods() == "" and sf.trees.size() == woods - 1 and sf.mana == 100.0 - Defs.CLEAR_MANA, "Cut woods clears one patch for its mana")
 	sf.mana = 0.0
 	_check(sf.cut_random_woods() != "", "Cut woods needs mana")
+	var ax := GameSim.new(lv, {"land_axes": 3})
+	var ax_woods := ax.trees.size()
+	ax.mana = 100.0
+	_check(ax.woods_cost() < Defs.CLEAR_MANA and ax.cut_random_woods() == "" and ax.trees.size() == ax_woods - 1
+		and ax.mana == 100.0 - ax.woods_cost(), "Sharp Axes makes cutting woods cheaper")
 
 	# After the last wave, the battle ends as soon as the last hero is gone, even with a gem still
 	# rolling home: no one is left to take it.

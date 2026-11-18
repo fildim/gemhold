@@ -470,8 +470,8 @@ func refresh(sim: GameSim, armed: bool, speed: int, paused: bool) -> void:
 		_next.text = "Final wave"
 	_meteor.disabled = not sim.can_meteor() and not armed
 	_meteor.text = "Cancel meteor" if armed else "Meteor %d" % Defs.METEOR["cost"]
-	_cut.disabled = sim.trees.is_empty() or sim.mana < Defs.CLEAR_MANA
-	_cut.text = "Cut woods %d" % Defs.CLEAR_MANA
+	_cut.disabled = sim.trees.is_empty() or sim.mana < sim.woods_cost()
+	_cut.text = "Cut woods %d" % sim.woods_cost()
 	_speed.text = "%d×" % speed
 	_pause.text = "Resume" if paused else "Pause"
 	for a in _popup_actions:

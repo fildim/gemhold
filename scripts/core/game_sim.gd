@@ -1833,7 +1833,7 @@ func cell_info(c: Vector2i) -> Dictionary:
 		return {"title": "Your den", "text": txt, "actions": []}
 	if trees.has(c):
 		return {"title": "Woods", "text": "Cut the trees to free this %s tile for building. You sell the timber for gold." % _ground_name(t),
-			"actions": [{"id": "clear", "label": "Cut woods", "price": "%d mana  +%dg" % [Defs.CLEAR_MANA, Defs.CLEAR_GOLD], "mana": Defs.CLEAR_MANA}]}
+			"actions": [{"id": "clear", "label": "Cut woods", "price": "%d mana  +%dg" % [woods_cost(), Defs.CLEAR_GOLD], "mana": woods_cost()}]}
 	if towers.has(c):
 		var tw: Tower = towers[c]
 		var d: Dictionary = Defs.TOWERS[tw.type]
@@ -1916,6 +1916,11 @@ func _bridge_info(i: int) -> Dictionary:
 	return {"title": "Bridge", "text": "Collapse it and heroes must swim the gap: slow, soaked, and no Herald can hurry them." + ("" if int(collapses.get(i, 0)) == 0 else "
 Rebuilt bridges cost more to bring down again."),
 		"actions": [{"id": "collapse", "label": "Collapse", "price": "%d mana" % cost, "mana": cost}]}
+
+
+## Mana to cut one patch of woods (Sharp Axes takes 10% off per rank).
+func woods_cost() -> int:
+	return ceili(Defs.CLEAR_MANA * (1.0 - 0.1 * skill("land_axes")))
 
 
 ## Mana for one cut. Buildings that take several cuts cost more in all, but less per cut:
@@ -2071,9 +2076,9 @@ func do_action(id: String, c: Vector2i) -> String:
 		"clear":
 			if not trees.has(c):
 				return "No woods here"
-			if mana < Defs.CLEAR_MANA:
+			if mana < woods_cost():
 				return "Not enough mana"
-			mana -= Defs.CLEAR_MANA
+			mana -= woods_cost()
 			woods_cut += 1
 			gold += Defs.CLEAR_GOLD
 			trees.erase(c)

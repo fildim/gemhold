@@ -104,7 +104,7 @@ func _ready(id: String, sim: GameSim) -> bool:
 		"upgrade":
 			return sim.wave >= 2 and sim.gold >= int(Defs.TOWERS["moss"]["cost"][1]) and not sim.towers.is_empty()
 		"woods":
-			return sim.wave >= 1 and sim.mana >= Defs.CLEAR_MANA and _woods_spot(sim).x >= 0
+			return sim.wave >= 1 and sim.mana >= sim.woods_cost() and _woods_spot(sim).x >= 0
 		"meteor":
 			return sim.wave >= 3 and sim.can_meteor()
 	return false
