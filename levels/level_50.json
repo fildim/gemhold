@@ -3,7 +3,7 @@
  "title": "The Seraph's Descent",
  "cols": 16,
  "rows": 10,
- "hp_mul": 2.34,
+ "hp_mul": 2.66,
  "race_hp": 0.38,
  "legend": {"A":"high ash","F":"high frost","L":"lair","M":"high moss","a":"ash","f":"frost","m":"moss"},
  "terrain": [

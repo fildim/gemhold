@@ -3,7 +3,7 @@
  "title": "The King's Highway",
  "cols": 18,
  "rows": 10,
- "hp_mul": 4.24,
+ "hp_mul": 4.75,
  "race_hp": 0.48,
  "legend": {"A":"high ash","F":"high frost","L":"lair","M":"high moss","a":"ash","f":"frost","m":"moss"},
  "terrain": [

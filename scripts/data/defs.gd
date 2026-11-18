@@ -56,7 +56,7 @@ const ENEMIES := {
 	"w": {"name": "Warden", "hp": 95, "spd": 0.9, "gold": 12, "r": 0.23, "armor": 1, "cap": 1, "ward": 1.4, "special": true},
 	"h": {"name": "Herald", "hp": 110, "spd": 0.85, "gold": 12, "r": 0.23, "armor": 1, "cap": 1, "haste": 0.35, "special": true},
 	"r": {"name": "Berserker", "hp": 180, "spd": 0.72, "gold": 14, "r": 0.26, "armor": 0, "cap": 1, "rage": 2.1},
-	"x": {"name": "Champion", "hp": 1500, "spd": 0.5, "gold": 80, "r": 0.38, "armor": 6, "cap": 3, "rally": "3f", "no_send": true, "send_as": "k"},
+	"x": {"name": "Champion", "hp": 1150, "spd": 0.5, "gold": 80, "r": 0.38, "armor": 6, "cap": 3, "rally": "3f", "no_send": true, "send_as": "k"},
 	# Chapter III: the Drowned Marches
 	"m": {"name": "Fenwalker", "hp": 70, "spd": 1.15, "gold": 8, "r": 0.21, "armor": 0, "cap": 1, "wader": true},
 	"e": {"name": "Engineer", "hp": 110, "spd": 0.85, "gold": 14, "r": 0.23, "armor": 1, "cap": 1, "engineer": true, "special": true},
@@ -154,6 +154,12 @@ const SOAK_HEAT := 0.6
 const HOARD_GOLD := 50
 const HOARD_MANA := 15
 const HOARD_REGEN := 0.15   # Mana Spring: +0.15 mana per second per point
+## The Land skills, per point: Rich Veins (gold per mine payout), Deep Springs (mana per second per
+## well), Commanding Heights (range and damage for towers on raised tiles).
+const VEINS_GOLD := 2
+const SPRINGS_REGEN := 0.2
+const HEIGHTS_RANGE := 0.2
+const HEIGHTS_DMG := 0.05
 
 const DEN := {"charges": 1, "range": 2.6, "dmg": 70, "refill": 8.0, "rate": 0.5}
 
@@ -284,10 +290,10 @@ const SKILLS := {
 		{"id": "dragon_patience", "name": "Dragon's Patience", "text": "+10 starting mana", "max": 3, "tier": 3},
 	],
 	"land": [
-		{"id": "land_veins", "name": "Rich Veins", "text": "Gold mines pay +1 gold", "max": 3},
-		{"id": "land_springs", "name": "Deep Springs", "text": "Mana wells give +0.1 mana per second", "max": 3},
+		{"id": "land_veins", "name": "Rich Veins", "text": "Gold mines pay +2 gold", "max": 3},
+		{"id": "land_springs", "name": "Deep Springs", "text": "Mana wells give +0.2 mana per second", "max": 3},
 		{"id": "land_axes", "name": "Sharp Axes", "text": "Cuts cost 10% less mana", "max": 3},
-		{"id": "land_heights", "name": "Commanding Heights", "text": "Raised tiles give +0.1 more range", "max": 2},
+		{"id": "land_heights", "name": "Commanding Heights", "text": "Towers on raised tiles: +0.2 range, +5% damage", "max": 2},
 		{"id": "land_spoils", "name": "Spoils of War", "text": "Razing a hero building pays +15 gold", "max": 2},
 		{"id": "land_lantern", "name": "Lantern Oil", "text": "Lights reach 0.3 tiles further at night", "max": 3},
 		{"id": "land_flood", "name": "Floodmaster", "text": "Sluices recharge 20% faster; collapsing a bridge costs 5 mana less", "max": 2},

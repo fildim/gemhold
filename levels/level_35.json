@@ -3,7 +3,7 @@
  "title": "Stonefall Quarry",
  "cols": 16,
  "rows": 10,
- "hp_mul": 1.69,
+ "hp_mul": 1.62,
  "night_hp": 0.8,
  "legend": {"A":"high ash","F":"high frost","L":"lair","M":"high moss","a":"ash","f":"frost","m":"moss"},
  "terrain": [

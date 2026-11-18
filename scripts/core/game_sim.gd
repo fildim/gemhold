@@ -408,7 +408,7 @@ func mana_regen() -> float:
 	var r := Defs.MANA_REGEN + Defs.HOARD_REGEN * skill("hoard_regen")
 	for s: Site in sites.values():
 		if s.kind == "well" and s.owned:
-			r += Defs.SITES["well"]["regen"] + 0.1 * skill("land_springs")
+			r += Defs.SITES["well"]["regen"] + Defs.SPRINGS_REGEN * skill("land_springs")
 	return r
 
 
@@ -554,7 +554,7 @@ func _update_sites(dt: float) -> void:
 			s.t += dt
 			if s.t >= Defs.SITES["mine"]["every"]:
 				s.t = 0.0
-				var g: int = Defs.SITES["mine"]["gold"] + skill("land_veins")
+				var g: int = Defs.SITES["mine"]["gold"] + Defs.VEINS_GOLD * skill("land_veins")
 				gold += g
 				_text(s.pos + Vector2(0, -0.5), "+%d" % g, Color("e8b84a"))
 
@@ -676,6 +676,9 @@ func _update_enemies(dt: float) -> void:
 			if e.dir == 1:
 				e.dist = maxf(0.0, e.dist - sp * 0.6 * dt)
 		else:
+			if e.dir == -1 and e.carry == 0 and home > 0 and int(e.d["cap"]) > 0 and not e.retreat and not e.d.has("belfry"):
+				# Turned back empty-handed, but a dropped gem has since rolled home: back to the lair.
+				e.dir = 1
 			var goal := _gem_goal(e)
 			if goal >= 0.0:
 				# A gem lies out on this road: go for it, back the way it came if need be.
@@ -1877,9 +1880,10 @@ Plunder: +%d gold a kill" % mini(tw.plunder + 1, Defs.PLUNDER_MAX)
 		var bonus := []
 		for type: String in Defs.TOWERS:
 			acts.append(_build_action(type, Defs.TOWERS[type]["name"]))
-			bonus.append("%s +%.1f" % [Defs.TOWERS[type]["name"], Defs.TOWERS[type]["high_range"]])
+			bonus.append("%s +%.1f" % [Defs.TOWERS[type]["name"], float(Defs.TOWERS[type]["high_range"]) + Defs.HEIGHTS_RANGE * skill("land_heights")])
 		var hl := " Hallowed: towers here have less range and no ability while a Chapel stands." if hallow_on() and level.hallowed.has(c) else ""
-		return {"title": "Raised ground", "text": "Any tower can be built up here, and it reaches further: %s." % ", ".join(bonus) + hl,
+		var hd := " Commanding Heights: +%d%% damage." % roundi(100.0 * Defs.HEIGHTS_DMG * skill("land_heights")) if skill("land_heights") > 0 else ""
+		return {"title": "Raised ground", "text": "Any tower can be built up here, and it reaches further: %s.%s" % [", ".join(bonus), hd] + hl,
 			"actions": acts}
 	var holy_note := " Hallowed: towers here have less range and no ability while a Chapel stands." if hallow_on() and level.hallowed.has(c) else ""
 	return {"title": td["name"], "text": "%s Builds only on %s.%s" % [td["blurb"], t, holy_note],
@@ -1950,14 +1954,14 @@ Refilling: ready in %d s." % ceili(s.t), "actions": []}
 	match s.kind:
 		"mine":
 			if s.owned:
-				return {"title": d["name"], "text": "Yours. Earns %d gold every %d s." % [d["gold"] + skill("land_veins"), int(d["every"])], "actions": []}
+				return {"title": d["name"], "text": "Yours. Earns %d gold every %d s." % [d["gold"] + Defs.VEINS_GOLD * skill("land_veins"), int(d["every"])], "actions": []}
 			cut["label"] = "Cut free"
-			return {"title": d["name"], "text": d["text"] % [d["gold"] + skill("land_veins"), int(d["every"])] + more, "actions": [cut]}
+			return {"title": d["name"], "text": d["text"] % [d["gold"] + Defs.VEINS_GOLD * skill("land_veins"), int(d["every"])] + more, "actions": [cut]}
 		"well":
 			if s.owned:
-				return {"title": d["name"], "text": "Yours. +%.1f mana per second." % (d["regen"] + 0.1 * skill("land_springs")), "actions": []}
+				return {"title": d["name"], "text": "Yours. +%.1f mana per second." % (d["regen"] + Defs.SPRINGS_REGEN * skill("land_springs")), "actions": []}
 			cut["label"] = "Cut free"
-			return {"title": d["name"], "text": d["text"] % (d["regen"] + 0.1 * skill("land_springs")) + more, "actions": [cut]}
+			return {"title": d["name"], "text": d["text"] % (d["regen"] + Defs.SPRINGS_REGEN * skill("land_springs")) + more, "actions": [cut]}
 	if s.owned:
 		var ruin: String = {"camp": "Ruined barracks", "workshop": "Ruined workshop", "beacon": "Cold ashes"}.get(s.kind, "Ruins")
 		return {"title": ruin, "text": "Nothing left but ash.", "actions": []}
@@ -2002,7 +2006,7 @@ func preview_center(c: Vector2i) -> Vector2:
 func _range_bonus(type: String, c: Vector2i) -> float:
 	var r := 0.2 * skill(type + "_range")
 	if level.high.has(c):
-		r += float(Defs.TOWERS[type]["high_range"]) + 0.1 * skill("land_heights")
+		r += float(Defs.TOWERS[type]["high_range"]) + Defs.HEIGHTS_RANGE * skill("land_heights")
 	return r
 
 
@@ -2042,6 +2046,8 @@ func do_action(id: String, c: Vector2i) -> String:
 		tw.pos = Vector2(c) + Vector2(0.5, 0.5)
 		tw.spent = cost
 		tw.dmg_mul = 1.0 + 0.1 * skill(type + "_dmg") + Defs.LEGEND_DMG * skill(type + "_legend")
+		if level.high.has(c):   # Commanding Heights
+			tw.dmg_mul += Defs.HEIGHTS_DMG * skill("land_heights")
 		tw.rate_mul = 1.0 + 0.08 * skill(type + "_rate")
 		tw.range_add = _range_bonus(type, c)
 		tw.xp_mul = 1.0 + 0.25 * skill(type + "_vet")

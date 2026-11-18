@@ -3,7 +3,7 @@
  "title": "Beacon Hill",
  "cols": 16,
  "rows": 10,
- "hp_mul": 1.85,
+ "hp_mul": 1.89,
  "race_hp": 0.59,
  "legend": {"A":"high ash","F":"high frost","L":"lair","M":"high moss","a":"ash","f":"frost","m":"moss"},
  "terrain": [
