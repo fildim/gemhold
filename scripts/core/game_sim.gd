@@ -1394,7 +1394,7 @@ func _update_shots(dt: float) -> void:
 				_strike(s, s.target, s.dmg)
 				if s.burst:   # Mausoleum: the bolt bursts over the heroes close by
 					for o: Enemy in enemies.duplicate():
-						if o != s.target and o.hp > 0.0 and o.pos.distance_to(at) <= Defs.MAUSOLEUM["r"]:
+						if o != s.target and o.hp > 0.0 and not o.hidden and o.pos.distance_to(at) <= Defs.MAUSOLEUM["r"]:
 							_strike(s, o, s.dmg * Defs.MAUSOLEUM["share"])
 		else:
 			s.pos += to.normalized() * step
@@ -1849,7 +1849,7 @@ func cell_info(c: Vector2i) -> Dictionary:
 		var ab: Dictionary = Defs.ABILITIES[tw.type]
 		var txt := "Damage %d, range %.1f\n" % [int(tw.stat("dmg")), tw.stat("range")]
 		if d["kind"] == "beam":
-			txt = "Burns %d to %d per second as it heats, range %.1f\n" % [int(tw.stat("dmg")), int(tw.stat("dmg") * Defs.HEAT_MAX), tw.stat("range")]
+			txt = "Burns %d to %d per second as it heats, range %.1f\n" % [int(tw.stat("dmg")), int(tw.stat("dmg") * (Defs.HEAT_MAX + 0.4 * skill("ash_core"))), tw.stat("range")]
 		if tw.has_ability():
 			txt += "%s: %s" % [ab["name"], ab["text"]]
 		else:
@@ -1916,6 +1916,23 @@ func _bridge_info(i: int) -> Dictionary:
 	return {"title": "Bridge", "text": "Collapse it and heroes must swim the gap: slow, soaked, and no Herald can hurry them." + ("" if int(collapses.get(i, 0)) == 0 else "
 Rebuilt bridges cost more to bring down again."),
 		"actions": [{"id": "collapse", "label": "Collapse", "price": "%d mana" % cost, "mana": cost}]}
+
+
+## What a building pays or gives with this battle's skills (Spoils of War, Rich Veins, Deep Springs, Black Rites).
+func site_bounty(kind: String) -> int:
+	return int(Defs.SITES[kind]["bounty"]) + 15 * skill("land_spoils")
+
+
+func mine_gold() -> int:
+	return int(Defs.SITES["mine"]["gold"]) + Defs.VEINS_GOLD * skill("land_veins")
+
+
+func well_regen() -> float:
+	return float(Defs.SITES["well"]["regen"]) + Defs.SPRINGS_REGEN * skill("land_springs")
+
+
+func altar_boost() -> float:
+	return float(Defs.SITES["altar"]["dmg"]) + 0.05 * skill("land_rites")
 
 
 ## Mana to cut one patch of woods (Sharp Axes takes 10% off per rank).

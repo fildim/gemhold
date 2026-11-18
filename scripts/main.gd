@@ -32,6 +32,7 @@ var _shake := 0.0         # seconds of screen shake left
 var _ad_due := false      # an interstitial shows when the player leaves this win card (Ads.on_win)
 var speed := 1
 var paused := false
+var _popup_sig := ""         # title and buttons of the open tile panel (see _sig)
 var started := false
 var armed := false            # meteor waiting for a target
 var selected := Vector2i(-1, -1)
@@ -278,6 +279,10 @@ func _process(delta: float) -> void:
 	board.armed = armed
 	board.queue_redraw()
 	hud.refresh(sim, armed, speed, paused)
+	# An open tile panel follows the battle: a Trebuchet buries the tower, a sluice fills, an Engineer
+	# rebuilds the bridge. Rebuilt only when its title or buttons change, so a tap is never lost.
+	if started and selected.x >= 0 and hud.popup_open() and _sig(sim.cell_info(selected)) != _popup_sig:
+		_select(selected)
 
 
 ## Tips for the rules of Chapter III, each shown once (Prefs "rule_tip_<key>").
@@ -370,21 +375,21 @@ func _site_tip_text(s: GameSim.Site) -> String:
 	var t := ""
 	match kind:
 		"camp":
-			t = "[b]Hero Barracks![/b] It sends extra heroes onto the road while waves are coming. [b]Tap it and Raze it[/b] with mana to stop them and win %d gold." % d["bounty"]
+			t = "[b]Hero Barracks![/b] It sends extra heroes onto the road while waves are coming. [b]Tap it and Raze it[/b] with mana to stop them and win %d gold." % sim.site_bounty(kind)
 		"mine":
-			t = "[b]A Gold Mine[/b], overgrown. [b]Tap it and Cut it free[/b] with mana; then it pays %d gold every %d s for the rest of the battle." % [d["gold"], int(d["every"])]
+			t = "[b]A Gold Mine[/b], overgrown. [b]Tap it and Cut it free[/b] with mana; then it pays %d gold every %d s for the rest of the battle." % [sim.mine_gold(), int(d["every"])]
 		"well":
-			t = "[b]A Mana Well[/b], choked with roots. [b]Tap it and Cut it free[/b] with mana for +%.1f mana per second, so you can cast and cut more." % d["regen"]
+			t = "[b]A Mana Well[/b], choked with roots. [b]Tap it and Cut it free[/b] with mana for +%.1f mana per second, so you can cast and cut more." % sim.well_regen()
 		"altar":
-			t = "[b]A Dark Altar[/b], overgrown. [b]Cut it free[/b] with mana and towers within %.1f tiles deal %d%% more damage and grow battle-hardened faster." % [d["range"], int(d["dmg"] * 100)]
+			t = "[b]A Dark Altar[/b], overgrown. [b]Cut it free[/b] with mana and towers within %.1f tiles deal %d%% more damage and grow battle-hardened faster." % [d["range"], roundi(sim.altar_boost() * 100)]
 		"sluice":
 			t = "[b]A Sluice Gate[/b]. [b]Tap it and Open the sluice[/b] (%d mana) to send a flood down its waterway: heroes in the water are swept back and hurt, boats worst of all. It takes %d s to fill again." % [d["mana"], int(d["recharge"])]
 		"beacon":
-			t = "[b]A Signal Fire![/b] While it burns, every wave comes %d s sooner and barracks muster faster. [b]Tap it and Raze it[/b] with mana for %d gold." % [int(d["sooner"]), d["bounty"]]
+			t = "[b]A Signal Fire![/b] While it burns, every wave comes %d s sooner and barracks muster faster. [b]Tap it and Raze it[/b] with mana for %d gold." % [int(d["sooner"]), sim.site_bounty(kind)]
 		"chapel":
-			t = "[b]A Chapel![/b] It heals the heroes walking near it and keeps hallowed ground holy. [b]Tap it and Raze it[/b] with mana for %d gold." % d["bounty"]
+			t = "[b]A Chapel![/b] It heals the heroes walking near it and keeps hallowed ground holy. [b]Tap it and Raze it[/b] with mana for %d gold." % sim.site_bounty(kind)
 		"workshop":
-			t ="[b]A Siege Workshop![/b] It builds Trebuchets and rolls them onto the road while waves are coming. [b]Tap it and Raze it[/b] with mana to stop it and win %d gold." % d["bounty"]
+			t ="[b]A Siege Workshop![/b] It builds Trebuchets and rolls them onto the road while waves are coming. [b]Tap it and Raze it[/b] with mana to stop it and win %d gold." % sim.site_bounty(kind)
 	if s.cuts > 1:
 		t += " This one takes [b]%d cuts[/b]; tap it to see how many are left." % s.cuts
 	return t
@@ -581,7 +586,17 @@ func _select(c: Vector2i) -> void:
 	var rect := Rect2(xf * (Vector2(c) * T), Vector2(T, T) * frame.scale)
 	var rg := sim.preview_range(c)
 	var circle := _cell_rect(sim.preview_center(c) - Vector2(rg, rg), Vector2(rg, rg) * 2.0) if rg > 0.0 else Rect2()
-	hud.show_popup(sim.cell_info(c), rect, circle)
+	var info := sim.cell_info(c)
+	_popup_sig = _sig(info)
+	hud.show_popup(info, rect, circle)
+
+
+## A tile panel's title and buttons, to notice when they change under an open panel.
+func _sig(info: Dictionary) -> String:
+	var s: String = info["title"]
+	for a: Dictionary in info["actions"]:
+		s += "|%s %s" % [a["id"], a["price"]]
+	return s
 
 
 func _deselect() -> void:
@@ -690,10 +705,11 @@ func _notification(what: int) -> void:
 			_deselect()
 		elif armed:
 			armed = false
-		else:
+		elif race.is_empty():   # no pausing in a race (it has no Resume button)
 			paused = not paused
 	elif what == NOTIFICATION_APPLICATION_PAUSED:
-		paused = true
+		if race.is_empty():   # a race keeps running: its clock is real time
+			paused = true
 
 
 func _unhandled_input(event: InputEvent) -> void:
