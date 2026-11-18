@@ -138,6 +138,7 @@ func _zones() -> void:
 ## A hero carrying gems walks Defs.CARRY_SLOW slower per gem, never more than CARRY_SLOW_MAX slower.
 func _carry() -> void:
 	var sim := GameSim.new(Level.load_from(MAIN.LEVELS[0]))   # Mossfold Pass: dry land roads
+	sim.home = 0   # an empty hoard: an empty-handed hero has nothing to turn back for
 	var walked := []
 	for n in [0, 1, 2, 9]:
 		var e := _hero(sim, "f", 0, 5.0)
@@ -156,6 +157,13 @@ func _carry() -> void:
 	k.slow = 1.0
 	k.slow_amt = 0.5
 	_check(is_equal_approx(sim.pace(k), float(Defs.ENEMIES["k"]["spd"]) * 0.5 * 0.8), "chill and gems multiply: %.4f" % sim.pace(k))
+	# A gem rolled back into the hoard: the empty-handed hero turns back for it.
+	sim.home = 1
+	var back := _hero(sim, "f", 0, 5.0)
+	back.dir = -1
+	sim.enemies = [back]
+	sim._update_enemies(0.05)
+	_check(back.dir == 1, "an empty-handed hero turns back for a gem rolled home")
 func _hero(sim: GameSim, code: String, path: int, dist: float) -> GameSim.Enemy:
 	var e := GameSim.Enemy.new()
 	e.code = code
