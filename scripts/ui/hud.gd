@@ -628,6 +628,7 @@ func show_popup(info: Dictionary, anchor: Rect2, avoid := Rect2()) -> void:
 			continue
 		b.text = "%s    %s" % [a["label"], a["price"]]
 		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		b.disabled = a.get("disabled", false)
 		b.focus_mode = Control.FOCUS_NONE
 		b.custom_minimum_size = Vector2(0, 46)
 		var id: String = a["id"]

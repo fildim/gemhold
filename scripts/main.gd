@@ -384,14 +384,14 @@ func _site_tip_text(s: GameSim.Site) -> String:
 		"altar":
 			t = "[b]A Dark Altar[/b], overgrown. [b]Cut it free[/b] with mana and towers within %.1f tiles deal %d%% more damage and grow battle-hardened faster." % [d["range"], roundi(sim.altar_boost() * 100)]
 		"sluice":
-			t = "[b]A Sluice Gate[/b]. [b]Tap it and Open the sluice[/b] (%d mana) to send a flood down its waterway: heroes in the water are swept back and hurt, boats worst of all. It takes %d s to fill again." % [d["mana"], int(d["recharge"])]
+			t = "[b]A Sluice Gate[/b]. [b]Tap it and Open the sluice[/b] (%d mana) to send a flood down its waterway. It only hits [b]what is in the water[/b]: boats, and heroes swimming. They are swept back and hurt, boats worst of all. Open it when a boat sails in; it takes %d s to fill again." % [d["mana"], int(d["recharge"])]
 		"beacon":
 			t = "[b]A Signal Fire![/b] While it burns, every wave comes %d s sooner and barracks muster faster. [b]Tap it and Raze it[/b] with mana for %d gold." % [int(d["sooner"]), sim.site_bounty(kind)]
 		"chapel":
 			t = "[b]A Chapel![/b] It heals the heroes walking near it and keeps hallowed ground holy. [b]Tap it and Raze it[/b] with mana for %d gold." % sim.site_bounty(kind)
 		"workshop":
 			t ="[b]A Siege Workshop![/b] It builds Trebuchets and rolls them onto the road while waves are coming. [b]Tap it and Raze it[/b] with mana to stop it and win %d gold." % sim.site_bounty(kind)
-	if s.cuts > 1:
+	if s.cuts > 1 and kind != "sluice":   # a sluice is yours from the start: nothing to cut
 		t += " This one takes [b]%d cuts[/b]; tap it to see how many are left." % s.cuts
 	return t
 
