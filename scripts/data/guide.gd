@@ -19,7 +19,7 @@ static func topics() -> Array:
 		+ "Stop them with towers along the roads, your den's bolts and your Meteor."))
 	t.append(_t("The basics", "Waves",
 		"Heroes come in waves. The button at the top of the panel counts down to the next one.\n\n"
-		+ "[b]Call a wave early[/b] to earn the seconds left as gold. Early calls are how good players get rich, but only call when your towers can take it.\n\n"
+		+ "[b]Call a wave early[/b] to earn the seconds left as gold, plus the mana you would have regenerated in that time. Early calls are how good players get rich, but only call when your towers can take it.\n\n"
 		+ "After the last wave the lair is won the moment its last hero falls or flees."))
 	t.append(_t("The basics", "Ratings and stars",
 		"Each win is rated:\n\n"
@@ -125,9 +125,9 @@ Towers aim for him first. Cover the bank where he will stop." % roundi(Defs.ENGI
 
 Arrows and bolts don't care about rain. Or catch her with a Shrine before the crowd closes in."))
 	t.append(_t("Heroes", "Longboat",
-		"From lair 25. A boat of heroes on the [b]river[/b], sturdy (%d health) and armoured; chill and Dread don't touch it. Where the water ends it [b]lands its crew[/b], who march on.
+		"From lair 25. A boat of heroes on the [b]river[/b], sturdy (%d health) and armoured; chill and Dread don't touch it. Where the water ends it beaches and [b]its crew steps ashore one by one[/b], then marches on.
 
-[b]Sink it on the water and the crew drowns[/b]: every one of them counts as slain and pays its bounty. Towers along the river, a Sluice Gate or the Meteor." % e["l"]["hp"]))
+[b]Sink it before the last of them is off and the rest drown[/b]: each one still aboard counts as slain and pays its bounty. Towers along the river, a Sluice Gate or the Meteor." % e["l"]["hp"]))
 	t.append(_t("Heroes", "Diver",
 		"From lair 26. He swims [b]under the water[/b]: while he is in a ford, a broken bridge or the high tide, towers and the den can't see him (a ripple and a reed give him away). The Meteor and Sluice Gates still hit him.
 
@@ -273,7 +273,10 @@ A [b]Dark Altar[/b] is overgrown. Cut it free (%d mana) and towers within %.1f t
 		+ "[b]Matthew Pablo[/b] (matthewpablo.com), licensed under Creative Commons: By Attribution 3.0: Dark Descent (the map).
 
 "
-		+ "Public domain (CC0) from OpenGameArt.org: The Final Battle by skrjablin; QaziJamJam (orchestral battle theme) by Emma_MA."))
+		+ "Public domain (CC0) from OpenGameArt.org: The Final Battle by skrjablin; QaziJamJam (orchestral battle theme) by Emma_MA.
+
+"
+		+ "From OpenGameArt.org under Creative Commons By Attribution 3.0: Battle Site by Tausdei; Death Is Just Another Path by Otto Halmén; The Wraiths of Winter by HitCtrl. Under By Attribution 4.0: Egipet Battle Music, music by Alex_089; Epic Orchestral Fantasy Theme by Markus Lindner."))
 	return t
 
 

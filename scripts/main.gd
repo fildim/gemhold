@@ -18,7 +18,8 @@ const MUSIC := {"level_01": "mountain", "level_02": "heroicage", "level_03": "cu
 	"level_04": "volatilereaction", "level_06": "crusade", "level_10": "firebrand", "level_07": "fate", "level_11": "killers",
 	"level_08": "fivearmies", "level_12": "rynostheme", "level_13": "darkling", "level_14": "malicious", "level_15": "ossuary2_turn",
 	"level_16": "unholyknight", "level_17": "blackvortex", "level_18": "orchestralbattle", "level_19": "finalbattleofthedarkwizards",
-	"level_20": "finalbattle", "level_05": "valkyries"}
+	"level_20": "finalbattle", "level_05": "valkyries",
+	"level_21": "epicfantasy", "level_22": "battlesite", "level_23": "egipet", "level_24": "wraithsofwinter", "level_25": "deathpath"}
 
 var level_index := 0
 var night := false            # playing the level's night mission

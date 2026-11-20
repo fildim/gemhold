@@ -40,6 +40,7 @@ class Enemy:
 	var work := 0.0       # Engineer: seconds spent repairing the bridge ahead
 	var surge_t := 0.0    # Tidecaller: seconds until her next surge
 	var crew: Array[String] = []   # Longboat: the heroes it carries
+	var ashore := -1.0    # Longboat: seconds until the next of its crew steps ashore (-1 = still sailing)
 	var hidden := false   # Diver under water: towers and the den can't see him
 	var zone := ""        # the road zone it stood in last frame
 	var crossing := -1    # which crossing that was (Level.crossings), or -1
@@ -474,8 +475,13 @@ func call_early() -> int:
 	early_calls += 1
 	skipped += bonus
 	gold += bonus
+	# The skipped seconds also pay the mana they would have regenerated.
+	var gain := minf(mana_max - mana, timer * mana_regen())
+	mana += maxf(0.0, gain)
 	if bonus > 0:
 		_text(level.lair_center + Vector2(0, -1), "+%d early" % bonus, Color("e8b84a"))
+	if gain >= 1.0:
+		_text(level.lair_center + Vector2(0, -0.4), "+%d mana" % int(gain), Color("c9c0ff"))
 	start_wave()
 	return bonus
 
@@ -688,8 +694,10 @@ func _update_enemies(dt: float) -> void:
 				e.dist += sp * dt * e.dir
 		var total: float = level.paths[e.path]["total"]
 		if e.d.has("boat") and e.dist >= float(level.landings[e.path]) and float(level.landings[e.path]) >= 0.0:
-			_land(e)
-			continue
+			e.dist = float(level.landings[e.path])   # beached: it waits while its crew steps off
+			_land(e, dt)
+			if e.gone:
+				continue
 		if e.dir == 1 and e.dist >= total and e.d.has("belfry"):
 			_unload(e)
 		if e.dir == 1 and e.dist >= total:
@@ -1010,22 +1018,32 @@ func _repairing(e: Enemy, dt: float) -> bool:
 	return false
 
 
-## A boat reached its landing: its crew steps ashore and marches on; the boat is gone (neither
+## A boat at its landing: its crew steps ashore one by one (Defs.LAND_GAP apart) and marches on.
+## Sink it before the last one is off and the rest drown. Once empty the boat is gone (neither
 ## slain nor escaped, so it does not count toward the threat).
-func _land(e: Enemy) -> void:
-	e.gone = true
-	boats_landed += 1
-	if e.wave > 0:
-		wave_left[e.wave] += e.crew.size()   # counted now, before the boat's own removal below
-	_rally.append({"codes": e.crew, "path": e.path, "dist": e.dist + 0.3, "wave": e.wave, "counted": true})
-	_text(e.pos + Vector2(0, -0.7), "They land!", Color("ff9a7a"))
-	sound.emit("horn")
+func _land(e: Enemy, dt: float) -> void:
+	if e.ashore < 0.0:
+		e.ashore = 0.0
+		_text(e.pos + Vector2(0, -0.7), "They land!", Color("ff9a7a"))
+		sound.emit("horn")
+	e.ashore -= dt
+	if e.ashore > 0.0:
+		return
+	if not e.crew.is_empty():
+		var code: String = e.crew.pop_front()
+		if e.wave > 0:
+			wave_left[e.wave] += 1   # counted now, before the boat's own removal
+		_rally.append({"codes": [code], "path": e.path, "dist": e.dist + 0.3, "wave": e.wave, "counted": true})
+		e.ashore = Defs.LAND_GAP
+	if e.crew.is_empty():
+		e.gone = true
+		boats_landed += 1
 
 
 ## Is the hero in water: a boat afloat, in a ford, or swimming a collapsed bridge.
 func in_water(e: Enemy) -> bool:
 	if e.d.has("boat"):
-		return float(level.landings[e.path]) < 0.0 or e.dist < float(level.landings[e.path])
+		return float(level.landings[e.path]) < 0.0 or e.dist <= float(level.landings[e.path])
 	return e.zone == "ford" or e.swim
 
 

@@ -68,6 +68,19 @@ func _boats() -> void:
 	s2.hurt(b, 99999.0, true)
 	_check(s2.boats_sunk == 1 and s2.drowned == 2 and s2.kills == 3, "a sunk boat drowns its crew: kills %d" % s2.kills)
 	_check(s2.gold == gold + 20 + 7 + 7, "bounties for boat and crew: %d" % (s2.gold - gold))
+	# Beached, the crew steps off one by one; sunk halfway, the rest drown.
+	var s4 := _sim()
+	var land := float(s4.level.landings[2])
+	var b4 := _hero(s4, "l", 2, land - 0.05)
+	b4.crew = ["f", "f", "f", "f"]
+	s4.update(0.1)
+	_check(b4.crew.size() == 3 and s4.enemies.has(b4), "the first steps off, the boat waits: %d aboard" % b4.crew.size())
+	_run(s4, Defs.LAND_GAP + 0.05)
+	_check(b4.crew.size() == 2, "the next one follows: %d aboard" % b4.crew.size())
+	var g4 := s4.gold
+	s4.hurt(b4, 99999.0, true)
+	_check(s4.drowned == 2 and s4.gold == g4 + 20 + 7 + 7, "the two still aboard drown and pay: %d" % (s4.gold - g4))
+	_check(s4.boats_landed == 0, "a boat sunk while unloading has not landed")
 	# Boats shrug off chill.
 	var s3 := _sim()
 	var b3 := _hero(s3, "l", 2, 0.5)

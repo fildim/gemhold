@@ -34,6 +34,8 @@ const HEAT_TIME := 2.0
 const HEAT_MAX := 5.0
 const HEAT_KEEP := 0.0
 const SLOW_TIME := 2.5
+## Seconds between a beached Longboat's crew stepping ashore, one by one.
+const LAND_GAP := 0.7
 
 ## Heroes. Letter codes are used in each level's wave list ("6p,2f" = 6 peasants, 2 footmen).
 ## spd is in tiles per second, r is body radius in tiles, cap is how many gems they can carry.
@@ -95,7 +97,7 @@ const HERO_TIPS := {
 	"m": "Wades through water as if it were dry land: fords and broken bridges don't slow him. Kill him on dry ground.",
 	"e": "Repairs broken bridges (he stands at the bank for a moment) and lays planks over fords so heroes cross dry. Towers aim for him first.",
 	"q": "Carries a rain cloud: Shrine beams on heroes under it never get hot, and it puts out Lava. Arrows and bolts work fine.",
-	"l": "A boat full of heroes on the river. Chill and Dread don't touch it. Sink it before it lands and its crew drowns; let it land and they march on.",
+	"l": "A boat full of heroes on the river. Chill and Dread don't touch it. Sink it before its crew is off and the rest drown; once beached they step ashore one by one.",
 	"d": "Swims under the water: towers and the den can't see him while he is in a ford or a flooded crossing. Meteors still hit him.",
 	"T": "The Tidecaller, a boss. Her surge washes chill and Dread off the heroes around her and lets them wade freely. Where she falls, Fenwalkers and Divers rise.",
 	"a": "Runs for a tower near the road, lights a keg and [b]stuns it for 7 s[/b]. Towers on raised tiles are out of his reach. Slay him while the fuse burns and the keg hurts the heroes around him.",

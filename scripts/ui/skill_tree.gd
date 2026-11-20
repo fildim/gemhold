@@ -210,11 +210,18 @@ func _skill_button(sk: Dictionary) -> Button:
 	b.add_theme_font_size_override("font_size", 34)
 	b.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	b.disabled = not _save.can_buy(id)
-	if r >= int(sk["max"]):
-		b.add_theme_color_override("font_disabled_color", Hud.GOLD)
-	elif r > 0:
-		b.add_theme_color_override("font_disabled_color", Color(Hud.BONE, 0.8))
+	var can := _save.can_buy(id)
+	b.set_meta("buyable", can)
+	# A mastery stays tappable even when it can't be bought: the tap opens its details first.
+	var info := id.begins_with("mastery_")
+	b.disabled = not can and not info
+	for c: String in (["font_disabled_color"] if not info else ["font_color", "font_hover_color", "font_pressed_color"]):
+		if r >= int(sk["max"]):
+			b.add_theme_color_override(c, Hud.GOLD)
+		elif r > 0:
+			b.add_theme_color_override(c, Color(Hud.BONE, 0.8))
+		elif info and not can:
+			b.add_theme_color_override(c, Color(Hud.BONE, 0.4))
 	# Its picture on the left, with the text moved over to make room.
 	for st: String in ["normal", "hover", "pressed", "disabled"]:
 		b.add_theme_stylebox_override(st, _padded(st))
@@ -225,8 +232,113 @@ func _skill_button(sk: Dictionary) -> Button:
 	ic.offset_top = -39
 	ic.offset_bottom = 39
 	b.add_child(ic)
-	b.pressed.connect(_on_buy.bind(id))
+	if info:
+		b.pressed.connect(_show_mastery.bind(sk))
+	else:
+		b.pressed.connect(_on_buy.bind(id))
 	return b
+
+
+## The level IV tower a mastery skill opens, explained, with Learn and Cancel.
+func _show_mastery(sk: Dictionary) -> void:
+	var id: String = sk["id"]
+	var mid := id.trim_prefix("mastery_")
+	var tower := ""
+	var m := {}
+	for t: String in Defs.MASTERIES:
+		for e: Dictionary in Defs.MASTERIES[t]:
+			if e["id"] == mid:
+				tower = t
+				m = e
+	var veil := ColorRect.new()
+	veil.color = Color(0, 0, 0, 0.6)
+	veil.set_anchors_preset(Control.PRESET_FULL_RECT)
+	veil.mouse_filter = Control.MOUSE_FILTER_STOP
+	veil.gui_input.connect(func(ev: InputEvent) -> void:
+		if ev is InputEventMouseButton and ev.pressed:
+			veil.queue_free())
+	add_child(veil)
+	var center := CenterContainer.new()
+	center.set_anchors_preset(Control.PRESET_FULL_RECT)
+	center.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	veil.add_child(center)
+	var panel := PanelContainer.new()
+	panel.custom_minimum_size = Vector2(minf(900.0, size.x - 40.0), 0)
+	center.add_child(panel)
+	var margin := MarginContainer.new()
+	for side in ["left", "right", "top", "bottom"]:
+		margin.add_theme_constant_override("margin_" + side, 24)
+	panel.add_child(margin)
+	var box := VBoxContainer.new()
+	box.add_theme_constant_override("separation", 16)
+	margin.add_child(box)
+	var head := HBoxContainer.new()
+	head.add_theme_constant_override("separation", 16)
+	box.add_child(head)
+	head.add_child(GameIcon.make("skill:" + id, 78))
+	var title := Label.new()
+	title.text = "%s (level IV %s)" % [m.get("name", sk["name"]), Defs.TOWERS[tower]["name"] if tower != "" else "tower"]
+	title.add_theme_font_override("font", _hud.display_font)
+	title.add_theme_font_size_override("font_size", 40)
+	title.add_theme_color_override("font_color", TREE_COLORS.get(tower, Hud.GOLD))
+	title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	head.add_child(title)
+	var text := RichTextLabel.new()
+	text.bbcode_enabled = true
+	text.fit_content = true
+	text.add_theme_font_size_override("normal_font_size", 32)
+	text.add_theme_font_size_override("bold_font_size", 32)
+	text.text = mastery_text(mid) + "
+
+In battle, a level III %s that has learned its ability can become a %s for %d gold. Learn both masteries of a tower to choose for each one you build." % [Defs.TOWERS[tower]["name"] if tower != "" else "tower", m.get("name", ""), int(Defs.TOWERS[tower]["cost"][3]) if tower != "" else 0]
+	box.add_child(text)
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 16)
+	row.alignment = BoxContainer.ALIGNMENT_END
+	box.add_child(row)
+	var have := _save.skill_rank(id) >= int(sk["max"])
+	var learn := Button.new()
+	learn.focus_mode = Control.FOCUS_NONE
+	learn.custom_minimum_size = Vector2(260, 80)
+	learn.add_theme_font_size_override("font_size", 32)
+	if have:
+		learn.text = "Learned"
+		learn.disabled = true
+	elif _save.can_buy(id):
+		learn.text = "Learn (1 point)"
+	else:
+		learn.disabled = true
+		learn.text = "No point to spend" if _save.points_free() <= 0 else "Not open yet"
+	learn.pressed.connect(func() -> void:
+		veil.queue_free()
+		_on_buy(id))
+	var cancel := Button.new()
+	cancel.focus_mode = Control.FOCUS_NONE
+	cancel.text = "Close" if learn.disabled else "Cancel"
+	cancel.custom_minimum_size = Vector2(200, 80)
+	cancel.add_theme_font_size_override("font_size", 32)
+	cancel.pressed.connect(func() -> void: veil.queue_free())
+	row.add_child(cancel)
+	row.add_child(learn)
+
+
+## What a level IV mastery does, in full (the same words as the Guide).
+static func mastery_text(mid: String) -> String:
+	match mid:
+		"longhouse":
+			return "Every shot is [b]three arrows at up to three heroes[/b]. For crowds."
+		"lodge":
+			return "One heavy javelin that [b]ignores armour[/b], aimed at the healthiest hero, and [b]marks[/b] him for %d seconds: everything hits him %d%% harder. For Knights and bosses." % [roundi(Defs.LODGE["mark"]), roundi(Defs.LODGE["mark_dmg"] * 100)]
+		"ossuary":
+			return "[b]Stores a bolt every reload[/b] even with no hero in sight, up to %d (the skulls on its roof light up), then looses them at different heroes, unchilled ones first." % Defs.OSSUARY["charges"]
+		"mausoleum":
+			return "Each bolt [b]bursts[/b], chilling and hurting every hero within %.1f tiles, and Dread rolls for each of them." % Defs.MAUSOLEUM["r"]
+		"twin":
+			return "[b]Two beams on two heroes[/b], each heating up on its own."
+		"sunlance":
+			return "The beam [b]burns on through its hero and every hero on the line behind him[/b], and keeps part of its heat when it changes target."
+	return ""
 
 
 ## The theme's button look with room on the left for a skill's picture.
@@ -272,7 +384,7 @@ func _disarm_reset() -> void:
 ## For the tutorial spotlight: the first skill a point can buy now, and the way back.
 func first_buyable_rect() -> Rect2:
 	for b in _buttons:
-		if not b.disabled:
+		if b.get_meta("buyable", false):
 			return b.get_global_rect()
 	return Rect2()
 

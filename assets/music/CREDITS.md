@@ -38,4 +38,14 @@ Tracks are from Wikimedia Commons and OpenGameArt.org (licences checked 2026-10-
 | finalbattle.ogg | The Final Battle | skrjablin | https://opengameart.org/content/the-final-battle |
 | orchestralbattle.ogg | QaziJamJam (orchestral battle theme) | Emma_MA | https://opengameart.org/content/qazijamjam-orchestral-battle-theme |
 
+## OpenGameArt.org — CC BY 3.0 / 4.0
+
+| File | Track | Composer | Licence | Source |
+|---|---|---|---|---|
+| battlesite.ogg | Battle Site (0:06–2:36) | Tausdei | CC BY 3.0 | https://opengameart.org/content/battle-site |
+| deathpath.ogg | Death Is Just Another Path | Otto Halmén | CC BY 3.0 | https://opengameart.org/content/death-is-just-another-path |
+| wraithsofwinter.ogg | Fantasy Music - The Wraiths of Winter (0:28–2:58) | HitCtrl | CC BY 3.0 | https://opengameart.org/content/fantasy-music-the-wraiths-of-winter |
+| egipet.ogg | Egipet Battle Music ("music by Alex_089") | Alex_089 | CC BY 4.0 | https://opengameart.org/content/egipet-battle-music |
+| epicfantasy.ogg | Epic Orchestral Fantasy Theme | Markus Lindner (linxiaoma) | CC BY 4.0 | https://opengameart.org/content/epic-orchestral-fantasy-theme |
+
 Tracks still waiting for a lair are in `Desktop\Gemhold music to try` (not in this repository); once a track is cut and given to a lair, its source file is deleted there, so that folder only holds what is still pending.
