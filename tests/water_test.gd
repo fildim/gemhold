@@ -138,7 +138,7 @@ func _bridges() -> void:
 	_check(info["title"] == "Bridge" and info["actions"][0]["id"] == "collapse", "a bridge can be collapsed from its panel")
 	sim.mana = 100
 	_check(sim.do_action("collapse", cell) == "" and sim.collapsed.has(cell), "collapsing it")
-	_check(sim.mana == 60, "it cost 40 mana")
+	_check(sim.mana == 85, "it cost 15 mana")
 	_check(sim.cell_info(cell)["title"] == "Broken bridge", "now it shows broken")
 	# An Engineer walks up, stands at the bank, and rebuilds it.
 	var z: Dictionary = lv.zones[1][0]
@@ -149,7 +149,7 @@ func _bridges() -> void:
 	_check(not sim.collapsed.has(cell), "and rebuilds the bridge")
 	sim.mana = 100
 	sim.do_action("collapse", cell)
-	_check(sim.mana == 40, "a second collapse costs 60: %d left" % sim.mana)
+	_check(sim.mana == 85, "a second collapse costs the same 15: %d left" % sim.mana)
 
 
 func _waders_divers() -> void:
