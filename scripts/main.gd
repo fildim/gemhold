@@ -384,7 +384,7 @@ func _site_tip_text(s: GameSim.Site) -> String:
 		"altar":
 			t = "[b]A Dark Altar[/b], overgrown. [b]Cut it free[/b] with mana and towers within %.1f tiles deal %d%% more damage and grow battle-hardened faster." % [d["range"], roundi(sim.altar_boost() * 100)]
 		"sluice":
-			t = "[b]A Sluice Gate[/b]. [b]Tap it and Open the sluice[/b] (%d mana) to send a flood down its waterway. It only hits [b]what is in the water[/b]: boats, and heroes swimming. They are swept back and hurt, boats worst of all. Open it when a boat sails in; it takes %d s to fill again." % [d["mana"], int(d["recharge"])]
+			t = "[b]A Sluice Gate[/b]. [b]Tap it and Open the sluice[/b] (%d mana) to send a flood down its waterway. It only hits [b]what is in the water[/b]: boats, and heroes swimming. They are swept back and hurt, and a boat loses a third of its health. Open it when a boat sails in; it takes %d s to fill again." % [d["mana"], int(d["recharge"])]
 		"beacon":
 			t = "[b]A Signal Fire![/b] While it burns, every wave comes %d s sooner and barracks muster faster. [b]Tap it and Raze it[/b] with mana for %d gold." % [int(d["sooner"]), sim.site_bounty(kind)]
 		"chapel":

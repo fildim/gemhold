@@ -182,7 +182,7 @@ The tide clock beside the wave counter shows it: the blue arc is high tide, the 
 	t.append(_t("The Marches", "Wave routes",
 		"On some lairs each wave takes only some of the roads. The [b]glowing road starts[/b] show where the next wave will come from, so you can get ready."))
 	t.append(_t("The Marches", "Sluice Gates and Dark Altars",
-		"A [b]Sluice Gate[/b] is yours from the start. Open it (%d mana) and a flood sweeps down its waterway: heroes in the water are pushed back and take %d damage through armour, boats triple. It takes %d seconds to fill again.
+		"A [b]Sluice Gate[/b] is yours from the start. Open it (%d mana) and a flood sweeps down its waterway: heroes in the water are pushed back and take %d damage through armour, and a boat loses [b]a third of its full health[/b] (three floods sink it). It takes %d seconds to fill again.
 
 A [b]Dark Altar[/b] is overgrown. Cut it free (%d mana) and towers within %.1f tiles deal %d%% more damage and grow battle-hardened faster." % [Defs.SITES["sluice"]["mana"], Defs.SITES["sluice"]["dmg"], roundi(Defs.SITES["sluice"]["recharge"]), Defs.SITES["altar"]["cut"], Defs.SITES["altar"]["range"], roundi(Defs.SITES["altar"]["dmg"] * 100)]))
 

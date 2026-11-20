@@ -1133,7 +1133,7 @@ func sluice_targets(s: Site) -> int:
 
 
 ## A Sluice Gate's surge sweeps down its road: heroes in the water are pushed back and hurt
-## through armour, boats worst of all.
+## through armour; a boat loses a third of its full health.
 func _flood(s: Site) -> void:
 	var d: Dictionary = Defs.SITES["sluice"]
 	s.t = float(d["recharge"]) * (1.0 - 0.2 * skill("land_flood"))
@@ -1144,7 +1144,7 @@ func _flood(s: Site) -> void:
 		if e.hp <= 0.0 or e.path != s.path or not in_water(e):
 			continue
 		hit += 1
-		hurt(e, float(d["dmg"]) * (float(d["boat_mul"]) if e.d.has("boat") else 1.0), true)
+		hurt(e, e.max_hp * float(d["boat_share"]) if e.d.has("boat") else float(d["dmg"]), true)   # a boat: a third of its full health
 		if e.hp > 0.0:
 			e.dist = maxf(0.0, e.dist - float(d["push"]))
 			e.pos = level.path_pos(e.path, e.dist)
