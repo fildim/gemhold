@@ -156,7 +156,15 @@ static func _flood_worth(sim: GameSim, s: GameSim.Site) -> bool:
 	return n >= 3
 
 
-## Bring a bridge down while heroes are coming, unless Divers are about (they hide in the gap).
+## Bring a bridge down when heroes are about to cross it, unless Divers are about (they hide in the gap).
+static func _near_bridge(sim: GameSim, c: Vector2i) -> bool:
+	var at := Vector2(c) + Vector2(0.5, 0.5)
+	for e: GameSim.Enemy in sim.enemies:
+		if e.hp > 0.0 and not e.d.has("boat") and not sim.flying(e) and e.pos.distance_to(at) <= 2.5:
+			return true
+	return false
+
+
 static func _collapse(sim: GameSim) -> void:
 	if sim.enemies.is_empty() or sim.level.crossing_cells.is_empty():
 		return
@@ -168,6 +176,6 @@ static func _collapse(sim: GameSim) -> void:
 			return
 	for i in sim.level.crossing_cells.size():
 		var c: Vector2i = sim.level.crossing_cells[i][0]
-		if sim.level.crossing_kind[i] == "bridge" and not sim.collapsed.has(c) and sim.mana >= sim.collapse_cost(i):
+		if sim.level.crossing_kind[i] == "bridge" and not sim.collapsed.has(c) and sim.mana >= sim.collapse_cost(i) and _near_bridge(sim, c):
 			sim.do_action("collapse", c)
 

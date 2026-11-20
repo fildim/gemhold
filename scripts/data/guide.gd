@@ -174,7 +174,7 @@ Where she falls, Fenwalkers and Divers rise. While a boss is on the map, her nam
 	t.append(_t("The Marches", "Fords and bridges",
 		"Where a road crosses [b]shallows[/b] it is a ford: heroes wade at %d%% speed and come out [b]soaked[/b] for %d seconds. Crypt chill lasts longer on a soaked hero, but Shrine beams heat up slower.
 
-Where a road crosses [b]deep water[/b] it is a bridge. Tap it and [b]Collapse[/b] it (%d mana): heroes must swim the gap at %d%% speed, soaked, and no Herald can hurry them. An Engineer can rebuild it, and each collapse of the same bridge costs %d mana more." % [roundi(Defs.ZONE_SPEED["ford"] * 100), roundi(Defs.SOAK_TIME), Defs.COLLAPSE["mana"], roundi(Defs.ZONE_SPEED["swim"] * 100), Defs.COLLAPSE["step"]]))
+Where a road crosses [b]deep water[/b] it is a bridge. Tap it and [b]Collapse[/b] it (%d mana): heroes must swim the gap at %d%% speed, soaked, and no Herald can hurry them. An Engineer can rebuild it; collapse it again as often as you like." % [roundi(Defs.ZONE_SPEED["ford"] * 100), roundi(Defs.SOAK_TIME), Defs.COLLAPSE["mana"], roundi(Defs.ZONE_SPEED["swim"] * 100)]))
 	t.append(_t("The Marches", "The tide",
 		"On some lairs the water rises and falls. At [b]high tide[/b] the fords are too deep to wade, so heroes swim them, slowly, and Divers hide in them.
 
@@ -182,9 +182,9 @@ The tide clock beside the wave counter shows it: the blue arc is high tide, the 
 	t.append(_t("The Marches", "Wave routes",
 		"On some lairs each wave takes only some of the roads. The [b]glowing road starts[/b] show where the next wave will come from, so you can get ready."))
 	t.append(_t("The Marches", "Sluice Gates and Dark Altars",
-		"A [b]Sluice Gate[/b] is yours from the start. Open it (%d mana) and a flood sweeps down its waterway: heroes in the water are pushed back and take %d damage through armour, and a boat loses [b]a third of its full health[/b] (three floods sink it). It takes %d seconds to fill again.
+		"A [b]Sluice Gate[/b] is yours from the start. Open it (%d mana) and a flood sweeps down its river: every boat on it is pushed back and loses [b]a third of its full health[/b], so three floods sink one. Open it when boats are on the water. It takes %d seconds to fill again.
 
-A [b]Dark Altar[/b] is overgrown. Cut it free (%d mana) and towers within %.1f tiles deal %d%% more damage and grow battle-hardened faster." % [Defs.SITES["sluice"]["mana"], Defs.SITES["sluice"]["dmg"], roundi(Defs.SITES["sluice"]["recharge"]), Defs.SITES["altar"]["cut"], Defs.SITES["altar"]["range"], roundi(Defs.SITES["altar"]["dmg"] * 100)]))
+A [b]Dark Altar[/b] is overgrown. Cut it free (%d mana) and towers within %.1f tiles deal %d%% more damage and grow battle-hardened faster." % [Defs.SITES["sluice"]["mana"], roundi(Defs.SITES["sluice"]["recharge"]), Defs.SITES["altar"]["cut"], Defs.SITES["altar"]["range"], roundi(Defs.SITES["altar"]["dmg"] * 100)]))
 
 	# ------------------------------------------------------------ siege
 	t.append(_t("The Siegeworks", "Stunned, buried, silenced",

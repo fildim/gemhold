@@ -269,7 +269,7 @@ var dreads := 0           # heroes terrified by Dread
 var lavas := 0            # pools of Lava left behind
 # Road zones (Level.zones): what has changed on them during the battle.
 var collapsed := {}       # Vector2i -> true for water tiles whose bridge has been collapsed
-var collapses := {}       # crossing index -> times that bridge has been collapsed (each costs more)
+var collapses := {}       # crossing index -> times that bridge has been collapsed (stats; the cost is flat)
 var planks := {}          # crossing index -> battle time a ford's planks rot away (laid by Engineers)
 var rains: Array = []     # [Vector2 centre, radius] of every rain cloud this frame
 var drowned := 0          # boat crews drowned with their boat
@@ -1118,7 +1118,7 @@ func in_rain(pos: Vector2) -> bool:
 	return false
 
 
-## Mana to collapse bridge (crossing) i now: more each time, less with Floodmaster.
+## Mana to collapse bridge (crossing) i (flat COLLAPSE mana, less with Floodmaster).
 func collapse_cost(i: int) -> int:
 	return Defs.COLLAPSE["mana"] + Defs.COLLAPSE["step"] * int(collapses.get(i, 0)) - 5 * skill("land_flood")
 
@@ -2071,15 +2071,15 @@ func _site_panel(s: Site) -> Dictionary:
 			cut["label"] = "Cut free"
 			return {"title": d["name"], "text": d["text"] % [d["range"], boost], "actions": [cut]}
 		"sluice":
-			var txt: String = d["text"] % d["dmg"]
+			var txt: String = d["text"]
 			if s.t > 0.0:
 				return {"title": d["name"], "text": txt + "
 Refilling: ready in %d s." % ceili(s.t), "actions": []}
 			var wet := sluice_targets(s)
 			if wet == 0:
 				return {"title": d["name"], "text": txt + "
-Nothing is in its water yet: wait for a boat.", "actions": [{"id": "flood", "label": "Nothing in the water", "price": "", "mana": 0, "disabled": true}]}
-			return {"title": d["name"], "text": txt, "actions": [{"id": "flood", "label": "Open the sluice (%d in the water)" % wet, "price": "%d mana" % d["mana"], "mana": d["mana"]}]}
+No boat on its river yet.", "actions": [{"id": "flood", "label": "No boat on the river", "price": "", "mana": 0, "disabled": true}]}
+			return {"title": d["name"], "text": txt, "actions": [{"id": "flood", "label": "Open the sluice (%d boat%s)" % [wet, "" if wet == 1 else "s"], "price": "%d mana" % d["mana"], "mana": d["mana"]}]}
 	match s.kind:
 		"mine":
 			if s.owned:
@@ -2257,7 +2257,7 @@ func do_action(id: String, c: Vector2i) -> String:
 			if s.t > 0.0:
 				return "Still refilling"
 			if sluice_targets(s) == 0:
-				return "Nothing in the water"
+				return "No boat on the river"
 			if mana < Defs.SITES["sluice"]["mana"]:
 				return "Not enough mana"
 			mana -= Defs.SITES["sluice"]["mana"]

@@ -193,7 +193,7 @@ const SITES := {
 	"altar": {"name": "Dark Altar", "cut": 30, "range": 2.2, "dmg": 0.1, "xp": 0.2, "light": 1.6,
 		"text": "Overgrown. Cut it free: towers within %.1f tiles deal %d%% more damage and rank up faster."},
 	"sluice": {"name": "Sluice Gate", "cut": 0, "mana": 35, "recharge": 45.0, "push": 2.0, "dmg": 120, "boat_share": 0.3334, "light": 1.6,
-		"text": "Open it to send a flood surge down its road: heroes in the water are swept back and take %d damage; a boat loses a third of its full health."},
+		"text": "Open it to send a flood down its river: every boat on it is swept back and loses a third of its full health."},
 	"beacon": {"name": "Signal Fire", "cut": 50, "bounty": 30, "sooner": 4.0, "muster": 1.25,
 		"text": "While it burns, waves come %d s sooner and barracks muster faster. Raze it for %d gold."},
 	"workshop": {"name": "Siege Workshop", "cut": 50, "bounty": 40,
@@ -346,8 +346,8 @@ static func gate_chapter(beaten: int) -> int:
 # ---------------------------------------------------------------- Chapter III: water
 
 ## Bridges (road over deep water) can be collapsed from their tile panel: heroes then swim the gap
-## (ZONE_SPEED swim, Soaked). Each later collapse of the same bridge costs COLLAPSE_STEP more.
-const COLLAPSE := {"mana": 40, "step": 20}
+## (ZONE_SPEED swim, Soaked). A flat cost (step 0): Engineers rebuild them often.
+const COLLAPSE := {"mana": 15, "step": 0}
 ## Engineer: stands this long at the bank of a collapsed bridge, then it stands again; a ford he
 ## crosses alive gets planks (no slow, no soak) for PLANK_TIME seconds.
 const ENGINEER_FIX := 4.0

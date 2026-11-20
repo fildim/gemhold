@@ -311,7 +311,7 @@ func _rule_tip_for(k: String) -> Array:
 					var c: Vector2i = level.crossing_cells[i][0]
 					if k == "ford":
 						return ["[b]A ford.[/b] Heroes wade through the shallows slowly and come out [b]soaked[/b]: Crypt chill lasts longer on them, but Shrine beams heat up slower.", _cell_rect(Vector2(c))]
-					return ["[b]A bridge.[/b] Tap it and [b]Collapse[/b] it with mana: heroes must swim the gap, slow and soaked. An Engineer can rebuild it, and each collapse costs more.", _cell_rect(Vector2(c))]
+					return ["[b]A bridge.[/b] Tap it and [b]Collapse[/b] it with mana: heroes must swim the gap, slow and soaked. An Engineer can rebuild it; collapsing costs the same every time.", _cell_rect(Vector2(c))]
 		"tide":
 			if sim.tide.x > 0.0 and sim.wave >= 1:
 				return ["[b]The tide[/b] comes and goes here. At high tide the fords are too deep to wade, so heroes swim them, slowly. The tide clock by the wave counter shows what is coming.", hud.button_rect("tide")]
@@ -384,7 +384,7 @@ func _site_tip_text(s: GameSim.Site) -> String:
 		"altar":
 			t = "[b]A Dark Altar[/b], overgrown. [b]Cut it free[/b] with mana and towers within %.1f tiles deal %d%% more damage and grow battle-hardened faster." % [d["range"], roundi(sim.altar_boost() * 100)]
 		"sluice":
-			t = "[b]A Sluice Gate[/b]. [b]Tap it and Open the sluice[/b] (%d mana) to send a flood down its waterway. It only hits [b]what is in the water[/b]: boats, and heroes swimming. They are swept back and hurt, and a boat loses a third of its health. Open it when a boat sails in; it takes %d s to fill again." % [d["mana"], int(d["recharge"])]
+			t = "[b]A Sluice Gate[/b]. [b]Tap it and Open the sluice[/b] (%d mana) to send a flood down its river: [b]every boat on it[/b] is swept back and loses a third of its health. Open it when boats sail in; it takes %d s to fill again." % [d["mana"], int(d["recharge"])]
 		"beacon":
 			t = "[b]A Signal Fire![/b] While it burns, every wave comes %d s sooner and barracks muster faster. [b]Tap it and Raze it[/b] with mana for %d gold." % [int(d["sooner"]), sim.site_bounty(kind)]
 		"chapel":
