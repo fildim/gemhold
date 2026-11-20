@@ -41,6 +41,7 @@ class Enemy:
 	var surge_t := 0.0    # Tidecaller: seconds until her next surge
 	var crew: Array[String] = []   # Longboat: the heroes it carries
 	var ashore := -1.0    # Longboat: seconds until the next of its crew steps ashore (-1 = still sailing)
+	var beached := false  # Longboat: empty on the shore, waiting to carry its crew away (no longer a hero)
 	var hidden := false   # Diver under water: towers and the den can't see him
 	var zone := ""        # the road zone it stood in last frame
 	var crossing := -1    # which crossing that was (Level.crossings), or -1
@@ -396,7 +397,7 @@ func update(dt: float) -> void:
 	_update_fx(dt)
 	if lost >= level.gems:
 		_end(false)
-	elif wave >= level.waves.size() and queue.is_empty() and _rally.is_empty() and enemies.all(func(e: Enemy) -> bool: return e.retreat):
+	elif wave >= level.waves.size() and queue.is_empty() and _rally.is_empty() and enemies.all(func(e: Enemy) -> bool: return e.retreat or e.beached):
 		# No hero is left to take them (an engine rolling away never comes back, so the battle does
 		# not wait for it), so gems still rolling home count as home now.
 		for g: Drop in drops:
@@ -583,6 +584,8 @@ func _update_den(dt: float) -> void:
 		if e.hp <= 0.0 or e.hidden or e.covered or d > Defs.DEN["range"]:
 			continue
 		var score := (100.0 if e.carry > 0 else 0.0) - d
+		if e.beached:
+			score -= 1000.0
 		if score > best_score:
 			best_score = score
 			best = e
@@ -685,8 +688,13 @@ func _update_enemies(dt: float) -> void:
 			if e.dir == -1 and e.carry == 0 and home > 0 and int(e.d["cap"]) > 0 and not e.retreat and not e.d.has("belfry"):
 				# Turned back empty-handed, but a dropped gem has since rolled home: back to the lair.
 				e.dir = 1
-			var goal := _gem_goal(e)
-			if goal >= 0.0:
+			var goal := -1.0 if _stranded(e) else _gem_goal(e)
+			if _stranded(e):
+				# Their boat is sunk: the only way off the map is back past the cave and out by land.
+				e.dist = minf(float(level.paths[e.path]["total"]), e.dist + sp * dt)
+				if e.dist >= float(level.paths[e.path]["total"]):
+					_to_land_road(e)
+			elif goal >= 0.0:
 				# A gem lies out on this road: go for it, back the way it came if need be.
 				var step := minf(sp * dt, absf(goal - e.dist))
 				e.dist += step * signf(goal - e.dist)
@@ -698,6 +706,9 @@ func _update_enemies(dt: float) -> void:
 			_land(e, dt)
 			if e.gone:
 				continue
+		if e.dir == -1 and level.path_kind[e.path] == "river" and not e.d.has("boat") and e.dist <= float(level.landings[e.path]) and _boat_waiting(e.path):
+			_board(e)
+			continue
 		if e.dir == 1 and e.dist >= total and e.d.has("belfry"):
 			_unload(e)
 		if e.dir == 1 and e.dist >= total:
@@ -787,6 +798,8 @@ func sturdy_mul() -> float:
 ## haste, Berserker rage and the like multiply on top of it.
 func pace(e: Enemy) -> float:
 	var chill := (1.0 - e.slow_amt) if e.slow > 0.0 else 1.0
+	if e.d.has("boat") and e.dir == -1:   # rowing back upstream, heavy with loot
+		chill *= Defs.ROW_BACK
 	return float(e.d["spd"]) * chill * (1.0 - minf(Defs.CARRY_SLOW_MAX, Defs.CARRY_SLOW * e.carry))
 
 
@@ -1022,6 +1035,8 @@ func _repairing(e: Enemy, dt: float) -> bool:
 ## Sink it before the last one is off and the rest drown. Once empty the boat is gone (neither
 ## slain nor escaped, so it does not count toward the threat).
 func _land(e: Enemy, dt: float) -> void:
+	if e.beached:
+		return
 	if e.ashore < 0.0:
 		e.ashore = 0.0
 		_text(e.pos + Vector2(0, -0.7), "They land!", Color("ff9a7a"))
@@ -1036,8 +1051,56 @@ func _land(e: Enemy, dt: float) -> void:
 		_rally.append({"codes": [code], "path": e.path, "dist": e.dist + 0.3, "wave": e.wave, "counted": true})
 		e.ashore = Defs.LAND_GAP
 	if e.crew.is_empty():
-		e.gone = true
+		# Empty, it waits on the shore to carry them away. It is no longer a hero of its wave.
+		e.beached = true
 		boats_landed += 1
+		if e.wave > 0:
+			wave_left[e.wave] -= 1
+			if wave_left[e.wave] == 0:
+				_judge_wave(e.wave)
+			e.wave = 0
+
+
+## A beached boat waits on this river road.
+func _boat_waiting(path: int) -> bool:
+	for o: Enemy in enemies:
+		if o.beached and o.path == path and o.hp > 0.0:
+			return true
+	return false
+
+
+## A hero walking back along a river road whose boat has been sunk: no way out by water.
+func _stranded(e: Enemy) -> bool:
+	return e.dir == -1 and not e.d.has("boat") and level.path_kind[e.path] == "river" and not _boat_waiting(e.path)
+
+
+## Back at the cave with no boat to flee in: out along the shortest land road instead.
+func _to_land_road(e: Enemy) -> void:
+	var best := -1
+	for r: int in level.land_roads:
+		if best < 0 or float(level.paths[r]["total"]) < float(level.paths[best]["total"]):
+			best = r
+	if best < 0:
+		return
+	e.path = best
+	e.dist = float(level.paths[best]["total"])
+	e.swim = false
+
+
+## A hero walking back reached the beached boat: he climbs aboard with whatever gems he holds and
+## it rows back down the river. Sink it on the way and he drowns, and the gems roll home.
+func _board(e: Enemy) -> void:
+	for o: Enemy in enemies:
+		if o.beached and o.path == e.path and o.hp > 0.0:
+			e.gone = true
+			o.crew.append(e.code)
+			o.carry += e.carry
+			e.carry = 0
+			o.beached = false
+			o.dir = -1
+			o.dist = float(level.landings[o.path]) - 0.01
+			_text(o.pos + Vector2(0, -0.7), "They row away!", Color("ff9a7a"))
+			return
 
 
 ## Is the hero in water: a boat afloat, in a ford, or swimming a collapsed bridge.
@@ -1203,6 +1266,8 @@ func _pick_target(tw: Tower, skip: Enemy = null, skips: Array = [], healthiest :
 			score += 100000.0
 		if e.carry > 0:
 			score += 1000000.0
+		if e.beached:   # an empty boat on the shore: only when no hero is in reach
+			score -= 10000000.0
 		if score > best_score:
 			best_score = score
 			best = e

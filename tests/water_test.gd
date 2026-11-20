@@ -81,6 +81,40 @@ func _boats() -> void:
 	s4.hurt(b4, 99999.0, true)
 	_check(s4.drowned == 2 and s4.gold == g4 + 20 + 7 + 7, "the two still aboard drown and pay: %d" % (s4.gold - g4))
 	_check(s4.boats_landed == 0, "a boat sunk while unloading has not landed")
+	# Empty, it waits on the shore: a hero walking back rows away in it; sink it and they must go by land.
+	var s5 := _sim()
+	var land5 := float(s5.level.landings[2])
+	var b5 := _hero(s5, "l", 2, land5 - 0.05)
+	b5.crew = ["f"]
+	_run(s5, 0.5)
+	_check(b5.beached and s5.enemies.has(b5), "the empty boat stays on the shore")
+	var c5 := _hero(s5, "f", 2, land5 + 0.2)
+	c5.dir = -1
+	c5.carry = 1
+	var lost5 := s5.lost
+	_run(s5, 1.0)
+	_check(c5.gone and b5.dir == -1 and b5.carry == 1 and not b5.beached, "a hero with a gem boards and the boat rows away")
+	var tt := 0.0
+	while not b5.gone and b5.hp > 0.0 and tt < 60.0:
+		b5.hp = b5.max_hp   # no tower may sink it here
+		s5.update(0.05)
+		tt += 0.05
+	_check(b5.gone and s5.lost >= lost5 + 1, "the boat escapes with the gem")
+	s5 = _sim()
+	b5 = _hero(s5, "l", 2, land5 - 0.05)
+	b5.crew = ["f"]
+	_run(s5, 0.5)
+	s5.hurt(b5, 99999.0, true)
+	s5.update(0.05)
+	var c6 := _hero(s5, "f", 2, land5 + 0.5)
+	c6.dir = -1
+	c6.carry = 1
+	var d6 := c6.dist
+	s5.update(0.2)
+	_check(c6.dist > d6, "with the boat sunk he turns back toward the cave")
+	c6.dist = float(s5.level.paths[2]["total"]) - 0.01
+	s5.update(0.2)
+	_check(s5.level.path_kind[c6.path] == "land" and c6.dir == -1, "and leaves by a land road")
 	# Boats shrug off chill.
 	var s3 := _sim()
 	var b3 := _hero(s3, "l", 2, 0.5)

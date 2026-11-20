@@ -127,7 +127,9 @@ Arrows and bolts don't care about rain. Or catch her with a Shrine before the cr
 	t.append(_t("Heroes", "Longboat",
 		"From lair 25. A boat of heroes on the [b]river[/b], sturdy (%d health) and armoured; chill and Dread don't touch it. Where the water ends it beaches and [b]its crew steps ashore one by one[/b], then marches on.
 
-[b]Sink it before the last of them is off and the rest drown[/b]: each one still aboard counts as slain and pays its bounty. Towers along the river, a Sluice Gate or the Meteor." % e["l"]["hp"]))
+[b]Sink it before the last of them is off and the rest drown[/b]: each one still aboard counts as slain and pays its bounty. Towers along the river, a Sluice Gate or the Meteor.
+
+The empty boat [b]waits on the shore[/b] to carry them home with your gems. Sink it there too and anyone fleeing must walk back past the cave and out by a land road." % e["l"]["hp"]))
 	t.append(_t("Heroes", "Diver",
 		"From lair 26. He swims [b]under the water[/b]: while he is in a ford, a broken bridge or the high tide, towers and the den can't see him (a ripple and a reed give him away). The Meteor and Sluice Gates still hit him.
 

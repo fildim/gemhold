@@ -3,7 +3,7 @@
  "title": "The Last Procession",
  "cols": 18,
  "rows": 10,
- "hp_mul": 1.60,
+ "hp_mul": 1.19,
  "race_hp": 0.65,
  "legend": {"A":"high ash","F":"high frost","L":"lair","M":"high moss","a":"ash","f":"frost","m":"moss"},
  "terrain": [
