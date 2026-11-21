@@ -21,7 +21,7 @@ Dropped: an App Store (iOS) release (owner, 2026-11-21).
 - [ ] **Before every publish**: play-test all lairs with the bot (`tests/sim_test.gd`, every lair, day and night) and re-check **race_hp** (online races) after the 2026-11-18 and 2026-11-20 retunes.
 - [ ] The bot still loses its day battle on lairs 18–20 and 50 (`tests/sim_test.gd`): look at whether they need easing.
 - [x] **Plunder** (owner, 2026-11-21): +1 gold on a level IV Hut's first kill, one more each kill, up to +25; a tip explains it the first time a Hut reaches level IV.
-- [ ] **Retune Chapters III–V after Plunder**: bot plunder gold went from 125 to 674 (lair 30), 225 to 799 (lair 38) and 649 to 2712 (lair 50, ending with 552 gold); run `tests/difficulty.gd` on lairs 21–50 and adjust hp_mul.
+- [x] **Retune after Plunder** (2026-11-21, Plunder +1 → +25): lairs 21–50 measured before and after; only The Long Siege (1.27 → 1.36) and Hallowed Fields (4.24 → 4.90) got clearly easier and were raised. Lairs 22 (×1.01) and 45 (×0.97) stay near the bot's limit.
 
 ## Ideas kept for later (not decided)
 
