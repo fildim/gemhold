@@ -383,7 +383,7 @@ const LONGHOUSE_SHARE := 0.85   # each extra Longhouse arrow, as a share of a fu
 const SUNLANCE := {"share": 0.18, "keep": 0.35}
 ## Plunder: a level IV Hut pays +PLUNDER_START gold on its first kill as level IV, one more on each kill
 ## after, up to +PLUNDER_MAX a kill.
-const PLUNDER_START := 10
+const PLUNDER_START := 1
 const PLUNDER_MAX := 25
 
 

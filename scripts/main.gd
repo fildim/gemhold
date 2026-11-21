@@ -77,6 +77,7 @@ func _ready() -> void:
 	hud.next_level_pressed.connect(func() -> void: _after_ad(func() -> void: _choose(level_index + 1)))
 	hud.map_pressed.connect(func() -> void: _after_ad(_show_map))
 	Ads.start(self)   # Android Play build only: consent, then ads (scripts/core/ads.gd)
+	Shop.start(self)  # Android Play build only: the Remove ads purchase (scripts/core/shop.gd)
 	spot = preload("res://scripts/ui/spotlight.gd").new()
 	$UI.add_child(spot)
 	spot.setup(hud)

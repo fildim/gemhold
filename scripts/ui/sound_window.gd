@@ -66,6 +66,17 @@ func _build(hud: Control) -> void:
 	_build_graphics(hud, box)
 	if Keys.available():
 		_build_keys(hud, box)
+	if Shop.available():
+		var shop_box := VBoxContainer.new()
+		shop_box.add_theme_constant_override("separation", 10)
+		box.add_child(shop_box)
+		_fill_shop(hud, shop_box)
+		if Shop.node() != null:
+			Shop.node().changed.connect(func() -> void:
+				if is_instance_valid(shop_box):
+					for c in shop_box.get_children():
+						c.queue_free()
+					_fill_shop(hud, shop_box))
 	if Ads.enabled() and Ads.privacy_options_required():   # Android Play build, where the law asks for it
 		var privacy := Button.new()
 		privacy.text = "Privacy choices"
@@ -77,6 +88,46 @@ func _build(hud: Control) -> void:
 			queue_free()
 			Ads.show_privacy_options())
 		box.add_child(privacy)
+
+
+## The Remove ads purchase (Android Play build): buy it, or restore it on a new phone.
+func _fill_shop(hud: Control, box: VBoxContainer) -> void:
+	var h := Label.new()
+	h.text = "Ads"
+	h.add_theme_font_override("font", hud.display_font)
+	h.add_theme_font_size_override("font_size", 34)
+	h.add_theme_color_override("font_color", Hud.GOLD)
+	box.add_child(h)
+	if Shop.owned():
+		var l := Label.new()
+		l.text = "Ads are removed. Thank you for supporting Gemhold!"
+		l.add_theme_font_size_override("font_size", 26)
+		box.add_child(l)
+		return
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 12)
+	box.add_child(row)
+	var buy := Button.new()
+	buy.text = "Remove ads   %s" % Shop.price_text()
+	buy.disabled = Shop.busy
+	buy.focus_mode = Control.FOCUS_NONE
+	buy.custom_minimum_size = Vector2(0, 60)
+	buy.add_theme_font_size_override("font_size", 28)
+	buy.pressed.connect(Shop.buy)
+	row.add_child(buy)
+	var restore := Button.new()
+	restore.text = "Restore purchases"
+	restore.focus_mode = Control.FOCUS_NONE
+	restore.custom_minimum_size = Vector2(0, 60)
+	restore.add_theme_font_size_override("font_size", 24)
+	restore.pressed.connect(Shop.restore)
+	row.add_child(restore)
+	var l := Label.new()
+	l.text = Shop.note if Shop.note != "" else "One payment, no ads ever again on this Google account. The whole game stays free either way."
+	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	l.add_theme_font_size_override("font_size", 24)
+	l.add_theme_color_override("font_color", Hud.DIM)
+	box.add_child(l)
 
 
 ## Graphics: Auto (Detailed on a computer, Light on a phone, and Light if battles run slow),
