@@ -24,6 +24,7 @@ const CHAPTERS: Array[String] = ["Chapter I: The Lowland Roads", "Chapter II: Th
 var _hud: Control
 var _levels: Array = []       # [{"id", "title", "waves"}]
 var _save: SaveData
+var focus_lair := -1               # lair just played (0-based): the map opens on its chapter, or -1 for the newest
 var _markers: Array = []
 var _heading: Label
 var _sub: Label
@@ -164,9 +165,11 @@ func refresh() -> void:
 		_confirm.visible = false
 	if _offer:
 		_offer.visible = false
-	# Open on the chapter of the newest lair the player may play.
+	# Open on the chapter of the lair just played, so replaying old lairs for stars keeps you there;
+	# at start, on the chapter of the newest lair the player may play.
 	var newest := mini(_save.unlocked, Edition.DEMO_LAIRS if Edition.demo else _levels.size())
-	_show_page((mini(newest, _levels.size()) - 1) / PER_PAGE)
+	var at := focus_lair + 1 if focus_lair >= 0 and focus_lair < newest else newest
+	_show_page((mini(at, _levels.size()) - 1) / PER_PAGE)
 
 
 func _layout() -> void:

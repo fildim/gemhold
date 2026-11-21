@@ -296,7 +296,7 @@ const SKILLS := {
 	"land": [
 		{"id": "land_veins", "name": "Rich Veins", "text": "Gold mines pay +2 gold", "max": 3},
 		{"id": "land_springs", "name": "Deep Springs", "text": "Mana wells give +0.2 mana per second", "max": 3},
-		{"id": "land_axes", "name": "Sharp Axes", "text": "Cuts cost 10% less mana", "max": 3},
+		{"id": "land_axes", "name": "Sharp Axes", "text": "Cutting woods and buildings costs 10% less mana", "max": 3},
 		{"id": "land_heights", "name": "Commanding Heights", "text": "Towers on raised tiles: +0.2 range, +5% damage", "max": 2},
 		{"id": "land_spoils", "name": "Spoils of War", "text": "Razing a hero building pays +15 gold", "max": 2},
 		{"id": "land_lantern", "name": "Lantern Oil", "text": "Lights reach 0.3 tiles further at night", "max": 3},

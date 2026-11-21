@@ -138,6 +138,8 @@ func _on_account_merged() -> void:
 
 
 func _show_map() -> void:
+	if not on_map:
+		select.focus_lair = level_index   # back from a battle: the map stays on that lair's chapter
 	_leave_race()
 	on_map = true
 	started = false
