@@ -382,34 +382,14 @@ func _show_info() -> void:
 		_info_panel.queue_free()
 	_info_panel = Control.new()
 	_info_panel.mouse_filter = Control.MOUSE_FILTER_STOP
-	_info_panel.size = size
+	_info_panel.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(_info_panel)
-	var dim := ColorRect.new()
-	dim.color = Color(0.05, 0.04, 0.03, 0.85)
-	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
-	_info_panel.add_child(dim)
-	var center := CenterContainer.new()
-	center.set_anchors_preset(Control.PRESET_FULL_RECT)
-	_info_panel.add_child(center)
-	var card := PanelContainer.new()
-	card.add_theme_stylebox_override("panel", _hud._box(Hud.PANEL, Hud.GOLD, 2, 12, 24))
-	center.add_child(card)
-	var box := VBoxContainer.new()
-	box.add_theme_constant_override("separation", 14)
-	card.add_child(box)
-	var h := Label.new()
-	h.text = "Gemhold"
-	h.add_theme_font_override("font", _hud.display_font)
-	h.add_theme_font_size_override("font_size", 44)
-	h.add_theme_color_override("font_color", Hud.GOLD)
-	box.add_child(h)
+	var box := Screens.page(_info_panel, _hud, "Info", "Back to map", func() -> void: _info_panel.visible = false)
 	var about := Label.new()
-	about.text = "Version %s%s\nQuestions, bugs or ideas: %s" % [ProjectSettings.get_setting("application/config/version", ""),
-		("  ·  free demo" if Edition.demo else "  ·  full game") if Edition.demo_build else "", CONTACT]
-	about.add_theme_font_size_override("font_size", 26)
+	about.text = "Gemhold, version %s%s" % [ProjectSettings.get_setting("application/config/version", ""),
+		("  ·  free demo" if Edition.demo else "  ·  full game") if Edition.demo_build else ""]
+	about.add_theme_font_size_override("font_size", 28)
 	box.add_child(about)
-	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 14)
 	if Edition.demo_build and Edition.demo:
 		var code_row := HBoxContainer.new()
 		code_row.add_theme_constant_override("separation", 10)
@@ -442,21 +422,47 @@ func _show_info() -> void:
 		code.text_submitted.connect(func(_t: String) -> void: try.call())
 		code_row.add_child(go)
 		box.add_child(status)
+	_feedback(box)
+
+
+## Feedback: where to write, the address copied with a tap (phones rarely have a mail app set up),
+## and a button that opens the mail app when there is one.
+func _feedback(box: VBoxContainer) -> void:
+	var h := Label.new()
+	h.text = "Feedback"
+	h.add_theme_font_override("font", _hud.display_font)
+	h.add_theme_font_size_override("font_size", 36)
+	h.add_theme_color_override("font_color", Hud.GOLD)
+	box.add_child(h)
+	var text := Label.new()
+	text.text = "Found a bug, have an idea, or does a lair feel unfair? We read every message. Tap the address to copy it."
+	text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	text.add_theme_font_size_override("font_size", 26)
+	box.add_child(text)
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 14)
 	box.add_child(row)
+	var copy := Button.new()
+	copy.text = CONTACT
+	copy.focus_mode = Control.FOCUS_NONE
+	copy.custom_minimum_size = Vector2(0, 64)
+	copy.add_theme_font_size_override("font_size", 28)
+	row.add_child(copy)
 	var mail := Button.new()
-	mail.text = "Write to us"
+	mail.text = "Open mail app"
 	mail.focus_mode = Control.FOCUS_NONE
-	mail.custom_minimum_size = Vector2(0, 60)
+	mail.custom_minimum_size = Vector2(0, 64)
 	mail.add_theme_font_size_override("font_size", 26)
 	mail.pressed.connect(func() -> void: OS.shell_open("mailto:" + CONTACT))
 	row.add_child(mail)
-	var close := Button.new()
-	close.text = "Close"
-	close.focus_mode = Control.FOCUS_NONE
-	close.custom_minimum_size = Vector2(160, 60)
-	close.add_theme_font_size_override("font_size", 26)
-	close.pressed.connect(func() -> void: _info_panel.visible = false)
-	row.add_child(close)
+	var done := Label.new()
+	done.add_theme_font_size_override("font_size", 24)
+	done.add_theme_color_override("font_color", Hud.GOLD)
+	box.add_child(done)
+	copy.pressed.connect(func() -> void:
+		DisplayServer.clipboard_set(CONTACT)
+		Sfx.play("coin")
+		done.text = "Copied: paste it into your mail.")
 
 
 func _erase() -> void:

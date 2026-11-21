@@ -259,7 +259,9 @@ func _process(delta: float) -> void:
 		spot.show_tip(tip, _tip_rect(tutorial.target), tutorial.has_ok())
 	else:
 		spot.hide_tip()
-	if started and not paused and not sim.over and tip == "":
+	# The full-screen Settings page hides the battle, so it waits (a race never does).
+	var held := race.is_empty() and not get_tree().get_nodes_in_group("sound_window").is_empty()
+	if started and not paused and not held and not sim.over and tip == "":
 		var dt := minf(delta, 0.05)
 		for i in speed:
 			sim.update(dt)

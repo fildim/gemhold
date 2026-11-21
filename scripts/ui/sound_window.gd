@@ -2,8 +2,8 @@ class_name SoundWindow
 extends Control
 ## The Settings window: a slider for effects and one for music, the screen shake and frame rate
 ## switches, Graphics (Quality: Auto, Detailed, Light) and, with a keyboard, the battle shortcuts (Keys),
-## opened from the Settings button on the map and in battle. Covers its host with a dim backdrop; tapping outside the card or
-## Close shuts it. Changes apply and save at once.
+## opened from the Settings button on the map and in battle. A full-screen page (Screens.page); Back
+## shuts it. In a battle (not a race) the battle waits while it is open. Changes apply and save at once.
 
 const Hud := preload("res://scripts/ui/hud.gd")
 
@@ -33,29 +33,7 @@ func _build(hud: Control) -> void:
 	add_to_group("sound_window")
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_STOP
-	var dim := ColorRect.new()
-	dim.color = Color(0.05, 0.04, 0.03, 0.85)
-	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
-	dim.gui_input.connect(func(e: InputEvent) -> void:
-		if e is InputEventMouseButton and e.pressed:
-			queue_free())
-	add_child(dim)
-	var center := CenterContainer.new()
-	center.set_anchors_preset(Control.PRESET_FULL_RECT)
-	center.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(center)
-	var card := PanelContainer.new()
-	card.add_theme_stylebox_override("panel", hud._box(Hud.PANEL, Hud.GOLD, 2, 12, 28))
-	center.add_child(card)
-	var box := VBoxContainer.new()
-	box.add_theme_constant_override("separation", 12)
-	card.add_child(box)
-	var h := Label.new()
-	h.text = "Settings"
-	h.add_theme_font_override("font", hud.display_font)
-	h.add_theme_font_size_override("font_size", 44)
-	h.add_theme_color_override("font_color", Hud.GOLD)
-	box.add_child(h)
+	var box := Screens.page(self, hud, "Settings", "Back", queue_free)
 	_row(hud, box, "Effects", Sfx.sfx_volume(), func(v: float, done: bool) -> void:
 		Sfx.set_sfx_volume(v)
 		if done:
@@ -99,14 +77,6 @@ func _build(hud: Control) -> void:
 			queue_free()
 			Ads.show_privacy_options())
 		box.add_child(privacy)
-	var close := Button.new()
-	close.text = "Close"
-	close.focus_mode = Control.FOCUS_NONE
-	close.custom_minimum_size = Vector2(180, 60)
-	close.size_flags_horizontal = Control.SIZE_SHRINK_END
-	close.add_theme_font_size_override("font_size", 26)
-	close.pressed.connect(queue_free)
-	box.add_child(close)
 
 
 ## Graphics: Auto (Detailed on a computer, Light on a phone, and Light if battles run slow),
