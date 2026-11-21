@@ -84,6 +84,9 @@ var _fps_t := 0.0
 var _fps_frames := 0
 var _keys_shown := ""        # the shortcut keys the tooltips were last set for
 var _boss_shown: Object      # the boss whose name the bar shows
+var _brand: Label            # the lair's number and name in the top bar ("Gemhold" until one is set)
+var _intro_lair := ""        # the level id on the start card, for show_world_best
+var _world: RichTextLabel    # the world best line on the start card
 
 
 func _ready() -> void:
@@ -176,7 +179,10 @@ func _build_bars() -> void:
 	brand.add_theme_font_size_override("font_size", 30)
 	brand.add_theme_color_override("font_color", GOLD)
 	brand.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	brand.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	brand.custom_minimum_size = Vector2(120, 0)
 	row.add_child(brand)
+	_brand = brand
 	_gold = _stat(row, "coin")
 	var mana_box := HBoxContainer.new()
 	mana_box.add_theme_constant_override("separation", 6)
@@ -833,21 +839,54 @@ func _on_card_button(sig: Signal) -> void:
 
 
 ## The start card: the goal, the lair's best rating and its night mission.
-func show_intro(level: Level, number: int, best_rank: String, night_open := false, night_best := "") -> void:
+## best_score and night_score are the player's best scores (0 for none). The world best arrives later,
+## from the online leaderboard, through show_world_best().
+func show_intro(level: Level, number: int, best_rank: String, night_open := false, night_best := "",
+		best_score := 0, night_score := 0) -> void:
 	var txt := "[b]Guard the gems!!![/b]\n\n"
 	txt += "[color=#a8977c]Lair %d · %d waves[/color]" % [number, level.waves.size()]
 	if best_rank != "":
-		txt += "   [color=#e8b84a]Best: %s[/color]" % best_rank
+		txt += "   [color=#e8b84a]Best: %s%s[/color]" % [best_rank, " · %s" % _thousands(best_score) if best_score > 0 else ""]
 	var buttons := [["Defend the hoard", start_pressed]]
 	if night_open:
 		txt += "\n\n[color=#9fb4ff][b]Night mission unlocked.[/b] Same lair in darkness: build only where you can see. Earns its own stars.[/color]"
 		if night_best != "":
-			txt += "   [color=#e8b84a]Night best: %s[/color]" % night_best
+			txt += "   [color=#e8b84a]Night best: %s%s[/color]" % [night_best, " · %s" % _thousands(night_score) if night_score > 0 else ""]
 		buttons.append(["Night mission", night_pressed])
 	else:
 		txt += "\n[color=#6f7aa8]Clear it Brilliant to unlock its night mission.[/color]"
 	buttons.append(["Map", map_pressed])
 	_show_card(level.title, txt, buttons)
+	_intro_lair = level.id
+	_world = RichTextLabel.new()
+	_world.bbcode_enabled = true
+	_world.fit_content = true
+	_world.scroll_active = false
+	_world.visible = false
+	_card_box.add_child(_world)
+	_card_box.move_child(_world, 2)   # under the text, above the buttons
+
+
+## The world's best scores for the lair on the start card (from Online.top), if it is still shown:
+## day and night are [name, score] or [] when nobody has one.
+func show_world_best(level_id: String, day: Array, night: Array) -> void:
+	if level_id != _intro_lair or not is_instance_valid(_world) or not _overlay.visible:
+		return
+	var parts := []
+	if not day.is_empty():
+		parts.append("%s  [color=#a8977c](%s)[/color]" % [_thousands(int(day[1])), str(day[0]).xml_escape()])
+	if not night.is_empty():
+		parts.append("night %s  [color=#a8977c](%s)[/color]" % [_thousands(int(night[1])), str(night[0]).xml_escape()])
+	if parts.is_empty():
+		return
+	_world.text = "[color=#c9c0ff]World best: %s[/color]" % "   ".join(parts)
+	_world.visible = true
+
+
+## The lair being played, in the top bar: "46 · Pilgrim's Flood", with "(night)" on night missions.
+func set_lair(number: int, title: String, night := false) -> void:
+	_brand.text = "%d · %s%s" % [number, title, " (night)" if night else ""]
+	_brand.tooltip_text = _brand.text
 
 
 ## score is this battle's (GameSim.score), best_before the mission's best until now; earned lists new

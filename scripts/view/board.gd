@@ -284,7 +284,13 @@ func _draw() -> void:
 			_draw_status(tw, tm)
 	if not off.has("gems"):
 		for g: GameSim.Drop in sim.drops:
-			_draw_gems(g.pos * T + Vector2(0, (-0.1 + sin(tm * 5.0) * 0.05) * T), g.n, 0.3)
+			var at := g.pos * T + Vector2(0, (-0.1 + sin(tm * 5.0) * 0.05) * T)
+			if g.fall > 0.0:   # dropped by a flying carrier: it falls from where it was carried to the road
+				var k := 1.0 - g.fall / Defs.DROP_FALL
+				var top := g.from * T - Vector2(0, (Defs.FLY_LIFT + 0.45) * T)
+				draw_circle(g.pos * T + Vector2(0, 0.05 * T), (0.08 + 0.1 * k) * T, Color(0, 0, 0, 0.25 * k))
+				at = top.lerp(at, k * k)   # speeding up as it falls
+			_draw_gems(at, g.n, 0.3)
 	if not off.has("overlays"):
 		for e: GameSim.Enemy in _es:
 			_draw_enemy(e, tm)

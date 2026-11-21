@@ -152,6 +152,8 @@ class Drop:
 	var n := 0
 	var path := 0
 	var dist := 0.0
+	var fall := 0.0       # seconds left falling from the air to the road (Defs.DROP_FALL); it rolls once landed
+	var from := Vector2.ZERO   # where it began to fall (the flying carrier), for drawing the fall
 
 
 class Loot:
@@ -756,7 +758,7 @@ func _update_enemies(dt: float) -> void:
 					o.hp = minf(o.max_hp, o.hp + float(e.d["heal"]) * dt)
 		if e.carry < int(e.d["cap"]):
 			for g: Drop in drops:
-				if g.n > 0 and g.pos.distance_to(e.pos) < 0.4:
+				if g.n > 0 and g.fall <= 0.0 and g.pos.distance_to(e.pos) < 0.4:
 					var take := mini(int(e.d["cap"]) - e.carry, g.n)
 					touched = true
 					g.n -= take
@@ -1263,6 +1265,9 @@ func _judge_kill(w: int) -> void:
 
 func _update_drops(dt: float) -> void:
 	for g: Drop in drops:
+		if g.fall > 0.0:   # still falling from the air: it rolls once it lands
+			g.fall = maxf(0.0, g.fall - dt)
+			continue
 		var total: float = level.paths[g.path]["total"]
 		g.dist = minf(total, g.dist + Defs.DROP_SPEED * (1.0 + 0.2 * skill("gem_magnet")) * dt)
 		g.pos = level.path_pos(g.path, g.dist)
@@ -1665,6 +1670,8 @@ func hurt(e: Enemy, dmg: float, pierce := false, src: Tower = null, ap := 0) -> 
 				g.path = near[0]
 				g.dist = near[1]
 				g.pos = level.path_pos(g.path, g.dist)
+				g.from = e.pos
+				g.fall = Defs.DROP_FALL
 			drops.append(g)
 			e.carry = 0
 		if not (e.d.has("boss") or e.d.has("boat") or e.d.has("siege") or e.d.has("fly")):

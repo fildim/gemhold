@@ -47,6 +47,8 @@ var _arts_intro := false      # the Dark Arts intro tip is up
 var _tier_tip := 0            # the lairs-beaten gate whose "new Dark Arts" tip is up, or 0
 var _race_intro := false      # a race walkthrough tip is up (Prefs "race_tip": the next one to show)
 var online: Online            # the optional account and leaderboard
+const WORLD_BEST_KEEP := 300.0   # seconds a lair's world best scores are kept before asking again
+var _world_cache := {}        # level id -> {"t", "day", "night"}: the world bests last fetched (see _world_best)
 var hall: Control             # Hall of Fame: leaderboard, achievements, account
 var _ids: Array = []          # every lair's level id, campaign order
 var race := {}                # the online race being played (Online.race_get + "side"), or {}
@@ -168,8 +170,27 @@ func _choose(i: int) -> void:
 	night = false
 	_load_level(i)
 	_layout()
+	var night_id := SaveData.mission_id(level.id, true)
 	hud.show_intro(level, i + 1, save.best_rank(level.id), save.night_unlocked(level.id),
-		save.best_rank(SaveData.mission_id(level.id, true)))
+		save.best_rank(night_id), int(save.scores.get(level.id, 0)), int(save.scores.get(night_id, 0)))
+	_world_best(level.id)
+
+
+## Asks the online leaderboard for the lair's best day and night scores and puts them on the start card.
+## Kept for WORLD_BEST_KEEP seconds per lair, so going back and forth costs nothing; offline, nothing shows.
+func _world_best(level_id: String) -> void:
+	var now := Time.get_ticks_msec() / 1000.0
+	var kept: Dictionary = _world_cache.get(level_id, {})
+	if kept.is_empty() or now - float(kept["t"]) > WORLD_BEST_KEEP:
+		var got := []
+		for m: String in [level_id, SaveData.mission_id(level_id, true)]:
+			var rows: Variant = await online.top("scores." + Online.score_key(m), 1)
+			if typeof(rows) != TYPE_ARRAY:
+				return   # offline or refused: show nothing
+			got.append([] if rows.is_empty() or int(rows[0]["value"]) <= 0 else [rows[0]["name"], int(rows[0]["value"])])
+		kept = {"t": now, "day": got[0], "night": got[1]}
+		_world_cache[level_id] = kept
+	hud.show_world_best(level_id, kept["day"], kept["night"])
 
 
 ## Chosen on the start card: reload the same level in darkness and begin.
@@ -185,6 +206,7 @@ func _load_level(i: int) -> void:
 	level_index = i
 	level = Level.load_from(LEVELS[i])
 	level.night = night
+	hud.set_lair(i + 1, level.title, night)
 	_new_battle()
 
 

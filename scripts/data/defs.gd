@@ -138,6 +138,7 @@ const THREAT := {"easy": 0.45, "hard": 0.7, "up_max": 0.4, "up_easy": 0.1, "up_m
 	"up_close": 0.03, "up_touched": 0.01, "max": 4.0,
 	"rich": 250, "per_gold": 0.0005, "rich_max": 0.25}
 const DROP_SPEED := 0.7      # dropped gems roll home along the road at this many tiles/s
+const DROP_FALL := 0.7       # seconds a gem dropped by a flying carrier takes to fall to the road below
 ## A hero carrying gems walks CARRY_SLOW slower for each gem, never more than CARRY_SLOW_MAX slower
 ## (GameSim.pace). Flyers too; a boat carries no gems itself.
 const CARRY_SLOW := 0.10
