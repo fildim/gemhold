@@ -381,8 +381,10 @@ const TWIN_DMG := 0.75
 const TWIN_SAME := 0.3   # the second beam when both burn the one hero in reach
 const LONGHOUSE_SHARE := 0.85   # each extra Longhouse arrow, as a share of a full one (at least Volley strength)
 const SUNLANCE := {"share": 0.18, "keep": 0.35}
-## Plunder: a level IV Hut pays +1 gold on its first kill as level IV, +2 on the next, ... up to this.
-const PLUNDER_MAX := 5
+## Plunder: a level IV Hut pays +PLUNDER_START gold on its first kill as level IV, one more on each kill
+## after, up to +PLUNDER_MAX a kill.
+const PLUNDER_START := 10
+const PLUNDER_MAX := 25
 
 
 # ---------------------------------------------------------------- Chapter IV: siege

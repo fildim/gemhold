@@ -75,9 +75,11 @@ With a keyboard there are [b]shortcuts[/b]: %s pauses, %s changes speed, %s call
 		+ "[color=#9fd8f0][b]Mausoleum[/b][/color] (Crypt): each bolt bursts, chilling and hurting every hero within %.1f tiles, and Dread rolls for each of them.\n\n" % Defs.MAUSOLEUM["r"]
 		+ "[color=#ff8a3a][b]Twin Flame[/b][/color] (Shrine): two beams on two heroes, each heating up on its own.\n"
 		+ "[color=#ff8a3a][b]Sunlance[/b][/color] (Shrine): the beam burns on through its hero and every hero on the line behind him, and keeps part of its heat when it changes target.\n\n"
-		+ "[b]Plunder:[/b] a level IV Hut, whichever mastery, loots what it kills: +1 gold on its first kill, +2 on the next, up to [b]+%d a kill[/b]. The count is lost if you sell it." % Defs.PLUNDER_MAX))
+		+ "[b]Plunder:[/b] a level IV Hut, whichever mastery, loots what it kills: [b]+%d gold[/b] on its first kill, one more on each kill after, up to [b]+%d a kill[/b]. The count is lost if you sell it." % [Defs.PLUNDER_START, Defs.PLUNDER_MAX]))
 	t.append(_t("Towers", "Who towers shoot",
-		"Towers always pick, in this order:\n\n1. a hero [b]carrying a gem[/b]\n2. a [b]support hero[/b] (Cleric, Shieldbearer, Warden, Herald, Engineer, Rainbringer, Sapper, Pavior)\n3. whoever has the [b]least health[/b] left\n\nSo a thief running home is never ignored, and healers and protectors die first. Heroes they can't see are skipped: a Diver under water, and anyone in the Iron Belfry's shadow."))
+		"On [b]Auto[/b] aim, towers pick in this order:\n\n1. a hero [b]carrying a gem[/b]\n2. a [b]support hero[/b] (Cleric, Shieldbearer, Warden, Herald, Engineer, Rainbringer, Sapper, Pavior)\n3. whoever has the [b]least health[/b] left\n\nSo a thief running home is never ignored, and healers and protectors die first.
+
+Tap a tower and its [b]Aim[/b] button to change what it goes for after gem carriers: [b]Strongest[/b] (the hero with the most health, for Knights and bosses) or [b]Closest to the cave[/b] (whoever is about to reach your gems). Gem carriers always come first. An Ossuary picks its own spread of heroes. Heroes they can't see are skipped: a Diver under water, and anyone in the Iron Belfry's shadow."))
 
 	# ------------------------------------------------------------ heroes
 	t.append(_t("Heroes", "Gem carriers",

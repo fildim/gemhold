@@ -65,6 +65,8 @@ static func play(lv: Level, skill_ranks: Dictionary, seed := 0, style := "near",
 			for a: Dictionary in acts:
 				if a["id"] == "clear" and uncut:
 					break   # save mana to raze barracks first
+				if a["id"] == "aim":
+					continue   # keeps every tower on Auto
 				if a["id"] == "flood" and not _flood_worth(sim, sim.sites[v]):
 					break   # open a sluice only on boats or a crowd in the water
 				if a["id"].begins_with("master:"):

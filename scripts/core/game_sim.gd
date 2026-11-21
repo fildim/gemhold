@@ -80,6 +80,7 @@ class Tower:
 	var altars := 0       # freed Dark Altars in reach (see GameSim._attune)
 	var mastery := ""     # level IV: "longhouse", "lodge", "ossuary", "mausoleum", "twin" or "sunlance"
 	var plunder := 0      # level IV Hut: kills since it became level IV (see Defs.PLUNDER_MAX)
+	var aim := "auto"     # who it shoots after gem carriers: "auto", "strong" (most health) or "first" (closest to the cave)
 	var charges := 0      # Ossuary: bolts stored
 	var volley_t := 0.0   # Ossuary: seconds to the next stored bolt
 	var volley_hits: Array = []   # Ossuary: heroes already hit in this volley
@@ -1272,8 +1273,14 @@ func _update_drops(dt: float) -> void:
 
 
 ## Who a tower shoots: gem carriers first, then special heroes (Cleric, Shieldbearer, Warden, Herald),
-## then whoever has the least health left. Skips `skip` and `skips`; a Hunter's Lodge (healthiest)
-## wants the toughest hero after gem carriers. Hidden Divers are never picked.
+## then whoever has the least health left (Auto aim). Skips `skip` and `skips`; a Hunter's Lodge (healthiest)
+## wants the toughest hero after gem carriers. The player may set a tower's aim (Tower.aim) to Strongest or
+## Closest to the cave instead; gem carriers come first whatever it is. Hidden Divers are never picked.
+## Tower aim choices in the order the tile panel button steps through them, and their names.
+const AIMS := ["auto", "strong", "first"]
+const AIM_NAMES := {"auto": "Auto", "strong": "Strongest", "first": "Closest to the cave"}
+
+
 func _pick_target(tw: Tower, skip: Enemy = null, skips: Array = [], healthiest := false) -> Enemy:
 	var rg := tw.stat("range")
 	var best: Enemy = null
@@ -1281,9 +1288,16 @@ func _pick_target(tw: Tower, skip: Enemy = null, skips: Array = [], healthiest :
 	for e: Enemy in enemies:
 		if e == skip or e.hp <= 0.0 or e.hidden or e.covered or e.pos.distance_to(tw.pos) > rg or (not skips.is_empty() and skips.has(e)):
 			continue
-		var score := e.hp if healthiest else -e.hp
-		if e.d.get("special", false) and not healthiest:
-			score += 100000.0
+		var score := 0.0
+		match tw.aim:
+			"strong":
+				score = e.hp
+			"first":
+				score = -e.pos.distance_to(level.lair_center)
+			_:
+				score = e.hp if healthiest else -e.hp
+				if e.d.get("special", false) and not healthiest:
+					score += 100000.0
 		if e.carry > 0:
 			score += 1000000.0
 		if e.beached:   # an empty boat on the shore: only when no hero is in reach
@@ -1616,7 +1630,7 @@ func hurt(e: Enemy, dmg: float, pierce := false, src: Tower = null, ap := 0) -> 
 			lodge_champion += 1
 		if src != null and src.type == "moss" and src.lvl >= 4:   # Plunder
 			src.plunder += 1
-			var extra := mini(src.plunder, Defs.PLUNDER_MAX)
+			var extra := mini(Defs.PLUNDER_START + src.plunder - 1, Defs.PLUNDER_MAX)
 			gold += extra
 			plundered += extra
 			paid += extra
@@ -1948,6 +1962,8 @@ func cell_info(c: Vector2i) -> Dictionary:
 		var offers := masteries_for(tw)
 		for m: Dictionary in offers:
 			acts.append({"id": "master:" + m["id"], "label": m["name"], "price": "%dg" % d["cost"][3], "gold": d["cost"][3]})
+		if tw.mastery != "ossuary":   # an Ossuary picks its own spread of heroes
+			acts.append({"id": "aim", "label": "Aim: %s" % AIM_NAMES[tw.aim], "price": "tap to change"})
 		acts.append({"id": "sell", "label": "Sell", "price": "+%dg" % int(tw.spent * Defs.SELL_REFUND)})
 		var ab: Dictionary = Defs.ABILITIES[tw.type]
 		var txt := "Damage %d, range %.1f\n" % [int(tw.stat("dmg")), tw.stat("range")]
@@ -1968,7 +1984,7 @@ func cell_info(c: Vector2i) -> Dictionary:
 %s" % m["text"]
 		if tw.type == "moss" and tw.lvl >= 4:
 			txt += "
-Plunder: +%d gold a kill" % mini(tw.plunder + 1, Defs.PLUNDER_MAX)
+Plunder: +%d gold on its next kill (up to +%d)" % [mini(Defs.PLUNDER_START + tw.plunder, Defs.PLUNDER_MAX), Defs.PLUNDER_MAX]
 		var status := tower_status(tw)
 		if status != "":
 			txt = status + "\n" + txt
@@ -2316,6 +2332,11 @@ func do_action(id: String, c: Vector2i) -> String:
 			_relight()
 			sound.emit("upgrade")
 			_text(tw.pos + Vector2(0, -0.9), mastery_def(tw.type, m)["name"] + "!", Color("ffd86a"))
+		"aim":
+			if not towers.has(c):
+				return "No tower here"
+			var tw: Tower = towers[c]
+			tw.aim = AIMS[(AIMS.find(tw.aim) + 1) % AIMS.size()]
 		"sell":
 			if not towers.has(c):
 				return "No tower here"

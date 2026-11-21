@@ -291,7 +291,7 @@ func _process(delta: float) -> void:
 
 
 ## Tips for the rules of Chapter III, each shown once (Prefs "rule_tip_<key>").
-const RULE_TIPS := ["ford", "bridge", "tide", "routes", "mastery", "dusk", "rubble", "stun", "silence", "eclipse", "hallowed", "air"]
+const RULE_TIPS := ["ford", "bridge", "tide", "routes", "mastery", "plunder", "dusk", "rubble", "stun", "silence", "eclipse", "hallowed", "air"]
 var _rule_key := ""
 
 
@@ -327,6 +327,10 @@ func _rule_tip_for(k: String) -> Array:
 			for tw: GameSim.Tower in sim.towers.values():
 				if not sim.masteries_for(tw).is_empty():
 					return ["[b]Level IV![/b] This tower is battle-hardened and level III, so it can become one of its masteries. Tap it to choose; the choice is final.", _cell_rect(Vector2(tw.cell))]
+		"plunder":
+			for tw: GameSim.Tower in sim.towers.values():
+				if tw.type == "moss" and tw.lvl >= 4:
+					return ["[b]Plunder![/b] A level IV Hut loots what it kills: [b]+%d gold[/b] on its first kill, one more on each kill after, up to [b]+%d a kill[/b]. Keep it: selling it loses the count." % [Defs.PLUNDER_START, Defs.PLUNDER_MAX], _cell_rect(Vector2(tw.cell))]
 		"dusk":
 			if sim.dusk_wave > 0 and sim.wave >= 1 and not sim.dark:
 				return ["[b]Night falls at wave %d.[/b] After dark you can only build where your den, towers, mines and wells give light, so build now where you will need towers later." % sim.dusk_wave, hud.button_rect("next")]
