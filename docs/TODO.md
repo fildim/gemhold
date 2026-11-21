@@ -1,15 +1,15 @@
 # Gemhold: to do
 
-What is still open, in one place. Tick items off (`[x]`) as they are done; add new ones at the end of their section. Last gathered 2026-11-21 (version 0.9.5).
+What is still open, in one place. Tick items off (`[x]`) as they are done; add new ones at the end of their section. Last gathered 2026-11-21 (version 0.9.5, published 2026-11-22).
 
 ## Release and stores
 
 Dropped: an App Store (iOS) release (owner, 2026-11-21).
 
-- [ ] Upload `build/gemhold-0.9.4.aab` (version code 26) to the Play **Alpha** track.
+- [x] Upload the 0.9.5 bundle (version code 28) to the Play **Alpha** track (2026-11-22; product `remove_ads` active at €3.99 incl. VAT).
 - [ ] Apply for Google Play **production** once the 14-day closed test is over (from about 2026-12-02).
 - [ ] Try the **ads** on a real phone (built in `scripts/core/ads.gd`, "Android Play" preset only).
-- [ ] **Google Play: one purchase only, Remove ads** (owner, 2026-11-21): one-time, €3.99 (owner, 2026-11-21); no chapter purchases, no subscription. Needs the Google Play Billing plugin, a payments profile and a Restore purchases button; the full game stays free with ads.
+- [x] **Google Play: one purchase only, Remove ads** (owner, 2026-11-21): one-time, €3.99 (owner, 2026-11-21); no chapter purchases, no subscription. Needs the Google Play Billing plugin, a payments profile and a Restore purchases button; the full game stays free with ads.
 - [ ] **Steam: chapters as DLC** (owner, 2026-11-21): the base game is free with lairs 1–5 (the demo), every chapter is DLC at €1.99, and a bundle of all chapters at −25%. Needs: gating by chapter instead of demo/full (`Edition`), GodotSteam + the Steam app (Steam Direct fee), DLC ownership checks; full-game codes unlock every chapter; races offer only owned lairs.
 - [ ] **Steam**: make the store page, then fill in the store URLs in `scripts/core/edition.gd` (empty URLs show "coming soon").
 - [ ] Switch the store accounts to **trader** status before selling anything paid.
