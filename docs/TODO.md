@@ -1,6 +1,6 @@
 # Gemhold: to do
 
-What is still open, in one place. Tick items off (`[x]`) as they are done; add new ones at the end of their section. Last gathered 2026-11-21 (version 0.9.4).
+What is still open, in one place. Tick items off (`[x]`) as they are done; add new ones at the end of their section. Last gathered 2026-11-21 (version 0.9.5).
 
 ## Release and stores
 
