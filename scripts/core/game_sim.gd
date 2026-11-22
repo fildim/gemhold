@@ -1398,11 +1398,19 @@ func _update_ossuary(tw: Tower, dt: float) -> void:
 	for e: Enemy in enemies:
 		if e.hp <= 0.0 or e.hidden or e.covered or e.pos.distance_to(tw.pos) > rg:
 			continue
-		var score := -e.hp
+		# Each bolt of a volley goes to a different hero; the tower's aim says in which order.
+		var score := 0.0
+		match tw.aim:
+			"strong":
+				score = e.hp
+			"first":
+				score = -e.pos.distance_to(level.lair_center)
+			_:   # Auto: the unchilled first, then the weakest
+				score = -e.hp
+				if e.slow <= 0.0:
+					score += 1000000.0
 		if not tw.volley_hits.has(e):
 			score += 10000000.0
-		if e.slow <= 0.0:
-			score += 1000000.0
 		if e.carry > 0:
 			score += 100000.0
 		if score > best_score:
@@ -1981,8 +1989,7 @@ func cell_info(c: Vector2i) -> Dictionary:
 		var offers := masteries_for(tw)
 		for m: Dictionary in offers:
 			acts.append({"id": "master:" + m["id"], "label": m["name"], "price": "%dg" % d["cost"][3], "gold": d["cost"][3]})
-		if tw.mastery != "ossuary":   # an Ossuary picks its own spread of heroes
-			acts.append({"id": "aim", "label": "Aim: %s" % AIM_NAMES[tw.aim], "price": "tap to change"})
+		acts.append({"id": "aim", "label": "Aim: %s" % AIM_NAMES[tw.aim], "price": "tap to change"})
 		acts.append({"id": "sell", "label": "Sell", "price": "+%dg" % int(tw.spent * Defs.SELL_REFUND)})
 		var ab: Dictionary = Defs.ABILITIES[tw.type]
 		var txt := "Damage %d, range %.1f\n" % [int(tw.stat("dmg")), tw.stat("range")]

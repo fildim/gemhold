@@ -79,7 +79,7 @@ With a keyboard there are [b]shortcuts[/b]: %s pauses, %s changes speed, %s call
 	t.append(_t("Towers", "Who towers shoot",
 		"On [b]Auto[/b] aim, towers pick in this order:\n\n1. a hero [b]carrying a gem[/b]\n2. a [b]support hero[/b] (Cleric, Shieldbearer, Warden, Herald, Engineer, Rainbringer, Sapper, Pavior)\n3. whoever has the [b]least health[/b] left\n\nSo a thief running home is never ignored, and healers and protectors die first.
 
-Tap a tower and its [b]Aim[/b] button to change what it goes for after gem carriers: [b]Strongest[/b] (the hero with the most health, for Knights and bosses) or [b]Closest to the cave[/b] (whoever is about to reach your gems). Gem carriers always come first. An Ossuary picks its own spread of heroes. Heroes they can't see are skipped: a Diver under water, and anyone in the Iron Belfry's shadow."))
+Tap a tower and its [b]Aim[/b] button to change what it goes for after gem carriers: [b]Strongest[/b] (the hero with the most health, for Knights and bosses) or [b]Closest to the cave[/b] (whoever is about to reach your gems). Gem carriers always come first. An Ossuary still looses each volley at different heroes, in the order its aim says. Heroes they can't see are skipped: a Diver under water, and anyone in the Iron Belfry's shadow."))
 
 	# ------------------------------------------------------------ heroes
 	t.append(_t("Heroes", "Gem carriers",
