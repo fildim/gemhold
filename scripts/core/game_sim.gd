@@ -8,6 +8,7 @@ const COVER_STEP := 0.25   # tiles between samples when measuring how much of a 
 signal toast(text: String)
 signal ended(won: bool)
 signal ground_changed
+signal trees_changed   # woods were cut: only the woods need drawing again
 signal light_changed
 ## A sound effect to play (see Sfx.SFX): the rules say what happened, the view decides how it sounds.
 signal sound(name: String)
@@ -320,7 +321,7 @@ var engines_built := 0    # Trebuchets that rolled out of Siege Workshops
 func _init(lv: Level, skill_ranks := {}) -> void:
 	level = lv
 	skills = skill_ranks
-	gold = lv.start_gold + Defs.HOARD_GOLD * skill("hoard_gold")
+	gold = lv.start_gold + Defs.HOARD_GOLD * skill("hoard_gold") + Defs.TITHE_GOLD * skill("hoard_tithe")
 	mana_max = Defs.MANA_MAX + Defs.HOARD_MANA * skill("hoard_mana")
 	mana = lv.start_mana + Defs.PATIENCE_MANA * skill("dragon_patience")
 	home = lv.gems
@@ -2216,7 +2217,7 @@ func do_action(id: String, c: Vector2i) -> String:
 		tw.cell = c
 		tw.pos = Vector2(c) + Vector2(0.5, 0.5)
 		tw.spent = cost
-		tw.dmg_mul = 1.0 + 0.1 * skill(type + "_dmg") + Defs.LEGEND_DMG * skill(type + "_legend")
+		tw.dmg_mul = 1.0 + 0.1 * skill(type + "_dmg") + Defs.LEGEND_DMG * skill(type + "_legend") + Defs.DRILL_DMG * skill(type + "_drill")
 		if level.high.has(c):   # Commanding Heights
 			tw.dmg_mul += Defs.HEIGHTS_DMG * skill("land_heights")
 		tw.rate_mul = 1.0 + 0.08 * skill(type + "_rate")
@@ -2249,7 +2250,7 @@ func do_action(id: String, c: Vector2i) -> String:
 			gold += Defs.CLEAR_GOLD
 			trees.erase(c)
 			_text(Vector2(c) + Vector2(0.5, 0.3), "+%d" % Defs.CLEAR_GOLD, Color("e8b84a"))
-			ground_changed.emit()
+			trees_changed.emit()
 			sound.emit("chop")
 		"cut":
 			if not sites.has(c) or (sites[c] as Site).owned:

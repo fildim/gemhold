@@ -243,7 +243,33 @@ func _restart() -> void:
 	started = true
 
 
+## Frames per second: a battle needs no more than BATTLE_FPS (a 144 Hz screen would otherwise draw
+## it 144 times a second); the map and its pages draw MAP_FPS while nobody touches them, and run
+## free for a moment after any input so scrolling stays smooth. tests/perf.gd turns this off.
+const BATTLE_FPS := 60
+const MAP_FPS := 30
+const INPUT_FREE_MS := 1500
+var fps_cap := true
+var _input_ms := 0
+
+
+func _input(event: InputEvent) -> void:
+	if event is InputEventMouseMotion or event is InputEventScreenDrag or event.is_pressed():
+		_input_ms = Time.get_ticks_msec()
+
+
+func _cap_fps() -> void:
+	if not fps_cap:
+		return
+	var want := BATTLE_FPS
+	if on_map:
+		want = BATTLE_FPS if Time.get_ticks_msec() - _input_ms < INPUT_FREE_MS else MAP_FPS
+	if Engine.max_fps != want:
+		Engine.max_fps = want
+
+
 func _process(delta: float) -> void:
+	_cap_fps()
 	if not race.is_empty():
 		if sim.race_sends.length() != _race_sends:   # a hero sent by the kills rule: tell the rival now
 			_race_sends = sim.race_sends.length()
@@ -476,7 +502,7 @@ func _on_tip_ok() -> void:
 	if not on_map and tutorial:
 		tutorial.dismiss()
 	elif _tier_tip > 0:
-		for gate: int in [10, 20, 40]:   # the gates below it are covered too
+		for gate: int in TIER_TIPS:   # the gates below it are covered too
 			if gate <= _tier_tip:
 				Prefs.set_value("tier_tip_%d" % gate, true)
 	elif _race_intro:
@@ -496,7 +522,7 @@ func _on_tip_skip() -> void:
 		spot.hide_tip()
 		return
 	if on_map and _tier_tip > 0:
-		for gate: int in [10, 20, 40]:
+		for gate: int in TIER_TIPS:
 			Prefs.set_value("tier_tip_%d" % gate, true)
 		spot.hide_tip()
 		return
@@ -517,7 +543,7 @@ func _on_tip_skip() -> void:
 		tutorial = null
 	Prefs.set_value("tutorial_done", true)
 	Prefs.set_value("arts_tip", 2)
-	for gate: int in [10, 20, 40]:
+	for gate: int in TIER_TIPS:
 		Prefs.set_value("tier_tip_%d" % gate, true)
 	Prefs.set_value("arts_intro", true)
 	Prefs.set_value("race_tip", RACE_TIPS.size())
@@ -526,6 +552,8 @@ func _on_tip_skip() -> void:
 
 ## Shown once on the map when the campaign opens new Dark Arts (Defs.TREE_BEATEN, Defs.TIER_BEATEN),
 ## keyed by lairs beaten (Prefs "tier_tip_<gate>").
+## The gates in TIER_TIPS, newest first: the map shows the newest unseen one.
+const TIER_GATES_NEWEST_FIRST := [40, 30, 20, 10]
 const TIER_TIPS := {
 	10: "[b]Chapter II opens The Land[/b], a new Dark Arts tab: richer mines and wells, cheaper cuts, higher raised tiles. Tap [b]Dark Arts[/b] to see it.",
 	20: "[b]Chapter III opens tier II[/b] of every Dark Arts tree, with the [b]masteries[/b]: learn one and a battle-hardened level III tower can be raised to level IV. The Land adds [b]Floodmaster[/b] and [b]Black Rites[/b]. Tap [b]Dark Arts[/b].",
@@ -552,7 +580,7 @@ func _arts_tip() -> void:
 		return
 	if stage >= 2 and not skill_tree.visible:
 		# New Dark Arts opened with the campaign: say so once, for the newest gate reached.
-		for gate: int in [40, 30, 20, 10]:
+		for gate: int in TIER_GATES_NEWEST_FIRST:
 			if save.lairs_beaten() >= gate and not Prefs.get_value("tier_tip_%d" % gate, false):
 				_tier_tip = gate
 				spot.show_tip(TIER_TIPS[gate], select.skills_rect(), true, "No more tips")

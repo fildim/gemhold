@@ -24,8 +24,11 @@ var biome := 0             # chapter look for the shader: 0 lowland, 1 crusade, 
 var _ripples: Sprite2D   # animated highlights over water (water_fx.gdshader), above the baked ground
 
 
-var _over_vp: SubViewport   # the roads, woods and lair painted once (see _draw)
-var _over_painter: Node2D
+var _over_vp: SubViewport   # the roads and grass painted once (see _draw); woods and lair in _tree_vp
+var _over_painter: Node2D   # roads, crossings, grass and reeds (repainted only when the ground changes)
+var _tree_painter: Node2D   # woods, lair and vignette on top (also repainted when woods are cut)
+var _tree_vp: SubViewport   # the woods picture, over the roads picture
+var _trees: Sprite2D
 var _over: Sprite2D          # that picture, drawn over the ground and its ripples
 var _over_k := 1.0
 var _has_water := false
@@ -38,6 +41,7 @@ func setup(lv: Level, s: GameSim) -> void:
 	_build_base()
 	_build_over()
 	sim.ground_changed.connect(_repaint)
+	sim.trees_changed.connect(_repaint_trees)
 	queue_redraw()
 
 
@@ -97,14 +101,24 @@ func _draw() -> void:
 
 
 func _paint_over(ci: CanvasItem) -> void:
+	_paint_ground(ci)
+	_paint_trees(ci)
+
+
+func _paint_ground(ci: CanvasItem) -> void:
 	if level == null:
 		return
-	var W := level.cols * T
-	var H := level.rows * T
 	_draw_details(ci)
 	_draw_roads(ci)
 	_draw_crossings(ci)
 	_draw_reeds(ci)
+
+
+func _paint_trees(ci: CanvasItem) -> void:
+	if level == null:
+		return
+	var W := level.cols * T
+	var H := level.rows * T
 	var cells: Array = sim.trees.keys()
 	cells.sort_custom(func(a: Vector2i, b: Vector2i) -> bool: return a.y < b.y)
 	for c: Vector2i in cells:
@@ -134,34 +148,60 @@ func _build_over() -> void:
 	if DisplayServer.get_name() == "headless":
 		return
 	if _over_vp == null:
-		_over_vp = SubViewport.new()
-		_over_vp.disable_3d = true
-		_over_vp.transparent_bg = true
-		_over_vp.render_target_update_mode = SubViewport.UPDATE_DISABLED
 		_over_painter = Node2D.new()
-		_over_painter.draw.connect(func() -> void: _paint_over(_over_painter))
-		_over_vp.add_child(_over_painter)
-		add_child(_over_vp)
-		_over = Sprite2D.new()
-		_over.centered = false
-		var m := CanvasItemMaterial.new()
-		m.blend_mode = CanvasItemMaterial.BLEND_MODE_PREMULT_ALPHA   # a SubViewport's output is premultiplied
-		_over.material = m
-		_over.texture = _over_vp.get_texture()
-		add_child(_over)
+		_over_painter.draw.connect(func() -> void: _paint_ground(_over_painter))
+		_over_vp = _layer_vp(_over_painter)
+		_over = _layer_sprite(_over_vp)
+		_tree_painter = Node2D.new()
+		_tree_painter.draw.connect(func() -> void: _paint_trees(_tree_painter))
+		_tree_vp = _layer_vp(_tree_painter)
+		_trees = _layer_sprite(_tree_vp)
 	_over_k = Quality.bake_scale(Quality.screen_scale(self))
 	_repaint()
+
+
+func _layer_vp(painter: Node2D) -> SubViewport:
+	var vp := SubViewport.new()
+	vp.disable_3d = true
+	vp.transparent_bg = true
+	vp.render_target_update_mode = SubViewport.UPDATE_DISABLED
+	vp.add_child(painter)
+	add_child(vp)
+	return vp
+
+
+func _layer_sprite(vp: SubViewport) -> Sprite2D:
+	var s := Sprite2D.new()
+	s.centered = false
+	var m := CanvasItemMaterial.new()
+	m.blend_mode = CanvasItemMaterial.BLEND_MODE_PREMULT_ALPHA   # a SubViewport's output is premultiplied
+	s.material = m
+	s.texture = vp.get_texture()
+	add_child(s)
+	return s
 
 
 func _repaint() -> void:
 	if _over_vp == null or level == null:
 		queue_redraw()
 		return
-	_over_vp.size = Vector2i((Vector2(level.cols, level.rows) * T * _over_k).ceil())
-	_over_painter.scale = Vector2(_over_k, _over_k)
-	_over.scale = Vector2.ONE / _over_k
-	_over_painter.queue_redraw()
-	_over_vp.render_target_update_mode = SubViewport.UPDATE_ONCE
+	var px := Vector2i((Vector2(level.cols, level.rows) * T * _over_k).ceil())
+	for pair: Array in [[_over_vp, _over_painter, _over], [_tree_vp, _tree_painter, _trees]]:
+		pair[0].size = px
+		pair[1].scale = Vector2(_over_k, _over_k)
+		pair[2].scale = Vector2.ONE / _over_k
+		pair[1].queue_redraw()
+		pair[0].render_target_update_mode = SubViewport.UPDATE_ONCE
+
+
+## Woods were cut: only the woods picture is drawn and rendered again. The roads alone take tens
+## of milliseconds to draw, and a cut never changes them, so they keep a picture of their own.
+func _repaint_trees() -> void:
+	if _over_vp == null or level == null:
+		queue_redraw()
+		return
+	_tree_painter.queue_redraw()
+	_tree_vp.render_target_update_mode = SubViewport.UPDATE_ONCE
 
 
 func _draw_details(ci: CanvasItem) -> void:

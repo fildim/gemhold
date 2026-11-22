@@ -243,6 +243,15 @@ const NIGHT_HP := 0.85
 const TIER_BEATEN := {1: 0, 2: 20, 3: 40}
 const TREE_BEATEN := {"land": 10}
 const LAIRS_PER_CHAPTER := 10
+## Deep skills: many small ranks (War Drums, Deathless Watch, Eternal Flame: +DRILL_DMG damage each;
+## Tithe: +TITHE_GOLD starting gold each), open from the start, so every star always has somewhere
+## to go: with them the trees hold exactly STARS_MAX ranks (50 lairs, 3 stars by day and 3 by night).
+## Each rank is weaker than any other skill's, so they are what is left once the rest is learned.
+const DRILL_MAX := 45
+const DRILL_DMG := 0.01
+const TITHE_MAX := 32
+const TITHE_GOLD := 3
+const STARS_MAX := 300
 ## Tree ids in the order the Dark Arts tabs show them.
 const SKILL_TREES := ["moss", "frost", "ash", "den", "land"]
 const SKILLS := {
@@ -257,6 +266,7 @@ const SKILLS := {
 		{"id": "mastery_longhouse", "name": "Mastery: Longhouse", "text": "Huts can become Longhouses (level IV)", "max": 1, "tier": 2},
 		{"id": "mastery_lodge", "name": "Mastery: Hunter's Lodge", "text": "Huts can become Hunter's Lodges (level IV)", "max": 1, "tier": 2},
 		{"id": "moss_legend", "name": "Legend of the Warband", "text": "+5% damage", "max": 5, "tier": 3},
+		{"id": "moss_drill", "name": "War Drums", "text": "+1% damage", "max": DRILL_MAX},
 	],
 	"frost": [
 		{"id": "frost_dmg", "name": "Grave Chill", "text": "+10% damage", "max": 3},
@@ -270,6 +280,7 @@ const SKILLS := {
 		{"id": "mastery_ossuary", "name": "Mastery: Ossuary", "text": "Crypts can become Ossuaries (level IV)", "max": 1, "tier": 2},
 		{"id": "mastery_mausoleum", "name": "Mastery: Mausoleum", "text": "Crypts can become Mausoleums (level IV)", "max": 1, "tier": 2},
 		{"id": "frost_legend", "name": "Legend of the Crypt", "text": "+5% damage", "max": 5, "tier": 3},
+		{"id": "frost_drill", "name": "Deathless Watch", "text": "+1% damage", "max": DRILL_MAX},
 	],
 	"ash": [
 		{"id": "ash_dmg", "name": "Hotter Coals", "text": "+10% damage", "max": 3},
@@ -283,6 +294,7 @@ const SKILLS := {
 		{"id": "mastery_twin", "name": "Mastery: Twin Flame", "text": "Shrines can become Twin Flames (level IV)", "max": 1, "tier": 2},
 		{"id": "mastery_sunlance", "name": "Mastery: Sunlance", "text": "Shrines can become Sunlances (level IV)", "max": 1, "tier": 2},
 		{"id": "ash_legend", "name": "Legend of the Flame", "text": "+5% damage", "max": 5, "tier": 3},
+		{"id": "ash_drill", "name": "Eternal Flame", "text": "+1% damage", "max": DRILL_MAX},
 	],
 	"den": [
 		{"id": "den_charge", "name": "Hoard's Wrath", "text": "+1 den charge", "max": 5},
@@ -294,6 +306,7 @@ const SKILLS := {
 		{"id": "sturdy", "name": "Sturdy Foundations", "text": "Stun, Rubble and Silence weigh 15% less", "max": 3, "tier": 2, "beaten": 30},
 		{"id": "den_fury", "name": "Hoard's Fury", "text": "Den bolts +20% damage", "max": 5, "tier": 3},
 		{"id": "dragon_patience", "name": "Dragon's Patience", "text": "+10 starting mana", "max": 3, "tier": 3},
+		{"id": "hoard_tithe", "name": "Tithe", "text": "+3 starting gold", "max": TITHE_MAX},
 	],
 	"land": [
 		{"id": "land_veins", "name": "Rich Veins", "text": "Gold mines pay +2 gold", "max": 3},

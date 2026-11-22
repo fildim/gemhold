@@ -46,13 +46,13 @@ const ACH_PREFIX := [
 	["battles", "swords"], ["wins", "swords"], ["losses", "gem_broken"], ["race", "flag"],
 ]
 ## Skill id suffix -> the badge on its tower.
-const SKILL_BADGE := {"dmg": "blade", "rate": "rate", "range": "range", "vet": "vet", "legend": "crown"}
+const SKILL_BADGE := {"dmg": "blade", "drill": "blade", "rate": "rate", "range": "range", "vet": "vet", "legend": "crown"}
 const ABILITY_BADGE := {"moss": "volley", "frost": "dread", "ash": "flame"}
 const HOARD := {"den_charge": "orb", "hoard_gold": "coins", "hoard_mana": "potion", "hoard_regen": "spring", "meteor_dmg": "meteor",
 	"gem_magnet": "gem", "sturdy": "hill",
 	"land_veins": "site:mine", "land_springs": "site:well", "land_axes": "tree", "land_heights": "hill", "land_spoils": "site:camp",
 	"land_lantern": "spark", "land_flood": "site:sluice", "land_rites": "site:altar",
-	"den_fury": "orb", "dragon_patience": "potion"}
+	"den_fury": "orb", "dragon_patience": "potion", "hoard_tithe": "coins"}
 
 
 static func make(k: String, px: float, on := true) -> GameIcon:

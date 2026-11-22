@@ -69,6 +69,7 @@ func _initialize() -> void:
 	Engine.max_fps = 0
 	main = load("res://scenes/main.tscn").instantiate()
 	root.add_child(main)
+	main.fps_cap = false   # measure uncapped
 
 
 func _process(_delta: float) -> bool:

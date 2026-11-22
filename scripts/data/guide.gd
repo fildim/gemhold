@@ -240,7 +240,8 @@ A [b]Dark Altar[/b] is overgrown. Cut it free (%d mana) and towers within %.1f t
 	t.append(_t("Progress", "Dark Arts",
 		"Your skills, opened from the map. [b]Every star is a skill point.[/b]\n\n"
 		+ "Each tower kind has its own tab: damage, attack speed, range, faster ranks and a stronger ability. [b]The Hoard[/b] tab gives your den more charges, every battle more starting gold, more mana or faster mana (Mana Spring), and the Meteor more damage.\n\n"
-		+ "More skills open as the campaign goes on: [b]The Land[/b] (mines, wells, cutting, raised tiles, Sluices and Altars) with Chapter II, and [b]tier II[/b] of every tree and the masteries with Chapter III (Sturdy Foundations in The Hoard helps against siege heroes), and [b]tier III[/b] with Chapter V: a Legend skill for each tower, Hoard's Fury for the den and Dragon's Patience for starting mana. A tier that is still shut shows which chapter opens it.
+		+ "Every star can always be spent: each tower tab ends with a [b]deep skill[/b] of %d small ranks (+%d%% damage each) and The Hoard with [b]Tithe[/b] (%d ranks of +%d starting gold), for the stars left once the rest is learned.\n\n" % [Defs.DRILL_MAX, roundi(Defs.DRILL_DMG * 100), Defs.TITHE_MAX, Defs.TITHE_GOLD]
+		+ "More skills open as the campaign goes on: [b]The Land[/b] (mines, wells, cutting, raised tiles, Sluices and Altars) with Chapter II, and [b]tier II[/b] of every tree and the masteries with Chapter III (Floodmaster and Black Rites in The Land), Sturdy Foundations against siege heroes with Chapter IV, and [b]tier III[/b] with Chapter V: a Legend skill for each tower, Hoard's Fury for the den and Dragon's Patience for starting mana. A tier that is still shut shows which chapter opens it.
 
 "
 		+ "Tower skills apply to towers you build after buying them. [b]Refund all points[/b] any time to try a different plan."))

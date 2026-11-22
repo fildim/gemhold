@@ -535,7 +535,7 @@ func _erase() -> void:
 	Prefs.set_value("tutorial_done", false)
 	Prefs.set_value("arts_tip", 0)
 	Prefs.set_value("arts_intro", false)
-	for gate in [10, 20, 30, 40]:
+	for gate: int in load("res://scripts/main.gd").TIER_TIPS:
 		Prefs.set_value("tier_tip_%d" % gate, false)
 	for k in Defs.SITES:
 		Prefs.set_value("building_tip_" + k, false)

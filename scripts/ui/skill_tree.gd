@@ -206,7 +206,9 @@ func _skill_button(sk: Dictionary) -> Button:
 	b.focus_mode = Control.FOCUS_NONE
 	b.alignment = HORIZONTAL_ALIGNMENT_LEFT
 	b.custom_minimum_size = Vector2(0, 96)
-	b.text = "%s   %s\n%s" % [sk["name"], "●".repeat(r) + "○".repeat(int(sk["max"]) - r), sk["text"]]
+	var top := int(sk["max"])
+	var dots := "●".repeat(r) + "○".repeat(top - r) if top <= 5 else "%d/%d" % [r, top]   # deep skills: a count
+	b.text = "%s   %s\n%s" % [sk["name"], dots, sk["text"]]
 	# A skill about something that turns up later than its tier: when it opens, under its text.
 	var own := Defs.skill_gate(id)
 	if own > Defs.group_gate(Defs.skill_def(id)) and _save.lairs_beaten() < own:
