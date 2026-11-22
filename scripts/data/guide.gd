@@ -261,6 +261,9 @@ A [b]Dark Altar[/b] is overgrown. Cut it free (%d mana) and towers within %.1f t
 		+ "You play the same lair with the same heroes and [b]the same Dark Arts skills[/b]: a standard set for that lair instead of your own, so it is fair and there is nothing to choose. [b]Waves come faster[/b] than in the campaign and heroes are weaker to make up for it, so a race takes about 3 to 6 minutes. A badge on the map shows your rival's wave and gems.\n\n"
 		+ "[b]Attack your rival:[/b] every [b]%d heroes[/b] you slay sends one like the last onto their road, and [b]Send heroes[/b] (in place of Pause) buys more with gold.\n\n" % Defs.RACE_KILL_SEND
 		+ "[b]The race ends for both[/b] the moment one of you clears the last wave or falls. Clear it first and you win; fall, and your rival wins. If you both clear it within a moment of each other, each second sooner is worth [b]%d points[/b] on top of the score, and the most points win. Leaving a race counts as a loss.\n\n" % Defs.RACE_TIME_BONUS
+		+ "[b]Challenge a player:[/b] tap anyone on the Leaderboard and [b]Challenge[/b] them to a race on a lair and at a time you pick. They see it on the Race page next time they play, and can accept, ask for another time or say no; the Race a friend button on the map shows when a challenge waits for you. At the agreed time (from 10 minutes before), both open the Race page and tap [b]Ready[/b]: the race starts once you both have.
+
+"
 		+ "Every race goes on your record: the [b]Races[/b] leaderboard ranks players by wins. Races need an account and don't change your campaign or lair scores."))
 	t.append(_t("Progress", "Tips",
 		"• Build your first towers near where the roads come close to the cave, so the den helps.\n"

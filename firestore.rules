@@ -40,6 +40,39 @@ service cloud.firestore {
         && (!('uid' in request.resource.data) || (request.auth != null && request.resource.data.uid == request.auth.uid))
         && request.resource.data.created == request.time;
     }
+    // Challenges: a race booked for a time between two players. Only they can see or
+    // change it; the sender opens it, either may propose another time, only the one
+    // who did not propose the current time may accept it, and only the sender adds
+    // the race code.
+    match /challenges/{id} {
+      function player() {
+        return request.auth != null
+          && (resource.data.from == request.auth.uid || resource.data.to == request.auth.uid);
+      }
+      allow read, delete: if player();
+      allow create: if request.auth != null
+        && request.resource.data.keys().hasOnly(['from', 'from_name', 'to', 'to_name', 'level', 'night', 'at', 'by', 'state', 'created'])
+        && request.resource.data.from == request.auth.uid
+        && request.resource.data.by == request.auth.uid
+        && request.resource.data.to is string && request.resource.data.to != request.auth.uid
+        && request.resource.data.from_name is string && request.resource.data.from_name.size() <= 16
+        && request.resource.data.to_name is string && request.resource.data.to_name.size() <= 16
+        && request.resource.data.level is string && request.resource.data.level.size() <= 32
+        && request.resource.data.night is bool
+        && request.resource.data.at is int
+        && request.resource.data.state == 'sent'
+        && request.resource.data.created == request.time;
+      allow update: if player()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['at', 'by', 'state', 'code'])
+        && request.resource.data.state in ['sent', 'accepted', 'declined', 'cancelled']
+        && request.resource.data.at is int
+        && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['at', 'by'])
+          || (request.resource.data.by == request.auth.uid && request.resource.data.state == 'sent'))
+        && (request.resource.data.state != 'accepted' || resource.data.state == 'accepted'
+          || (resource.data.state == 'sent' && resource.data.by != request.auth.uid))
+        && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['code'])
+          || (request.auth.uid == resource.data.from && request.resource.data.code is string && request.resource.data.code.size() == 5));
+    }
     // Online races: the host opens one, a rival joins it once, then each racer
     // writes only their own progress (h for the host, g for the guest).
     match /races/{code} {

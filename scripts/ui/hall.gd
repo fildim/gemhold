@@ -4,6 +4,7 @@ extends Control
 
 signal closed
 signal race_ready(race: Dictionary, side: String)   # a race has begun: play it (side "h" host, "g" guest)
+signal challenges_changed(attention: int, live: bool)   # challenges wanting an answer or Ready; live: a race is now
 
 const Hud := preload("res://scripts/ui/hud.gd")
 
@@ -38,6 +39,15 @@ var _race_entry: LineEdit
 var _race_code := ""             # the race this player hosts and waits on, or ""
 var _race_poll := 0.0
 var _race_asking := false
+var _race_for := ""              # the rival a booked race (challenge) is for, while hosting or waiting
+var _challenges: Array = []      # this player's challenges (Online.challenges), soonest first
+var _chal_box: VBoxContainer     # the challenge list on the Race page
+var _chal_target := {}           # {uid, name}: the player being challenged (the form is up), or {}
+var _chal_retime := ""           # the challenge whose time is being changed, or ""
+var _chal_wait := ""             # the challenge this player is Ready for, waiting for its race code, or ""
+var _chal_poll := 0.0
+var _chal_busy := false
+var _chal_loading := false
 
 
 func setup(hud: Control, save: SaveData, online: Online, levels: Array) -> void:
@@ -95,7 +105,10 @@ func setup(hud: Control, save: SaveData, online: Online, levels: Array) -> void:
 	_online.changed.connect(_refresh_race)
 	visibility_changed.connect(func() -> void:
 		if not visible:
-			_cancel_race())
+			_cancel_race()
+			_chal_wait = ""
+			_chal_target = {}
+			_chal_retime = "")
 
 
 func _big_button(parent: Control, text: String) -> Button:
@@ -151,6 +164,7 @@ func _show_tab(i: int) -> void:
 		_refresh_achievements()
 	elif i == 3:
 		_refresh_race()
+		load_challenges()
 
 
 # ---------------------------------------------------------------- leaderboard
@@ -266,6 +280,21 @@ func _add_row(place: int, r: Dictionary) -> void:
 	# Tapping a player shows their best score on every lair.
 	var detail := _label(col, _lair_scores(r["scores"]), 24, Hud.DIM)
 	detail.visible = false
+	var extras: Array[Control] = [detail]
+	if _online.signed_in() and not me:   # challenge them to a race at a time you both pick
+		var ch := Button.new()
+		ch.text = "Challenge %s to a race" % r["name"]
+		ch.focus_mode = Control.FOCUS_NONE
+		ch.custom_minimum_size = Vector2(0, 60)
+		ch.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+		ch.add_theme_font_size_override("font_size", 26)
+		ch.add_theme_stylebox_override("normal", _hud._box(Color("5a2414"), Hud.EMBER, 4, 8, 18))
+		ch.visible = false
+		ch.pressed.connect(func() -> void:
+			_chal_target = {"uid": r["uid"], "name": r["name"]}
+			_show_tab(3))
+		col.add_child(ch)
+		extras.append(ch)
 	panel.mouse_filter = Control.MOUSE_FILTER_PASS   # lets the list still scroll by dragging
 	var down := [Vector2.ZERO]
 	panel.gui_input.connect(func(ev: InputEvent) -> void:
@@ -274,7 +303,9 @@ func _add_row(place: int, r: Dictionary) -> void:
 				down[0] = ev.position
 			elif ev.position.distance_to(down[0]) < 20.0:
 				Sfx.play("click")
-				detail.visible = not detail.visible)
+				var show := not detail.visible
+				for x: Control in extras:
+					x.visible = show)
 	var medal: Color = [Hud.GOLD, Color("cfd6e0"), Color("d08a4a")][place - 1] if place <= 3 else Hud.DIM
 	var p := _label(row, str(place), 30, medal, _hud.display_font)
 	p.custom_minimum_size.x = 56
@@ -525,8 +556,22 @@ func _refresh_race() -> void:
 		_label(_race, "Races are played online, so both of you need an account. Sign in or create one on the Account page.", 24, Hud.DIM)
 		_action(_race, "Go to Account", _show_tab.bind(2))
 		return
+	if not _chal_target.is_empty():
+		_build_challenge_form()
+		return
+	if _chal_wait != "":
+		_label(_race, "Ready! Waiting for %s to open the race…" % _race_for, 28, Hud.BONE, _hud.bold_font)
+		_label(_race, "Keep this page open: the race starts as soon as %s taps Ready too." % _race_for, 24, Hud.DIM)
+		_action(_race, "Not now", func() -> void:
+			_chal_wait = ""
+			_refresh_race())
+		_race_status = _label(_race, "", 24, Hud.DIM)
+		return
 	if _race_code != "":
-		_label(_race, "Give your rival this code. The race starts the moment they join.", 24, Hud.DIM)
+		if _race_for != "":
+			_label(_race, "Ready! Waiting for %s: the race starts the moment they tap Ready too." % _race_for, 24, Hud.DIM)
+		else:
+			_label(_race, "Give your rival this code. The race starts the moment they join.", 24, Hud.DIM)
 		# The code in the plain bold face, widely spaced, on a dark plate: easy to read out and type.
 		var plate := PanelContainer.new()
 		plate.add_theme_stylebox_override("panel", _hud._box(Color(0, 0, 0, 0.45), Hud.GOLD, 2, 12, 18))
@@ -544,6 +589,11 @@ func _refresh_race() -> void:
 			_cancel_race()
 			_refresh_race())
 		return
+	_chal_box = VBoxContainer.new()
+	_chal_box.add_theme_constant_override("separation", 10)
+	_race.add_child(_chal_box)
+	_fill_challenges()
+	_label(_race, "Race now", 30, Hud.GOLD, _hud.display_font)
 	_label(_race, "A race takes about 3 to 6 minutes. You both play the same lair at the same time, with the same heroes and the same standard Dark Arts for that lair (nothing to choose). Host one on any lair you have cleared (by day, or at night once you have opened it); to join, you only need the code. Slaying heroes and spending gold sends heroes onto your rival's road. The race ends for both the moment one of you clears the last wave or falls: clear it first to win. Every race counts on the Races leaderboard.", 24, Hud.DIM)
 	var host := HBoxContainer.new()
 	_race_rows["host"] = host
@@ -641,10 +691,13 @@ func _cancel_race() -> void:
 		return
 	_online.race_cancel(_race_code)
 	_race_code = ""
+	_race_for = ""
 
 
 ## While hosting, looks every couple of seconds whether a rival has joined.
 func _process(delta: float) -> void:
+	if _chal_wait != "":
+		_wait_challenge(delta)
 	if _race_code == "" or _race_asking:
 		return
 	_race_poll -= delta
@@ -662,8 +715,370 @@ func _process(delta: float) -> void:
 		return
 	if r["state"] == "on":
 		_race_code = ""   # it is no longer waiting, so closing the hall must not call it off
+		_race_for = ""
 		_refresh_race()
 		race_ready.emit(r, "h")
+
+
+# ---------------------------------------------------------------- challenges
+# A race booked for a time with a player from the leaderboard (Online, challenges). The Race page
+# lists this player's challenges; at the agreed time both tap Ready: the challenger's game opens the
+# race and puts its code on the challenge, the other's game waits for that code and joins.
+
+const DAY_NAMES := ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+const MONTHS := ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+
+
+## Looks up this player's challenges and tells the map how many want an answer (challenges_changed).
+func load_challenges() -> void:
+	if _chal_loading or not _online.signed_in():
+		return
+	_chal_loading = true
+	var res: Variant = await _online.challenges()
+	_chal_loading = false
+	if typeof(res) != TYPE_ARRAY or not is_inside_tree():
+		return
+	_challenges = res
+	var now := int(Time.get_unix_time_from_system())
+	var attention := 0
+	var live := false
+	for c: Dictionary in _challenges:
+		if c["state"] == "sent" and c["by"] != _online.uid:
+			attention += 1
+		elif c["state"] == "accepted" and Online.challenge_when(c, now) == "now":
+			attention += 1
+			live = true
+	challenges_changed.emit(attention, live)
+	_fill_challenges()
+
+
+## The Race page is showing the challenge list (not the challenge form, a wait or a hosted race).
+func challenges_shown() -> bool:
+	return visible and _pages[3].visible and _chal_box != null and is_instance_valid(_chal_box)
+
+
+## Seconds from now as "in 2 h 10 min".
+static func _in_time(secs: int) -> String:
+	if secs < 60:
+		return "in under a minute"
+	var m := secs / 60
+	return "in %d h %d min" % [m / 60, m % 60] if m >= 60 else "in %d min" % m
+
+
+## A unix time in this device's local time: "today 21:00", "tomorrow 09:15", "Sat 21:00" or "29 Nov 21:00".
+static func when_text(at: int) -> String:
+	var bias := int(Time.get_time_zone_from_system().get("bias", 0)) * 60
+	var now := int(Time.get_unix_time_from_system())
+	var d := Time.get_datetime_dict_from_unix_time(at + bias)
+	var days := (at + bias) / 86400 - (now + bias) / 86400
+	var clock := "%02d:%02d" % [d["hour"], d["minute"]]
+	if days == 0:
+		return "today " + clock
+	if days == 1:
+		return "tomorrow " + clock
+	if days > 1 and days < 7:
+		return "%s %s" % [DAY_NAMES[d["weekday"]], clock]
+	return "%d %s %s" % [d["day"], MONTHS[d["month"] - 1], clock]
+
+
+func _lair_text(c: Dictionary) -> String:
+	for i in _levels.size():
+		if _levels[i]["id"] == c["level"]:
+			return "Lair %d: %s%s" % [i + 1, _levels[i]["title"], " · Night" if c.get("night", false) else ""]
+	return str(c["level"])
+
+
+## Fills a lair choice with the lairs this player has cleared (as the host list). Returns the index
+## of the newest, or 0 if there is none (only "Random lair").
+func _fill_lairs(ob: OptionButton) -> int:
+	ob.focus_mode = Control.FOCUS_NONE
+	ob.custom_minimum_size = Vector2(0, 62)
+	ob.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	ob.add_theme_font_size_override("font_size", 26)
+	ob.get_popup().add_theme_font_size_override("font_size", 28)
+	ob.add_item("Random lair", RACE_RANDOM)
+	var newest := 0
+	for i in _levels.size():
+		if _save.stars(_levels[i]["id"]) > 0 and not Edition.locked(i):
+			ob.add_item("Lair %d: %s" % [i + 1, _levels[i]["title"]], i * 2)
+			newest = ob.item_count - 1
+			if _save.night_unlocked(_levels[i]["id"]):
+				ob.add_item("Lair %d: %s · Night" % [i + 1, _levels[i]["title"]], i * 2 + 1)
+	return newest
+
+
+## The picked item id of a lair choice (Random lair resolved to one of the day lairs offered).
+func _picked_lair(ob: OptionButton) -> int:
+	var pick := ob.get_selected_id()
+	if pick == RACE_RANDOM:
+		var days: Array[int] = []
+		for k in ob.item_count:
+			var id := ob.get_item_id(k)
+			if id != RACE_RANDOM and id % 2 == 0:
+				days.append(id)
+		pick = days.pick_random()
+	return pick
+
+
+## Day, hour and minute choices in a row, set to `at` (local time). Returns the three.
+func _time_pickers(parent: Control, at: int) -> Array:
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 10)
+	parent.add_child(row)
+	var bias := int(Time.get_time_zone_from_system().get("bias", 0)) * 60
+	var now := int(Time.get_unix_time_from_system())
+	var d := Time.get_datetime_dict_from_unix_time(at + bias)
+	var day := (at + bias) / 86400 - (now + bias) / 86400
+	var out := []
+	for spec: Array in [["day", 7], ["hour", 24], ["min", 4]]:
+		var ob := OptionButton.new()
+		ob.focus_mode = Control.FOCUS_NONE
+		ob.custom_minimum_size = Vector2(0, 62)
+		ob.size_flags_horizontal = Control.SIZE_EXPAND_FILL if spec[0] == "day" else Control.SIZE_FILL
+		ob.add_theme_font_size_override("font_size", 26)
+		ob.get_popup().add_theme_font_size_override("font_size", 28)
+		for k in int(spec[1]):
+			match spec[0]:
+				"day":
+					var wd: int = Time.get_datetime_dict_from_unix_time(now + bias + k * 86400)["weekday"]
+					ob.add_item("Today" if k == 0 else "Tomorrow" if k == 1 else DAY_NAMES[wd])
+				"hour":
+					ob.add_item("%02d h" % k)
+				"min":
+					ob.add_item(":%02d" % (k * 15))
+		if spec[0] == "day":
+			ob.select(clampi(day, 0, 6))
+		elif spec[0] == "hour":
+			ob.select(int(d["hour"]))
+		else:
+			ob.select(int(d["minute"]) / 15)
+		row.add_child(ob)
+		out.append(ob)
+	return out
+
+
+## The unix time the day, hour and minute choices say.
+static func _picked_at(p: Array) -> int:
+	var bias := int(Time.get_time_zone_from_system().get("bias", 0)) * 60
+	var now := int(Time.get_unix_time_from_system())
+	var midnight := (now + bias) / 86400 * 86400
+	return midnight + (p[0] as OptionButton).selected * 86400 + (p[1] as OptionButton).selected * 3600 + (p[2] as OptionButton).selected * 900 - bias
+
+
+## A good first guess at a time: an hour from now, on the next quarter hour.
+static func _default_at() -> int:
+	var t := int(Time.get_unix_time_from_system()) + 3600
+	return (t + 899) / 900 * 900
+
+
+func _build_challenge_form() -> void:
+	var who: String = _chal_target["name"]
+	_label(_race, "Challenge %s" % who, 36, Hud.GOLD, _hud.display_font)
+	_label(_race, "Pick a lair and a time. %s sees your challenge on the Race page the next time they open Gemhold, and can accept it, ask for another time or say no. At that time, both of you open this page and tap Ready: the race begins as soon as you both have." % who, 24, Hud.DIM)
+	var pick := OptionButton.new()
+	if _fill_lairs(pick) == 0:
+		pick.free()
+		_label(_race, "Clear a lair in the campaign first: you challenge on lairs you have cleared.", 24, Hud.DIM)
+		_action(_race, "Back", func() -> void:
+			_chal_target = {}
+			_refresh_race())
+		return
+	pick.select(pick.item_count - 1)
+	_race.add_child(pick)
+	var times := _time_pickers(_race, _default_at())
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 10)
+	_race.add_child(row)
+	_action(row, "Send challenge", func() -> void:
+		var at := _picked_at(times)
+		if at < int(Time.get_unix_time_from_system()) + 60:
+			_race_say("Pick a time in the future", true)
+			return
+		var lair := _picked_lair(pick)
+		_race_say("Please wait…")
+		_race_lock(true)
+		var err: String = await _online.challenge_send(_chal_target["uid"], who, _levels[lair / 2]["id"], lair % 2 == 1, at)
+		if not is_inside_tree():
+			return
+		_race_lock(false)
+		if err != "":
+			_race_say(err, true)
+			return
+		_chal_target = {}
+		_refresh_race()
+		_race_say("Challenge sent to %s for %s." % [who, when_text(at)])
+		load_challenges())
+	_action(row, "Back", func() -> void:
+		_chal_target = {}
+		_refresh_race())
+	_race_status = _label(_race, "", 24, Hud.DIM)
+
+
+## The list of challenges on the Race page, rebuilt whenever they are looked up again.
+func _fill_challenges() -> void:
+	if not challenges_shown():
+		return
+	_clear(_chal_box)
+	_label(_chal_box, "Challenges", 30, Hud.GOLD, _hud.display_font)
+	if _challenges.is_empty():
+		_label(_chal_box, "None yet. To challenge someone, tap their name on the Leaderboard.", 24, Hud.DIM)
+		return
+	for c: Dictionary in _challenges:
+		_challenge_row(c)
+
+
+func _challenge_row(c: Dictionary) -> void:
+	var now := int(Time.get_unix_time_from_system())
+	var other: String = c["to_name"] if c["mine"] else c["from_name"]
+	var lair := _lair_text(c)
+	var when := when_text(int(c["at"]))
+	var my_time: bool = c["by"] == _online.uid
+	var id: String = c["id"]
+	var panel := PanelContainer.new()
+	panel.add_theme_stylebox_override("panel", _hud._box(Hud.PANEL_2, Hud.EDGE, 1, 8, 12))
+	_chal_box.add_child(panel)
+	var col := VBoxContainer.new()
+	col.add_theme_constant_override("separation", 8)
+	panel.add_child(col)
+	var text := ""
+	var tint := Hud.BONE
+	var buttons := []   # [label, callable]
+	var call_off := ["Call off", _chal_set.bind(id, {"state": "cancelled"})]
+	var remove := ["Remove", _chal_remove.bind(id)]
+	var retime := ["Other time", _retime.bind(id)]
+	match str(c["state"]):
+		"sent":
+			if my_time:
+				text = "Waiting for %s to answer: %s, %s." % [other, lair, when]
+				buttons = [retime, call_off]
+			else:
+				if c["mine"]:
+					text = "%s asks for another time: %s, %s." % [other, lair, when]
+				else:
+					text = "%s challenges you: %s, %s." % [other, lair, when]
+				tint = Hud.GOLD
+				buttons = [["Accept", _chal_set.bind(id, {"state": "accepted"})], retime, ["Decline", _chal_set.bind(id, {"state": "declined"})]]
+		"accepted":
+			match Online.challenge_when(c, now):
+				"soon":
+					text = "Race with %s: %s, %s (%s). Come back then and tap Ready." % [other, lair, when, _in_time(int(c["at"]) - now)]
+					buttons = [retime, call_off]
+				"now":
+					text = "Your race with %s is now! %s." % [other, lair]
+					tint = Hud.GOLD
+					buttons = [["Ready", _chal_ready.bind(c)], call_off]
+				_:
+					text = "Missed: the race with %s (%s, %s)." % [other, lair, when]
+					tint = Hud.DIM
+					buttons = [retime, remove]
+		"declined":
+			text = "%s said no: %s, %s." % [other if my_time else "You", lair, when]
+			tint = Hud.DIM
+			buttons = [remove]
+		_:
+			text = "Called off: the race with %s (%s, %s)." % [other, lair, when]
+			tint = Hud.DIM
+			buttons = [remove]
+	_label(col, text, 26, tint, _hud.bold_font)
+	if _chal_retime == id:
+		var times := _time_pickers(col, maxi(int(c["at"]), _default_at()))
+		buttons = [["Propose this time", func() -> void:
+			var at := _picked_at(times)
+			if at < int(Time.get_unix_time_from_system()) + 60:
+				_race_say("Pick a time in the future", true)
+				return
+			_chal_retime = ""
+			_chal_set(id, {"at": at, "by": _online.uid, "state": "sent"})],
+			["Back", func() -> void:
+				_chal_retime = ""
+				_fill_challenges()]]
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 10)
+	col.add_child(row)
+	for b: Array in buttons:
+		_action(row, b[0], b[1])
+
+
+func _retime(id: String) -> void:
+	_chal_retime = id
+	_fill_challenges()
+
+
+func _chal_set(id: String, fields: Dictionary) -> void:
+	_race_say("Please wait…")
+	_race_lock(true)
+	var err: String = await _online.challenge_update(id, fields)
+	if not is_inside_tree():
+		return
+	_race_lock(false)
+	_race_say(err, err != "")
+	load_challenges()
+
+
+func _chal_remove(id: String) -> void:
+	await _online.challenge_delete(id)
+	load_challenges()
+
+
+## Ready for an agreed race. The challenger opens it and puts its code on the challenge; the other
+## waits here for that code (_wait_challenge) and joins.
+func _chal_ready(c: Dictionary) -> void:
+	if c["mine"]:
+		_race_say("Please wait…")
+		_race_lock(true)
+		var r: Dictionary = await _online.race_host(c["level"], bool(c.get("night", false)))
+		if not is_inside_tree():
+			return
+		_race_lock(false)
+		if r.has("error"):
+			_race_say(r["error"], true)
+			return
+		var err: String = await _online.challenge_update(c["id"], {"code": r["code"]})
+		if err != "":
+			_online.race_cancel(r["code"])
+			_race_say(err, true)
+			return
+		_race_code = r["code"]
+		_race_for = c["to_name"]
+		_race_poll = 2.0
+		_refresh_race()
+	else:
+		_chal_wait = c["id"]
+		_race_for = c["from_name"]
+		_chal_poll = 0.0
+		_refresh_race()
+
+
+## While Ready for a challenger's race: looks for its code every couple of seconds, then joins.
+func _wait_challenge(delta: float) -> void:
+	_chal_poll -= delta
+	if _chal_poll > 0.0 or _chal_busy:
+		return
+	_chal_poll = 2.5
+	_chal_busy = true
+	var id := _chal_wait
+	var c: Dictionary = await _online.challenge_get(id)
+	if id != _chal_wait:
+		_chal_busy = false
+		return
+	if c.has("error"):
+		_chal_busy = false
+		_race_say(c["error"], true)
+		return
+	if c["state"] != "accepted":
+		_chal_busy = false
+		_chal_wait = ""
+		_refresh_race()
+		_race_say("%s called the race off." % _race_for, true)
+		return
+	if str(c["code"]) != "":
+		var r: Dictionary = await _online.race_join(str(c["code"]))
+		_chal_busy = false
+		if id == _chal_wait and not r.has("error"):
+			_chal_wait = ""
+			race_ready.emit(r, "g")
+		return   # an old code (they left and came back): wait for the new one
+	_chal_busy = false
 
 
 # ---------------------------------------------------------------- helpers

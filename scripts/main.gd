@@ -113,6 +113,7 @@ func _ready() -> void:
 	hall.setup(hud, save, online, infos)
 	select.hall_pressed.connect(hall.open)
 	select.race_pressed.connect(hall.open_race)
+	hall.challenges_changed.connect(select.set_race_badge)
 	select.full_unlocked.connect(func() -> void: online.sync(save))   # remember it on the account
 	hall.closed.connect(func() -> void: hall.visible = false)
 	hall.race_ready.connect(_start_race)
@@ -277,6 +278,11 @@ func _process(delta: float) -> void:
 		_race_t -= delta
 		if _race_t <= 0.0 and not _race_busy:
 			_race_tick()
+	if on_map and online.signed_in():   # challenges (Hall of Fame, Race page): look now and then
+		_chal_t -= delta
+		if _chal_t <= 0.0:
+			_chal_t = CHALLENGE_LOOK_FAST if hall.challenges_shown() else CHALLENGE_LOOK
+			hall.load_challenges()
 	if on_map:
 		_arts_tip()
 		return
@@ -992,6 +998,9 @@ func _on_send(code: String) -> void:
 ## how to join and how a race goes. Each OK moves on (Prefs "race_tip"); "No more tips" ends it.
 const RACE_TROUBLE := 3   # race polls failed in a row before the player is told
 const RACE_WAIT_MS := 10000   # after finishing, how long to wait for the rival's answer before settling the race
+const CHALLENGE_LOOK := 60.0       # seconds between looks for challenges while the map is up
+const CHALLENGE_LOOK_FAST := 15.0  # while the Race page shows them
+var _chal_t := 2.0
 
 const RACE_TIPS := [
 	["host", "[b]Race a friend![/b] Pick any lair you have cleared, or [b]Random lair[/b] (night missions you have opened are there too), and tap [b]Host a race[/b]. You get a 5-letter code to give your friend."],

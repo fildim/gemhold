@@ -74,6 +74,33 @@ func _run() -> void:
 	var both := await a.race_get(str(hosted["code"]))
 	_check(int(both["g"]["wave"]) == 3 and int(both["h"]["wave"]) == 3, "both progresses are there: %s" % [both])
 
+	# Challenges: a race booked for a time between two players.
+	var at := int(Time.get_unix_time_from_system()) + 3600
+	_check(await a.challenge_send(b.uid, b.player_name, "level_03", false, at) == "", "a challenges b")
+	_check(await a.challenge_send(a.uid, a.player_name, "level_03", false, at) != "", "nobody challenges themself")
+	var got: Variant = await b.challenges()
+	_check(typeof(got) == TYPE_ARRAY and got.size() == 1 and got[0]["from"] == a.uid and got[0]["level"] == "level_03" and got[0]["at"] == at and not got[0]["mine"], "b sees the challenge: %s" % [got])
+	var cid: String = got[0]["id"] if typeof(got) == TYPE_ARRAY and got.size() > 0 else ""
+	var sent: Variant = await a.challenges()
+	_check(typeof(sent) == TYPE_ARRAY and sent.size() == 1 and sent[0]["mine"], "a sees it as sent: %s" % [sent])
+	_check(await a.challenge_update(cid, {"state": "accepted"}) != "", "the sender can't accept their own time")
+	_check(await b.challenge_update(cid, {"at": at + 1800, "by": b.uid, "state": "sent"}) == "", "b asks for another time")
+	_check(await b.challenge_update(cid, {"state": "accepted"}) != "", "and then can't accept it themself")
+	_check(await a.challenge_update(cid, {"state": "accepted"}) == "", "a accepts b's time")
+	_check(await b.challenge_update(cid, {"code": "ABCDE"}) != "", "only the sender puts the race code on")
+	_check(await a.challenge_update(cid, {"code": "ABCDE"}) == "", "the sender puts the race code on")
+	var seen_c: Dictionary = await b.challenge_get(cid)
+	_check(seen_c.get("state") == "accepted" and seen_c.get("code") == "ABCDE" and seen_c.get("at") == at + 1800, "b reads the agreed race: %s" % [seen_c])
+	_check(Online.challenge_when(seen_c, at + 1800 - 300) == "now" and Online.challenge_when(seen_c, at - 3600) == "soon", "Ready opens 10 minutes before")
+	var save_c := SaveData.load_from("user://online_test_c3.json")
+	var c3 := _client("c3")
+	_check(await c3.sign_up("c" + mail, "secret123", "Gamma3", save_c) == "", "a third player signs up")
+	_check((await c3.challenge_get(cid)).has("error"), "a third player can't read it")
+	_check(await c3.challenge_update(cid, {"state": "cancelled"}) != "", "or change it")
+	_check(await c3.delete_account() == "", "the third player leaves again")
+	await b.challenge_delete(cid)
+	var left: Variant = await a.challenges()
+	_check(typeof(left) == TYPE_ARRAY and left.is_empty(), "either player can remove it")
 	# Feedback from the Info page: signed in (with name and uid) or not, never read back.
 	_check(await a.send_feedback("Signed-in feedback") == "", "a signed-in player sends feedback")
 	_check(await a.send_feedback("   ") != "", "empty feedback is refused")

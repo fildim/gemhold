@@ -903,3 +903,16 @@ func _river(_spots: Array[Vector2]) -> void:
 	for q in pts:
 		pts2.append(q + Vector2(0, 10))
 	draw_polyline(pts2, Color(INK, 0.08), 2.0, true)
+
+
+## Challenges waiting for this player (Hall of Fame, Race page): the Race button says so, and
+## glows when an agreed race is due now.
+func set_race_badge(attention: int, live: bool) -> void:
+	if live:
+		_race.text = "Your race is now!"
+	elif attention > 0:
+		_race.text = "Race a friend · %d" % attention
+	else:
+		_race.text = "Race a friend"
+	_race.add_theme_color_override("font_color", Hud.GOLD if attention > 0 else Hud.BONE)
+	_layout()

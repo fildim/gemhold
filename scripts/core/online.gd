@@ -471,6 +471,113 @@ func race_cancel(code: String) -> void:
 	await _call("DELETE", _docs + "/races/" + code, null, true, RACE_TIMEOUT)
 
 
+# ---------------------------------------------------------------- challenges
+# A challenge is a race booked for a time: challenges/<id> {from, from_name, to, to_name, level
+# (race_level_field), night, at (unix seconds), by (who proposed the current time), state, created},
+# plus code (the race the challenger opened at that time). state: "sent" (waiting for the one who
+# did not propose `at` to answer), "accepted", "declined" or "cancelled". Either player may propose
+# another time (at, by = themself, state back to "sent"). Only the two players can read or change it.
+# No server sends anything: each game looks for its challenges (challenges()).
+
+const CHALLENGE_EARLY := 10 * 60    # Ready opens this many seconds before the agreed time
+const CHALLENGE_LATE := 30 * 60     # and stays open this long after it
+const CHALLENGE_KEEP := 24 * 3600   # a challenge whose time passed this long ago is cleared away
+
+## Sends a challenge to player `to` for a race on `level_id` at unix time `at`. "" when sent.
+func challenge_send(to: String, to_name: String, level_id: String, night: bool, at: int) -> String:
+	if not signed_in():
+		return "Sign in first"
+	if to == uid:
+		return "You can't challenge yourself"
+	var id := ""
+	for i in 20:
+		id += "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"[randi() % 62]
+	var f := {"from": uid, "from_name": player_name, "to": to, "to_name": to_name.left(16), "level": race_level_field(level_id),
+		"night": night, "at": at, "by": uid, "state": "sent"}
+	var doc := {"name": "projects/%s/databases/(default)/documents/challenges/%s" % [PROJECT, id], "fields": _typed_fields(f)}
+	var body := {"writes": [{"update": doc, "currentDocument": {"exists": false},
+		"updateTransforms": [{"fieldPath": "created", "setToServerValue": "REQUEST_TIME"}]}]}
+	var r := await _call("POST", _docs + ":commit", body, true)
+	return "" if r["ok"] else str(r["error"])
+
+
+## This player's challenges, sent and received, soonest first: [{id, from, from_name, to, to_name,
+## level, version, night, at, by, state, code, mine (true if this player sent it)}], or {"error"}.
+## Ones whose time is long past are deleted on the way.
+func challenges() -> Variant:
+	if not signed_in():
+		return []
+	var out := []
+	var now := int(Time.get_unix_time_from_system())
+	for side: String in ["to", "from"]:
+		var q := {"structuredQuery": {
+			"from": [{"collectionId": "challenges"}],
+			"where": {"fieldFilter": {"field": {"fieldPath": side}, "op": "EQUAL", "value": {"stringValue": uid}}},
+			"limit": 50,
+		}}
+		var r := await _call("POST", _docs + ":runQuery", q, true)
+		if not r["ok"]:
+			return {"error": r["error"]}
+		for item in r["data"]:
+			if typeof(item) != TYPE_DICTIONARY or not item.has("document"):
+				continue
+			var c := {"id": str(item["document"]["name"]).get_file(), "code": ""}
+			var f: Dictionary = item["document"].get("fields", {})
+			for k: String in f:
+				c[k] = _value(f[k])
+			c["at"] = int(c.get("at", 0))
+			var lv := race_level(str(c.get("level", "")))
+			c["level"] = lv[0]
+			c["version"] = lv[1]
+			c["mine"] = c.get("from") == uid
+			if now - int(c["at"]) > CHALLENGE_KEEP:
+				challenge_delete(c["id"])
+				continue
+			out.append(c)
+	out.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return a["at"] < b["at"])
+	return out
+
+
+## Changes a challenge: {"state": ...}, {"at": ..., "by": uid, "state": "sent"} or {"code": ...}. "" when done.
+func challenge_update(id: String, fields: Dictionary) -> String:
+	var doc := {"name": "projects/%s/databases/(default)/documents/challenges/%s" % [PROJECT, id], "fields": _typed_fields(fields)}
+	var body := {"writes": [{"update": doc, "updateMask": {"fieldPaths": fields.keys()}, "currentDocument": {"exists": true}}]}
+	var r := await _call("POST", _docs + ":commit", body, true)
+	return "" if r["ok"] else str(r["error"])
+
+
+func challenge_delete(id: String) -> void:
+	await _call("DELETE", _docs + "/challenges/" + id, null, true)
+
+
+## One challenge (as challenges() lists them), or {"error"}.
+func challenge_get(id: String) -> Dictionary:
+	var r := await _call("GET", _docs + "/challenges/" + id, null, true, RACE_TIMEOUT)
+	if not r["ok"]:
+		return {"error": r["error"]}
+	var c := {"id": id, "code": ""}
+	var f: Dictionary = r["data"].get("fields", {})
+	for k: String in f:
+		c[k] = _value(f[k])
+	c["at"] = int(c.get("at", 0))
+	var lv := race_level(str(c.get("level", "")))
+	c["level"] = lv[0]
+	c["version"] = lv[1]
+	c["mine"] = c.get("from") == uid
+	return c
+
+
+## Where an accepted challenge stands at unix time `now`: "soon" (before Ready opens), "now"
+## (Ready is open) or "missed".
+static func challenge_when(c: Dictionary, now: int) -> String:
+	var at := int(c["at"])
+	if now < at - CHALLENGE_EARLY:
+		return "soon"
+	if now <= at + CHALLENGE_LATE:
+		return "now"
+	return "missed"
+
+
 ## A racer's progress record; with no sim, the one for a battle not begun. secs: seconds since the
 ## race began (frozen at the finish); out: the heroes sent to the rival so far (GameSim.race_sends).
 static func race_progress(sim: GameSim = null, done := false, secs := 0) -> Dictionary:
