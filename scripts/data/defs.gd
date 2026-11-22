@@ -386,7 +386,7 @@ const MASTERIES := {
 		{"id": "lodge", "name": "Hunter's Lodge", "text": "A heavy javelin that ignores armour and marks its hero: everything hits him harder."},
 	],
 	"frost": [
-		{"id": "ossuary", "name": "Ossuary", "text": "Stores bolts while it waits, up to four, then looses them at different heroes."},
+		{"id": "ossuary", "name": "Ossuary", "text": "Stores bolts while it waits, up to four, then looses them all at its target."},
 		{"id": "mausoleum", "name": "Mausoleum", "text": "Bolts burst, chilling and hurting every hero close by."},
 	],
 	"ash": [

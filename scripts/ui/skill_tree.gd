@@ -338,7 +338,7 @@ static func mastery_text(mid: String) -> String:
 		"lodge":
 			return "One heavy javelin that [b]ignores armour[/b], aimed at the healthiest hero, and [b]marks[/b] him for %d seconds: everything hits him %d%% harder. For Knights and bosses." % [roundi(Defs.LODGE["mark"]), roundi(Defs.LODGE["mark_dmg"] * 100)]
 		"ossuary":
-			return "[b]Stores a bolt every reload[/b] even with no hero in sight, up to %d (the skulls on its roof light up), then looses them at different heroes, unchilled ones first." % Defs.OSSUARY["charges"]
+			return "[b]Stores a bolt every reload[/b] even with no hero in sight, up to %d (the skulls on its roof light up), then looses them in a quick burst at its target (its Aim): for Knights and bosses." % Defs.OSSUARY["charges"]
 		"mausoleum":
 			return "Each bolt [b]bursts[/b], chilling and hurting every hero within %.1f tiles, and Dread rolls for each of them." % Defs.MAUSOLEUM["r"]
 		"twin":

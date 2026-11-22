@@ -71,7 +71,7 @@ With a keyboard there are [b]shortcuts[/b]: %s pauses, %s changes speed, %s call
 		"A tower that is [b]level III and has learned its ability[/b] can be raised once more, for %d gold, into one of two [b]masteries[/b]. Each mastery must first be learned in Dark Arts (tier II, from Chapter III). Tap the tower to choose; [b]the choice is final[/b] for that tower.\n\n" % hut["cost"][3]
 		+ "[color=#8fb35a][b]Longhouse[/b][/color] (Hut): every shot is three arrows at up to three heroes. For crowds.\n"
 		+ "[color=#8fb35a][b]Hunter's Lodge[/b][/color] (Hut): one heavy javelin that ignores armour, aimed at the healthiest hero, and [b]marks[/b] him for %d seconds: everything hits him %d%% harder. For Knights and bosses.\n\n" % [roundi(Defs.LODGE["mark"]), roundi(Defs.LODGE["mark_dmg"] * 100)]
-		+ "[color=#9fd8f0][b]Ossuary[/b][/color] (Crypt): stores a bolt every reload even with no hero in sight, up to %d (the skulls on its roof light up), then looses them at different heroes, unchilled ones first.\n" % Defs.OSSUARY["charges"]
+		+ "[color=#9fd8f0][b]Ossuary[/b][/color] (Crypt): stores a bolt every reload even with no hero in sight, up to %d (the skulls on its roof light up), then looses them in a quick burst at its target (its Aim). For Knights and bosses; when its target falls, the next bolt goes to the next hero.\n" % Defs.OSSUARY["charges"]
 		+ "[color=#9fd8f0][b]Mausoleum[/b][/color] (Crypt): each bolt bursts, chilling and hurting every hero within %.1f tiles, and Dread rolls for each of them.\n\n" % Defs.MAUSOLEUM["r"]
 		+ "[color=#ff8a3a][b]Twin Flame[/b][/color] (Shrine): two beams on two heroes, each heating up on its own.\n"
 		+ "[color=#ff8a3a][b]Sunlance[/b][/color] (Shrine): the beam burns on through its hero and every hero on the line behind him, and keeps part of its heat when it changes target.\n\n"
@@ -79,7 +79,7 @@ With a keyboard there are [b]shortcuts[/b]: %s pauses, %s changes speed, %s call
 	t.append(_t("Towers", "Who towers shoot",
 		"On [b]Auto[/b] aim, towers pick in this order:\n\n1. a hero [b]carrying a gem[/b]\n2. a [b]support hero[/b] (Cleric, Shieldbearer, Warden, Herald, Engineer, Rainbringer, Sapper, Pavior)\n3. whoever has the [b]least health[/b] left\n\nSo a thief running home is never ignored, and healers and protectors die first.
 
-Tap a tower and its [b]Aim[/b] button to change what it goes for after gem carriers: [b]Strongest[/b] (the hero with the most health, for Knights and bosses) or [b]Closest to the cave[/b] (whoever is about to reach your gems). Gem carriers always come first. An Ossuary still looses each volley at different heroes, in the order its aim says. Heroes they can't see are skipped: a Diver under water, and anyone in the Iron Belfry's shadow."))
+Tap a tower and its [b]Aim[/b] button to change what it goes for after gem carriers: [b]Strongest[/b] (the hero with the most health, for Knights and bosses) or [b]Closest to the cave[/b] (whoever is about to reach your gems). Gem carriers always come first. Heroes they can't see are skipped: a Diver under water, and anyone in the Iron Belfry's shadow."))
 
 	# ------------------------------------------------------------ heroes
 	t.append(_t("Heroes", "Gem carriers",

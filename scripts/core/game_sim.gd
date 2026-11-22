@@ -1380,8 +1380,9 @@ func _update_towers(dt: float) -> void:
 				shots.append(v)
 
 
-## Ossuary: a bolt is stored every reload, hero or not, up to four; then they fly 0.3 s apart at
-## different heroes, unchilled ones first.
+## Ossuary: a bolt is stored every reload, hero or not, up to four; then they fly 0.3 s apart at the
+## tower's target, as any Crypt picks it (_pick_target: its aim, gem carriers first): a burst on one
+## hero. A hero the bolts already flying will finish is passed over, so no bolt is wasted on the dead.
 func _update_ossuary(tw: Tower, dt: float) -> void:
 	tw.cd -= dt
 	if tw.charges >= Defs.OSSUARY["charges"]:
@@ -1392,30 +1393,15 @@ func _update_ossuary(tw: Tower, dt: float) -> void:
 	tw.volley_t -= dt
 	if tw.charges <= 0 or tw.volley_t > 0.0:
 		return
-	var rg := tw.stat("range")
-	var best: Enemy = null
-	var best_score := -INF
-	for e: Enemy in enemies:
-		if e.hp <= 0.0 or e.hidden or e.covered or e.pos.distance_to(tw.pos) > rg:
-			continue
-		# Each bolt of a volley goes to a different hero; the tower's aim says in which order.
-		var score := 0.0
-		match tw.aim:
-			"strong":
-				score = e.hp
-			"first":
-				score = -e.pos.distance_to(level.lair_center)
-			_:   # Auto: the unchilled first, then the weakest
-				score = -e.hp
-				if e.slow <= 0.0:
-					score += 1000000.0
-		if not tw.volley_hits.has(e):
-			score += 10000000.0
-		if e.carry > 0:
-			score += 100000.0
-		if score > best_score:
-			best_score = score
-			best = e
+	var coming := {}   # hero -> damage this tower's bolts in flight will deal (armour counted)
+	for s: Shot in shots:
+		if s.src == tw and not s.done and s.target != null and s.target.hp > 0.0:
+			coming[s.target] = float(coming.get(s.target, 0.0)) + maxf(1.0, s.dmg - float(s.target.d["armor"]))
+	var doomed := []
+	for e: Enemy in coming:
+		if coming[e] >= e.hp:
+			doomed.append(e)
+	var best := _pick_target(tw, null, doomed)
 	if best == null:
 		tw.volley_hits.clear()
 		return

@@ -96,7 +96,7 @@ const TOUGH := 6.0   # hero health for the level IV rows: few die, so damage dea
 ## The level IV groups (plan §5): a crowd, one knight, a mixed group. Each mastery's niche is one
 ## of them; it should gain 35-45% there and at most 15% elsewhere.
 const IV_GROUPS := {"crowd": "14p,4f", "knight": "1k", "mixed": "6p,4f,3s,1k,2c"}
-const NICHE := {"longhouse": "crowd mixed", "lodge": "knight", "ossuary": "crowd mixed", "mausoleum": "crowd mixed", "twin": "crowd mixed", "sunlance": "crowd mixed"}
+const NICHE := {"longhouse": "crowd mixed", "lodge": "knight", "ossuary": "knight", "mausoleum": "crowd mixed", "twin": "crowd mixed", "sunlance": "crowd mixed"}
 
 
 func _masteries(lv: Level, spots: Array[Vector2i]) -> void:
