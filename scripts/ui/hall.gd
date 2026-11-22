@@ -29,7 +29,6 @@ var _fields := {}                # LineEdits on the account page, by name
 var _delete_armed := false
 var _del_button: Button
 var _race: VBoxContainer
-var _title: Label   # "Hall of Fame", or "Race a friend" on the Race page
 var _race_status: Label
 var _race_rows := {}             # "host" and "join" rows of the Race page, for the race walkthrough
 var _race_pick: OptionButton
@@ -78,12 +77,10 @@ func setup(hud: Control, save: SaveData, online: Online, levels: Array) -> void:
 	title.add_theme_color_override("font_color", Hud.GOLD)
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	head.add_child(title)
-	_title = title
 	for t in ["Leaderboard", "Achievements", "Account", "Race"]:
 		var b := _big_button(head, t)
 		b.pressed.connect(_show_tab.bind(_tabs.size()))
 		_tabs.append(b)
-	_tabs[3].visible = false   # races open from the map's Race a friend button, not a tab here
 	var back := _big_button(head, "Back to map")
 	back.pressed.connect(func() -> void: closed.emit())
 
@@ -140,7 +137,6 @@ func open_race() -> void:
 
 func _show_tab(i: int) -> void:
 	Sfx.play("click")
-	_title.text = "Race a friend" if i == 3 else "Hall of Fame"
 	for k in _pages.size():
 		_pages[k].visible = k == i
 		if k == i:
@@ -224,7 +220,7 @@ func _load_board() -> void:
 	if _board == 1:
 		var w := int(_save.stats.get("race_wins", 0))
 		var l := int(_save.stats.get("race_losses", 0))
-		note = "Your races: %d won, %d lost%s." % [w, l, ", %d drawn" % int(_save.stats["race_draws"]) if _save.stats.has("race_draws") else ""] if w + l > 0 else "No races of yours yet: tap Race a friend on the map."
+		note = "Your races: %d won, %d lost%s." % [w, l, ", %d drawn" % int(_save.stats["race_draws"]) if _save.stats.has("race_draws") else ""] if w + l > 0 else "No races of yours yet: race a friend from the Race page."
 	else:
 		var mine := _save.total_score() if _board == 0 else int(_save.scores.get(_mission(_board), 0))
 		note = "Your best: %s" % Hud._thousands(mine) if mine > 0 else "No score of yours here yet."
