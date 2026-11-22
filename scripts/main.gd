@@ -244,12 +244,14 @@ func _restart() -> void:
 	started = true
 
 
-## Frames per second: a battle needs no more than BATTLE_FPS (a 144 Hz screen would otherwise draw
-## it 144 times a second); the map and its pages draw MAP_FPS while nobody touches them, and run
-## free for a moment after any input so scrolling stays smooth. tests/perf.gd turns this off.
-const BATTLE_FPS := 60
+## Frames per second. A battle is never capped: with vsync on, any frame cap makes Godot's limiter
+## land frames on uneven screen refreshes (it catches up after a slow frame), and motion judders;
+## measured on a 100 Hz screen, the battle runs even only uncapped. The level map and its pages,
+## where almost nothing moves, draw MAP_FPS once nobody has touched anything for INPUT_FREE_MS
+## (that cut the map's GPU use by more than half), and run free again at the first touch, so
+## scrolling and flings stay smooth. tests/perf.gd turns this off.
 const MAP_FPS := 30
-const INPUT_FREE_MS := 1500
+const INPUT_FREE_MS := 3000
 var fps_cap := true
 var _input_ms := 0
 
@@ -262,9 +264,7 @@ func _input(event: InputEvent) -> void:
 func _cap_fps() -> void:
 	if not fps_cap:
 		return
-	var want := BATTLE_FPS
-	if on_map:
-		want = BATTLE_FPS if Time.get_ticks_msec() - _input_ms < INPUT_FREE_MS else MAP_FPS
+	var want := MAP_FPS if on_map and Time.get_ticks_msec() - _input_ms >= INPUT_FREE_MS else 0
 	if Engine.max_fps != want:
 		Engine.max_fps = want
 
