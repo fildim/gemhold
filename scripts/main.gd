@@ -76,6 +76,10 @@ func _ready() -> void:
 	hud.start_pressed.connect(func() -> void: started = true)
 	hud.night_pressed.connect(_start_night)
 	hud.restart_pressed.connect(func() -> void: _after_ad(_restart))
+	hud.restart_now.connect(func() -> void:
+		if race.is_empty() and not on_map:
+			spot.hide_tip()
+			_restart())
 	hud.next_level_pressed.connect(func() -> void: _after_ad(func() -> void: _choose(level_index + 1)))
 	hud.map_pressed.connect(func() -> void: _after_ad(_show_map))
 	Ads.start(self)   # Android Play build only: consent, then ads (scripts/core/ads.gd)
@@ -91,6 +95,7 @@ func _ready() -> void:
 	online = Online.new()
 	add_child(online)
 	online.merged.connect(_on_account_merged)
+	select.online = online
 	var infos := []
 	for p in LEVELS:
 		var lv := Level.load_from(p)
@@ -107,6 +112,7 @@ func _ready() -> void:
 	$UI.add_child(hall)
 	hall.setup(hud, save, online, infos)
 	select.hall_pressed.connect(hall.open)
+	select.race_pressed.connect(hall.open_race)
 	select.full_unlocked.connect(func() -> void: online.sync(save))   # remember it on the account
 	hall.closed.connect(func() -> void: hall.visible = false)
 	hall.race_ready.connect(_start_race)
@@ -522,7 +528,8 @@ func _on_tip_skip() -> void:
 ## keyed by lairs beaten (Prefs "tier_tip_<gate>").
 const TIER_TIPS := {
 	10: "[b]Chapter II opens The Land[/b], a new Dark Arts tab: richer mines and wells, cheaper cuts, higher raised tiles. Tap [b]Dark Arts[/b] to see it.",
-	20: "[b]Chapter III opens tier II[/b] of every Dark Arts tree, with the [b]masteries[/b]: learn one and a battle-hardened level III tower can be raised to level IV. Tap [b]Dark Arts[/b].",
+	20: "[b]Chapter III opens tier II[/b] of every Dark Arts tree, with the [b]masteries[/b]: learn one and a battle-hardened level III tower can be raised to level IV. The Land adds [b]Floodmaster[/b] and [b]Black Rites[/b]. Tap [b]Dark Arts[/b].",
+	30: "[b]Chapter IV opens Sturdy Foundations[/b] in The Hoard: Sappers, Trebuchets and Inquisitors stun, bury and silence your towers, and it makes that weigh less. Tap [b]Dark Arts[/b].",
 	40: "[b]Chapter V opens tier III[/b] of Dark Arts: a Legend skill for each tower, Hoard's Fury for your den and Dragon's Patience for mana. Tap [b]Dark Arts[/b].",
 }
 
@@ -545,7 +552,7 @@ func _arts_tip() -> void:
 		return
 	if stage >= 2 and not skill_tree.visible:
 		# New Dark Arts opened with the campaign: say so once, for the newest gate reached.
-		for gate: int in [40, 20, 10]:
+		for gate: int in [40, 30, 20, 10]:
 			if save.lairs_beaten() >= gate and not Prefs.get_value("tier_tip_%d" % gate, false):
 				_tier_tip = gate
 				spot.show_tip(TIER_TIPS[gate], select.skills_rect(), true, "No more tips")
@@ -843,6 +850,8 @@ func _race_tick() -> void:
 		return
 	_race_connection(ok and not r.has("error"))
 	if r.has("error"):
+		if sim.over:   # offline after finishing: the wait still runs out
+			_race_settle(me, race.get("rival", Online.race_progress()))
 		return
 	var rival: Dictionary = r["g" if side == "h" else "h"]
 	var out := str(rival.get("out", ""))
@@ -865,10 +874,26 @@ func _race_tick() -> void:
 	race["rival"] = rival
 	hud.set_rival(_rival_badge(), rival)
 	if sim.over:
-		hud.show_race_end(me, rival, _rival_name())
-		if rival.get("done", false) and race.get("sent", {}) == me:
-			_record_race(Online.race_compare(me, rival))
-			_race_t = INF   # both finished and told: nothing more to send or fetch
+		_race_settle(me, rival)
+
+
+## After this player finished: the card, and the result once it is known.
+func _race_settle(me: Dictionary, rival: Dictionary) -> void:
+	# The rival is stopped by our report on their next poll. If no answer comes back within
+	# RACE_WAIT_MS (their app in the background, an old version, a bad connection), the race is
+	# settled here anyway, with the rival stopped where they stood: it never sits on "Waiting".
+	if race.has("final"):
+		rival = race["final"]
+	elif not rival.get("done", false) and Time.get_ticks_msec() - int(race.get("t_end", 0)) > RACE_WAIT_MS:
+		rival = rival.duplicate()
+		rival["done"] = true
+		rival["stopped"] = true
+	if rival.get("done", false):
+		race["final"] = rival
+		_record_race(Online.race_compare(me, rival))
+	hud.show_race_end(me, rival, _rival_name())
+	if rival.get("done", false) and race.get("sent", {}) == me:
+		_race_t = INF   # settled and told: nothing more to send or fetch
 
 
 ## Keeps count of failed race polls: the third in a row says so once (and marks the rival's badge),
@@ -938,6 +963,7 @@ func _on_send(code: String) -> void:
 ## The race walkthrough: the first time the Race page opens (signed in), three tips show how to host,
 ## how to join and how a race goes. Each OK moves on (Prefs "race_tip"); "No more tips" ends it.
 const RACE_TROUBLE := 3   # race polls failed in a row before the player is told
+const RACE_WAIT_MS := 10000   # after finishing, how long to wait for the rival's answer before settling the race
 
 const RACE_TIPS := [
 	["host", "[b]Race a friend![/b] Pick any lair you have cleared, or [b]Random lair[/b] (night missions you have opened are there too), and tap [b]Host a race[/b]. You get a 5-letter code to give your friend."],

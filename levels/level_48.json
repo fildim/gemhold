@@ -62,8 +62,8 @@
   "6k,8f,4j,4y",
   "1x,6k,4j,4n",
   "6k,8y,4f,4j,2h",
-  "2x,6k,6y,4j",
-  "2x,8k,8y,4n"
+  "1x,8k,6y,4j",
+  "1x,10k,8y,4n"
  ],
  "rules": [
   {"dark":25,"kind":"eclipse","period":70}

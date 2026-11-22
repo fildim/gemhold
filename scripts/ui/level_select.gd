@@ -7,6 +7,7 @@ signal level_chosen(index: int)
 signal skills_pressed
 signal guide_pressed
 signal hall_pressed
+signal race_pressed   # the Race button: the Hall of Fame's Race page
 signal full_unlocked   # a full-game code was accepted (main puts it on the account)
 
 const Hud := preload("res://scripts/ui/hud.gd")
@@ -35,9 +36,11 @@ var _skills: Button
 var _sound: Button
 var _info: Button          # opens _info_panel: version, contact, full-game code
 var _info_panel: Control
+var online: Online   # set by main: sends the Info page's feedback
 const CONTACT := "contactgemhold@gmail.com"
 var _guide: Button
 var _hall: Button
+var _race: Button   # online races, in ember so it stands out
 var _page := 0
 var _beaten := 0
 var _prev: Button
@@ -91,6 +94,16 @@ func setup(hud: Control, levels: Array, save: SaveData) -> void:
 	_hall.add_theme_font_size_override("font_size", 30)
 	_hall.pressed.connect(func() -> void: hall_pressed.emit())
 	add_child(_hall)
+	_race = Button.new()
+	_race.text = "Race a friend"
+	_race.focus_mode = Control.FOCUS_NONE
+	_race.custom_minimum_size = Vector2(0, 68)
+	_race.add_theme_font_size_override("font_size", 30)
+	_race.add_theme_color_override("font_color", Hud.BONE)
+	_race.add_theme_stylebox_override("normal", hud._box(Color("5a2414"), Hud.EMBER, 4, 8, 18))
+	_race.add_theme_stylebox_override("hover", hud._box(Color("6e2c18"), Hud.EMBER, 4, 8, 18))
+	_race.pressed.connect(func() -> void: race_pressed.emit())
+	add_child(_race)
 	_reset = Button.new()
 	_reset.focus_mode = Control.FOCUS_NONE
 	_reset.add_theme_font_size_override("font_size", 26)
@@ -196,6 +209,8 @@ func _layout() -> void:
 	_guide.position = Vector2(_skills.position.x + _skills.size.x + 10, size.y - _guide.size.y - 12)
 	_hall.reset_size()
 	_hall.position = Vector2(_guide.position.x + _guide.size.x + 10, size.y - _hall.size.y - 12)
+	_race.reset_size()
+	_race.position = Vector2(_hall.position.x + _hall.size.x + 10, size.y - _race.size.y - 12)
 	_info.reset_size()
 	_info.position = Vector2(_sound.position.x - _info.size.x - 10, size.y - _info.size.y - 12)
 	if _info_panel:
@@ -435,10 +450,59 @@ func _feedback(box: VBoxContainer) -> void:
 	h.add_theme_color_override("font_color", Hud.GOLD)
 	box.add_child(h)
 	var text := Label.new()
-	text.text = "Found a bug, have an idea, or does a lair feel unfair? We read every message. Tap the address to copy it."
+	text.text = "Found a bug, have an idea, or does a lair feel unfair? Write it here and tap Send. We read every message."
 	text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	text.add_theme_font_size_override("font_size", 26)
 	box.add_child(text)
+	# Written right here and sent straight to us (Online.send_feedback); needs an internet connection.
+	var msg := TextEdit.new()
+	msg.placeholder_text = "Your message…"
+	msg.custom_minimum_size = Vector2(0, 200)
+	msg.wrap_mode = TextEdit.LINE_WRAPPING_BOUNDARY
+	msg.add_theme_font_size_override("font_size", 26)
+	msg.add_theme_stylebox_override("normal", _hud._box(Color("1d1712"), Hud.EDGE, 2, 6, 12))
+	msg.add_theme_stylebox_override("focus", _hud._box(Color("1d1712"), Hud.GOLD, 2, 6, 12))
+	box.add_child(msg)
+	var send_row := HBoxContainer.new()
+	send_row.add_theme_constant_override("separation", 14)
+	box.add_child(send_row)
+	var send := Button.new()
+	send.text = "Send"
+	send.focus_mode = Control.FOCUS_NONE
+	send.custom_minimum_size = Vector2(160, 64)
+	send.add_theme_font_size_override("font_size", 28)
+	send.add_theme_stylebox_override("normal", _hud._box(Color("3d2a12"), Color("8a6420"), 4, 8, 18))
+	send_row.add_child(send)
+	var sent := Label.new()
+	sent.add_theme_font_size_override("font_size", 24)
+	sent.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	sent.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	send_row.add_child(sent)
+	send.pressed.connect(func() -> void:
+		if online == null:
+			return
+		send.disabled = true
+		sent.remove_theme_color_override("font_color")
+		sent.text = "Sending…"
+		var err: String = await online.send_feedback(msg.text)
+		if not is_instance_valid(sent):
+			return
+		send.disabled = false
+		if err == "":
+			Sfx.play("coin")
+			msg.text = ""
+			sent.add_theme_color_override("font_color", Hud.GOLD)
+			sent.text = "Sent. Thank you!"
+		else:
+			Sfx.play("error")
+			sent.add_theme_color_override("font_color", Hud.POOR)
+			sent.text = err)
+	var or_mail := Label.new()
+	or_mail.text = "Or write to us by email. Tap the address to copy it."
+	or_mail.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	or_mail.add_theme_font_size_override("font_size", 24)
+	or_mail.add_theme_color_override("font_color", Hud.DIM)
+	box.add_child(or_mail)
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 14)
 	box.add_child(row)
@@ -471,7 +535,7 @@ func _erase() -> void:
 	Prefs.set_value("tutorial_done", false)
 	Prefs.set_value("arts_tip", 0)
 	Prefs.set_value("arts_intro", false)
-	for gate in [10, 20, 40]:
+	for gate in [10, 20, 30, 40]:
 		Prefs.set_value("tier_tip_%d" % gate, false)
 	for k in Defs.SITES:
 		Prefs.set_value("building_tip_" + k, false)

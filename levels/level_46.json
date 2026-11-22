@@ -64,7 +64,7 @@
   "1x,6k,6y",
   {"cargo":{"1":"2j,1k"},"heroes":"6k,8y,2j,2l"},
   "6k,10y,4j",
-  {"cargo":{"1":"3k"},"heroes":"2x,6k,8y,3l"}
+  {"cargo":{"1":"3k"},"heroes":"1x,8k,8y,3l"}
  ],
  "path_info": [
   {"kind":"land"},

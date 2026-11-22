@@ -11,6 +11,7 @@ signal action_pressed(id: String)
 signal popup_closed
 signal start_pressed
 signal restart_pressed
+signal restart_now   # the battle bar's Restart (second tap): start this lair again at once
 signal next_level_pressed
 signal night_pressed
 signal map_pressed
@@ -76,6 +77,10 @@ var _overlay: Control
 var _card_box: VBoxContainer
 var _sound: Button
 var _map_arms := 0
+var _leave_row: HBoxContainer   # Restart and Map share a row
+var _restart: Button        # hidden in online races
+var _popup_anchor := Rect2()   # the tile the tile panel last opened for, and the side it took there,
+var _popup_side := -1          # so an upgrade that grows the range circle keeps it on that side
 var _rating: Label
 var _rating_was := ""
 var _rating_shown := ""      # the rating the label shows (it changes rarely; refresh runs every frame)
@@ -253,7 +258,7 @@ func _build_bars() -> void:
 	_send_menu.index_pressed.connect(func(i: int) -> void: send_pressed.emit(_send_kinds[i]))
 	add_child(_send_menu)
 	_sound = sound_button(brow)
-	_add_map_button(brow)
+	_add_leave_row(brow)
 	for b in [_meteor, _cut]:
 		b.add_theme_color_override("font_color", Color("c9c0ff"))
 
@@ -289,27 +294,36 @@ func sound_button(parent: Control, host: Control = null) -> Button:
 	return b
 
 
-## Leaving mid-battle throws the battle away, so the bar's Map button needs a second tap
-## within SELL_CONFIRM_TIME seconds, like Sell.
-func _add_map_button(parent: Control) -> void:
-	var b := _button(parent, "Map", map_pressed)
+## Restart and Map share the bar's last row. Both throw the battle away, so each needs a second tap
+## within SELL_CONFIRM_TIME seconds, like Sell. Restart is hidden in online races.
+func _add_leave_row(parent: Control) -> void:
+	_leave_row = HBoxContainer.new()
+	_leave_row.add_theme_constant_override("separation", 8)
+	parent.add_child(_leave_row)
+	_restart = _confirm_button(_leave_row, "Restart", restart_now)
+	_confirm_button(_leave_row, "Map", map_pressed)
+
+
+func _confirm_button(parent: Control, text: String, sig: Signal) -> Button:
+	var b := _button(parent, text, sig)
 	for c in b.pressed.get_connections():
 		b.pressed.disconnect(c["callable"])
 	var armed := [0]   # 0 = not armed, else which arming this is (a stale timer leaves a newer one alone)
 	b.pressed.connect(func() -> void:
 		if armed[0] > 0:
 			armed[0] = 0
-			b.text = "Map"
-			map_pressed.emit()
+			b.text = text
+			sig.emit()
 			return
 		_map_arms += 1
 		armed[0] = _map_arms
 		var mine := _map_arms
-		b.text = "Leave? Tap again"
+		b.text = "Tap again"
 		get_tree().create_timer(SELL_CONFIRM_TIME).timeout.connect(func() -> void:
 			if armed[0] == mine:
 				armed[0] = 0
-				b.text = "Map"))
+				b.text = text))
+	return b
 
 
 ## Every button of the battle bar, including those sharing a row.
@@ -385,7 +399,7 @@ func _set_side(on: bool, safe: Vector4) -> void:
 	for l: Label in [_gold, _mana, _gems, _rating, _wave]:
 		l.add_theme_font_size_override("font_size", 30 if on else 23)
 	_mana_bar.custom_minimum_size = Vector2(120 if on else 90, 14 if on else 12)
-	for row: Control in [_play_row]:
+	for row: Control in [_play_row, _leave_row]:
 		row.size_flags_vertical = Control.SIZE_EXPAND_FILL if on else Control.SIZE_FILL
 	for b: Button in _buttons():
 		var paired := b.get_parent() != _brow
@@ -652,13 +666,34 @@ func show_popup(info: Dictionary, anchor: Rect2, avoid := Rect2()) -> void:
 		Vector2(keep.end.x + 6, anchor.position.y), Vector2(keep.position.x - ps.x - 6, anchor.position.y),
 		Vector2(anchor.position.x, keep.end.y + 6), Vector2(anchor.position.x, keep.position.y - ps.y - 6)]
 	var p := Vector2(INF, INF)
-	for t: Vector2 in tries:
+	var chosen := -1
+	var order := range(tries.size())
+	var same := anchor == _popup_anchor and _popup_side >= 0
+	if same:   # the same tile again (an upgrade): its old side first, so the panel doesn't jump
+		order.erase(_popup_side)
+		order.push_front(_popup_side)
+	for k: int in order:
+		var t: Vector2 = tries[k]
 		var q := Vector2(t.x, clampf(t.y, area.position.y, area.end.y - ps.y))
 		if t.x == anchor.position.x:   # below or above: slide sideways, keep the vertical spot
 			q = Vector2(clampf(t.x, area.position.x, area.end.x - ps.x), t.y)
 		if Rect2(q, ps).grow(-1).intersects(keep) == false and area.encloses(Rect2(q, ps)):
 			p = q
+			chosen = k
 			break
+		if same and k == _popup_side:
+			# A bigger circle no longer leaves room there: stay on that side, beside the tile itself,
+			# rather than jumping across the map.
+			var near := [Vector2(anchor.end.x + 6, anchor.position.y), Vector2(anchor.position.x - ps.x - 6, anchor.position.y),
+				Vector2(anchor.position.x, anchor.end.y + 6), Vector2(anchor.position.x, anchor.position.y - ps.y - 6)]
+			var n: Vector2 = near[k]
+			q = Vector2(n.x, clampf(n.y, area.position.y, area.end.y - ps.y)) if k < 2 else Vector2(clampf(n.x, area.position.x, area.end.x - ps.x), n.y)
+			if area.encloses(Rect2(q, ps)):
+				p = q
+				chosen = k
+				break
+	_popup_anchor = anchor
+	_popup_side = chosen
 	if p.x == INF:
 		var right := area.end.x - anchor.end.x > anchor.position.x - area.position.x
 		p = Vector2(area.end.x - ps.x if right else area.position.x, anchor.position.y)
@@ -967,6 +1002,7 @@ func set_rival(rival_name: String, p: Dictionary = {}) -> void:
 	_rival_box.visible = rival_name != ""
 	_send.visible = _rival_box.visible     # in a race, Send takes Pause's place: pausing would
 	_pause.visible = not _rival_box.visible   # only lose time on the race clock
+	_restart.visible = not _rival_box.visible
 	if not _rival_box.visible:
 		return
 	if p.get("done", false):

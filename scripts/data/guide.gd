@@ -19,7 +19,7 @@ static func topics() -> Array:
 		+ "Stop them with towers along the roads, your den's bolts and your Meteor."))
 	t.append(_t("The basics", "Waves",
 		"Heroes come in waves. The button at the top of the panel counts down to the next one.\n\n"
-		+ "[b]Call a wave early[/b] to earn the seconds left as gold, plus the mana you would have regenerated in that time. Early calls are how good players get rich, but only call when your towers can take it.\n\n"
+		+ "[b]Call a wave early[/b] to earn the seconds left as gold, plus the mana you would have regenerated and the gold your mines would have dug in that time. Early calls are how good players get rich, but only call when your towers can take it.\n\n"
 		+ "After the last wave the lair is won the moment its last hero falls or flees."))
 	t.append(_t("The basics", "Ratings and stars",
 		"Each win is rated:\n\n"
@@ -64,7 +64,7 @@ With a keyboard there are [b]shortcuts[/b]: %s pauses, %s changes speed, %s call
 		% [hut["high_range"], shrine["high_range"], crypt["high_range"]]
 		+ "There are only a few on each map. Decide what that spot needs most: a Crypt to slow a long bend, a Hut to cover two roads, or a Shrine where Knights come through."))
 	t.append(_t("Towers", "Ranks and abilities",
-		"Towers grow battle-hardened from the damage they deal. It is not shown (the gold numeral at a tower's foot is its upgrade level), but it happens three times, each adding %d%% damage.\n\n" % roundi(Defs.RANK_DMG * 100)
+		"Towers grow battle-hardened (their experience) from the damage they deal. It happens three times, each adding %d%% damage. Tap a tower to see its rank and how close the next one is (the gold numeral at a tower's foot is its upgrade level, not its rank).\n\n" % roundi(Defs.RANK_DMG * 100)
 		+ "A fully battle-hardened tower that is also [b]upgraded to level III[/b] unlocks its ability: Volley (Hut), Dread (Crypt) or Lava (Shrine). Its name flashes over the tower and a violet ring appears. Dark Arts can make each ability stronger.\n\n"
 		+ "Towers that see a lot of action harden fastest, so upgrade the ones at the busy spots."))
 	t.append(_t("Towers", "Level IV: masteries",
@@ -112,7 +112,7 @@ Tap a tower and its [b]Aim[/b] button to change what it goes for after gem carri
 		"Arrives from the thirteenth lair. Tough and unarmoured, but once he drops [b]below half health he runs %.0f× as fast[/b] and glows red.\n\n" % e["r"]["rage"]
 		+ "Don't start on a Berserker just before the cave. Hit him early, or hard enough to finish him in one stretch: Crypts and heated Shrine beams."))
 	t.append(_t("Heroes", "Champion",
-		"Arrives from the fifteenth lair, at the head of the final waves. A crowned giant with [b]%d health[/b], heavy armour (%d), and he carries [b]3 gems[/b].\n\n" % [e["x"]["hp"], e["x"]["armor"]]
+		"Arrives from the fifteenth lair, at the head of the final waves, never more than one in a wave. A crowned giant with [b]%d health[/b], heavy armour (%d), and he carries [b]3 gems[/b].\n\n" % [e["x"]["hp"], e["x"]["armor"]]
 		+ "When he falls, [b]three Footmen rise[/b] where he lay and march on. Bring him down far from the cave, with Shrines, the Meteor and the den's bolts."))
 	t.append(_t("Heroes", "Fenwalker",
 		"From the Drowned Marches (lair 21). Quick and light, and [b]water does not slow or soak him[/b]: he wades fords and swims broken bridges at full speed.

@@ -18,6 +18,7 @@ Dropped: an App Store (iOS) release (owner, 2026-11-21).
 
 - [ ] **Music** for lairs 26–50 (25 lairs have none). Candidates wait in `Desktop\Gemhold\Music to try\new`; the owner picks each lair's track.
 - [x] In-game **feedback**: Info page (full screen) with the address, tap to copy, and Open mail app (2026-11-21).
+- [ ] Deploy `firestore.rules` (the new `feedback` collection) before publishing: the Info page's Send fails until then (2026-11-22).
 - [ ] **Before every publish**: play-test all lairs with the bot (`tests/sim_test.gd`, every lair, day and night) and re-check **race_hp** (online races) after the 2026-11-18 and 2026-11-20 retunes.
 - [ ] The bot still loses its day battle on lairs 18–20 and 45 The Reliquary (`tests/sim_test.gd`, 2026-11-21): it falls early, by wave 4–9 with 7–8 towers, and less hero health does not fix 45 (lost at −10% too). Look at whether they need easing.
 - [x] **Plunder** (owner, 2026-11-21): +1 gold on a level IV Hut's first kill, one more each kill, up to +25; a tip explains it the first time a Hut reaches level IV.

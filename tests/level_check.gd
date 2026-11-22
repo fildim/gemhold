@@ -66,6 +66,8 @@ func _check_file(path: String) -> void:
 		_check(not lv.is_lair(c), "%s: woods in lair at %s" % [lv.id, c])
 		_check(not sites.has(c), "%s: woods on site at %s" % [lv.id, c])
 		_check(not lv.is_water(c), "%s: woods on water at %s" % [lv.id, c])
+	for c: Vector2i in lv.high:   # a raised tile under a road shows as a stone edge peeking out
+		_check(not lv.road.has(c) and not lv.is_water(c) and not lv.is_lair(c), "%s: raised tile at %s is on a road, water or the lair" % [lv.id, c])
 	for c: Vector2i in lv.hallowed:
 		var buildable := not lv.road.has(c) and not lv.is_lair(c) and not sites.has(c) and not lv.is_water(c)
 		_check(buildable, "%s: hallowed ground at %s is not buildable ground" % [lv.id, c])

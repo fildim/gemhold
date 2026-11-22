@@ -74,9 +74,14 @@ func _run() -> void:
 	var both := await a.race_get(str(hosted["code"]))
 	_check(int(both["g"]["wave"]) == 3 and int(both["h"]["wave"]) == 3, "both progresses are there: %s" % [both])
 
+	# Feedback from the Info page: signed in (with name and uid) or not, never read back.
+	_check(await a.send_feedback("Signed-in feedback") == "", "a signed-in player sends feedback")
+	_check(await a.send_feedback("   ") != "", "empty feedback is refused")
+	_check(not (await a._call("GET", a._docs + "/feedback", null, true))["ok"], "nobody can read feedback back")
 	# Signing in elsewhere brings scores and achievements back.
 	a.sign_out()
 	_check(not a.signed_in(), "signed out")
+	_check(await a.send_feedback("Signed-out feedback") == "", "feedback needs no account")
 	_check(await a.sign_in(mail, "wrong-pass", save_a) == "Wrong email or password", "wrong password")
 	var other := SaveData.load_from("user://online_test_c.json")
 	_check(await a.sign_in(mail, "secret123", other) == "", "sign in")

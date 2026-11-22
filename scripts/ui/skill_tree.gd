@@ -207,6 +207,11 @@ func _skill_button(sk: Dictionary) -> Button:
 	b.alignment = HORIZONTAL_ALIGNMENT_LEFT
 	b.custom_minimum_size = Vector2(0, 96)
 	b.text = "%s   %s\n%s" % [sk["name"], "●".repeat(r) + "○".repeat(int(sk["max"]) - r), sk["text"]]
+	# A skill about something that turns up later than its tier: when it opens, under its text.
+	var own := Defs.skill_gate(id)
+	if own > Defs.group_gate(Defs.skill_def(id)) and _save.lairs_beaten() < own:
+		b.text += "\nOpens in Chapter %s" % ROMAN[Defs.gate_chapter(own)]
+		b.modulate = Color(1, 1, 1, 0.45)
 	b.add_theme_font_size_override("font_size", 34)
 	b.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	b.size_flags_horizontal = Control.SIZE_EXPAND_FILL

@@ -60,7 +60,7 @@ const ENEMIES := {
 	"w": {"name": "Warden", "hp": 95, "spd": 0.9, "gold": 12, "r": 0.23, "armor": 1, "cap": 1, "ward": 1.4, "special": true},
 	"h": {"name": "Herald", "hp": 110, "spd": 0.85, "gold": 12, "r": 0.23, "armor": 1, "cap": 1, "haste": 0.35, "special": true},
 	"r": {"name": "Berserker", "hp": 180, "spd": 0.72, "gold": 14, "r": 0.26, "armor": 0, "cap": 1, "rage": 2.1},
-	"x": {"name": "Champion", "hp": 1150, "spd": 0.5, "gold": 80, "r": 0.38, "armor": 6, "cap": 3, "rally": "3f", "no_send": true, "send_as": "k"},
+	"x": {"name": "Champion", "hp": 950, "spd": 0.5, "gold": 80, "r": 0.38, "armor": 5, "cap": 3, "rally": "3f", "no_send": true, "send_as": "k"},
 	# Chapter III: the Drowned Marches
 	"m": {"name": "Fenwalker", "hp": 70, "spd": 1.15, "gold": 8, "r": 0.21, "armor": 0, "cap": 1, "wader": true},
 	"e": {"name": "Engineer", "hp": 110, "spd": 0.85, "gold": 14, "r": 0.23, "armor": 1, "cap": 1, "engineer": true, "special": true},
@@ -237,7 +237,8 @@ const NIGHT_HP := 0.85
 ## Skill points are stars: each mission's best rating gives 1 (Survived), 2 (Wicked) or 3 (Brilliant).
 ## A skill may set "tier" (default 1). Tiers open with the campaign: once the player has beaten
 ## this many lairs (TIER_BEATEN), so tier II comes with Chapter III and tier III with Chapter V; a
-## whole tree may wait for a chapter too (TREE_BEATEN: The Land with Chapter II). Beaten lairs stay
+## whole tree may wait for a chapter too (TREE_BEATEN: The Land with Chapter II). A skill about something
+## that first turns up later sets its own "beaten" gate (Sturdy Foundations: Chapter IV's siege heroes). Beaten lairs stay
 ## beaten, so a refund never locks anything.
 const TIER_BEATEN := {1: 0, 2: 20, 3: 40}
 const TREE_BEATEN := {"land": 10}
@@ -290,7 +291,7 @@ const SKILLS := {
 		{"id": "hoard_regen", "name": "Mana Spring", "text": "+0.15 mana per second", "max": 3},
 		{"id": "meteor_dmg", "name": "Starfall", "text": "+25% meteor damage", "max": 3},
 		{"id": "gem_magnet", "name": "Gem Magnet", "text": "Loose gems roll home 20% faster", "max": 3, "tier": 2},
-		{"id": "sturdy", "name": "Sturdy Foundations", "text": "Stun, Rubble and Silence weigh 15% less", "max": 3, "tier": 2},
+		{"id": "sturdy", "name": "Sturdy Foundations", "text": "Stun, Rubble and Silence weigh 15% less", "max": 3, "tier": 2, "beaten": 30},
 		{"id": "den_fury", "name": "Hoard's Fury", "text": "Den bolts +20% damage", "max": 5, "tier": 3},
 		{"id": "dragon_patience", "name": "Dragon's Patience", "text": "+10 starting mana", "max": 3, "tier": 3},
 	],
@@ -301,8 +302,8 @@ const SKILLS := {
 		{"id": "land_heights", "name": "Commanding Heights", "text": "Towers on raised tiles: +0.2 range, +5% damage", "max": 2},
 		{"id": "land_spoils", "name": "Spoils of War", "text": "Razing a hero building pays +15 gold", "max": 2},
 		{"id": "land_lantern", "name": "Lantern Oil", "text": "Lights reach 0.3 tiles further at night", "max": 3},
-		{"id": "land_flood", "name": "Floodmaster", "text": "Sluices recharge 20% faster; collapsing a bridge costs 5 mana less", "max": 2},
-		{"id": "land_rites", "name": "Black Rites", "text": "Dark Altars give +5% more damage", "max": 2},
+		{"id": "land_flood", "name": "Floodmaster", "text": "Sluices recharge 20% faster; collapsing a bridge costs 5 mana less", "max": 2, "beaten": 20},
+		{"id": "land_rites", "name": "Black Rites", "text": "Dark Altars give +5% more damage", "max": 2, "beaten": 20},
 	],
 }
 
@@ -327,6 +328,11 @@ static func skill_gate(id: String) -> int:
 	var sk := skill_def(id)
 	if sk.is_empty():
 		return 0
+	return maxi(group_gate(sk), int(sk.get("beaten", 0)))
+
+
+## The gate of a skill's tier and tree, without its own "beaten" gate.
+static func group_gate(sk: Dictionary) -> int:
 	return maxi(int(TIER_BEATEN.get(skill_tier(sk), 0)), int(TREE_BEATEN.get(sk["tree"], 0)))
 
 

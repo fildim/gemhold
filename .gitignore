@@ -18,3 +18,4 @@ build/
 
 # Stray engine data from test runs that set APPDATA to this folder
 /Godot/
+firestore-debug.log

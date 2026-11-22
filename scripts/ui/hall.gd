@@ -129,6 +129,12 @@ func open() -> void:
 	Prefs.set_value("hall_seen", true)
 
 
+## Straight to the Race page (the map's Race button).
+func open_race() -> void:
+	open()
+	_show_tab(3)
+
+
 func _show_tab(i: int) -> void:
 	Sfx.play("click")
 	for k in _pages.size():

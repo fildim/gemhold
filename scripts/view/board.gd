@@ -1340,6 +1340,16 @@ func _draw_paving() -> void:
 			var a := clampf((float(p["until"]) - sim.time) / 4.0, 0.0, 1.0)
 			var d := float(p["from"])
 			var n := 0
+			# A grey stone strip down the road first, so the stretch reads as paving, not loose lines.
+			if float(p["to"]) - d > 0.05:
+				var strip := PackedVector2Array()
+				var s := d
+				while s < float(p["to"]):
+					strip.append(level.path_pos(i, s) * T)
+					s += 0.25
+				strip.append(level.path_pos(i, float(p["to"])) * T)
+				_fl.draw_polyline(strip, Color(0.33, 0.31, 0.29, 0.55 * a), T * 0.62)
+				_fl.draw_polyline(strip, Color(0.58, 0.55, 0.5, 0.5 * a), T * 0.5)
 			while d < float(p["to"]):
 				var q := level.path_pos(i, d) * T
 				var side := (Paint.hash01(i, n, 5) - 0.5) * T * 0.4

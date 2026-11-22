@@ -25,6 +25,7 @@ var waves: Array = []    # Array of Array[String] hero codes
 var wave_roads: Array = []   # parallel to waves: Array[int] of road indexes the wave may use; empty = every land road
 var wave_cargo: Array = []   # parallel to waves: {road index (String) -> Array[String] hero codes} carried by boats
 var wave_walk: Array = []    # parallel to waves: Array[int] of land roads its walkers are dealt over
+var wave_deal: Array = []    # parallel to waves: wave_walk with the long roads twice (see deal)
 var night := false       # only lit tiles can be built on (set for night missions)
 var hp_mul := 1.0        # hero health multiplier, so later levels can be tougher
 var night_hp := Defs.NIGHT_HP   # hero health factor on the night mission ("night_hp" in the file; most lairs keep the default)
@@ -155,6 +156,8 @@ func _parse(d: Dictionary) -> void:
 			if land_roads.has(r):
 				walk.append(r)
 		wave_walk.append(walk if not walk.is_empty() else land_roads)
+	for walk: Array[int] in wave_walk:
+		wave_deal.append(deal(walk))
 	var rivers: Array[int] = []
 	for i in path_kind.size():
 		if path_kind[i] == "river":
@@ -390,3 +393,18 @@ func _find_crossings() -> void:
 					todo.append(n)
 		crossing_cells.append(group)
 		crossing_kind.append("bridge" if kind == "water" else "ford")
+
+
+## Land roads shorter than this (tiles, edge to den) leave towers too little room, so when a wave
+## also walks longer roads, a short one gets only half a share of its heroes.
+const SHORT_ROAD := 7.0
+
+
+## The order heroes are dealt over `roads`: every road once, then the long ones again, so a short
+## road gets one hero for every two on a long one. Only short roads: plain round-robin.
+func deal(roads: Array[int]) -> Array[int]:
+	var out: Array[int] = roads.duplicate()
+	for r in roads:
+		if float(paths[r]["total"]) >= SHORT_ROAD:
+			out.append(r)
+	return out if out.size() > roads.size() else roads

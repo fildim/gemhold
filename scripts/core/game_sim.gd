@@ -482,6 +482,16 @@ func call_early() -> int:
 	# The skipped seconds also pay the mana they would have regenerated.
 	var gain := minf(mana_max - mana, timer * mana_regen())
 	mana += maxf(0.0, gain)
+	# And owned gold mines pay what they would have dug in that time.
+	var dug := 0
+	for s: Site in sites.values():
+		if s.owned and s.kind == "mine":
+			var every: float = Defs.SITES["mine"]["every"]
+			dug += int((s.t + timer) / every) * mine_gold()
+			s.t = fmod(s.t + timer, every)
+	gold += dug
+	if dug > 0:
+		_text(level.lair_center + Vector2(0, 0.2), "+%d mines" % dug, Color("e8b84a"))
 	if bonus > 0:
 		_text(level.lair_center + Vector2(0, -1), "+%d early" % bonus, Color("e8b84a"))
 	if gain >= 1.0:
@@ -520,8 +530,9 @@ func _spawn(code: String, path := -1, dist := 0.0, w := 0) -> void:
 		e.path = airs[air_lane % airs.size()]
 		air_lane += 1
 	elif path < 0:
-		# Dealt round-robin over the land roads its wave may use (every land road unless it names some).
-		var roads: Array[int] = level.wave_walk[w - 1] if w > 0 and w <= level.wave_walk.size() else level.land_roads
+		# Dealt round-robin over the land roads its wave may use (every land road unless it names some),
+		# short roads at half a share (Level.deal).
+		var roads: Array[int] = level.wave_deal[w - 1] if w > 0 and w <= level.wave_deal.size() else level.deal(level.land_roads)
 		e.path = roads[lane % roads.size()]
 		lane += 1
 	else:
@@ -1976,6 +1987,14 @@ func cell_info(c: Vector2i) -> Dictionary:
 		var txt := "Damage %d, range %.1f\n" % [int(tw.stat("dmg")), tw.stat("range")]
 		if d["kind"] == "beam":
 			txt = "Burns %d to %d per second as it heats, range %.1f\n" % [int(tw.stat("dmg")), int(tw.stat("dmg") * (Defs.HEAT_MAX + 0.4 * skill("ash_core"))), tw.stat("range")]
+		# Battle-hardened ranks: what the tower's experience has given it so far.
+		var ranks: int = Defs.TOWER_XP_RANKS.size()
+		var prev_xp: float = Defs.TOWER_XP_RANKS[tw.rank - 1] if tw.rank > 0 else 0.0
+		if tw.rank >= ranks:
+			txt += "Battle-hardened %d/%d: +%d%% damage\n" % [tw.rank, ranks, roundi(100.0 * Defs.RANK_DMG * tw.rank)]
+		else:
+			txt += "Battle-hardened %d/%d: +%d%% damage (%d%% to the next rank)\n" % [tw.rank, ranks, roundi(100.0 * Defs.RANK_DMG * tw.rank),
+				clampi(roundi(100.0 * (tw.xp - prev_xp) / (float(Defs.TOWER_XP_RANKS[tw.rank]) - prev_xp)), 0, 99)]
 		if tw.has_ability():
 			txt += "%s: %s" % [ab["name"], ab["text"]]
 		else:

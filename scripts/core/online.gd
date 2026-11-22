@@ -323,6 +323,34 @@ func top(field: String, limit := 50) -> Variant:
 	return rows
 
 
+# ---------------------------------------------------------------- feedback
+# A player's message from the Info page: feedback/<random id> {text, version, platform, created},
+# plus name and uid when signed in. Anyone may write one, nobody can read them back from the game
+# (the owner reads them in the Firebase console). Limits are in firestore.rules.
+
+const FEEDBACK_MAX := 2000   # characters in one message
+
+## Sends a feedback message. Returns "" when it arrived, or a message for the player.
+func send_feedback(text: String) -> String:
+	text = text.strip_edges()
+	if text == "":
+		return "Write something first"
+	text = text.left(FEEDBACK_MAX)
+	var id := ""
+	for i in 20:
+		id += "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"[randi() % 62]
+	var f := {"text": text, "version": str(ProjectSettings.get_setting("application/config/version", "")).left(20),
+		"platform": OS.get_name().left(20)}
+	if signed_in():
+		f["name"] = player_name
+		f["uid"] = uid
+	var doc := {"name": "projects/%s/databases/(default)/documents/feedback/%s" % [PROJECT, id], "fields": _typed_fields(f)}
+	var body := {"writes": [{"update": doc, "currentDocument": {"exists": false},
+		"updateTransforms": [{"fieldPath": "created", "setToServerValue": "REQUEST_TIME"}]}]}
+	var r := await _call("POST", _docs + ":commit", body, signed_in())
+	return "" if r["ok"] else str(r["error"])
+
+
 # ---------------------------------------------------------------- races
 # A race is one document, races/<code>: {host, host_name, level, state, created, h} from the host,
 # then {guest, guest_name, g} when a rival joins and state turns "on". h and g are each racer's
