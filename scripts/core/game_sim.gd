@@ -212,6 +212,7 @@ var timer := 0.0
 var queue: Array[String] = []
 var queue_wave: Array[int] = []   # the wave each queued hero belongs to
 var threat := 1.0         # dynamic difficulty: multiplies hero health, see _judge_wave
+var threat_seen := {}     # wave -> [sum of threat, heroes]: what the heroes of each wave got (measuring)
 var wave_left := {}       # wave -> its heroes still queued or on the map
 var wave_peak := {}       # wave -> most of the defended road any of its heroes got through
 var wave_live := {}       # wave -> threat already added by its heroes falling early (_judge_kill)
@@ -508,6 +509,8 @@ func _spawn(code: String, path := -1, dist := 0.0, w := 0) -> void:
 	e.wave = w
 	e.d = d
 	var mul := level.hp_mul * (1.0 + Defs.WAVE_HP_SCALE * maxi(0, wave - 1)) * threat
+	var seen: Array = threat_seen.get(wave, [0.0, 0])
+	threat_seen[wave] = [seen[0] + threat, seen[1] + 1]
 	if level.night:
 		mul *= level.night_hp
 	if race_on:
