@@ -8,6 +8,7 @@ Dropped: an App Store (iOS) release (owner, 2026-11-21).
 
 - [x] Upload the 0.9.5 bundle (version code 28) to the Play **Alpha** track (2026-11-22; product `remove_ads` active at €3.99 incl. VAT).
 - [x] Upload the 0.9.6 bundle (version code 29) to the Play **Alpha** track (2026-11-22, full rollout, in review).
+- [ ] Upload the 0.9.7 bundle (`build/gemhold-0.9.7.aab`, version code 30) to the Play **Alpha** track (published everywhere else 2026-11-22: race challenges, no battle frame cap).
 - [ ] Apply for Google Play **production** once the 14-day closed test is over (from about 2026-12-02).
 - [ ] Try the **ads** on a real phone (built in `scripts/core/ads.gd`, "Android Play" preset only).
 - [x] **Google Play: one purchase only, Remove ads** (owner, 2026-11-21): one-time, €3.99 (owner, 2026-11-21); no chapter purchases, no subscription. Needs the Google Play Billing plugin, a payments profile and a Restore purchases button; the full game stays free with ads.
