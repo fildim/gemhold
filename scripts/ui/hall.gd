@@ -277,10 +277,8 @@ func _add_row(place: int, r: Dictionary) -> void:
 	row.add_theme_constant_override("separation", 16)
 	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	col.add_child(row)
-	# Tapping a player shows their best score on every lair.
-	var detail := _label(col, _lair_scores(r["scores"]), 24, Hud.DIM)
-	detail.visible = false
-	var extras: Array[Control] = [detail]
+	# Tapping another player (when signed in) shows only the button to challenge them.
+	var extras: Array[Control] = []
 	if _online.signed_in() and not me:   # challenge them to a race at a time you both pick
 		var ch := Button.new()
 		ch.text = "Challenge %s to a race" % r["name"]
@@ -301,9 +299,9 @@ func _add_row(place: int, r: Dictionary) -> void:
 		if ev is InputEventMouseButton and ev.button_index == MOUSE_BUTTON_LEFT:
 			if ev.pressed:
 				down[0] = ev.position
-			elif ev.position.distance_to(down[0]) < 20.0:
+			elif ev.position.distance_to(down[0]) < 20.0 and not extras.is_empty():
 				Sfx.play("click")
-				var show := not detail.visible
+				var show := not extras[0].visible
 				for x: Control in extras:
 					x.visible = show)
 	var medal: Color = [Hud.GOLD, Color("cfd6e0"), Color("d08a4a")][place - 1] if place <= 3 else Hud.DIM
@@ -325,19 +323,6 @@ func _add_row(place: int, r: Dictionary) -> void:
 	v.custom_minimum_size.x = 150
 	v.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	v.autowrap_mode = TextServer.AUTOWRAP_OFF
-
-
-## One player's per-lair bests (score_key → points) as a line per lair, campaign order.
-func _lair_scores(scores: Dictionary) -> String:
-	var lines := []
-	for i in _levels.size():
-		var id: String = _levels[i]["id"]
-		var day := int(scores.get(Online.score_key(id), 0))
-		var night := int(scores.get(Online.score_key(SaveData.mission_id(id, true)), 0))
-		if day > 0 or night > 0:
-			lines.append("Lair %d: %s   —   day %s  ·  night %s" % [i + 1, _levels[i]["title"],
-				Hud._thousands(day) if day > 0 else "–", Hud._thousands(night) if night > 0 else "–"])
-	return "\n".join(lines) if lines else "No lair won yet."
 
 
 # ---------------------------------------------------------------- achievements
