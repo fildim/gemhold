@@ -7,6 +7,11 @@ var frames := 0
 const SAVE := "user://scene_test_save.json"
 
 func _initialize() -> void:
+	# Never the live account: the game signs in and syncs as it starts, which would merge the
+	# player's progress in (and could upload test data). Online reads its account file on _ready.
+	node_added.connect(func(n: Node) -> void:
+		if n is Online:
+			n.path = "user://test_account_none.cfg")
 	main = load("res://scenes/main.tscn").instantiate()
 	root.add_child(main)
 
@@ -15,6 +20,7 @@ func _process(_delta: float) -> bool:
 	if frames == 3:
 		assert(main.on_map and main.select.visible, "game should open on the level map")
 		main.save.path = SAVE   # never touch the real save file
+		main.save.skills = {}   # the player's Dark Arts would change ranges and costs checked below
 		Prefs.path = "user://scene_test_settings.cfg"
 		Prefs.set_value("tutorial_done", true)   # tips freeze the battle; tutorial_test covers them
 		main._choose(0)

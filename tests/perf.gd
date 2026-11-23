@@ -67,6 +67,10 @@ func _initialize() -> void:
 	DisplayServer.window_set_position(Vector2i(0, 0))
 	DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
 	Engine.max_fps = 0
+	# Never the live account: the game signs in and syncs as it starts.
+	node_added.connect(func(n: Node) -> void:
+		if n is Online:
+			n.path = "user://test_account_none.cfg")
 	main = load("res://scenes/main.tscn").instantiate()
 	root.add_child(main)
 	main.fps_cap = false   # measure uncapped

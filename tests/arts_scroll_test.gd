@@ -19,6 +19,11 @@ func _check(cond: bool, what: String) -> void:
 
 
 func _initialize() -> void:
+	# Never the live account: the game signs in and syncs as it starts, which would merge the
+	# player's progress in (and could upload test data). Online reads its account file on _ready.
+	node_added.connect(func(n: Node) -> void:
+		if n is Online:
+			n.path = "user://test_account_none.cfg")
 	main = load("res://scenes/main.tscn").instantiate()
 	root.add_child(main)
 
