@@ -68,6 +68,7 @@ func setup(hud: Control) -> void:
 	list_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	list_scroll.size_flags_stretch_ratio = 0.36
 	split.add_child(list_scroll)
+	TouchScroll.wire(list_scroll)
 	var list := VBoxContainer.new()
 	list.add_theme_constant_override("separation", 6)
 	list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -131,6 +132,7 @@ func setup(hud: Control) -> void:
 	_body_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	_body_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	cbox.add_child(_body_scroll)
+	TouchScroll.wire(_body_scroll)   # the text too: a RichTextLabel catches touches
 	_body = RichTextLabel.new()
 	_body.bbcode_enabled = true
 	_body.fit_content = true

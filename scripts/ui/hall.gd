@@ -203,6 +203,7 @@ func _build_board() -> Control:
 	again.pressed.connect(_load_board)
 	_board_note = _label(page, "", 24, Hud.DIM)
 	var scroll := ScrollContainer.new()
+	TouchScroll.wire(scroll)   # drags that start on a button or card still scroll
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	page.add_child(scroll)
@@ -329,6 +330,7 @@ func _build_achievements() -> Control:
 	page.add_theme_constant_override("separation", 12)
 	_ach_count = _label(page, "", 28, Hud.GOLD, _hud.bold_font)
 	var scroll := ScrollContainer.new()
+	TouchScroll.wire(scroll)   # drags that start on a button or card still scroll
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	page.add_child(scroll)
@@ -374,6 +376,7 @@ func _refresh_achievements() -> void:
 
 func _build_account() -> Control:
 	var scroll := ScrollContainer.new()
+	TouchScroll.wire(scroll)   # drags that start on a button or card still scroll
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	var center := CenterContainer.new()
 	center.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -517,6 +520,7 @@ func _delete() -> void:
 
 func _build_race() -> Control:
 	var scroll := ScrollContainer.new()
+	TouchScroll.wire(scroll)   # drags that start on a button or card still scroll
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	var center := CenterContainer.new()
 	center.size_flags_horizontal = Control.SIZE_EXPAND_FILL

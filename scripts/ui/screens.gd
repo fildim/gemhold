@@ -39,6 +39,7 @@ static func page(host: Control, hud: Control, title_text: String, back_text: Str
 	b.pressed.connect(back)
 	head.add_child(b)
 	var scroll := ScrollContainer.new()
+	TouchScroll.wire(scroll)   # drags that start on a button or card still scroll
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	outer.add_child(scroll)

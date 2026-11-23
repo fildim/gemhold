@@ -13,7 +13,6 @@ const TIER_NAMES := {1: "Tier I", 2: "Tier II", 3: "Tier III"}
 const ROMAN := ["", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"]
 ## Shown as a tip the first time Dark Arts opens (see main.gd), instead of taking up the screen.
 const INTRO := "[b]Dark Arts[/b] are your skills. [b]Every star is a skill point:[/b] each lair's best rating gives ★ Survived, ★★ Wicked or ★★★ Brilliant, and night missions earn their own.\n\nTap a skill to buy a rank; the dots show ranks bought and left. [b]Tower skills[/b] apply to towers you build from then on. [b]The Hoard[/b] tab powers your den and gives every battle more starting gold or mana. [b]Refund all points[/b] gives them back to spend again."
-const DRAG_PX := 16.0   # a finger moving further than this is scrolling, not tapping
 const TREE_COLORS := {"moss": Color("8fb35a"), "frost": Color("9fd8f0"), "ash": Color("ff8a3a"), "den": Color("ff7a90"), "land": Color("c9a86a")}
 
 var _hud: Control
@@ -44,6 +43,7 @@ func setup(hud: Control, save: SaveData) -> void:
 	scroll.set_anchors_preset(Control.PRESET_FULL_RECT)
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	add_child(scroll)
+	TouchScroll.wire(scroll)
 	var margin := MarginContainer.new()
 	margin.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	for side in ["left", "right", "top", "bottom"]:
@@ -103,6 +103,7 @@ func setup(hud: Control, save: SaveData) -> void:
 	strip.custom_minimum_size = Vector2(0, 76)
 	strip.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	box.add_child(strip)
+	TouchScroll.wire(strip)
 	_tabs = HBoxContainer.new()
 	_tabs.add_theme_constant_override("separation", 10)
 	_tabs.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -158,7 +159,7 @@ func _tab_button(tree: String) -> Button:
 	b.add_theme_color_override("font_hover_pressed_color", TREE_COLORS[tree])
 	b.custom_minimum_size = Vector2(0, 72)
 	b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_tap(b, func() -> void:
+	b.pressed.connect(func() -> void:
 		_tab = tree
 		refresh())
 	return b
@@ -240,28 +241,8 @@ func _skill_button(sk: Dictionary) -> Button:
 	ic.offset_top = -39
 	ic.offset_bottom = 39
 	b.add_child(ic)
-	_tap(b, _show_mastery.bind(sk) if info else _on_buy.bind(id))
+	b.pressed.connect(_show_mastery.bind(sk) if info else _on_buy.bind(id))
 	return b
-
-
-## Makes a button in a scrolling list tappable without blocking the scroll: a drag that starts on
-## it (even a disabled one) still slides the list, and a press that turned into a drag doesn't count.
-func _tap(b: Button, on_tap: Callable) -> void:
-	b.mouse_filter = Control.MOUSE_FILTER_PASS
-	b.gui_input.connect(func(ev: InputEvent) -> void:
-		if ev is InputEventMouseButton and ev.button_index == MOUSE_BUTTON_LEFT and ev.pressed:
-			b.set_meta("down", ev.global_position)
-			b.set_meta("dragged", false)
-		elif ev is InputEventMouseMotion and b.has_meta("down"):
-			if ev.global_position.distance_to(b.get_meta("down")) > DRAG_PX:
-				b.set_meta("dragged", true))
-	b.pressed.connect(func() -> void:
-		if b.get_meta("dragged", false):
-			b.set_meta("dragged", false)
-			if b.toggle_mode:
-				b.set_pressed_no_signal(not b.button_pressed)
-			return
-		on_tap.call())
 
 
 ## The level IV tower a mastery skill opens, explained, with Learn and Cancel.
