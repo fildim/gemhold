@@ -1,0 +1,150 @@
+Mossfold Pass, 0 skill points: won=true rank=Wicked lost=0 wave=12/12 towers=12 gold=54 ranks={ 1: 3, 0: 1, 3: 3, 2: 5 } score=1554
+Mossfold Pass, 0 skill points: won=true rank=Wicked lost=0 wave=12/12 towers=12 gold=54 ranks={ 1: 3, 0: 1, 3: 3, 2: 5 } score=1554
+Mossfold Pass (night), 3 skill points: won=true rank=Brilliant lost=0 wave=12/12 towers=12 gold=94 ranks={ 1: 6, 2: 4, 3: 2 } score=3141
+Rimewater Ford, 0 skill points: won=true rank=Brilliant lost=0 wave=12/12 towers=12 gold=98 ranks={ 1: 3, 2: 4, 0: 2, 3: 3 } score=2308
+Rimewater Ford, 2 skill points: won=true rank=Brilliant lost=0 wave=12/12 towers=13 gold=27 ranks={ 2: 5, 0: 4, 3: 2, 1: 2 } score=2230
+Rimewater Ford (night), 5 skill points: won=true rank=Brilliant lost=0 wave=12/12 towers=10 gold=74 ranks={ 2: 8, 3: 1, 0: 1 } score=3422
+Gloamwood Hollow, 0 skill points: won=true rank=Brilliant lost=0 wave=14/14 towers=18 gold=50 ranks={ 1: 4, 3: 12, 2: 1, 0: 1 } score=2460
+Gloamwood Hollow, 5 skill points: won=true rank=Brilliant lost=0 wave=14/14 towers=17 gold=105 ranks={ 1: 3, 3: 11, 2: 2, 0: 1 } score=2526
+Gloamwood Hollow (night), 8 skill points: won=true rank=Brilliant lost=0 wave=14/14 towers=18 gold=86 ranks={ 1: 3, 3: 11, 2: 3, 0: 1 } score=3755
+Thornback Ridge, 0 skill points: won=true rank=Wicked lost=0 wave=14/14 towers=19 gold=10 ranks={ 2: 5, 3: 11, 1: 1, 0: 2 } score=1963
+Thornback Ridge, 7 skill points: won=true rank=Brilliant lost=0 wave=14/14 towers=20 gold=61 ranks={ 1: 4, 3: 11, 2: 3, 0: 2 } score=2679
+Thornback Ridge (night), 10 skill points: won=true rank=Wicked lost=0 wave=14/14 towers=17 gold=26 ranks={ 1: 3, 3: 7, 2: 3, 0: 4 } score=2976
+Cinderfall Steps, 0 skill points: won=true rank=Survived lost=4 wave=15/15 towers=22 gold=117 ranks={ 3: 18, 2: 1, 1: 2, 0: 1 } score=444
+Cinderfall Steps, 10 skill points: won=true rank=Wicked lost=0 wave=15/15 towers=23 gold=10 ranks={ 3: 15, 2: 4, 1: 2, 0: 2 } score=2114
+Cinderfall Steps (night), 13 skill points: won=true rank=Wicked lost=0 wave=15/15 towers=22 gold=89 ranks={ 3: 15, 2: 3, 0: 4 } score=3337
+Saltmarsh Crossing, 0 skill points: won=true rank=Survived lost=4 wave=14/14 towers=18 gold=62 ranks={ 2: 8, 3: 8, 0: 2 } score=393
+Saltmarsh Crossing, 12 skill points: won=true rank=Wicked lost=0 wave=14/14 towers=18 gold=10 ranks={ 1: 4, 0: 2, 3: 9, 2: 3 } score=2265
+Saltmarsh Crossing (night), 15 skill points: won=true rank=Wicked lost=0 wave=14/14 towers=18 gold=131 ranks={ 1: 7, 0: 2, 3: 5, 2: 4 } score=3670
+Emberfen, 0 skill points: won=true rank=Survived lost=1 wave=15/15 towers=18 gold=44 ranks={ 3: 14, 2: 2, 1: 1, 0: 1 } score=1350
+Emberfen, 14 skill points: won=true rank=Wicked lost=0 wave=15/15 towers=19 gold=129 ranks={ 3: 15, 1: 2, 2: 1, 0: 1 } score=2606
+Emberfen (night), 17 skill points: won=true rank=Brilliant lost=0 wave=15/15 towers=17 gold=21 ranks={ 3: 14, 2: 2, 0: 1 } score=4850
+The Iron Column, 0 skill points: won=false rank=Plundered lost=5 wave=9/14 towers=11 gold=10 ranks={ 3: 5, 2: 4, 1: 1, 0: 1 } score=0
+The Iron Column, 17 skill points: won=true rank=Wicked lost=0 wave=14/14 towers=24 gold=39 ranks={ 3: 17, 2: 3, 1: 1, 0: 3 } score=2616
+The Iron Column (night), 20 skill points: won=true rank=Wicked lost=0 wave=14/14 towers=21 gold=152 ranks={ 3: 15, 2: 3, 1: 1, 0: 2 } score=4213
+The Three Gates, 0 skill points: won=false rank=Plundered lost=5 wave=4/15 towers=8 gold=30 ranks={ 2: 3, 1: 3, 0: 2 } score=0
+The Three Gates, 19 skill points: won=true rank=Wicked lost=0 wave=15/15 towers=26 gold=9 ranks={ 3: 20, 1: 3, 0: 3 } score=2716
+The Three Gates (night), 22 skill points: won=true rank=Wicked lost=0 wave=15/15 towers=22 gold=2 ranks={ 3: 17, 2: 3, 1: 1, 0: 1 } score=4055
+Gloomspire Summit, 0 skill points: won=false rank=Plundered lost=5 wave=4/16 towers=7 gold=64 ranks={ 2: 4, 1: 2, 0: 1 } score=0
+Gloomspire Summit, 22 skill points: won=true rank=Wicked lost=0 wave=16/16 towers=30 gold=70 ranks={ 3: 21, 2: 5, 1: 2, 0: 2 } score=2983
+Gloomspire Summit (night), 25 skill points: won=true rank=Wicked lost=0 wave=16/16 towers=28 gold=81 ranks={ 3: 19, 2: 6, 1: 1, 0: 2 } score=4506
+Heraldmoor, 0 skill points: won=false rank=Plundered lost=5 wave=3/16 towers=5 gold=33 ranks={ 1: 3, 2: 1, 0: 1 } score=0
+Heraldmoor, 24 skill points: won=true rank=Survived lost=2 wave=16/16 towers=29 gold=181 ranks={ 3: 23, 2: 1, 1: 2, 0: 3 } score=1562
+Heraldmoor (night), 27 skill points: won=true rank=Survived lost=4 wave=16/16 towers=24 gold=18 ranks={ 3: 19, 2: 2, 0: 3 } score=654
+Frostfang Pass, 0 skill points: won=false rank=Plundered lost=5 wave=4/16 towers=6 gold=45 ranks={ 1: 6 } score=0
+Frostfang Pass, 26 skill points: won=true rank=Wicked lost=0 wave=16/16 towers=22 gold=58 ranks={ 3: 19, 2: 1, 1: 2 } score=3272
+Frostfang Pass (night), 29 skill points: won=true rank=Wicked lost=0 wave=16/16 towers=22 gold=224 ranks={ 3: 18, 1: 2, 0: 2 } score=5431
+Redwater Crossing, 0 skill points: won=false rank=Plundered lost=5 wave=4/16 towers=6 gold=7 ranks={ 2: 1, 1: 5 } score=0
+Redwater Crossing, 29 skill points: won=true rank=Wicked lost=0 wave=16/16 towers=29 gold=0 ranks={ 3: 24, 2: 3, 1: 1, 0: 1 } score=3300
+Redwater Crossing (night), 32 skill points: won=true rank=Survived lost=3 wave=16/16 towers=27 gold=212 ranks={ 3: 24, 2: 1, 0: 2 } score=2020
+The Sunken Abbey, 0 skill points: won=false rank=Plundered lost=5 wave=3/16 towers=5 gold=11 ranks={ 1: 4, 0: 1 } score=0
+The Sunken Abbey, 31 skill points: won=true rank=Survived lost=3 wave=16/16 towers=28 gold=43 ranks={ 3: 21, 2: 3, 1: 2, 0: 2 } score=1019
+The Sunken Abbey (night), 34 skill points: won=true rank=Survived lost=2 wave=16/16 towers=27 gold=43 ranks={ 3: 22, 2: 2, 1: 2, 0: 1 } score=2218
+The Champion's Road, 0 skill points: won=false rank=Plundered lost=5 wave=6/17 towers=8 gold=2 ranks={ 3: 2, 2: 1, 1: 4, 0: 1 } score=0
+The Champion's Road, 34 skill points: won=true rank=Survived lost=1 wave=17/17 towers=31 gold=111 ranks={ 3: 28, 2: 1, 0: 1, 1: 1 } score=2186
+The Champion's Road (night), 37 skill points: won=true rank=Survived lost=3 wave=17/17 towers=32 gold=122 ranks={ 3: 24, 1: 2, 2: 4, 0: 2 } score=1879
+Ashen Maze, 0 skill points: won=false rank=Plundered lost=5 wave=2/17 towers=4 gold=46 ranks={ 1: 3, 0: 1 } score=0
+Ashen Maze, 36 skill points: won=true rank=Survived lost=3 wave=17/17 towers=37 gold=37 ranks={ 3: 29, 2: 4, 0: 4 } score=1093
+Ashen Maze (night), 39 skill points: won=true rank=Survived lost=2 wave=17/17 towers=33 gold=21 ranks={ 3: 26, 2: 2, 0: 5 } score=2329
+Howling Steppe, 0 skill points: won=false rank=Plundered lost=5 wave=3/17 towers=5 gold=23 ranks={ 1: 4, 0: 1 } score=0
+Howling Steppe, 38 skill points: won=true rank=Survived lost=3 wave=17/17 towers=33 gold=40 ranks={ 3: 29, 2: 1, 1: 1, 0: 2 } score=1144
+Howling Steppe (night), 41 skill points: won=true rank=Survived lost=4 wave=17/17 towers=36 gold=1772 ranks={ 3: 25, 0: 11 } score=7691
+Lanternfall Vale, 0 skill points: won=false rank=Plundered lost=5 wave=2/18 towers=5 gold=63 ranks={ 1: 5 } score=0
+Lanternfall Vale, 41 skill points: won=true rank=Survived lost=4 wave=18/18 towers=40 gold=40 ranks={ 3: 33, 2: 4, 0: 3 } score=648
+Lanternfall Vale (night), 44 skill points: won=true rank=Survived lost=3 wave=18/18 towers=34 gold=71 ranks={ 3: 29, 1: 2, 2: 2, 0: 1 } score=1908
+The Last Bridge, 0 skill points: won=false rank=Plundered lost=5 wave=2/18 towers=4 gold=49 ranks={ 1: 3, 0: 1 } score=0
+The Last Bridge, 43 skill points: won=true rank=Survived lost=4 wave=18/18 towers=48 gold=96 ranks={ 3: 40, 2: 1, 1: 1, 0: 6 } score=829
+The Last Bridge (night), 46 skill points: won=true rank=Survived lost=3 wave=18/18 towers=50 gold=185 ranks={ 3: 28, 1: 2, 2: 8, 0: 12 } score=2457
+The Hoard Throne, 0 skill points: won=false rank=Plundered lost=5 wave=2/20 towers=4 gold=2 ranks={ 0: 3, 1: 1 } score=0
+The Hoard Throne, 46 skill points: won=false rank=Plundered lost=5 wave=4/20 towers=8 gold=67 ranks={ 2: 6, 1: 2 } score=0
+The Hoard Throne (night), 49 skill points: won=true rank=Survived lost=1 wave=20/20 towers=48 gold=99 ranks={ 3: 41, 2: 3, 1: 2, 0: 2 } score=3911
+Reedmere Ford, 0 skill points: won=false rank=Plundered lost=5 wave=3/14 towers=6 gold=66 ranks={ 2: 1, 1: 4, 0: 1 } score=0
+Reedmere Ford, 48 skill points: won=true rank=Wicked lost=0 wave=14/14 towers=21 gold=16 ranks={ 3: 16, 2: 1, 1: 1, 0: 3 } score=4548
+Reedmere Ford (night), 51 skill points: won=true rank=Wicked lost=0 wave=14/14 towers=25 gold=301 ranks={ 3: 12, 1: 6, 0: 7 } score=8105
+Twin Bridges, 0 skill points: won=false rank=Plundered lost=5 wave=4/15 towers=6 gold=25 ranks={ 1: 6 } score=0
+Twin Bridges, 50 skill points: won=false rank=Plundered lost=5 wave=4/15 towers=9 gold=8 ranks={ 2: 7, 3: 1, 0: 1 } score=0
+Twin Bridges (night), 53 skill points: won=true rank=Survived lost=2 wave=15/15 towers=22 gold=119 ranks={ 3: 17, 2: 1, 1: 2, 0: 2 } score=3343
+Rainmoor, 0 skill points: won=false rank=Plundered lost=5 wave=5/15 towers=7 gold=22 ranks={ 3: 1, 2: 4, 1: 2 } score=0
+Rainmoor, 53 skill points: won=true rank=Wicked lost=0 wave=15/15 towers=22 gold=5 ranks={ 3: 21, 0: 1 } score=4816
+Rainmoor (night), 56 skill points: won=true rank=Wicked lost=0 wave=15/15 towers=19 gold=218 ranks={ 3: 18, 0: 1 } score=8246
+The Sunken Causeway, 0 skill points: won=false rank=Plundered lost=5 wave=3/16 towers=8 gold=6 ranks={ 1: 4, 0: 4 } score=0
+The Sunken Causeway, 55 skill points: won=true rank=Survived lost=2 wave=16/16 towers=27 gold=84 ranks={ 3: 20, 2: 3, 1: 2, 0: 2 } score=2257
+The Sunken Causeway (night), 58 skill points: won=true rank=Wicked lost=0 wave=16/16 towers=22 gold=9 ranks={ 2: 2, 3: 16, 1: 3, 0: 1 } score=7470
+Oarsmen's Reach, 0 skill points: won=false rank=Plundered lost=5 wave=4/16 towers=7 gold=50 ranks={ 1: 4, 0: 3 } score=0
+Oarsmen's Reach, 58 skill points: won=true rank=Wicked lost=0 wave=16/16 towers=24 gold=69 ranks={ 3: 17, 2: 4, 0: 3 } score=5335
+Oarsmen's Reach (night), 61 skill points: won=true rank=Wicked lost=0 wave=16/16 towers=22 gold=61 ranks={ 3: 16, 2: 4, 0: 2 } score=7961
+Blackwater Fen, 0 skill points: won=false rank=Plundered lost=5 wave=3/16 towers=4 gold=1 ranks={ 1: 3, 0: 1 } score=0
+Blackwater Fen, 60 skill points: won=true rank=Survived lost=2 wave=16/16 towers=17 gold=65 ranks={ 3: 16, 0: 1 } score=2328
+Blackwater Fen (night), 63 skill points: won=true rank=Wicked lost=0 wave=16/16 towers=18 gold=236 ranks={ 3: 16, 1: 1, 0: 1 } score=9114
+Sluicegate, 0 skill points: won=false rank=Plundered lost=5 wave=3/17 towers=5 gold=48 ranks={ 1: 2, 0: 3 } score=0
+Sluicegate, 62 skill points: won=true rank=Wicked lost=0 wave=17/17 towers=27 gold=21 ranks={ 3: 22, 2: 3, 0: 2 } score=5476
+Sluicegate (night), 65 skill points: won=true rank=Wicked lost=0 wave=17/17 towers=30 gold=180 ranks={ 3: 24, 2: 3, 0: 3 } score=9072
+Tidewrack Flats, 0 skill points: won=false rank=Plundered lost=5 wave=2/17 towers=3 gold=8 ranks={ 1: 3 } score=0
+Tidewrack Flats, 65 skill points: won=true rank=Survived lost=1 wave=17/17 towers=20 gold=219 ranks={ 3: 18, 2: 1, 1: 1 } score=3770
+Tidewrack Flats (night), 68 skill points: won=true rank=Wicked lost=0 wave=17/17 towers=34 gold=188 ranks={ 3: 12, 2: 5, 0: 15, 1: 2 } score=9368
+The Flooded Abbey, 0 skill points: won=false rank=Plundered lost=5 wave=4/18 towers=5 gold=0 ranks={ 1: 3, 2: 1, 0: 1 } score=0
+The Flooded Abbey, 67 skill points: won=true rank=Wicked lost=0 wave=18/18 towers=28 gold=18 ranks={ 3: 20, 2: 2, 0: 5, 1: 1 } score=5768
+The Flooded Abbey (night), 70 skill points: won=true rank=Wicked lost=0 wave=18/18 towers=24 gold=268 ranks={ 3: 21, 2: 2, 0: 1 } score=10078
+Maelstrom Gate, 0 skill points: won=false rank=Plundered lost=5 wave=4/18 towers=7 gold=24 ranks={ 1: 6, 0: 1 } score=0
+Maelstrom Gate, 70 skill points: won=true rank=Wicked lost=0 wave=18/18 towers=29 gold=48 ranks={ 3: 28, 0: 1 } score=6037
+Maelstrom Gate (night), 73 skill points: won=true rank=Wicked lost=0 wave=18/18 towers=28 gold=248 ranks={ 3: 25, 0: 3 } score=10226
+Powder Road, 0 skill points: won=false rank=Plundered lost=5 wave=4/16 towers=6 gold=27 ranks={ 1: 5, 2: 1 } score=0
+Powder Road, 72 skill points: won=true rank=Survived lost=1 wave=16/16 towers=19 gold=48 ranks={ 3: 15, 2: 2, 0: 2 } score=3392
+Powder Road (night), 75 skill points: won=true rank=Wicked lost=0 wave=16/16 towers=18 gold=195 ranks={ 3: 14, 2: 3, 0: 1 } score=10170
+The King's Highway, 0 skill points: won=false rank=Plundered lost=5 wave=5/17 towers=5 gold=61 ranks={ 1: 5 } score=0
+The King's Highway, 74 skill points: won=true rank=Wicked lost=0 wave=17/17 towers=33 gold=123 ranks={ 3: 25, 2: 4, 1: 1, 0: 3 } score=6654
+The King's Highway (night), 77 skill points: won=true rank=Brilliant lost=0 wave=17/17 towers=28 gold=6 ranks={ 3: 25, 1: 1, 0: 2 } score=12337
+Censer Vale, 0 skill points: won=false rank=Plundered lost=5 wave=7/17 towers=8 gold=31 ranks={ 3: 3, 2: 1, 1: 3, 0: 1 } score=0
+Censer Vale, 77 skill points: won=true rank=Wicked lost=0 wave=17/17 towers=26 gold=16 ranks={ 3: 22, 0: 2, 2: 2 } score=6367
+Censer Vale (night), 80 skill points: won=true rank=Wicked lost=0 wave=17/17 towers=24 gold=38 ranks={ 3: 19, 2: 1, 1: 2, 0: 2 } score=9689
+Beacon Hill, 0 skill points: won=false rank=Plundered lost=5 wave=3/17 towers=5 gold=45 ranks={ 1: 3, 0: 2 } score=0
+Beacon Hill, 79 skill points: won=true rank=Wicked lost=0 wave=17/17 towers=19 gold=31 ranks={ 3: 17, 2: 1, 0: 1 } score=6583
+Beacon Hill (night), 82 skill points: won=true rank=Wicked lost=0 wave=17/17 towers=19 gold=72 ranks={ 3: 16, 2: 1, 0: 2 } score=10139
+Stonefall Quarry, 0 skill points: won=false rank=Plundered lost=5 wave=7/18 towers=7 gold=9 ranks={ 2: 3, 1: 4 } score=0
+Stonefall Quarry, 82 skill points: won=true rank=Survived lost=4 wave=18/18 towers=14 gold=9 ranks={ 3: 11, 2: 2, 0: 1 } score=920
+Stonefall Quarry (night), 85 skill points: won=true rank=Wicked lost=0 wave=18/18 towers=15 gold=18 ranks={ 3: 12, 1: 1, 0: 2 } score=10019
+The Workshops, 0 skill points: won=false rank=Plundered lost=5 wave=6/18 towers=6 gold=9 ranks={ 2: 3, 1: 3 } score=0
+The Workshops, 84 skill points: won=true rank=Wicked lost=0 wave=18/18 towers=17 gold=33 ranks={ 3: 15, 2: 1, 0: 1 } score=6899
+The Workshops (night), 87 skill points: won=true rank=Wicked lost=0 wave=18/18 towers=22 gold=147 ranks={ 3: 19, 0: 1, 2: 2 } score=11117
+Duskwall, 0 skill points: won=false rank=Plundered lost=5 wave=4/18 towers=7 gold=64 ranks={ 1: 6, 0: 1 } score=0
+Duskwall, 86 skill points: won=true rank=Wicked lost=0 wave=18/18 towers=24 gold=254 ranks={ 3: 23, 2: 1 } score=8068
+Duskwall (night), 89 skill points: won=true rank=Wicked lost=0 wave=18/18 towers=24 gold=258 ranks={ 3: 20, 2: 2, 0: 2 } score=12130
+Hollow Gate, 0 skill points: won=false rank=Plundered lost=5 wave=3/19 towers=7 gold=66 ranks={ 1: 6, 0: 1 } score=0
+Hollow Gate, 89 skill points: won=true rank=Wicked lost=0 wave=19/19 towers=34 gold=64 ranks={ 3: 29, 0: 4, 1: 1 } score=7351
+Hollow Gate (night), 92 skill points: won=true rank=Wicked lost=0 wave=19/19 towers=36 gold=11 ranks={ 3: 30, 2: 2, 1: 1, 0: 3 } score=10653
+The Long Siege, 0 skill points: won=false rank=Plundered lost=5 wave=6/22 towers=5 gold=8 ranks={ 2: 3, 1: 1, 0: 1 } score=0
+The Long Siege, 91 skill points: won=true rank=Wicked lost=0 wave=22/22 towers=27 gold=180 ranks={ 3: 24, 1: 1, 2: 1, 0: 1 } score=8064
+The Long Siege (night), 94 skill points: won=true rank=Wicked lost=0 wave=22/22 towers=26 gold=51 ranks={ 3: 24, 1: 1, 0: 1 } score=11167
+The Iron Belfry, 0 skill points: won=false rank=Plundered lost=5 wave=8/20 towers=7 gold=13 ranks={ 1: 5, 0: 1, 2: 1 } score=0
+The Iron Belfry, 94 skill points: won=true rank=Wicked lost=0 wave=20/20 towers=26 gold=68 ranks={ 3: 25, 0: 1 } score=7683
+The Iron Belfry (night), 97 skill points: won=true rank=Wicked lost=0 wave=20/20 towers=28 gold=110 ranks={ 3: 26, 0: 2 } score=11834
+Gryphon Aerie, 0 skill points: won=false rank=Plundered lost=5 wave=2/18 towers=3 gold=25 ranks={ 1: 3 } score=0
+Gryphon Aerie, 96 skill points: won=true rank=Survived lost=2 wave=18/18 towers=25 gold=406 ranks={ 3: 24, 1: 1 } score=5030
+Gryphon Aerie (night), 99 skill points: won=true rank=Survived lost=1 wave=18/18 towers=26 gold=336 ranks={ 3: 25, 0: 1 } score=8520
+Oathkeeper's Stair, 0 skill points: won=false rank=Plundered lost=5 wave=6/18 towers=7 gold=3 ranks={ 2: 1, 1: 5, 0: 1 } score=0
+Oathkeeper's Stair, 98 skill points: won=true rank=Wicked lost=0 wave=18/18 towers=35 gold=78 ranks={ 3: 33, 0: 2 } score=8048
+Oathkeeper's Stair (night), 101 skill points: won=true rank=Wicked lost=0 wave=18/18 towers=35 gold=33 ranks={ 3: 27, 1: 1, 0: 6, 2: 1 } score=11727
+The Chapel Road, 0 skill points: won=false rank=Plundered lost=5 wave=3/19 towers=5 gold=63 ranks={ 1: 5 } score=0
+The Chapel Road, 101 skill points: won=true rank=Survived lost=1 wave=19/19 towers=31 gold=19 ranks={ 3: 30, 0: 1 } score=4259
+The Chapel Road (night), 104 skill points: won=true rank=Wicked lost=0 wave=19/19 towers=35 gold=37 ranks={ 3: 32, 1: 2, 0: 1 } score=11989
+Hallowed Fields, 0 skill points: won=false rank=Plundered lost=5 wave=2/19 towers=3 gold=47 ranks={ 0: 3 } score=0
+Hallowed Fields, 103 skill points: won=true rank=Survived lost=1 wave=19/19 towers=35 gold=33 ranks={ 3: 32, 0: 3 } score=4415
+Hallowed Fields (night), 106 skill points: won=true rank=Wicked lost=0 wave=19/19 towers=37 gold=106 ranks={ 3: 30, 2: 2, 1: 3, 0: 2 } score=12768
+The Reliquary, 0 skill points: won=false rank=Plundered lost=5 wave=2/19 towers=3 gold=51 ranks={ 1: 3 } score=0
+The Reliquary, 106 skill points: won=true rank=Survived lost=3 wave=19/19 towers=26 gold=175 ranks={ 3: 22, 2: 1, 0: 3 } score=3105
+The Reliquary (night), 109 skill points: won=true rank=Wicked lost=0 wave=19/19 towers=26 gold=364 ranks={ 3: 23, 1: 1, 2: 1, 0: 1 } score=15098
+Pilgrim's Flood, 0 skill points: won=false rank=Plundered lost=5 wave=2/20 towers=5 gold=49 ranks={ 0: 5 } score=0
+Pilgrim's Flood, 108 skill points: won=true rank=Survived lost=4 wave=20/20 towers=32 gold=269 ranks={ 3: 28, 2: 1, 1: 1, 0: 2 } score=2580
+Pilgrim's Flood (night), 111 skill points: won=true rank=Survived lost=2 wave=20/20 towers=35 gold=6 ranks={ 3: 30, 0: 4, 1: 1 } score=5000
+The Sun Gate, 0 skill points: won=false rank=Plundered lost=5 wave=4/20 towers=7 gold=6 ranks={ 1: 5, 0: 2 } score=0
+The Sun Gate, 110 skill points: won=true rank=Wicked lost=0 wave=20/20 towers=27 gold=111 ranks={ 3: 24, 1: 1, 0: 2 } score=9022
+The Sun Gate (night), 113 skill points: won=true rank=Wicked lost=0 wave=20/20 towers=32 gold=22 ranks={ 3: 26, 2: 1, 1: 3, 0: 2 } score=12785
+Eclipse, 0 skill points: won=false rank=Plundered lost=5 wave=3/20 towers=5 gold=59 ranks={ 1: 5 } score=0
+Eclipse, 113 skill points: won=true rank=Wicked lost=0 wave=20/20 towers=30 gold=296 ranks={ 3: 28, 2: 1, 0: 1 } score=10237
+Eclipse (night), 116 skill points: won=true rank=Survived lost=1 wave=20/20 towers=30 gold=301 ranks={ 3: 28, 2: 1, 0: 1 } score=9414
+The Last Procession, 0 skill points: won=false rank=Plundered lost=5 wave=12/22 towers=15 gold=43 ranks={ 3: 9, 1: 2, 2: 2, 0: 2 } score=0
+The Last Procession, 115 skill points: won=true rank=Wicked lost=0 wave=22/22 towers=30 gold=128 ranks={ 3: 28, 2: 1, 0: 1 } score=9442
+The Last Procession (night), 118 skill points: won=true rank=Wicked lost=0 wave=22/22 towers=32 gold=49 ranks={ 3: 28, 2: 2, 1: 1, 0: 1 } score=13476
+The Seraph's Descent, 0 skill points: won=false rank=Plundered lost=5 wave=3/24 towers=5 gold=64 ranks={ 1: 4, 0: 1 } score=0
+The Seraph's Descent, 118 skill points: won=true rank=Survived lost=3 wave=24/24 towers=41 gold=371 ranks={ 3: 38, 2: 2, 0: 1 } score=4549
+The Seraph's Descent (night), 121 skill points: won=true rank=Wicked lost=0 wave=24/24 towers=43 gold=238 ranks={ 3: 40, 2: 1, 0: 2 } score=15381
