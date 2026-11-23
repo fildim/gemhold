@@ -3,7 +3,7 @@
  "title": "Twin Bridges",
  "cols": 16,
  "rows": 10,
- "hp_mul": 3.4,
+ "hp_mul": 3.36,
  "race_hp": 0.39,
  "curve": [1, 1.04, 1.04, 1.04, 1.06, 1.07, 1.08, 1.13, 1.17, 1.19, 1.21, 1.24, 1.35, 1.35, 1.39],
  "legend": {"A":"high ash","F":"high frost","L":"lair","M":"high moss","a":"ash","f":"frost","m":"moss"},

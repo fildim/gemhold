@@ -4,7 +4,8 @@
  "intro": "Two roads wind through a burnt thicket so dense there is hardly a tile to build on beside them. Seven raised tiles rise out of the ash: they take any tower and see over the trees. Everything else you will have to clear.",
  "cols": 16,
  "rows": 10,
- "hp_mul": 2.6,
+ "hp_mul": 2.69,
+ "race_hp": 0.53,
  "curve": [1, 1.01, 1.02, 1.04, 1.06, 1.06, 1.11, 1.13, 1.16, 1.2, 1.24, 1.26, 1.29, 1.32, 1.34, 1.37, 1.4],
  "legend": {"m": "moss", "f": "frost", "a": "ash", "M": "high moss", "F": "high frost", "A": "high ash", "L": "lair"},
  "terrain": [
