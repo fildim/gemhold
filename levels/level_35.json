@@ -4,6 +4,7 @@
  "cols": 16,
  "rows": 10,
  "hp_mul": 1.62,
+ "race_hp": 0.47,
  "night_hp": 0.8,
  "curve": [1, 1.08, 1.17, 1.21, 1.22, 1.37, 1.47, 1.54, 1.56, 1.61, 1.63, 1.63, 1.65, 1.66, 1.68, 1.76, 1.83, 1.89],
  "legend": {"A":"high ash","F":"high frost","L":"lair","M":"high moss","a":"ash","f":"frost","m":"moss"},
