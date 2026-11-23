@@ -22,7 +22,7 @@ Dropped: an App Store (iOS) release (owner, 2026-11-21).
 - [x] In-game **feedback**: Info page (full screen) with the address, tap to copy, and Open mail app (2026-11-21).
 - [x] Deploy `firestore.rules` with the `feedback` collection (2026-11-22). Messages: Firebase console > Firestore > feedback.
 - [ ] **Before every publish** (last done 2026-11-22 with the fixed curve: day loss only lair 20, no night losses, all 50 races won): play-test all lairs with the bot (`tests/sim_test.gd`, every lair, day and night) and re-check **race_hp** (online races) after the 2026-11-18 and 2026-11-20 retunes.
-- [ ] The bot still loses its day battle on lair 20, The Hoard Throne (`tests/sim_test.gd`, 2026-11-22, after the fixed difficulty curve): it falls at wave 4 with 8 towers. Lairs 18, 19 and 45 are won now. Look at whether its opening needs easing.
+- [ ] The bot still loses its day battle on lairs 18–20 (`tests/sim_test.gd`, 2026-11-23, dynamic difficulty back): it falls at wave 4 with 7–8 towers. Look at whether their openings need easing.
 - [x] **Plunder** (owner, 2026-11-21): +1 gold on a level IV Hut's first kill, one more each kill, up to +25; a tip explains it the first time a Hut reaches level IV.
 - [x] **Retune after Plunder** (2026-11-21, Plunder +1 → +25): lairs 21–50 measured before and after; only The Long Siege (1.27 → 1.36) and Hallowed Fields (4.24 → 4.90) got clearly easier and were raised. Lairs 22 (×1.01) and 45 (×0.97) stay near the bot's limit.
 
