@@ -439,6 +439,9 @@ const PAVE_FADE := 30.0
 ## `every` s buries the strongest of them; the stone flies `flight` s. Each tower is hit once per
 ## battle by the same Trebuchet (another may hit it again) and stays buried until the player pays
 ## RUBBLE_CLEAR; with nothing left to hit in reach, it rolls on.
+## No wave ever brings more than this many Trebuchets (level_check enforces it; the Long Night never
+## adds them). Siege Workshops roll theirs out separately.
+const MAX_SIEGE := 2
 const TREBUCHET := {"reach": 3.6, "setup": 1.5, "every": 5.0, "flight": 0.8}
 ## The Iron Belfry: heroes within `cover` tiles behind it can't be targeted; a Sapper jumps out every
 ## `sapper` s; at the den it unloads `unload` and rolls away.

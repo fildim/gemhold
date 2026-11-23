@@ -156,7 +156,7 @@ const LAIRS := [
 		"paths": [[[-1, 1], [9, 1], [9, 4], [12, 4]], [[-1, 8], [4, 8], [4, 5], [12, 5]]],
 		"sites": [{"kind": "mine", "cell": [15, 9]}, {"kind": "well", "cell": [0, 4]}],
 		"waves": ["8p", "6f,2a", "6p,1u", "4f,2c,1u", "2k,4a", "6t,1u,2i", "4f,4a,1u", "3k,2b,1u", "8p,4v,2u", "4k,2i,1u",
-			"6t,6a,2u", "4k,2w,2u", "8f,4a,2u,2i", "5k,2u,2c", "6k,6a,2u,2v", "6k,8f,3u", "1x,6k,4i,2u", "6k,8a,4f,3u,2h"]},
+			"6t,6a,2u", "4k,2w,2u", "8f,4a,2u,2i", "5k,2u,2c", "6k,6a,2u,2v", "6k,8f,2u", "1x,6k,4i,2u", "6k,8a,4f,2u,2h"]},
 
 	{"n": 36, "title": "The Workshops", "lair": [1, 4], "seed": 3606, "site_cuts": 3, "hp_mul": 2.8,
 		"ground": [["f", 0, 0, 6, 1], ["a", 7, 8, 15, 9]],
@@ -166,7 +166,7 @@ const LAIRS := [
 			{"kind": "workshop", "cell": [14, 9], "path": 1, "spawn": "1u", "every": 60, "cuts": 4},
 			{"kind": "camp", "cell": [10, 4], "path": 0, "spawn": "2f,1a", "every": 30}, {"kind": "mine", "cell": [0, 9]}],
 		"waves": ["8p", "6f,2a", "6p,2v", "4f,2i,2a", "2k,1u", "6t,4a,2c", "4f,2i,1u", "3k,2v,2b", "8p,6a,1u", "4k,2w,2i",
-			"6t,4a,2u", "4k,2b,3i", "8f,6a,3v", "5k,4i,1u", "6k,8a,2u", "6k,8f,4i,2u", "1x,6k,4v,6a", "6k,8a,4i,3u"]},
+			"6t,4a,2u", "4k,2b,3i", "8f,6a,3v", "5k,4i,1u", "6k,8a,2u", "6k,8f,4i,2u", "1x,6k,4v,6a", "6k,8a,4i,2u"]},
 
 	{"n": 37, "title": "Duskwall", "lair": [7, 4], "seed": 3707, "site_cuts": 3, "hp_mul": 2.9,
 		"ground": [["f", 0, 6, 5, 9], ["a", 10, 0, 15, 3]],
@@ -206,8 +206,8 @@ const LAIRS := [
 			{"heroes": "6t,2v,2c", "roads": [0]}, {"heroes": "4f,2i,4a", "roads": [0]}, {"heroes": "2u,3k", "roads": [1]}, {"heroes": "8p,6a,2h", "roads": [0]},
 			{"heroes": "4k,2w,2i", "roads": [0]}, {"heroes": "2u,4f,2b", "roads": [1]},
 			{"heroes": "6t,4a,2i,2c", "roads": [0]}, {"heroes": "4k,2b,3i", "roads": [0]}, {"heroes": "2u,4k", "roads": [1]}, {"heroes": "8f,6a,3v", "roads": [0]},
-			{"heroes": "5k,4i,2h", "roads": [0]}, {"heroes": "3u,4k,2b", "roads": [1]},
-			{"heroes": "3u,2k", "roads": [1]}, {"heroes": "1I,6k,4i,8a,4f", "roads": [0]}]},
+			{"heroes": "5k,4i,2h", "roads": [0]}, {"heroes": "2u,4k,2b", "roads": [1]},
+			{"heroes": "2u,2k", "roads": [1]}, {"heroes": "1I,6k,4i,8a,4f", "roads": [0]}]},
 
 	# ------------------------------------------------------------ Chapter V: the Radiant Host
 	{"n": 41, "title": "Gryphon Aerie", "lair": [13, 4], "seed": 4101, "site_cuts": 3, "hp_mul": 2.5,
@@ -272,7 +272,7 @@ const LAIRS := [
 		"sites": [{"kind": "chapel", "cell": [5, 4], "cuts": 4}, {"kind": "mine", "cell": [0, 9]}, {"kind": "well", "cell": [15, 9]}],
 		"waves": ["8p", "6f,2j", "6p,1u", "4f,2i,2j", "2k,1u,2j", "6t,4y", "4f,2i,1u", "3k,3j", "8p,4y,1u", "4k,2w,2i",
 			"6t,4n,2u", "4k,2b,3j", "8f,4y,2u,2i", "5k,4j,2i", "6k,4y,2u,2j", "6k,8f,4i,4j", "1x,6k,4j,2u", "6k,6j,4y,2i", "2u,6k,6j,4i",
-			"2x,6k,6j,3u,4i"]},
+			"2x,6k,6j,2u,4i"]},
 
 	{"n": 48, "title": "Eclipse", "lair": [7, 4], "seed": 4808, "site_cuts": 3, "hp_mul": 2.8,
 		"ground": [["f", 0, 6, 5, 9], ["a", 10, 6, 15, 9]],

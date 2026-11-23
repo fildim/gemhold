@@ -433,7 +433,7 @@ func extend_long(base: int) -> void:
 	var list: Array[String] = waves[src].duplicate()
 	var count := {}
 	for code in list:
-		if not Defs.ENEMIES[code].get("boss", false):
+		if not Defs.ENEMIES[code].get("boss", false) and not Defs.ENEMIES[code].has("siege"):   # never more than MAX_SIEGE engines
 			count[code] = int(count.get(code, 0)) + 1
 	if not count.is_empty():
 		var common: String = count.keys()[0]
