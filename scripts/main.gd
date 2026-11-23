@@ -425,7 +425,7 @@ func _rule_tip_for(k: String) -> Array:
 		"rubble", "stun", "silence":
 			for tw: GameSim.Tower in sim.towers.values():
 				if k == "rubble" and tw.rubble > 0.0:
-					return ["[b]Buried![/b] A Trebuchet's stone has buried this tower under rubble: it can't fire until you [b]tap it and Clear rubble[/b] (%d gold). Each tower is hit only once." % sim.rubble_price(), _cell_rect(Vector2(tw.cell))]
+					return ["[b]Buried![/b] A Trebuchet's stone has buried this tower under rubble: it can't fire until you [b]tap it and Clear rubble[/b] (%d gold). A Trebuchet never hits the same tower twice." % sim.rubble_price(), _cell_rect(Vector2(tw.cell))]
 				if k == "stun" and tw.stun > 0.0:
 					return ["[b]Stunned![/b] A Sapper's keg has stunned this tower for a few seconds. Sappers can't reach towers on raised tiles.", _cell_rect(Vector2(tw.cell))]
 				if k == "silence" and tw.silence > 0.0:

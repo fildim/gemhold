@@ -150,7 +150,13 @@ func _trebuchet() -> void:
 	_check(cheap.rubble > 0.0 and u.dist > held, "further on, it stops again for a tower not hit yet")
 	_run(sim, 30.0)
 	_check(cheap.rubble > 0.0, "rubble stays until it is cleared")
-	_check(near.rubble == 0.0, "a tower once hit is never hit again")
+	_check(near.rubble == 0.0, "it never hits the same tower twice")
+	# A second Trebuchet has its own list: it may bury the tower the first one hit.
+	var u3 := _hero(sim, "u", 0.0)
+	u3.hp = 999999.0
+	u3.max_hp = u3.hp
+	_run(sim, 60.0, func() -> bool: return near.rubble > 0.0)
+	_check(near.rubble > 0.0 and not u.deployed, "another Trebuchet may hit it again")
 	# Once the last wave is out and only engines are left, it rolls away, and the lair is won.
 	sim.wave = sim.level.waves.size()
 	sim.queue.clear()
@@ -163,8 +169,27 @@ func _trebuchet() -> void:
 	# Destroyed before its first stone.
 	var s2 := _sim()
 	var u2 := _hero(s2, "u", 1.0)
-	s2.hurt(u2, 999999.0, true)
+	s2.hurt(u2, 999999.0, true, null, 0, true)   # the Meteor
 	_check(s2.treb_fast == 1, "a Trebuchet destroyed before its first stone is counted")
+	# Only fire hurts it: a Cinder Shrine and the Meteor, not a Hut, a Crypt, the den or a keg.
+	var s4 := _sim()
+	var u4 := _hero(s4, "u", 1.0)
+	var hut := _build(s4, Vector2i(2, 2))
+	var hp := u4.hp
+	s4.hurt(u4, 500.0, true)
+	s4.hurt(u4, 500.0, false, hut)
+	_check(u4.hp == hp, "arrows, bolts and kegs don't hurt a Trebuchet")
+	u4.pos = hut.pos
+	_check(s4._pick_target(hut) != u4, "a Hut doesn't aim at it")
+	var shrine: GameSim.Tower = null
+	for y in 12:
+		for x in 16:
+			if shrine == null and s4.cell_info(Vector2i(x, y))["actions"].any(func(a: Dictionary) -> bool: return a["id"] == "build:ash"):
+				shrine = _build(s4, Vector2i(x, y), "ash")
+	u4.pos = shrine.pos
+	_check(s4._pick_target(shrine) == u4, "a Cinder Shrine aims at it")
+	s4.hurt(u4, 100.0, true, shrine)
+	_check(u4.hp == hp - 100.0, "a Cinder Shrine burns it")
 
 
 func _belfry() -> void:

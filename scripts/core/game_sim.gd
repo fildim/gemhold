@@ -53,6 +53,7 @@ class Enemy:
 	var deployed := false # Trebuchet: set up and slinging stones
 	var sling := 0.0      # Trebuchet: seconds to the next stone (or to set up); Belfry: to the next Sapper
 	var stones := 0       # Trebuchet: stones thrown
+	var struck := {}      # Trebuchet: towers it has hit (Tower -> true); it never hits one twice
 	var retreat := false  # an engine rolling away: it never comes back, nor counts as escaped
 	var unloaded := false # Iron Belfry: has unloaded its Footmen at the den
 	var covered := false  # walking in an Iron Belfry's shadow: towers and the den can't see him
@@ -91,7 +92,6 @@ class Tower:
 	var born := -10.0     # battle time it was built or last upgraded (view only: squash and settle)
 	var stun := 0.0       # seconds stunned (Sapper, Iron Belfry): no firing
 	var rubble := 0.0     # buried under Rubble (Trebuchet), > 0 until the player pays to clear it: no firing
-	var stoned := false   # a Trebuchet has hit it this battle: none will again, even once it is cleared
 	var silence := 0.0    # silenced by an Inquisitor this frame: how much slower it fires (0 = not)
 	var sapped: Enemy     # a Sapper is on his way to it
 	var holy := false     # on hallowed ground while a Chapel stands: less range, no ability
@@ -615,7 +615,7 @@ func _update_den(dt: float) -> void:
 	var best_score := -INF
 	for e: Enemy in enemies:
 		var d := e.pos.distance_to(level.lair_center)
-		if e.hp <= 0.0 or e.hidden or e.covered or d > Defs.DEN["range"]:
+		if e.hp <= 0.0 or e.hidden or e.covered or d > Defs.DEN["range"] or e.d.has("fire_only"):
 			continue
 		var score := (100.0 if e.carry > 0 else 0.0) - d
 		if e.beached:
@@ -830,6 +830,11 @@ func sturdy_mul() -> float:
 	return 1.0 - Defs.STURDY * skill("sturdy")
 
 
+## A Trebuchet (fire_only) is only hurt by fire: Cinder Shrines (beam, Sunlance, their lava) and
+## the Meteor. Arrows, bolts, the den and kegs don't touch it, and Huts and Crypts don't aim at it.
+func fire_hits(e: Enemy, src: Tower) -> bool:
+	return not e.d.has("fire_only") or (src != null and src.type == "ash")
+
 ## Gold to clear a tower buried by a Trebuchet (Sturdy Foundations makes it cheaper).
 func rubble_price() -> int:
 	return roundi(Defs.RUBBLE_CLEAR * sturdy_mul())
@@ -920,9 +925,8 @@ func _keg(e: Enemy) -> void:
 	sound.emit("boom")
 
 
-## A Trebuchet rolls until a tower no Trebuchet has hit yet is in reach, sets up, then buries the
-## strongest such tower under Rubble every few seconds. Each tower is hit only once, so when none is
-## left in reach it packs up and rolls on to the next. At the end of the road, or when the last wave
+## A Trebuchet rolls until a tower it has not hit yet is in reach, sets up, then buries the strongest
+## such tower under Rubble every few seconds. It hits each tower only once, so when none is left in reach it packs up and rolls on to the next. At the end of the road, or when the last wave
 ## is out and only engines are left, it rolls away. True while it stands still.
 func _siege(e: Enemy, dt: float) -> bool:
 	if e.retreat:
@@ -947,7 +951,7 @@ func _siege(e: Enemy, dt: float) -> bool:
 			_text(e.pos + Vector2(0, -0.9), "Rolls on", Color("ff9a7a"))
 			return false
 		else:
-			best.stoned = true   # claimed now, so a second engine picks another
+			e.struck[best] = true
 			e.sling = tb["every"]
 			e.stones += 1
 			var f := Fx.new()
@@ -961,11 +965,11 @@ func _siege(e: Enemy, dt: float) -> bool:
 	return true
 
 
-## The strongest tower in this Trebuchet's reach that no Trebuchet has hit yet, or null.
+## The strongest tower in this Trebuchet's reach that it has not hit yet and is not already buried, or null.
 func _treb_target(e: Enemy) -> Tower:
 	var best: Tower = null
 	for tw: Tower in towers.values():
-		if tw.stoned or tw.pos.distance_to(e.pos) > float(Defs.TREBUCHET["reach"]):
+		if e.struck.has(tw) or tw.rubble > 0.0 or tw.pos.distance_to(e.pos) > float(Defs.TREBUCHET["reach"]):
 			continue
 		if best == null or tw.spent > best.spent or (tw.spent == best.spent and tw.lvl > best.lvl):
 			best = tw
@@ -1343,7 +1347,7 @@ func _pick_target(tw: Tower, skip: Enemy = null, skips: Array = [], healthiest :
 	var best: Enemy = null
 	var best_score := -INF
 	for e: Enemy in enemies:
-		if e == skip or e.hp <= 0.0 or e.hidden or e.covered or e.pos.distance_to(tw.pos) > rg or (not skips.is_empty() and skips.has(e)):
+		if e == skip or e.hp <= 0.0 or e.hidden or e.covered or e.pos.distance_to(tw.pos) > rg or (not skips.is_empty() and skips.has(e)) or not fire_hits(e, tw):
 			continue
 		var score := 0.0
 		match tw.aim:
@@ -1625,7 +1629,7 @@ func _update_fx(dt: float) -> void:
 			for e: Enemy in enemies:
 				if e.pos.distance_to(f.pos) <= Defs.METEOR["radius"]:
 					var under := e.hidden
-					hurt(e, meteor_damage(), true)
+					hurt(e, meteor_damage(), true, null, 0, true)
 					if under and e.hp <= 0.0:
 						diver_meteor += 1
 			best_meteor = maxi(best_meteor, kills - before)
@@ -1633,8 +1637,11 @@ func _update_fx(dt: float) -> void:
 	fx = fx.filter(func(f: Fx) -> bool: return f.t < f.dur)
 
 
-func hurt(e: Enemy, dmg: float, pierce := false, src: Tower = null, ap := 0) -> void:
+## meteor: the hit is the Meteor's (it breaks Trebuchets, see fire_hits).
+func hurt(e: Enemy, dmg: float, pierce := false, src: Tower = null, ap := 0, meteor := false) -> void:
 	if e.hp <= 0.0 or e.untouch > 0.0:
+		return
+	if not meteor and not fire_hits(e, src):
 		return
 	var dealt := dmg if pierce else maxf(1.0, dmg - (float(e.d["armor"]) if ap == 0 else maxf(0.0, float(e.d["armor"]) - ap)))
 	if not pierce:
