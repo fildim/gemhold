@@ -41,6 +41,10 @@ const CONTACT := "contactgemhold@gmail.com"
 var _guide: Button
 var _hall: Button
 var _race: Button   # online races, in ember so it stands out
+var _race_texts := ["Race a friend", "Race"]   # its label, and a short one for narrow screens
+var _compact := false   # the bottom-left buttons were made smaller to fit (narrow screens)
+var _points_badge: Label   # unspent skill points, on the Dark Arts button's corner
+var _compact_w := 0.0  # the width it happened at: wider again, the buttons go back to full size
 var _page := 0
 var _beaten := 0
 var _prev: Button
@@ -75,30 +79,22 @@ func setup(hud: Control, levels: Array, save: SaveData) -> void:
 		_markers.append(m)
 	_skills = Button.new()
 	_skills.focus_mode = Control.FOCUS_NONE
-	_skills.custom_minimum_size = Vector2(0, 68)
-	_skills.add_theme_font_size_override("font_size", 30)
 	_skills.add_theme_stylebox_override("normal", hud._box(Color("3d2a12"), Color("8a6420"), 4, 8, 18))
 	_skills.pressed.connect(func() -> void: skills_pressed.emit())
 	add_child(_skills)
 	_guide = Button.new()
 	_guide.text = "Guide"
 	_guide.focus_mode = Control.FOCUS_NONE
-	_guide.custom_minimum_size = Vector2(0, 68)
-	_guide.add_theme_font_size_override("font_size", 30)
 	_guide.pressed.connect(func() -> void: guide_pressed.emit())
 	add_child(_guide)
 	_hall = Button.new()
 	_hall.text = "Hall of Fame"
 	_hall.focus_mode = Control.FOCUS_NONE
-	_hall.custom_minimum_size = Vector2(0, 68)
-	_hall.add_theme_font_size_override("font_size", 30)
 	_hall.pressed.connect(func() -> void: hall_pressed.emit())
 	add_child(_hall)
 	_race = Button.new()
 	_race.text = "Race a friend"
 	_race.focus_mode = Control.FOCUS_NONE
-	_race.custom_minimum_size = Vector2(0, 68)
-	_race.add_theme_font_size_override("font_size", 30)
 	_race.add_theme_color_override("font_color", Hud.BONE)
 	_race.add_theme_stylebox_override("normal", hud._box(Color("5a2414"), Hud.EMBER, 4, 8, 18))
 	_race.add_theme_stylebox_override("hover", hud._box(Color("6e2c18"), Hud.EMBER, 4, 8, 18))
@@ -106,23 +102,38 @@ func setup(hud: Control, levels: Array, save: SaveData) -> void:
 	add_child(_race)
 	_reset = Button.new()
 	_reset.focus_mode = Control.FOCUS_NONE
-	_reset.add_theme_font_size_override("font_size", 26)
-	_reset.custom_minimum_size = Vector2(0, 60)
 	_reset.add_theme_color_override("font_color", Hud.DIM)
 	_reset.pressed.connect(_on_reset)
 	add_child(_reset)
 	_sound = hud.sound_button(self, self)
-	_sound.custom_minimum_size = Vector2(0, 60)
-	_sound.add_theme_font_size_override("font_size", 26)
 	_info = Button.new()
 	_info.text = "Info"
 	_info.focus_mode = Control.FOCUS_NONE
-	_info.custom_minimum_size = Vector2(0, 60)
-	_info.add_theme_font_size_override("font_size", 26)
 	_info.pressed.connect(func() -> void:
 		Sfx.play("click")
 		_show_info())
 	add_child(_info)
+	# Unspent skill points: a gold badge on the Dark Arts button's corner.
+	_points_badge = Label.new()
+	_points_badge.add_theme_font_override("font", hud.bold_font)
+	_points_badge.add_theme_font_size_override("font_size", 24)
+	_points_badge.add_theme_color_override("font_color", Hud.NIGHT)
+	_points_badge.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_points_badge.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_points_badge.custom_minimum_size = Vector2(38, 38)
+	var pb := StyleBoxFlat.new()
+	pb.bg_color = Hud.GOLD
+	pb.set_corner_radius_all(19)
+	pb.set_content_margin_all(4)
+	pb.content_margin_left = 9
+	pb.content_margin_right = 9
+	pb.border_color = Hud.NIGHT
+	pb.set_border_width_all(2)
+	_points_badge.add_theme_stylebox_override("normal", pb)
+	_points_badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_points_badge.visible = false
+	_skills.add_child(_points_badge)
+	_row_size()
 	_prev = _page_button("«", -1)
 	_next = _page_button("»", 1)
 	resized.connect(_layout)
@@ -172,7 +183,9 @@ func refresh() -> void:
 		if m.stars > 0:
 			_beaten += 1
 	var free := _save.points_free()
-	_skills.text = "Dark Arts · ★ %d%s" % [_save.points_total(), "  (%d to spend)" % free if free > 0 else ""]
+	_skills.text = "Dark Arts · ★ %d" % _save.points_total()
+	_points_badge.text = str(free)
+	_points_badge.visible = free > 0
 	_reset.text = "Reset progress"
 	if _confirm:
 		_confirm.visible = false
@@ -188,6 +201,9 @@ func refresh() -> void:
 func _layout() -> void:
 	if _heading == null:
 		return
+	if _compact and size.x > _compact_w + 1.0:   # wider again: the bottom row goes back to full size
+		_compact = false
+		_row_size()
 	_heading.reset_size()
 	_heading.position = Vector2((size.x - _heading.size.x) / 2.0, size.y * 0.04)
 	_sub.reset_size()
@@ -205,14 +221,15 @@ func _layout() -> void:
 	_sound.position = Vector2(_reset.position.x - _sound.size.x - 10, size.y - _sound.size.y - 12)
 	_skills.reset_size()
 	_skills.position = Vector2(14, size.y - _skills.size.y - 12)
+	_points_badge.reset_size()
+	_points_badge.position = Vector2(_skills.size.x - _points_badge.size.x * 0.65, -_points_badge.size.y * 0.45)
 	_guide.reset_size()
 	_guide.position = Vector2(_skills.position.x + _skills.size.x + 10, size.y - _guide.size.y - 12)
 	_hall.reset_size()
 	_hall.position = Vector2(_guide.position.x + _guide.size.x + 10, size.y - _hall.size.y - 12)
-	_race.reset_size()
-	_race.position = Vector2(_hall.position.x + _hall.size.x + 10, size.y - _race.size.y - 12)
 	_info.reset_size()
 	_info.position = Vector2(_sound.position.x - _info.size.x - 10, size.y - _info.size.y - 12)
+	_place_race()
 	if _info_panel:
 		_info_panel.size = size
 	_prev.reset_size()
@@ -909,10 +926,45 @@ func _river(_spots: Array[Vector2]) -> void:
 ## glows when an agreed race is due now.
 func set_race_badge(attention: int, live: bool) -> void:
 	if live:
-		_race.text = "Your race is now!"
+		_race_texts = ["Your race is now!", "Race now!"]
 	elif attention > 0:
-		_race.text = "Race a friend · %d" % attention
+		_race_texts = ["Race a friend · %d" % attention, "Race · %d" % attention]
 	else:
-		_race.text = "Race a friend"
+		_race_texts = ["Race a friend", "Race"]
 	_race.add_theme_color_override("font_color", Hud.GOLD if attention > 0 else Hud.BONE)
 	_layout()
+
+
+## The Race button goes after Hall of Fame on the bottom row, with its short label if the full one
+## would run into Info; if even that does not fit, the bottom-left buttons get a smaller face, and only
+## if that is not enough either does it sit above Hall of Fame.
+func _place_race() -> void:
+	var room := _info.position.x - 10.0
+	for t: String in _race_texts:
+		_race.text = t
+		_race.reset_size()
+		_race.position = Vector2(_hall.position.x + _hall.size.x + 10, size.y - _race.size.y - 12)
+		if _race.position.x + _race.size.x <= room:
+			return
+	# Still no room: the left-hand buttons in a smaller face, then the row laid out again.
+	if not _compact:
+		_compact = true
+		_compact_w = size.x
+		_row_size()
+		_layout()
+		return
+	# Even then: above Hall of Fame, with its full label.
+	_race.text = _race_texts[0]
+	_race.reset_size()
+	_race.position = Vector2(_hall.position.x, _hall.position.y - _race.size.y - 10)
+
+
+## Every button of the bottom row the same size: ROW_FONT text, ROW_H tall (smaller when _compact).
+const ROW_FONT := 28
+const ROW_H := 64
+
+
+func _row_size() -> void:
+	for b: Button in [_skills, _guide, _hall, _race, _info, _sound, _reset]:
+		b.add_theme_font_size_override("font_size", 23 if _compact else ROW_FONT)
+		b.custom_minimum_size.y = 56 if _compact else ROW_H
