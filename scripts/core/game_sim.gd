@@ -1702,7 +1702,7 @@ func _roll_loot(e: Enemy) -> void:
 		# Worth more for stronger kinds of hero and later waves, but not for the threat: it rises
 		# when you do well, and paying more for that would snowball into riches. Tougher lairs pay
 		# only the square root of their extra hero health, or late lairs would drown you in gold.
-		var later := sqrt(level.hp_mul) * (1.0 + Defs.WAVE_HP_SCALE * maxi(0, wave - 1))
+		var later := sqrt(level.hp_mul) * (1.0 + Defs.COIN_WAVE_SCALE * maxi(0, wave - 1))
 		l.amount = Defs.LOOT_COIN_BONUS + roundi(float(e.d["gold"]) * Defs.LOOT_COIN_MUL * later)
 	else:
 		l.kind = "potion"

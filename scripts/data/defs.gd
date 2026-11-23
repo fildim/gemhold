@@ -123,6 +123,7 @@ const MANA_MAX := 100.0
 const MANA_REGEN := 1.0      # per second, plus HOARD_REGEN per Mana Spring point
 const SPAWN_INTERVAL := 0.85
 const WAVE_HP_SCALE := 0.13  # +13% hero health per wave
+const COIN_WAVE_SCALE := 0.13  # coins grow by this per wave (apart from hero health, so tougher late waves don't pay more)
 
 const DROP_SPEED := 0.7      # dropped gems roll home along the road at this many tiles/s
 const DROP_FALL := 0.7       # seconds a gem dropped by a flying carrier takes to fall to the road below
