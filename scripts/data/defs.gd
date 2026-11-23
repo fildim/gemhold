@@ -234,7 +234,7 @@ const RACE_TIME_BONUS := 20
 ## `extra_every` waves past the end, and hero health grows by `grow` per wave past the end,
 ## compounded, on top of the lair's fixed curve (Level.curve, no Resolve), so everyone meets the
 ## same waves and the night always wins in the end. Unspent gold draws nothing.
-const LONG := {"cycle": 5, "extra_every": 2, "grow": 0.06}
+const LONG := {"cycle": 5, "extra_every": 2, "grow": 0.08}   # grow 0.06 -> 0.08 (2026-11-23): Lair 1 ran too long (42 waves held)
 const RACE := {"first": 10.0, "gap": 12.0, "gap_min": 6.0, "hp": 0.55}
 const LOOT_COIN_MUL := 1.4    # a coin is worth this times the hero's bounty, grown by wave (not threat),
 const LOOT_COIN_BONUS := 4    # plus this flat amount, so even small heroes drop a worthwhile coin
