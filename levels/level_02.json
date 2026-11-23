@@ -5,6 +5,7 @@
  "cols": 16,
  "rows": 10,
  "hp_mul": 0.84,
+ "curve": [1, 1.23, 1.34, 1.39, 1.56, 1.62, 1.73, 1.81, 1.85, 1.91, 1.98, 2.05],
  "legend": {"m": "moss", "f": "frost", "a": "ash", "M": "high moss", "F": "high frost", "A": "high ash", "L": "lair"},
  "terrain": [
   "ffffffffffmmmmmm",

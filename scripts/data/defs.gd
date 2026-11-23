@@ -124,19 +124,6 @@ const MANA_REGEN := 1.0      # per second, plus HOARD_REGEN per Mana Spring poin
 const SPAWN_INTERVAL := 0.85
 const WAVE_HP_SCALE := 0.13  # +13% hero health per wave
 
-## Dynamic difficulty (GameSim._judge_wave). After each wave the threat, which multiplies hero
-## health, rises by how deep into the defence that wave got: the most of its road's defended
-## stretch (where towers or the den can reach) any of its heroes walked through, from 0 to 1.
-## It never falls. Under `easy`: up by up_easy..up_max (the earlier they fell, the more).
-## Up to `hard`: up_mid. Past `hard`: up_close. A hero reaching the hoard or a dropped gem: up_touched.
-## Riches draw heroes too: gold left unspent above `rich` adds per_gold threat per coin, up to
-## rich_max a wave, so hoarding gold is never the safe choice.
-## Within a wave too: while none of its heroes has got past `easy`, each one slain adds up_kill
-## at once (up to kill_max a wave), so the rest of that wave and the next already come tougher.
-const THREAT := {"easy": 0.45, "hard": 0.7, "up_max": 0.4, "up_easy": 0.1, "up_mid": 0.06,
-	"up_kill": 0.006, "kill_max": 0.1,
-	"up_close": 0.03, "up_touched": 0.01, "max": 4.0,
-	"rich": 250, "per_gold": 0.0005, "rich_max": 0.25}
 const DROP_SPEED := 0.7      # dropped gems roll home along the road at this many tiles/s
 const DROP_FALL := 0.7       # seconds a gem dropped by a flying carrier takes to fall to the road below
 ## A hero carrying gems walks CARRY_SLOW slower for each gem, never more than CARRY_SLOW_MAX slower
@@ -223,7 +210,7 @@ const RACE_TIME_BONUS := 20
 ## seconds off, but never below `gap_min`). Hero health is multiplied by the lair's race factor
 ## (Level.race_hp, "race_hp" in the file), `hp` unless the lair sets its own (tuned with tests/race_test.gd).
 const RACE := {"first": 10.0, "gap": 12.0, "gap_min": 6.0, "hp": 0.55}
-const LOOT_COIN_MUL := 1.4    # a coin is worth this times the hero's bounty, grown by wave (not threat),
+const LOOT_COIN_MUL := 1.4    # a coin is worth this times the hero's bounty, grown by wave,
 const LOOT_COIN_BONUS := 4    # plus this flat amount, so even small heroes drop a worthwhile coin
 
 ## Night levels: you can only build on lit tiles. Radii in tiles.

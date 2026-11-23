@@ -168,9 +168,8 @@ Where she falls, Fenwalkers and Divers rise. While a boss is on the map, her nam
 		"The boss of the Radiant Host (lair 50): [b]%d health[/b], armour %d, and she can carry 3 gems. She flies. At two thirds and one third of her health she [b]lands on the nearest road[/b], is untouchable for %d seconds and raises the last heroes you slew (six, then eight) at half health. Dread doesn't touch her.
 \nOnce she has landed she walks the road like anyone else." % [e["S"]["hp"], e["S"]["armor"], roundi(Defs.SERAPH["dur"])]))
 	t.append(_t("Heroes", "Heroes get stronger",
-		"Each wave's heroes are tougher than the last. The game also watches how you play: when you crush a wave far from the cave, the next heroes come back much tougher; when a wave gets close, only a little. Heroes falling quickly toughen the rest of their own wave too.\n\n"
-		+ "[b]Riches draw heroes too.[/b] Gold you leave unspent above %d makes every following wave stronger. Spend it on towers and upgrades instead of saving it.\n\n" % roundi(Defs.THREAT["rich"])
-		+ "It never gets easier during a battle, but it never runs away either."))
+		"Each wave's heroes are tougher than the last, and the last waves of a lair are much tougher than the first. Every lair is the same in every game: wave 10 is always as hard as it was last time, so you can learn a lair and plan for it.\n\n"
+		+ "How well you defend never changes the heroes: a clean wave doesn't make the next one harder."))
 
 	# ------------------------------------------------------------ water
 	t.append(_t("The Marches", "Fords and bridges",

@@ -30,6 +30,10 @@ var night := false       # only lit tiles can be built on (set for night mission
 var hp_mul := 1.0        # hero health multiplier, so later levels can be tougher
 var night_hp := Defs.NIGHT_HP   # hero health factor on the night mission ("night_hp" in the file; most lairs keep the default)
 var race_hp: float = Defs.RACE["hp"]   # hero health factor in an online race ("race_hp" in the file; most lairs keep the default)
+## Hero health by wave on top of hp_mul ("curve" in the file): curve[w - 1] for wave w, 1.0 at wave 1 and
+## never falling. It replaced the old dynamic difficulty (2026-11-22): its shape is the threat the test bot
+## met at each wave, so late waves stay as hard as they were. Waves past its end keep its last value.
+var curve: PackedFloat32Array = []
 var sites: Array = []    # [{"kind", "cell": Vector2i, "path", "spawn": Array[String], "every"}]
 var site_cuts := 1       # cuts (each paid in mana) to free a mine or well or raze a barracks; grows on later lairs
 var path_kind: Array[String] = []   # parallel to paths: "land" | "river" | "air"
@@ -109,6 +113,8 @@ func _parse(d: Dictionary) -> void:
 	hp_mul = float(d.get("hp_mul", 1.0))
 	night_hp = float(d.get("night_hp", Defs.NIGHT_HP))
 	race_hp = float(d.get("race_hp", Defs.RACE["hp"]))
+	for v in d.get("curve", []):
+		curve.append(float(v))
 	site_cuts = maxi(1, int(d.get("site_cuts", 1)))
 	for s in d.get("sites", []):
 		var site := {"kind": String(s["kind"]), "cell": Vector2i(int(s["cell"][0]), int(s["cell"][1]))}
@@ -408,3 +414,10 @@ func deal(roads: Array[int]) -> Array[int]:
 		if float(paths[r]["total"]) >= SHORT_ROAD:
 			out.append(r)
 	return out if out.size() > roads.size() else roads
+
+
+## The hero health factor of wave w (1 for a level without a curve, or before the first wave).
+func wave_curve(w: int) -> float:
+	if curve.is_empty() or w < 1:
+		return 1.0
+	return curve[mini(w, curve.size()) - 1]

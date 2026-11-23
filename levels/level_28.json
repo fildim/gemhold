@@ -5,6 +5,7 @@
  "rows": 10,
  "hp_mul": 3.62,
  "race_hp": 0.47,
+ "curve": [1, 1.07, 1.07, 1.09, 1.12, 1.15, 1.19, 1.22, 1.24, 1.27, 1.3, 1.35, 1.38, 1.42, 1.47, 1.51, 1.54],
  "legend": {"A":"high ash","F":"high frost","L":"lair","M":"high moss","a":"ash","f":"frost","m":"moss"},
  "terrain": [
   "fffffoooooommmmm",

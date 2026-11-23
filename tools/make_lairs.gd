@@ -9,7 +9,7 @@ extends SceneTree
 ## Then check with tests/level_check.gd. hp_mul is tuned afterwards with tests/difficulty.gd and
 ## kept: a spec's "hp_mul" is only the starting value for a file that does not exist yet. A file's
 ## "night_hp" (night hero health, set by hand) and "race_hp" (race hero health, tuned with
-## tests/race_test.gd) are kept too.
+## tests/race_test.gd) are kept too, and so is "curve" (the per-wave hero health curve).
 
 const SPECS := preload("res://tools/lair_specs.gd")
 const WATER_BESIDE_ROAD := 2
@@ -27,12 +27,12 @@ func _init() -> void:
 			var old = JSON.parse_string(FileAccess.get_file_as_string(path))
 			if old is Dictionary and old.has("hp_mul"):
 				d["hp_mul"] = old["hp_mul"]
-			if old is Dictionary and (old.has("night_hp") or old.has("race_hp")):   # and a tuned night and race health, right after hp_mul
+			if old is Dictionary and (old.has("night_hp") or old.has("race_hp") or old.has("curve")):   # and a tuned night and race health and the health curve, right after hp_mul
 				var keep := {}
 				for k: String in d:
 					keep[k] = d[k]
 					if k == "hp_mul":
-						for extra in ["night_hp", "race_hp"]:
+						for extra in ["night_hp", "race_hp", "curve"]:
 							if old.has(extra):
 								keep[extra] = old[extra]
 				d = keep
