@@ -30,5 +30,5 @@ Dropped: an App Store (iOS) release (owner, 2026-11-21).
 ## Ideas kept for later (not decided)
 
 - [ ] **Heroic missions**: a third mission per lair with a twist (one tower type, no Meteor, one gem).
-- [ ] **The Long Night**: endless waves on any beaten lair, with its own leaderboard.
+- [x] **The Long Night** (2026-11-23): endless waves on any lair won by day, own Dark Arts, day rules, a board per lair (`tests/long_night_test.gd`). Bot, +6%/wave: held 24 past the end on lair 1, 9 on 16, 5 on 41, 2 on 46. Tune `Defs.LONG` after real play.
 - [x] **Per-tower aim** (2026-11-21): Aim button in the tower panel: Auto / Strongest / Closest to the cave; gem carriers always first; the Ossuary got it too on 2026-11-22 (tester feedback): its stored bolts burst at the aimed target (2026-11-23).

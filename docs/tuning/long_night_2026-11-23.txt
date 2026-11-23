@@ -1,0 +1,15 @@
+Godot Engine v4.6.2.stable.official.71f334935 - https://godotengine.org
+
+ 1 Mossfold Pass: held 36 waves (own 12, fell in wave 39), kills=621 towers=42 time=934s
+ 6 Saltmarsh Crossing: held 44 waves (own 14, fell in wave 48), kills=957 towers=61 time=1150s
+11 Heraldmoor: held 37 waves (own 16, fell in wave 40), kills=521 towers=46 time=969s
+16 Ashen Maze: held 26 waves (own 17, fell in wave 29), kills=419 towers=58 time=716s
+21 Reedmere Ford: held 32 waves (own 14, fell in wave 34), kills=380 towers=32 time=841s
+26 Blackwater Fen: held 31 waves (own 16, fell in wave 34), kills=478 towers=45 time=828s
+31 Powder Road: held 28 waves (own 16, fell in wave 31), kills=267 towers=38 time=766s
+36 The Workshops: held 26 waves (own 18, fell in wave 35), kills=406 towers=42 time=848s
+41 Gryphon Aerie: held 23 waves (own 18, fell in wave 26), kills=335 towers=39 time=631s
+46 Pilgrim's Flood: held 22 waves (own 20, fell in wave 23), kills=306 towers=33 time=580s
+long_night_test: all passed
+
+[exited with code 0]
