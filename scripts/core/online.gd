@@ -75,7 +75,7 @@ static func score_key(mission: String) -> String:
 
 
 static func mission_of_key(key: String) -> String:
-	return key.replace("_night", ":night")
+	return key.replace("_night", ":night").replace("_long", ":long")
 
 
 static func check_name(n: String) -> String:

@@ -228,6 +228,13 @@ const RACE_TIME_BONUS := 20
 ## comes after `first` seconds and the next ones every `gap` (a lit Signal Fire still takes its
 ## seconds off, but never below `gap_min`). Hero health is multiplied by the lair's race factor
 ## (Level.race_hp, "race_hp" in the file), `hp` unless the lair sets its own (tuned with tests/race_test.gd).
+## The Long Night (GameSim.set_long): endless waves on a beaten lair, played with the player's own
+## Dark Arts and day rules, one leaderboard per lair. After the lair's own waves its last `cycle`
+## waves come round again and again (Level.extend_long), each with one more hero for every
+## `extra_every` waves past the end, and hero health grows by `grow` per wave past the end,
+## compounded, on top of the lair's fixed curve (Level.curve, no Resolve), so everyone meets the
+## same waves and the night always wins in the end. Unspent gold draws nothing.
+const LONG := {"cycle": 5, "extra_every": 2, "grow": 0.06}
 const RACE := {"first": 10.0, "gap": 12.0, "gap_min": 6.0, "hp": 0.55}
 const LOOT_COIN_MUL := 1.4    # a coin is worth this times the hero's bounty, grown by wave (not threat),
 const LOOT_COIN_BONUS := 4    # plus this flat amount, so even small heroes drop a worthwhile coin

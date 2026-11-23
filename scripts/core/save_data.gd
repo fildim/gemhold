@@ -84,6 +84,19 @@ static func mission_id(level_id: String, night: bool) -> String:
 	return level_id + (":night" if night else "")
 
 
+## Key for a lair's Long Night best (GameSim.long_score), kept with the scores but not in the total.
+static func long_id(level_id: String) -> String:
+	return level_id + LONG
+
+
+const LONG := ":long"
+
+
+## The Long Night opens once the lair is won by day.
+func long_unlocked(level_id: String) -> bool:
+	return best_rank(level_id) != ""
+
+
 ## A level's night mission opens once the day mission is cleared Brilliant.
 func night_unlocked(level_id: String) -> bool:
 	return best_rank(level_id) == "Brilliant"
@@ -216,10 +229,12 @@ func record_score(mission: String, score: int) -> bool:
 	return true
 
 
-## The leaderboard total: every mission's best score added up.
+## The leaderboard total: every mission's best score added up (not the Long Night's).
 func total_score() -> int:
 	var n := 0
-	for id in scores:
+	for id: String in scores:
+		if id.ends_with(LONG):
+			continue
 		n += int(scores[id])
 	return n
 

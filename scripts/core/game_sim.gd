@@ -238,6 +238,9 @@ var den_refill := 0.0     # seconds toward the next charge
 var den_cd := 0.0         # seconds until the den may fire again
 var time := 0.0
 var race_on := false       # an online race (set_race): kills send heroes to the rival, the race clock runs
+var long_on := false       # the Long Night (set_long): endless waves, see Defs.LONG
+var long_base := 0        # the lair's own wave count in the Long Night
+var cleared := 0          # waves whose heroes are all gone (judged): the Long Night's measure
 var race_sends := ""      # hero codes sent to the rival so far, oldest first
 var stopped := false      # an online race ended because the rival finished first
 var touched := false      # a hero has laid hands on a gem (grabbed from the hoard or picked up)
@@ -419,6 +422,9 @@ func mana_regen() -> float:
 
 
 func start_wave() -> void:
+	if long_on:
+		while level.waves.size() < wave + 2:   # always one more to come
+			level.extend_long(long_base)
 	if wave >= level.waves.size():
 		return
 	gather_loot()   # whatever the last wave dropped is picked up as the next one marches in
@@ -461,6 +467,14 @@ func wave_gap() -> float:
 func set_race() -> void:
 	race_on = true
 	timer = float(Defs.RACE["first"])
+
+
+## Makes this battle the Long Night (Defs.LONG): waves never end, heroes follow the lair's fixed curve
+## and grow past its end; the battle ends only when the last gem is gone. Call before it begins.
+func set_long() -> void:
+	long_on = true
+	long_base = level.own_waves
+	level.extend_long(long_base)
 
 
 ## A Signal Fire still burns: waves come sooner and barracks muster faster.
@@ -509,7 +523,9 @@ func _spawn(code: String, path := -1, dist := 0.0, w := 0) -> void:
 	e.d = d
 	# The campaign adapts to the player (threat, shown as Resolve); a race uses the lair's fixed
 	# per-wave curve instead, so both racers meet the same heroes (Level.curve).
-	var mul := level.hp_mul * (1.0 + level.wave_hp * maxi(0, wave - 1)) * (level.wave_curve(wave) if race_on else threat)
+	var mul := level.hp_mul * (1.0 + level.wave_hp * maxi(0, wave - 1)) * (level.wave_curve(wave) if race_on or long_on else threat)
+	if long_on:   # past the lair's own waves, health compounds (Defs.LONG)
+		mul *= pow(1.0 + float(Defs.LONG["grow"]), maxi(0, wave - long_base))
 	if level.night:
 		mul *= level.night_hp
 	if race_on:
@@ -1247,6 +1263,7 @@ func _cover_share(i: int, d: float) -> float:
 ## after a wave stopped early, only a little after one that got close, so it never feels hopeless.
 func _judge_wave(w: int) -> void:
 	var t: Dictionary = Defs.THREAT
+	cleared += 1
 	var reach: float = wave_peak.get(w, 0.0)
 	var up: float
 	if reach < t["easy"]:
@@ -2457,6 +2474,19 @@ func score(number: int) -> int:
 	if not race_on:   # the tougher the heroes became (Resolve), the more the win is worth
 		pts *= threat
 	return roundi(pts)
+
+
+## The Long Night's leaderboard value: waves held (every hero of the wave gone) first, then heroes
+## slain as the tie-break. long_waves() reads the waves back out of a stored value.
+func long_score() -> int:
+	return cleared * LONG_KILLS + mini(kills, LONG_KILLS - 1)
+
+
+const LONG_KILLS := 10000
+
+
+static func long_waves(value: int) -> int:
+	return value / LONG_KILLS
 
 
 ## The best rating still within reach if the battle is won from here (shown during the battle).

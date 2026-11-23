@@ -24,10 +24,12 @@ static func skills(points: int, beaten := 1000) -> Dictionary:
 ## "near" closest to the lair, "far" earliest along a land road, "mid" halfway along one.
 ## race: plays it as an online race (GameSim.set_race) against an equal rival: every hero its kills
 ## send (sim.race_sends) comes straight back onto its own roads. It never buys heroes to send.
-static func play(lv: Level, skill_ranks: Dictionary, seed := 0, style := "near", race := false) -> GameSim:
+static func play(lv: Level, skill_ranks: Dictionary, seed := 0, style := "near", race := false, long := false) -> GameSim:
 	var sim := GameSim.new(lv, skill_ranks)
 	if race:
 		sim.set_race()
+	if long:
+		sim.set_long()
 	var echoed := 0   # race: how many of its own sends have come back
 	if OS.has_environment("BOT_TRACE"):   # print what the battle announces, for debugging a lair
 		sim.toast.connect(func(t: String) -> void: print("%.1f w%d %s" % [sim.time, sim.wave, t]))
@@ -56,7 +58,8 @@ static func play(lv: Level, skill_ranks: Dictionary, seed := 0, style := "near",
 		spots.sort_custom(func(a: Vector2i, b: Vector2i) -> bool: return share[a] < share[b])
 	var t := 0.0
 	var dt := 0.05
-	while not sim.over and t < 1200.0:
+	var limit := 7200.0 if long else 1200.0
+	while not sim.over and t < limit:
 		# Take the first thing each tile offers (cut, build, upgrade); never sell.
 		var uncut := sim.sites.values().any(func(s: GameSim.Site) -> bool: return not s.owned and Defs.HERO_SITES.has(s.kind))
 		var grew := false   # built or upgraded something this pass

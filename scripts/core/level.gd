@@ -22,6 +22,7 @@ var gems := 0
 var first_delay := 15.0
 var wave_gap := 24.0
 var waves: Array = []    # Array of Array[String] hero codes
+var own_waves := 0         # the lair's own wave count (the Long Night adds more: extend_long)
 var wave_roads: Array = []   # parallel to waves: Array[int] of road indexes the wave may use; empty = every land road
 var wave_cargo: Array = []   # parallel to waves: {road index (String) -> Array[String] hero codes} carried by boats
 var wave_walk: Array = []    # parallel to waves: Array[int] of land roads its walkers are dealt over
@@ -111,6 +112,7 @@ func _parse(d: Dictionary) -> void:
 			waves.append(_parse_wave(String(w)))
 		wave_roads.append(roads)
 		wave_cargo.append(cargo)
+	own_waves = waves.size()
 	rules = d.get("rules", []).duplicate(true)
 	night = bool(d.get("night", false))
 	hp_mul = float(d.get("hp_mul", 1.0))
@@ -418,6 +420,32 @@ func deal(roads: Array[int]) -> Array[int]:
 		if float(paths[r]["total"]) >= SHORT_ROAD:
 			out.append(r)
 	return out if out.size() > roads.size() else roads
+
+
+## The Long Night: adds one more wave after the lair's own, copied in turn from its last
+## Defs.LONG["cycle"] waves (roads, boats and flyers included), with one more of the wave's most
+## common hero for every Defs.LONG["extra_every"] waves past the lair's end. base: the lair's own
+## wave count (the first call's waves.size()).
+func extend_long(base: int) -> void:
+	var cycle := mini(int(Defs.LONG["cycle"]), base)
+	var past := waves.size() - base   # long waves added so far
+	var src := base - cycle + past % cycle
+	var list: Array[String] = waves[src].duplicate()
+	var count := {}
+	for code in list:
+		if not Defs.ENEMIES[code].get("boss", false):
+			count[code] = int(count.get(code, 0)) + 1
+	if not count.is_empty():
+		var common: String = count.keys()[0]
+		for code: String in count:
+			if count[code] > count[common]:
+				common = code
+		for i in (past + 1) / int(Defs.LONG["extra_every"]):
+			list.append(common)
+	waves.append(list)
+	for arr: Array in [wave_roads, wave_cargo, wave_walk, wave_deal, wave_rivers, wave_air]:
+		if src < arr.size():
+			arr.append(arr[src].duplicate(true))
 
 
 ## The hero health factor of wave w (1 for a level without a curve, or before the first wave).

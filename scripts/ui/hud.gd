@@ -14,6 +14,7 @@ signal restart_pressed
 signal restart_now   # the battle bar's Restart (second tap): start this lair again at once
 signal next_level_pressed
 signal night_pressed
+signal long_pressed   # the start card's Long Night button
 signal map_pressed
 signal send_pressed(code: String)   # online race: buy this hero for the rival
 
@@ -466,9 +467,9 @@ func refresh(sim: GameSim, armed: bool, speed: int, paused: bool) -> void:
 	_mana_bar.max_value = sim.mana_max
 	_mana_bar.value = sim.mana
 	_gems.text = "%d/%d" % [sim.gems_left(), sim.level.gems]
-	_wave.text = "Wave %d/%d" % [sim.wave, sim.level.waves.size()]
+	_wave.text = "Wave %d" % sim.wave if sim.long_on else "Wave %d/%d" % [sim.wave, sim.level.waves.size()]
 	_resolve.visible = not sim.race_on
-	_resolve.text = "Resolve ×%.2f" % sim.threat
+	_resolve.text = ("Held %d wave%s" % [sim.cleared, "" if sim.cleared == 1 else "s"]) if sim.long_on else "Resolve ×%.2f" % sim.threat
 	if sim.dusk_wave > 0 and not sim.dark:   # the Dusk rule: say when night will fall
 		_wave.text += " · night at %d" % sim.dusk_wave
 	# One dial serves both rules: the tide (blue arc = high water) or the eclipse (dark arc = darkness).
@@ -888,7 +889,7 @@ func _on_card_button(sig: Signal) -> void:
 ## best_score and night_score are the player's best scores (0 for none). The world best arrives later,
 ## from the online leaderboard, through show_world_best().
 func show_intro(level: Level, number: int, best_rank: String, night_open := false, night_best := "",
-		best_score := 0, night_score := 0) -> void:
+		best_score := 0, night_score := 0, long_best := -1) -> void:
 	var txt := "[b]Guard the gems!!![/b]\n\n"
 	txt += "[color=#a8977c]Lair %d · %d waves[/color]" % [number, level.waves.size()]
 	if best_rank != "":
@@ -901,6 +902,11 @@ func show_intro(level: Level, number: int, best_rank: String, night_open := fals
 		buttons.append(["Night mission", night_pressed])
 	else:
 		txt += "\n[color=#6f7aa8]Clear it Brilliant to unlock its night mission.[/color]"
+	if long_best >= 0:   # won by day: the Long Night is open
+		txt += "\n\n[color=#c9a0ff][b]The Long Night.[/b] Endless waves with your own Dark Arts, until the hoard falls. Its own leaderboard.[/color]"
+		if long_best > 0:
+			txt += "   [color=#e8b84a]Best: %d waves held[/color]" % GameSim.long_waves(long_best)
+		buttons.append(["Long Night", long_pressed])
 	buttons.append(["Map", map_pressed])
 	_show_card(level.title, txt, buttons)
 	_intro_lair = level.id
@@ -930,9 +936,26 @@ func show_world_best(level_id: String, day: Array, night: Array) -> void:
 
 
 ## The lair being played, in the top bar: "46 · Pilgrim's Flood", with "(night)" on night missions.
-func set_lair(number: int, title: String, night := false) -> void:
-	_brand.text = "%d · %s%s" % [number, title, " (night)" if night else ""]
+func set_lair(number: int, title: String, night := false, long_night := false) -> void:
+	_brand.text = "%d · %s%s" % [number, title, " (Long Night)" if long_night else " (night)" if night else ""]
 	_brand.tooltip_text = _brand.text
+
+
+## The end of a Long Night: how many waves were held, against the lair's best until now
+## (GameSim.long_score values); earned lists new achievement ids.
+func show_long_end(sim: GameSim, best_before: int, earned_ach: Array[String] = []) -> void:
+	var txt := "The night swallowed the hoard in wave %d.\n\n" % sim.wave
+	txt += "Held: [b][color=#e8b84a]%d wave%s[/color][/b]   [color=#a8977c]%s heroes slain[/color]" % [sim.cleared, "" if sim.cleared == 1 else "s", _thousands(sim.kills)]
+	if sim.long_score() > best_before and best_before > 0:
+		txt += "\n[color=#e2683a]New best for this lair's Long Night![/color]"
+	elif best_before > 0:
+		txt += "\n[color=#a8977c]Best: %d waves held[/color]" % GameSim.long_waves(best_before)
+	for id in earned_ach.slice(0, ACH_ON_CARD):
+		var a := Achievements.find(id)
+		txt += "\n[b][color=#c9c0ff]★ Achievement: %s[/color][/b] [color=#a8977c]%s[/color]" % [a["name"], a["text"]]
+	if earned_ach.size() > ACH_ON_CARD:
+		txt += "\n[b][color=#c9c0ff]★ +%d more in the Hall of Fame[/color][/b]" % (earned_ach.size() - ACH_ON_CARD)
+	_show_card("Dawn never came", txt, [["Play again", restart_pressed], ["Map", map_pressed]])
 
 
 ## score is this battle's (GameSim.score), best_before the mission's best until now; earned lists new

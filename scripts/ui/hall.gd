@@ -58,8 +58,9 @@ func setup(hud: Control, save: SaveData, online: Online, levels: Array) -> void:
 	_boards = [{"label": "All lairs: total score", "field": "total"}, {"label": "Races: most wins", "field": "rw"}]
 	for i in levels.size():
 		var id: String = levels[i]["id"]
-		_boards.append({"label": "Lair %d: %s" % [i + 1, levels[i]["title"]], "field": "scores." + Online.score_key(id)})
-		_boards.append({"label": "Lair %d: %s · Night" % [i + 1, levels[i]["title"]], "field": "scores." + Online.score_key(SaveData.mission_id(id, true))})
+		for m: Array in [[id, ""], [SaveData.mission_id(id, true), " · Night"], [SaveData.long_id(id), " · Long Night"]]:
+			_boards.append({"label": "Lair %d: %s%s" % [i + 1, levels[i]["title"], m[1]], "field": "scores." + Online.score_key(m[0]),
+				"mission": m[0], "long": m[1] == " · Long Night"})
 	theme = hud.theme
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_STOP
@@ -236,8 +237,9 @@ func _load_board() -> void:
 		var l := int(_save.stats.get("race_losses", 0))
 		note = "Your races: %d won, %d lost%s." % [w, l, ", %d drawn" % int(_save.stats["race_draws"]) if _save.stats.has("race_draws") else ""] if w + l > 0 else "No races of yours yet: race a friend from the Race page."
 	else:
-		var mine := _save.total_score() if _board == 0 else int(_save.scores.get(_mission(_board), 0))
-		note = "Your best: %s" % Hud._thousands(mine) if mine > 0 else "No score of yours here yet."
+		var mine := _save.total_score() if _board == 0 else int(_save.scores.get(b["mission"], 0))
+		var shown := ("%d waves held" % GameSim.long_waves(mine)) if b.get("long", false) else Hud._thousands(mine)
+		note = "Your best: %s" % shown if mine > 0 else "No score of yours here yet."
 	if not _online.signed_in():
 		note += "  Sign in (Account) to put your name on the board."
 	_board_note.text = note
@@ -256,12 +258,6 @@ func _load_board() -> void:
 		return
 	for i in res.size():
 		_add_row(i + 1, res[i])
-
-
-## Mission id of leaderboard number n (2 and up: each lair's day, then night).
-func _mission(n: int) -> String:
-	var id: String = _levels[(n - 2) / 2]["id"]
-	return SaveData.mission_id(id, (n - 2) % 2 == 1)
 
 
 func _add_row(place: int, r: Dictionary) -> void:
@@ -319,7 +315,8 @@ func _add_row(place: int, r: Dictionary) -> void:
 	var extra := _label(row, info, 22, Hud.DIM)
 	extra.autowrap_mode = TextServer.AUTOWRAP_OFF
 	extra.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	var v := _label(row, ("%d wins" % r["value"]) if _board == 1 else Hud._thousands(r["value"]), 30, Hud.GOLD, _hud.bold_font)
+	var value: String = ("%d wins" % r["value"]) if _board == 1 else ("%d waves" % GameSim.long_waves(r["value"])) if _boards[_board].get("long", false) else Hud._thousands(r["value"])
+	var v := _label(row, value, 30, Hud.GOLD, _hud.bold_font)
 	v.custom_minimum_size.x = 150
 	v.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	v.autowrap_mode = TextServer.AUTOWRAP_OFF

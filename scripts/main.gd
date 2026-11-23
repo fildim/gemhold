@@ -23,6 +23,7 @@ const MUSIC := {"level_01": "mountain", "level_02": "heroicage", "level_03": "cu
 
 var level_index := 0
 var night := false            # playing the level's night mission
+var long_night := false       # playing the lair's Long Night (GameSim.set_long)
 var save: SaveData
 var on_map := true
 var level: Level
@@ -75,6 +76,7 @@ func _ready() -> void:
 	hud.popup_closed.connect(_deselect)
 	hud.start_pressed.connect(func() -> void: started = true)
 	hud.night_pressed.connect(_start_night)
+	hud.long_pressed.connect(_start_long)
 	hud.restart_pressed.connect(func() -> void: _after_ad(_restart))
 	hud.restart_now.connect(func() -> void:
 		if race.is_empty() and not on_map:
@@ -173,12 +175,14 @@ func _choose(i: int) -> void:
 	select.visible = false
 	frame.visible = true
 	hud.set_battle_visible(true)
+	long_night = false
 	night = false
 	_load_level(i)
 	_layout()
 	var night_id := SaveData.mission_id(level.id, true)
 	hud.show_intro(level, i + 1, save.best_rank(level.id), save.night_unlocked(level.id),
-		save.best_rank(night_id), int(save.scores.get(level.id, 0)), int(save.scores.get(night_id, 0)))
+		save.best_rank(night_id), int(save.scores.get(level.id, 0)), int(save.scores.get(night_id, 0)),
+		int(save.scores.get(SaveData.long_id(level.id), 0)) if save.long_unlocked(level.id) else -1)
 	_world_best(level.id)
 
 
@@ -199,11 +203,22 @@ func _world_best(level_id: String) -> void:
 	hud.show_world_best(level_id, kept["day"], kept["night"])
 
 
+## Chosen on the start card: the lair's Long Night (endless waves, own Dark Arts, by day).
+func _start_long() -> void:
+	if not save.long_unlocked(level.id):
+		return
+	night = false
+	long_night = true
+	_load_level(level_index)
+	started = true
+
+
 ## Chosen on the start card: reload the same level in darkness and begin.
 func _start_night() -> void:
 	if not save.night_unlocked(level.id):
 		return
 	night = true
+	long_night = false
 	_load_level(level_index)
 	started = true
 
@@ -212,13 +227,15 @@ func _load_level(i: int) -> void:
 	level_index = i
 	level = Level.load_from(LEVELS[i])
 	level.night = night
-	hud.set_lair(i + 1, level.title, night)
+	hud.set_lair(i + 1, level.title, night, long_night)
 	_new_battle()
 
 
 func _new_battle() -> void:
 	sim = GameSim.new(level, save.skills if race.is_empty() else Loadout.for_lair(level_index))   # races are fair: both get the lair's standard skills
 	sim.toast.connect(hud.toast)
+	if long_night:
+		sim.set_long()
 	sim.ended.connect(_on_ended)
 	sim.sound.connect(Sfx.play)
 	sim.burst.connect(func(kind: String, _p: Vector2, _c: String) -> void:
@@ -730,6 +747,16 @@ func _on_ended(won: bool) -> void:
 		_race_t = 0.0   # report the finish now; the race card shows when the rival's answer is in
 		hud.show_race_end(Online.race_progress(sim, false, _race_secs()), race.get("rival", Online.race_progress()), _rival_name())
 		return
+	if long_night:   # no stars, no win: only the lair's Long Night best
+		var long_id := SaveData.long_id(level.id)
+		var long_before := int(save.scores.get(long_id, 0))
+		save.record_score(long_id, sim.long_score())
+		Achievements.record(save, sim)
+		var earned := Achievements.check_battle(save, sim, level_index + 1)
+		save.save()
+		online.sync(save)
+		hud.show_long_end(sim, long_before, earned)
+		return
 	var had_night := save.night_unlocked(level.id)
 	var mission := SaveData.mission_id(level.id, night)
 	var stars_before := save.stars(mission)
@@ -844,6 +871,7 @@ func _start_race(r: Dictionary, side: String) -> void:
 	frame.visible = true
 	hud.set_battle_visible(true)
 	night = bool(r.get("night", false))
+	long_night = false
 	_load_level(i)
 	sim.set_race()   # the race clock and race hero health
 	_layout()
