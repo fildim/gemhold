@@ -4,7 +4,7 @@
  "intro": "A sunken hollow between two roads. A few raised tiles stand above the rest: any tower can be built on one, and it reaches further from up there. Choose which tower each height is worth. In the west stands a hero barracks that sends extra heroes down the road while waves are coming: raze it early.",
  "cols": 16,
  "rows": 10,
- "hp_mul": 1.35,
+ "hp_mul": 1.16,
  "race_hp": 0.65,
  "curve": [1, 1.07, 1.11, 1.13, 1.17, 1.17, 1.26, 1.29, 1.37, 1.41, 1.48, 1.52, 1.58, 1.63],
  "legend": {"m": "moss", "f": "frost", "a": "ash", "M": "high moss", "F": "high frost", "A": "high ash", "L": "lair"},

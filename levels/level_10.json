@@ -4,7 +4,7 @@
  "intro": "A fen of smouldering ash: almost every tile here takes only Cinder Shrines. Armoured heroes march in, and the raised tiles are the only places a Hut or a Crypt can stand. Choose well which tower each one gets.",
  "cols": 16,
  "rows": 10,
- "hp_mul": 2.16,
+ "hp_mul": 1.86,
  "race_hp": 0.7,
  "curve": [1, 1.01, 1.04, 1.07, 1.11, 1.14, 1.16, 1.2, 1.21, 1.24, 1.26, 1.3, 1.33, 1.35, 1.38],
  "legend": {"m": "moss", "f": "frost", "a": "ash", "M": "high moss", "F": "high frost", "A": "high ash", "L": "lair"},

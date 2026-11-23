@@ -3,7 +3,7 @@
  "title": "Sluicegate",
  "cols": 16,
  "rows": 10,
- "hp_mul": 3.60,
+ "hp_mul": 3.39,
  "race_hp": 0.7,
  "curve": [1, 1.07, 1.07, 1.08, 1.09, 1.1, 1.12, 1.14, 1.17, 1.17, 1.21, 1.22, 1.28, 1.28, 1.36, 1.37, 1.38],
  "legend": {"A":"high ash","F":"high frost","L":"lair","M":"high moss","a":"ash","f":"frost","m":"moss"},

@@ -4,7 +4,7 @@
  "intro": "Your den now crowns the Gloomspire, and every road on the mountain leads to it. Heroes climb from all four sides at once, two barracks feed them, and every kind of hero joins the climb. Raised tiles between the roads take any tower and let it reach two roads at once.",
  "cols": 16,
  "rows": 10,
- "hp_mul": 2.37,
+ "hp_mul": 2.27,
  "race_hp": 0.48,
  "curve": [1, 1.05, 1.06, 1.07, 1.08, 1.1, 1.12, 1.16, 1.22, 1.24, 1.32, 1.36, 1.38, 1.45, 1.46, 1.5],
  "legend": {"m": "moss", "f": "frost", "a": "ash", "M": "high moss", "F": "high frost", "A": "high ash", "L": "lair"},
