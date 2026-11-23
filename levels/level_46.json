@@ -3,7 +3,7 @@
  "title": "Pilgrim's Flood",
  "cols": 16,
  "rows": 10,
- "hp_mul": 3.68,
+ "hp_mul": 3.5,
  "curve": [1, 1.08, 1.09, 1.11, 1.12, 1.13, 1.14, 1.15, 1.16, 1.17, 1.19, 1.21, 1.23, 1.23, 1.27, 1.32, 1.32, 1.35, 1.36, 1.4],
  "legend": {"A":"high ash","F":"high frost","L":"lair","M":"high moss","a":"ash","f":"frost","m":"moss"},
  "terrain": [
