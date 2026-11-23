@@ -190,6 +190,14 @@ func _trebuchet() -> void:
 	_check(s4._pick_target(shrine) == u4, "a Cinder Shrine aims at it")
 	s4.hurt(u4, 100.0, true, shrine)
 	_check(u4.hp == hp - 100.0, "a Cinder Shrine burns it")
+	# A Meteor smashes it outright, however tough it has grown.
+	u4.hp = 99999.0
+	u4.max_hp = u4.hp
+	s4.mana = 100
+	s4.update(0.05)   # back on its road (the checks above moved it by hand)
+	s4.cast_meteor(u4.pos)
+	_run(s4, 2.0)
+	_check(u4.hp <= 0.0, "a Meteor smashes it at once")
 
 
 func _belfry() -> void:

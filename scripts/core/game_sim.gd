@@ -1629,7 +1629,8 @@ func _update_fx(dt: float) -> void:
 			for e: Enemy in enemies:
 				if e.pos.distance_to(f.pos) <= Defs.METEOR["radius"]:
 					var under := e.hidden
-					hurt(e, meteor_damage(), true, null, 0, true)
+					# A Trebuchet is smashed outright, whatever its health.
+					hurt(e, e.hp + 1.0 if e.d.has("fire_only") else meteor_damage(), true, null, 0, true)
 					if under and e.hp <= 0.0:
 						diver_meteor += 1
 			best_meteor = maxi(best_meteor, kills - before)

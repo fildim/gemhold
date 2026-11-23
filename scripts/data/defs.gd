@@ -105,7 +105,7 @@ const HERO_TIPS := {
 	"a": "Runs for a tower near the road, lights a keg and [b]stuns it for 7 s[/b]. Towers on raised tiles are out of his reach. Slay him while the fuse burns and the keg hurts the heroes around him.",
 	"v": "Paves the road behind him: [b]heroes walk faster on it[/b] until the paving fades, 30 s after he falls. Towers aim for him first.",
 	"i": "His censer smoke [b]silences towers[/b] near him: no ability, no battle-hardened bonus, slower fire. Out-range him from raised tiles; the den is never silenced.",
-	"u": "A siege engine. It stops when a tower comes in reach and [b]buries towers under rubble[/b], the strongest first, each only once, then rolls on. A buried tower stays silent until you tap it and clear it. [b]Only Cinder Shrines and the Meteor hurt it.[/b] It never takes gems.",
+	"u": "A siege engine. It stops when a tower comes in reach and [b]buries towers under rubble[/b], the strongest first, each only once, then rolls on. A buried tower stays silent until you tap it and clear it. [b]Only Cinder Shrines hurt it, and a Meteor smashes it at once.[/b] It never takes gems.",
 	"I": "The Iron Belfry, a boss. Heroes walking in its shadow, just behind it, can't be targeted by towers (the Meteor still hits). Sappers jump out of it, and it unloads Footmen at your den.",
 	"y": "Flies straight for your den, over roads, water and Lava (the faint dashed line is his flight). Chill holds him only half as well. Gems he drops fall to the nearest road and roll home.",
 	"j": "Once, when he is badly hurt, a [b]holy shield[/b] makes him untouchable for a moment and heals him. Burst him down past it, or make him spend it where your towers can finish him. Dread doesn't touch him.",
