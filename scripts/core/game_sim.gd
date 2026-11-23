@@ -502,7 +502,7 @@ func _spawn(code: String, path := -1, dist := 0.0, w := 0) -> void:
 	e.wave = w
 	e.d = d
 	# Fixed difficulty: the same health for the same wave of a lair in every game (Level.curve).
-	var mul := level.hp_mul * (1.0 + Defs.WAVE_HP_SCALE * maxi(0, wave - 1)) * level.wave_curve(wave)
+	var mul := level.hp_mul * (1.0 + level.wave_hp * maxi(0, wave - 1)) * level.wave_curve(wave)
 	if level.night:
 		mul *= level.night_hp
 	if race_on:

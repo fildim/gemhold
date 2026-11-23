@@ -34,6 +34,9 @@ var race_hp: float = Defs.RACE["hp"]   # hero health factor in an online race ("
 ## never falling. It replaced the old dynamic difficulty (2026-11-22): its shape is the threat the test bot
 ## met at each wave, so late waves stay as hard as they were. Waves past its end keep its last value.
 var curve: PackedFloat32Array = []
+## How much tougher each wave's heroes are than the first, per wave ("wave_hp" in the file; default
+## Defs.WAVE_HP_SCALE): hero health grows by 1 + wave_hp × (wave - 1), on top of the curve.
+var wave_hp: float = Defs.WAVE_HP_SCALE
 var sites: Array = []    # [{"kind", "cell": Vector2i, "path", "spawn": Array[String], "every"}]
 var site_cuts := 1       # cuts (each paid in mana) to free a mine or well or raze a barracks; grows on later lairs
 var path_kind: Array[String] = []   # parallel to paths: "land" | "river" | "air"
@@ -113,6 +116,7 @@ func _parse(d: Dictionary) -> void:
 	hp_mul = float(d.get("hp_mul", 1.0))
 	night_hp = float(d.get("night_hp", Defs.NIGHT_HP))
 	race_hp = float(d.get("race_hp", Defs.RACE["hp"]))
+	wave_hp = float(d.get("wave_hp", Defs.WAVE_HP_SCALE))
 	for v in d.get("curve", []):
 		curve.append(float(v))
 	site_cuts = maxi(1, int(d.get("site_cuts", 1)))

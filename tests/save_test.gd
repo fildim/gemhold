@@ -297,7 +297,7 @@ func _init() -> void:
 	_check(fin.over and fin.won and fin.home == lv.gems and fin.lost == 0, "the last hero gone ends the battle; rolling gems count as home")
 	th.wave = 5
 	th._spawn("p", 0)
-	_check(is_equal_approx(th.enemies.back().max_hp, 32.0 * lv.hp_mul * lv.wave_curve(5) * (1.0 + Defs.WAVE_HP_SCALE * 4)), "the wave's curve multiplies hero health")
+	_check(is_equal_approx(th.enemies.back().max_hp, 32.0 * lv.hp_mul * lv.wave_curve(5) * (1.0 + lv.wave_hp * 4)), "the wave's curve multiplies hero health")
 	var th2 := GameSim.new(lv)
 	th2.gold = 5000
 	th2.wave = 5

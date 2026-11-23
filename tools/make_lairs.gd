@@ -27,12 +27,12 @@ func _init() -> void:
 			var old = JSON.parse_string(FileAccess.get_file_as_string(path))
 			if old is Dictionary and old.has("hp_mul"):
 				d["hp_mul"] = old["hp_mul"]
-			if old is Dictionary and (old.has("night_hp") or old.has("race_hp") or old.has("curve")):   # and a tuned night and race health and the health curve, right after hp_mul
+			if old is Dictionary and (old.has("night_hp") or old.has("race_hp") or old.has("wave_hp") or old.has("curve")):   # and a tuned night and race health and the health curve, right after hp_mul
 				var keep := {}
 				for k: String in d:
 					keep[k] = d[k]
 					if k == "hp_mul":
-						for extra in ["night_hp", "race_hp", "curve"]:
+						for extra in ["night_hp", "race_hp", "wave_hp", "curve"]:
 							if old.has(extra):
 								keep[extra] = old[extra]
 				d = keep
