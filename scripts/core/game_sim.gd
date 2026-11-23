@@ -3,6 +3,7 @@ extends RefCounted
 ## The rules of one battle: heroes, towers, spells, waves, gems, map buildings and loot.
 ## No drawing code lives here, so battles can run headless in tests.
 
+const COVER_STEP := 0.25   # tiles between samples when measuring how much of a road is defended
 
 signal toast(text: String)
 signal ended(won: bool)
@@ -210,7 +211,11 @@ var wave := 0
 var timer := 0.0
 var queue: Array[String] = []
 var queue_wave: Array[int] = []   # the wave each queued hero belongs to
+var threat := 1.0         # dynamic difficulty: multiplies hero health, see _judge_wave
 var wave_left := {}       # wave -> its heroes still queued or on the map
+var wave_peak := {}       # wave -> most of the defended road any of its heroes got through
+var wave_live := {}       # wave -> threat already added by its heroes falling early (_judge_kill)
+var _cover := {}          # road -> defended length up to each COVER_STEP along it; empty = rebuild
 var spawn_t := 0.0
 var lane := 0
 var boat_lane := 0        # boats are dealt over river roads on their own count
@@ -429,6 +434,7 @@ func start_wave() -> void:
 	for i in list.size():
 		queue_wave.append(wave + 1)
 	wave_left[wave + 1] = list.size()
+	wave_peak[wave + 1] = 0.0
 	wave += 1
 	timer = wave_gap() if wave < level.waves.size() else 0.0
 	spawn_t = 0.0
@@ -501,8 +507,9 @@ func _spawn(code: String, path := -1, dist := 0.0, w := 0) -> void:
 	e.code = code
 	e.wave = w
 	e.d = d
-	# Fixed difficulty: the same health for the same wave of a lair in every game (Level.curve).
-	var mul := level.hp_mul * (1.0 + level.wave_hp * maxi(0, wave - 1)) * level.wave_curve(wave)
+	# The campaign adapts to the player (threat, shown as Resolve); a race uses the lair's fixed
+	# per-wave curve instead, so both racers meet the same heroes (Level.curve).
+	var mul := level.hp_mul * (1.0 + level.wave_hp * maxi(0, wave - 1)) * (level.wave_curve(wave) if race_on else threat)
 	if level.night:
 		mul *= level.night_hp
 	if race_on:
@@ -745,6 +752,11 @@ func _update_enemies(dt: float) -> void:
 			else:   # turned back for a gem: the paving stops here
 				e.pave["until"] = time + Defs.PAVE_FADE
 				e.pave = {}
+		if e.wave > 0 and not e.retreat:
+			# How much of the defence it has walked through. Running away means it reached the
+			# hoard or grabbed a dropped gem: as far as it gets.
+			var reach := _cover_share(e.path, e.dist) if e.dir == 1 else 1.0
+			wave_peak[e.wave] = maxf(wave_peak.get(e.wave, 0.0), reach)
 		var p := level.path_pos(e.path, e.dist)
 		if absf(p.x - e.pos.x) > 0.0001:
 			e.face = 1 if p.x > e.pos.x else -1
@@ -771,9 +783,11 @@ func _update_enemies(dt: float) -> void:
 		if e.gone or e.hp <= 0.0:
 			_leave(e)
 		if e.wave > 0 and (e.gone or e.hp <= 0.0):
+			if not e.gone:
+				_judge_kill(e.wave)
 			wave_left[e.wave] -= 1
 			if wave_left[e.wave] == 0:
-				_wave_done(e.wave)
+				_judge_wave(e.wave)
 	enemies = enemies.filter(func(e: Enemy) -> bool: return not e.gone and e.hp > 0.0)
 	for i in paved.size():
 		if not paved[i].is_empty():
@@ -1035,8 +1049,8 @@ func _repairing(e: Enemy, dt: float) -> bool:
 
 
 ## A boat at its landing: its crew steps ashore one by one (Defs.LAND_GAP apart) and marches on.
-## Sink it before the last one is off and the rest drown. Once empty the boat is gone (it no longer
-## counts as a hero of its wave).
+## Sink it before the last one is off and the rest drown. Once empty the boat is gone (neither
+## slain nor escaped, so it does not count toward the threat).
 func _land(e: Enemy, dt: float) -> void:
 	if e.beached:
 		return
@@ -1060,7 +1074,7 @@ func _land(e: Enemy, dt: float) -> void:
 		if e.wave > 0:
 			wave_left[e.wave] -= 1
 			if wave_left[e.wave] == 0:
-				_wave_done(e.wave)
+				_judge_wave(e.wave)
 			e.wave = 0
 
 
@@ -1204,9 +1218,63 @@ func _gem_goal(e: Enemy) -> float:
 	return best
 
 
-## Every hero of wave w is gone (slain, escaped or landed as crew).
-func _wave_done(w: int) -> void:
+## Share (0..1) of road i's defended stretch, the parts a tower or the den can reach, that lies
+## before distance d. Measures how deep into the defence a hero got, wherever towers stand.
+func _cover_share(i: int, d: float) -> float:
+	if _cover.is_empty():
+		for k in level.paths.size():
+			var total: float = level.paths[k]["total"]
+			var cum := PackedFloat32Array()
+			var sum := 0.0
+			for n in int(total / COVER_STEP) + 1:
+				var p := level.path_pos(k, n * COVER_STEP)
+				var hit := p.distance_to(level.lair_center) <= Defs.DEN["range"]
+				for tw: Tower in towers.values():
+					if hit:
+						break
+					hit = p.distance_to(tw.pos) <= tw.stat("range")
+				if hit:
+					sum += COVER_STEP
+				cum.append(sum)
+			_cover[k] = cum
+	var arr: PackedFloat32Array = _cover[i]
+	var last := arr[arr.size() - 1]
+	return arr[clampi(int(d / COVER_STEP), 0, arr.size() - 1)] / last if last > 0.0 else 1.0
+
+
+## Dynamic difficulty. Once every hero of a wave is gone, see how close the wave came: the
+## most of its road's defended stretch any of them got through. The threat only ever rises: a lot
+## after a wave stopped early, only a little after one that got close, so it never feels hopeless.
+func _judge_wave(w: int) -> void:
+	var t: Dictionary = Defs.THREAT
+	var reach: float = wave_peak.get(w, 0.0)
+	if reach < t["easy"]:
+		threat += t["up_easy"] + (t["up_max"] - t["up_easy"]) * (t["easy"] - reach) / t["easy"]
+	elif reach < t["hard"]:
+		threat += t["up_mid"]
+	elif reach < 1.0:
+		threat += t["up_close"]
+	else:
+		threat += t["up_touched"]
+	# Riches draw heroes: unspent gold over the line adds threat too.
+	threat += minf(t["rich_max"], maxf(0.0, gold - t["rich"]) * t["per_gold"])
+	threat = minf(threat, t["max"])
 	wave_left.erase(w)
+	wave_peak.erase(w)
+	wave_live.erase(w)
+
+
+## A hero of wave w fell. While the wave is going easily, the threat rises a little at once, so
+## the heroes still to come in it (and the next wave, which may start before this one ends) are
+## already tougher instead of waiting for the wave to be judged.
+func _judge_kill(w: int) -> void:
+	var t: Dictionary = Defs.THREAT
+	var live: float = wave_live.get(w, 0.0)
+	if wave_peak.get(w, 0.0) >= t["easy"] or live >= t["kill_max"]:
+		return
+	var step := minf(t["up_kill"], t["kill_max"] - live)
+	wave_live[w] = live + step
+	threat = minf(threat + step, t["max"])
 
 
 func _update_drops(dt: float) -> void:
@@ -1265,7 +1333,10 @@ func _update_towers(dt: float) -> void:
 	for tw: Tower in towers.values():
 		if tw.flash > 0.0:
 			tw.flash -= dt
+		var was := tw.holy
 		tw.holy = holy and level.hallowed.has(tw.cell)
+		if was != tw.holy:
+			_cover.clear()   # its reach changed
 		tw.silence = 0.0   # an Inquisitor's censer smoke reaches it
 		for o: Enemy in censers:
 			if o.pos.distance_to(tw.pos) <= float(o.d["censer"]):
@@ -1825,6 +1896,7 @@ func cast_meteor(pos: Vector2) -> bool:
 
 ## On night levels, tiles near the lair, your towers and your mines and wells are lit.
 func _relight() -> void:
+	_cover.clear()   # towers changed, so did the defended stretch of each road
 	_attune()
 	lit.clear()
 	lights = []
@@ -2203,6 +2275,7 @@ func do_action(id: String, c: Vector2i) -> String:
 				if s.kind == "chapel" and not hallow_on() and not level.hallowed.is_empty():
 					chapels_razed_wave = wave
 					toast.emit("The ground is no longer holy")
+				_cover.clear()
 			else:
 				toast.emit("%s is yours" % d["name"])
 				_relight()
@@ -2252,6 +2325,7 @@ func do_action(id: String, c: Vector2i) -> String:
 			tw.lvl += 1
 			tw.born = time
 			burst.emit("build", tw.pos, tw.type)
+			_cover.clear()   # range grew
 			sound.emit("upgrade")
 			if tw.has_ability() and tw.lvl == Defs.ABILITY_LEVEL:
 				_text(tw.pos + Vector2(0, -0.9), Defs.ABILITIES[tw.type]["name"] + "!", Color("c9c0ff"))
@@ -2276,6 +2350,7 @@ func do_action(id: String, c: Vector2i) -> String:
 			masteries_built[m] = int(masteries_built.get(m, 0)) + 1
 			tw.born = time
 			burst.emit("build", tw.pos, tw.type)
+			_cover.clear()
 			_relight()
 			sound.emit("upgrade")
 			_text(tw.pos + Vector2(0, -0.9), mastery_def(tw.type, m)["name"] + "!", Color("ffd86a"))
@@ -2365,7 +2440,8 @@ func rank() -> String:
 
 ## Leaderboard points for a won battle (0 for a loss): up to 1000 for gems kept, 500 for Wicked or
 ## 1000 for Brilliant, 5 per second of countdown skipped by calling waves early and 1 per gold
-## left; then +10% for each lair further along the campaign (number counts from 1) and ×1.5 at night.
+## left; then +10% for each lair further along the campaign (number counts from 1) ×1.5 at night, and
+## (not in races) × the Resolve the heroes reached (threat).
 func score(number: int) -> int:
 	if not won:
 		return 0
@@ -2375,6 +2451,8 @@ func score(number: int) -> int:
 	pts *= 1.0 + 0.1 * (number - 1)
 	if level.night:
 		pts *= 1.5
+	if not race_on:   # the tougher the heroes became (Resolve), the more the win is worth
+		pts *= threat
 	return roundi(pts)
 
 

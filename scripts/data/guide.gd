@@ -168,8 +168,9 @@ Where she falls, Fenwalkers and Divers rise. While a boss is on the map, her nam
 		"The boss of the Radiant Host (lair 50): [b]%d health[/b], armour %d, and she can carry 3 gems. She flies. At two thirds and one third of her health she [b]lands on the nearest road[/b], is untouchable for %d seconds and raises the last heroes you slew (six, then eight) at half health. Dread doesn't touch her.
 \nOnce she has landed she walks the road like anyone else." % [e["S"]["hp"], e["S"]["armor"], roundi(Defs.SERAPH["dur"])]))
 	t.append(_t("Heroes", "Heroes get stronger",
-		"Each wave's heroes are tougher than the last, and the last waves of a lair are much tougher than the first. Every lair is the same in every game: wave 10 is always as hard as it was last time, so you can learn a lair and plan for it.\n\n"
-		+ "How well you defend never changes the heroes: a clean wave doesn't make the next one harder."))
+		"Each wave's heroes are tougher than the last. The game also watches how you play: when you crush a wave far from the cave, the next heroes come back much tougher; when a wave gets close, only a little. Heroes falling quickly toughen the rest of their own wave too.\n\n"
+		+ "[b]Riches draw heroes too.[/b] Gold you leave unspent above %d makes every following wave stronger. Spend it on towers and upgrades instead of saving it.\n\n" % roundi(Defs.THREAT["rich"])
+		+ "You see it in battle as [b]Resolve[/b] (×1.00 at the start). It never gets easier during a battle and never passes [b]×%.1f[/b], so a clean game always stays within reach. Your score for a win is multiplied by the Resolve the heroes reached: the tougher you made them, the more it is worth. Races and challenges don't use it: there both players meet the same heroes." % Defs.THREAT["max"]))
 
 	# ------------------------------------------------------------ water
 	t.append(_t("The Marches", "Fords and bridges",
@@ -253,7 +254,7 @@ A [b]Dark Altar[/b] is overgrown. Cut it free (%d mana) and towers within %.1f t
 		+ "• [b]+500[/b] for Wicked, [b]+1000[/b] for Brilliant\n"
 		+ "• [b]5[/b] for every second you skip by calling waves early\n"
 		+ "• [b]1[/b] for every gold coin left at the end (but hoarding gold makes heroes stronger)\n\n"
-		+ "Each lair further along the campaign is worth [b]10% more[/b], and night missions [b]half as much again[/b]. Your best score on each mission adds up to your total.\n\n"
+		+ "Each lair further along the campaign is worth [b]10%% more[/b], night missions [b]half as much again[/b], and the whole is multiplied by the heroes' [b]Resolve[/b] at the end (up to ×%.1f). Your best score on each mission adds up to your total.\n\n" % Defs.THREAT["max"]
 		+ "The [b]Hall of Fame[/b] on the map has the online leaderboard (the total and every lair, day and night: tap the board's name to pick one, tap a player to see their lairs), your [b]achievements[/b], and an optional account. Sign in to put your name on the board and to keep your scores and achievements on any device. Resetting progress keeps achievements and best scores."))
 	t.append(_t("Progress", "Online races",
 		"[b]Race a friend[/b] on the map, or the [b]Race[/b] tab in the Hall of Fame, pits you against a friend (sign in first, under Account). One of you hosts a race on any lair they have cleared (or [b]Random lair[/b], or a night mission once it is open) and gets a code; the other types the code in, whatever lair it is, and the race begins for both at once.\n\n"

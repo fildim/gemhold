@@ -261,14 +261,23 @@ func _init() -> void:
 	print("loot from 2000 kills: %d coins (%.0f%%), %d potions (%.0f%%)" % [coins, coins / 20.0, potions, potions / 20.0])
 	_check(absf(coins / 2000.0 - Defs.LOOT_COIN_CHANCE) < 0.04 and absf(potions / 2000.0 - Defs.LOOT_POTION_CHANCE) < 0.03, "drop rates as set in Defs")
 
-	# Fixed difficulty: every lair has a per-wave health curve, 1 at wave 1 and never falling.
-	for n in range(1, 51):
-		var cl := Level.load_from("res://levels/level_%02d.json" % n)
-		var ok := cl.curve.size() == cl.waves.size() and is_equal_approx(cl.curve[0], 1.0)
-		for k in range(1, cl.curve.size()):
-			ok = ok and cl.curve[k] >= cl.curve[k - 1]
-		_check(ok, "%s: a curve for every wave, 1 at wave 1, never falling: %s" % [cl.id, cl.curve])
+	# Dynamic difficulty: the threat only rises, a lot after an easy wave and a little after a close one.
 	var th := GameSim.new(lv)
+	var judge := func(reach: float) -> float:
+		var before := th.threat
+		th.wave_peak[99] = reach
+		th._judge_wave(99)
+		return th.threat - before
+	var big: float = judge.call(0.05)
+	var small: float = judge.call(0.6)
+	var ease: float = judge.call(0.85)
+	var grabbed: float = judge.call(1.0)
+	print("threat steps: easy %+.2f, middling %+.2f, close %+.2f, gem touched %+.2f -> x%.2f" % [big, small, ease, grabbed, th.threat])
+	_check(big > 0.3 and small < big and ease > 0.0 and ease < small and grabbed > 0.0 and grabbed <= ease, "threat climbs fast on easy waves, slowly on hard ones, never falls")
+	th.gold = 1000
+	var rich: float = judge.call(1.0)
+	th.gold = 0
+	_check(rich > grabbed + 0.2, "hoarded gold raises the threat")
 
 	# Starfall adds meteor damage; Cut woods clears a random patch for mana.
 	var sf := GameSim.new(lv, {"meteor_dmg": 2})
@@ -295,14 +304,13 @@ func _init() -> void:
 	fin.drops.append(rolling)
 	fin.update(0.05)
 	_check(fin.over and fin.won and fin.home == lv.gems and fin.lost == 0, "the last hero gone ends the battle; rolling gems count as home")
+	th.threat = 2.0
 	th.wave = 5
 	th._spawn("p", 0)
-	_check(is_equal_approx(th.enemies.back().max_hp, 32.0 * lv.hp_mul * lv.wave_curve(5) * (1.0 + lv.wave_hp * 4)), "the wave's curve multiplies hero health")
-	var th2 := GameSim.new(lv)
-	th2.gold = 5000
-	th2.wave = 5
-	th2._spawn("p", 0)
-	_check(is_equal_approx(th2.enemies.back().max_hp, th.enemies.back().max_hp), "how a battle goes (gold kept, waves crushed) never changes hero health")
+	_check(is_equal_approx(th.enemies.back().max_hp,  32.0 * lv.hp_mul * 2.0 * (1.0 + lv.wave_hp * 4)), "threat multiplies hero health")
+	th.set_race()
+	th._spawn("p", 0)
+	_check(is_equal_approx(th.enemies.back().max_hp, 32.0 * lv.hp_mul * lv.race_hp * lv.wave_curve(5) * (1.0 + lv.wave_hp * 4)), "a race uses the fixed curve, not the threat")
 
 	# Abilities need veteran rank 3 and upgrade level III together.
 	var ab := GameSim.Tower.new()

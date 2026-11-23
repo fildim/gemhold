@@ -30,8 +30,8 @@ func _play(lv: Level, skills: Dictionary, number: int, may_lose := false) -> boo
 	var ranks := {}
 	for tw: GameSim.Tower in sim.towers.values():
 		ranks[tw.rank] = ranks.get(tw.rank, 0) + 1
-	print("%s%s, %d skill points: won=%s rank=%s lost=%d wave=%d/%d towers=%d gold=%d ranks=%s score=%d" % [lv.title, " (night)" if lv.night else "",
-		skills.values().reduce(func(a: int, b: int) -> int: return a + b, 0), sim.won, sim.rank(), sim.lost, sim.wave, lv.waves.size(), sim.towers.size(), sim.gold, ranks, sim.score(number)])
+	print("%s%s, %d skill points: won=%s rank=%s lost=%d wave=%d/%d towers=%d gold=%d threat=x%.2f ranks=%s score=%d" % [lv.title, " (night)" if lv.night else "",
+		skills.values().reduce(func(a: int, b: int) -> int: return a + b, 0), sim.won, sim.rank(), sim.lost, sim.wave, lv.waves.size(), sim.towers.size(), sim.gold, sim.threat, ranks, sim.score(number)])
 	# A battle with no defence at all should be lost.
 	var idle := GameSim.new(lv)
 	var t := 0.0

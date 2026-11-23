@@ -25,8 +25,8 @@ func _init() -> void:
 			var m := _margin(i, sk, seed)
 			logsum += log(m)
 			each.append("%.2f" % m)
-		print("%2d %-22s hp_mul=%.2f pts=%2d | at x1: %s lost=%d gold=%d last wave x%.2f | margin=x%.2f (%s)" % [i + 1, base.title, base.hp_mul, pts,
-			sim.rank() if sim.won else "LOST", sim.lost, sim.gold, base.wave_curve(base.waves.size()), exp(logsum / SEEDS.size()), ", ".join(each)])
+		print("%2d %-22s hp_mul=%.2f pts=%2d | at x1: %s lost=%d gold=%d threat=x%.2f | margin=x%.2f (%s)" % [i + 1, base.title, base.hp_mul, pts,
+			sim.rank() if sim.won else "LOST", sim.lost, sim.gold, sim.threat, exp(logsum / SEEDS.size()), ", ".join(each)])
 	quit(0)
 
 

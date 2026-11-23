@@ -51,6 +51,7 @@ var _mana: Label
 var _mana_bar: ProgressBar
 var _gems: Label
 var _wave: Label
+var _resolve: Label         # "Resolve ×1.45": the dynamic difficulty, not shown in races
 var _rival: Label          # the rival's progress during an online race, in a badge over the map corner
 var _rival_box: PanelContainer
 var _next: Button
@@ -209,6 +210,14 @@ func _build_bars() -> void:
 	_wave = Label.new()
 	_wave.add_theme_font_override("font", bold_font)
 	row.add_child(_wave)
+	# Resolve: the dynamic difficulty (GameSim.threat), shown so the player knows the heroes answer
+	# good play; hidden in races, which use a fixed curve.
+	_resolve = Label.new()
+	_resolve.add_theme_font_override("font", bold_font)
+	_resolve.add_theme_color_override("font_color", Color("e2683a"))
+	_resolve.mouse_filter = Control.MOUSE_FILTER_PASS
+	_resolve.tooltip_text = "Heroes' resolve: their health grows when you defend well (up to ×%.1f). Your score is multiplied by it." % Defs.THREAT["max"]
+	row.add_child(_resolve)
 	_tide = TideClock.new()
 	_tide.custom_minimum_size = Vector2(34, 34)
 	_tide.size_flags_vertical = Control.SIZE_SHRINK_CENTER
@@ -396,7 +405,7 @@ func _set_side(on: bool, safe: Vector4) -> void:
 	_brow.alignment = BoxContainer.ALIGNMENT_BEGIN if on else BoxContainer.ALIGNMENT_CENTER
 	# The side panel (phones, wide windows) gets bigger text, and its buttons share out the
 	# whole height of the screen so they are easy to hit.
-	for l: Label in [_gold, _mana, _gems, _rating, _wave]:
+	for l: Label in [_gold, _mana, _gems, _rating, _wave, _resolve]:
 		l.add_theme_font_size_override("font_size", 30 if on else 23)
 	_mana_bar.custom_minimum_size = Vector2(120 if on else 90, 14 if on else 12)
 	for row: Control in [_play_row, _leave_row]:
@@ -458,6 +467,8 @@ func refresh(sim: GameSim, armed: bool, speed: int, paused: bool) -> void:
 	_mana_bar.value = sim.mana
 	_gems.text = "%d/%d" % [sim.gems_left(), sim.level.gems]
 	_wave.text = "Wave %d/%d" % [sim.wave, sim.level.waves.size()]
+	_resolve.visible = not sim.race_on
+	_resolve.text = "Resolve ×%.2f" % sim.threat
 	if sim.dusk_wave > 0 and not sim.dark:   # the Dusk rule: say when night will fall
 		_wave.text += " · night at %d" % sim.dusk_wave
 	# One dial serves both rules: the tide (blue arc = high water) or the eclipse (dark arc = darkness).
@@ -945,6 +956,8 @@ func show_end(sim: GameSim, has_next: bool, new_best: bool, new_stars := 0, free
 			txt += "   [color=#a8977c]Let no hero touch a gem for Brilliant.[/color]"
 	if sim.won:
 		txt += "\nScore: [b][color=#e8b84a]%s[/color][/b]" % _thousands(score)
+		if not sim.race_on and sim.threat > 1.0:
+			txt += "   [color=#e2683a]×%.2f Resolve[/color]" % sim.threat
 		if score > best_before and best_before > 0:
 			txt += "   [color=#e2683a]New high score![/color]"
 		elif best_before > score:
