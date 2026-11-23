@@ -140,7 +140,17 @@ func _trebuchet() -> void:
 	_run(sim, 6.0, func() -> bool: return near.rubble > 0.0 or cheap.rubble > 0.0)
 	_check(near.rubble > 0.0 and cheap.rubble <= 0.0, "it buries the strongest tower first")
 	var gold := sim.gold
-	_check(sim.do_action("rubble", near.cell) == "" and near.rubble == 0.0 and sim.gold == gold - Defs.RUBBLE_CLEAR, "rubble can be cleared for gold")
+	_check(sim.do_action("rubble", near.cell) == "" and near.rubble == 0.0 and sim.gold == gold - sim.rubble_price(), "rubble can be cleared for gold")
+	# Each tower is hit once: the next stone goes to the other one, rubble stays until paid for,
+	# and with nothing left to hit in reach it rolls on.
+	var held := u.dist
+	_run(sim, 6.0, func() -> bool: return not u.deployed)
+	_check(not u.deployed and near.rubble == 0.0, "with every tower in reach hit, it rolls on (and never hits one twice)")
+	_run(sim, 60.0, func() -> bool: return cheap.rubble > 0.0)
+	_check(cheap.rubble > 0.0 and u.dist > held, "further on, it stops again for a tower not hit yet")
+	_run(sim, 30.0)
+	_check(cheap.rubble > 0.0, "rubble stays until it is cleared")
+	_check(near.rubble == 0.0, "a tower once hit is never hit again")
 	# Once the last wave is out and only engines are left, it rolls away, and the lair is won.
 	sim.wave = sim.level.waves.size()
 	sim.queue.clear()

@@ -90,7 +90,8 @@ class Tower:
 	var heat2 := 0.0
 	var born := -10.0     # battle time it was built or last upgraded (view only: squash and settle)
 	var stun := 0.0       # seconds stunned (Sapper, Iron Belfry): no firing
-	var rubble := 0.0     # seconds buried under Rubble (Trebuchet): no firing
+	var rubble := 0.0     # buried under Rubble (Trebuchet), > 0 until the player pays to clear it: no firing
+	var stoned := false   # a Trebuchet has hit it this battle: none will again, even once it is cleared
 	var silence := 0.0    # silenced by an Inquisitor this frame: how much slower it fires (0 = not)
 	var sapped: Enemy     # a Sapper is on his way to it
 	var holy := false     # on hallowed ground while a Chapel stands: less range, no ability
@@ -744,6 +745,8 @@ func _update_enemies(dt: float) -> void:
 			continue
 		if e.dir == 1 and e.dist >= total and e.d.has("belfry"):
 			_unload(e)
+		if e.dir == 1 and e.dist >= total and e.d.has("siege"):
+			_retreat(e)   # a Trebuchet that rolled all the way through: it takes no gems, it leaves
 		if e.dir == 1 and e.dist >= total:
 			var take := mini(int(e.d["cap"]), home)
 			e.carry += take
@@ -768,7 +771,8 @@ func _update_enemies(dt: float) -> void:
 			else:   # turned back for a gem: the paving stops here
 				e.pave["until"] = time + Defs.PAVE_FADE
 				e.pave = {}
-		if e.wave > 0 and not e.retreat:
+		if e.wave > 0 and not e.retreat and not e.d.has("siege"):
+			# A Trebuchet rolls through the whole defence on purpose: it says nothing about it.
 			# How much of the defence it has walked through. Running away means it reached the
 			# hoard or grabbed a dropped gem: as far as it gets.
 			var reach := _cover_share(e.path, e.dist) if e.dir == 1 else 1.0
@@ -824,6 +828,11 @@ func _leave(e: Enemy) -> void:
 ## Stun, Rubble and Silence weigh this much (Sturdy Foundations lightens them).
 func sturdy_mul() -> float:
 	return 1.0 - Defs.STURDY * skill("sturdy")
+
+
+## Gold to clear a tower buried by a Trebuchet (Sturdy Foundations makes it cheaper).
+func rubble_price() -> int:
+	return roundi(Defs.RUBBLE_CLEAR * sturdy_mul())
 
 
 ## A hero's own walking speed in tiles a second: his base speed, held back by chill and by the
@@ -911,9 +920,10 @@ func _keg(e: Enemy) -> void:
 	sound.emit("boom")
 
 
-## A Trebuchet rolls until a tower is in reach (or it is far enough down the road), sets up, then
-## buries the strongest tower in reach under Rubble every few seconds. When the last wave is out and
-## only engines are left, it packs up and rolls away. True while it stands still.
+## A Trebuchet rolls until a tower no Trebuchet has hit yet is in reach, sets up, then buries the
+## strongest such tower under Rubble every few seconds. Each tower is hit only once, so when none is
+## left in reach it packs up and rolls on to the next. At the end of the road, or when the last wave
+## is out and only engines are left, it rolls away. True while it stands still.
 func _siege(e: Enemy, dt: float) -> bool:
 	if e.retreat:
 		return false
@@ -924,23 +934,20 @@ func _siege(e: Enemy, dt: float) -> bool:
 	if not e.deployed:
 		if e.dir != 1:
 			return false
-		var near := towers.values().any(func(tw: Tower) -> bool: return tw.pos.distance_to(e.pos) <= tb["reach"])
-		if not near and e.dist < float(level.paths[e.path]["total"]) * tb["stop"]:
+		if _treb_target(e) == null:
 			return false
 		e.deployed = true
 		e.sling = tb["setup"]
 		_text(e.pos + Vector2(0, -0.9), "Siege!", Color("ff9a7a"))
 	e.sling -= dt
 	if e.sling <= 0.0:
-		var best: Tower = null
-		for tw: Tower in towers.values():
-			if tw.rubble > 0.0 or tw.pos.distance_to(e.pos) > tb["reach"]:
-				continue
-			if best == null or tw.spent > best.spent or (tw.spent == best.spent and tw.lvl > best.lvl):
-				best = tw
-		if best == null:
-			e.sling = 0.5   # nothing to hit: look again soon
+		var best := _treb_target(e)
+		if best == null:   # every tower in reach has been hit: roll on to the next
+			e.deployed = false
+			_text(e.pos + Vector2(0, -0.9), "Rolls on", Color("ff9a7a"))
+			return false
 		else:
+			best.stoned = true   # claimed now, so a second engine picks another
 			e.sling = tb["every"]
 			e.stones += 1
 			var f := Fx.new()
@@ -952,6 +959,17 @@ func _siege(e: Enemy, dt: float) -> bool:
 			fx.append(f)
 			sound.emit("whoosh")
 	return true
+
+
+## The strongest tower in this Trebuchet's reach that no Trebuchet has hit yet, or null.
+func _treb_target(e: Enemy) -> Tower:
+	var best: Tower = null
+	for tw: Tower in towers.values():
+		if tw.stoned or tw.pos.distance_to(e.pos) > float(Defs.TREBUCHET["reach"]):
+			continue
+		if best == null or tw.spent > best.spent or (tw.spent == best.spent and tw.lvl > best.lvl):
+			best = tw
+	return best
 
 
 ## An engine turns for home: it never comes back, and leaving does not count as escaping.
@@ -1364,8 +1382,6 @@ func _update_towers(dt: float) -> void:
 				break
 		if tw.stun > 0.0:
 			tw.stun -= dt
-		if tw.rubble > 0.0:
-			tw.rubble -= dt
 		if tw.blocked():   # stunned or buried: no firing, and a beam goes out and cools
 			tw.beam = null
 			tw.beam2 = null
@@ -1593,7 +1609,7 @@ func _update_fx(dt: float) -> void:
 			f.hit = true
 			var tw: Tower = towers.get(f.cell)
 			if tw != null:
-				tw.rubble = maxf(tw.rubble, Defs.RUBBLE_TIME * sturdy_mul())
+				tw.rubble = 1.0
 				rubbles += 1
 				_fx("smoke", tw.pos, 0.7, 1.0)
 				_text(tw.pos + Vector2(0, -0.9), "Buried!", Color("ff9a7a"))
@@ -1991,7 +2007,7 @@ func cell_info(c: Vector2i) -> Dictionary:
 		var d: Dictionary = Defs.TOWERS[tw.type]
 		var acts := []
 		if tw.rubble > 0.0:
-			acts.append({"id": "rubble", "label": "Clear rubble", "price": "%dg" % Defs.RUBBLE_CLEAR, "gold": Defs.RUBBLE_CLEAR})
+			acts.append({"id": "rubble", "label": "Clear rubble", "price": "%dg" % rubble_price(), "gold": rubble_price()})
 		if tw.lvl < 3:
 			acts.append({"id": "upgrade", "label": "Upgrade", "price": "%dg" % d["cost"][tw.lvl], "gold": d["cost"][tw.lvl]})
 		var offers := masteries_for(tw)
@@ -2059,7 +2075,7 @@ func _ground_name(t: String) -> String:
 func tower_status(tw: Tower) -> String:
 	var out: Array[String] = []
 	if tw.rubble > 0.0:
-		out.append("BURIED under rubble by a Trebuchet: it can't fire for %d s, or clear it now." % ceili(tw.rubble))
+		out.append("BURIED under rubble by a Trebuchet: it can't fire until you clear it (%d gold)." % rubble_price())
 	if tw.stun > 0.0:
 		out.append("STUNNED by a Sapper's keg: it can't fire for %d s." % ceili(tw.stun))
 	if tw.holy:
@@ -2323,9 +2339,9 @@ func do_action(id: String, c: Vector2i) -> String:
 		"rubble":
 			if not towers.has(c) or (towers[c] as Tower).rubble <= 0.0:
 				return "No rubble here"
-			if gold < Defs.RUBBLE_CLEAR:
+			if gold < rubble_price():
 				return "Not enough gold"
-			gold -= Defs.RUBBLE_CLEAR
+			gold -= rubble_price()
 			(towers[c] as Tower).rubble = 0.0
 			rubble_cleared += 1
 			sound.emit("chop")

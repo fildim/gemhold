@@ -105,7 +105,7 @@ const HERO_TIPS := {
 	"a": "Runs for a tower near the road, lights a keg and [b]stuns it for 7 s[/b]. Towers on raised tiles are out of his reach. Slay him while the fuse burns and the keg hurts the heroes around him.",
 	"v": "Paves the road behind him: [b]heroes walk faster on it[/b] until the paving fades, 30 s after he falls. Towers aim for him first.",
 	"i": "His censer smoke [b]silences towers[/b] near him: no ability, no battle-hardened bonus, slower fire. Out-range him from raised tiles; the den is never silenced.",
-	"u": "A siege engine. It stops when a tower comes in reach and [b]buries towers under rubble[/b], the strongest first. Tap a buried tower to clear it. It never takes gems.",
+	"u": "A siege engine. It stops when a tower comes in reach and [b]buries towers under rubble[/b], the strongest first, each only once, then rolls on. A buried tower stays silent until you tap it and clear it. It never takes gems.",
 	"I": "The Iron Belfry, a boss. Heroes walking in its shadow, just behind it, can't be targeted by towers (the Meteor still hits). Sappers jump out of it, and it unloads Footmen at your den.",
 	"y": "Flies straight for your den, over roads, water and Lava (the faint dashed line is his flight). Chill holds him only half as well. Gems he drops fall to the nearest road and roll home.",
 	"j": "Once, when he is badly hurt, a [b]holy shield[/b] makes him untouchable for a moment and heals him. Burst him down past it, or make him spend it where your towers can finish him. Dread doesn't touch him.",
@@ -316,7 +316,7 @@ const SKILLS := {
 		{"id": "hoard_regen", "name": "Mana Spring", "text": "+0.15 mana per second", "max": 3},
 		{"id": "meteor_dmg", "name": "Starfall", "text": "+25% meteor damage", "max": 3},
 		{"id": "gem_magnet", "name": "Gem Magnet", "text": "Loose gems roll home 20% faster", "max": 3, "tier": 2},
-		{"id": "sturdy", "name": "Sturdy Foundations", "text": "Stun, Rubble and Silence weigh 15% less", "max": 3, "tier": 2, "beaten": 30},
+		{"id": "sturdy", "name": "Sturdy Foundations", "text": "Stun and Silence weigh 15% less, Rubble costs 15% less to clear", "max": 3, "tier": 2, "beaten": 30},
 		{"id": "den_fury", "name": "Hoard's Fury", "text": "Den bolts +20% damage", "max": 5, "tier": 3},
 		{"id": "dragon_patience", "name": "Dragon's Patience", "text": "+10 starting mana", "max": 3, "tier": 3},
 		{"id": "hoard_tithe", "name": "Tithe", "text": "+3 starting gold", "max": TITHE_MAX},
@@ -425,9 +425,8 @@ const PLUNDER_MAX := 25
 ## Tower statuses. Stunned (Sapper, Iron Belfry) and buried under Rubble (Trebuchet): no firing, a
 ## beam cools. Silenced (Inquisitor): no ability, no battle-hardened bonus, SILENCE_SLOW slower fire
 ## or heating. Sturdy Foundations takes STURDY per rank off each (shorter, or less slowdown).
-## Rubble can be cleared at once from the tile panel for RUBBLE_CLEAR gold.
+## Rubble stays until cleared from the tile panel for RUBBLE_CLEAR gold (less with Sturdy Foundations).
 const STUN_TIME := 7.0
-const RUBBLE_TIME := 9.0
 const RUBBLE_CLEAR := 15
 const SILENCE_SLOW := 0.3
 const STURDY := 0.15
@@ -436,9 +435,11 @@ const STURDY := 0.15
 const SAPPER := {"reach": 1.3, "fuse": 1.2, "dmg": 150, "r": 1.0}
 ## Pavior: the road behind him is paved (ZONE_SPEED paved) until PAVE_FADE s after he falls or leaves.
 const PAVE_FADE := 30.0
-## Trebuchet: rolls until a tower is within `reach` (or `stop` of the road is behind it), sets up for
-## `setup` s, then every `every` s buries the strongest tower in reach; the stone flies `flight` s.
-const TREBUCHET := {"reach": 3.6, "stop": 0.55, "setup": 1.5, "every": 5.0, "flight": 0.8}
+## Trebuchet: rolls until a tower it may hit is within `reach`, sets up for `setup` s, then every
+## `every` s buries the strongest of them; the stone flies `flight` s. Each tower is hit once per
+## battle (by any Trebuchet) and stays buried until the player pays RUBBLE_CLEAR; with nothing left
+## to hit in reach, it rolls on.
+const TREBUCHET := {"reach": 3.6, "setup": 1.5, "every": 5.0, "flight": 0.8}
 ## The Iron Belfry: heroes within `cover` tiles behind it can't be targeted; a Sapper jumps out every
 ## `sapper` s; at the den it unloads `unload` and rolls away.
 const BELFRY := {"cover": 1.5, "sapper": 12.0, "unload": "6f"}

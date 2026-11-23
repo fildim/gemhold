@@ -150,8 +150,8 @@ Where she falls, Fenwalkers and Divers rise. While a boss is on the map, her nam
 		"From lair 33. Tough and armoured. His censer smoke (the pale ring around him, %.1f tiles wide) [b]silences[/b] every tower inside it: no ability, no battle-hardened bonus, and %d%% slower fire or heating.
 \nOut-range him from raised tiles, or hit him with the Meteor. Your den is never silenced." % [e["i"]["censer"], roundi(Defs.SILENCE_SLOW * 100)]))
 	t.append(_t("Heroes", "Trebuchet",
-		"From lair 35. A siege engine: %d health and armour %d. It rolls until a tower is within %.1f tiles, sets up, then every %d seconds [b]buries the strongest tower in reach under rubble[/b]. It never takes gems.
-\nShrine beams and the Meteor break it. When the last wave is out and only engines are left, it packs up and rolls away." % [e["u"]["hp"], e["u"]["armor"], Defs.TREBUCHET["reach"], roundi(Defs.TREBUCHET["every"])]))
+		"From lair 35. A siege engine: %d health and armour %d. It rolls until a tower is within %.1f tiles, sets up, then every %d seconds [b]buries the strongest tower in reach under rubble[/b]: that tower can't fire until you pay to clear it. [b]Each tower is hit only once[/b]; when every tower in reach has been hit, it packs up and rolls on to the next ones. It never takes gems, and leaves at the end of the road.
+\nArmour %d comes off every hit, so arrows barely scratch it: Crypt bolts, Shrine beams and the Meteor break it. When the last wave is out and only engines are left, it rolls away." % [e["u"]["hp"], e["u"]["armor"], Defs.TREBUCHET["reach"], roundi(Defs.TREBUCHET["every"]), e["u"]["armor"]]))
 	t.append(_t("Heroes", "The Iron Belfry",
 		"The boss of the Siegeworks (lair 40): a siege tower with [b]%d health[/b] and armour %d. Heroes walking in the %.1f tiles behind it [b]can't be targeted[/b] by towers or the den (the Meteor still hits them). Every %d seconds a Sapper jumps out.
 \nAt your den it unloads six Footmen and rolls away. Break it open earlier and its garrison spills out: Footmen, Knights and an Inquisitor." % [e["I"]["hp"], e["I"]["armor"], Defs.BELFRY["cover"], roundi(Defs.BELFRY["sapper"])]))
@@ -192,9 +192,9 @@ A [b]Dark Altar[/b] is overgrown. Cut it free (%d mana) and towers within %.1f t
 	t.append(_t("The Siegeworks", "Stunned, buried, silenced",
 		"Siege heroes can't destroy your towers, but they can stop them for a while. Tap a tower to see what is wrong with it:
 \n[b]Stunned[/b] (a Sapper's keg): no firing for %d seconds.
-[b]Buried[/b] (a Trebuchet's stone): no firing for %d seconds, or [b]Clear rubble[/b] at once for %d gold.
+[b]Buried[/b] (a Trebuchet's stone): no firing [b]until you Clear rubble[/b] for %d gold. A Trebuchet hits each tower only once.
 [b]Silenced[/b] (an Inquisitor's censer): no ability, no battle-hardened bonus, slower, for as long as he is near.
-\nThe [b]Sturdy Foundations[/b] skill (The Hoard) makes all three weigh less." % [roundi(Defs.STUN_TIME), roundi(Defs.RUBBLE_TIME), Defs.RUBBLE_CLEAR]))
+\nThe [b]Sturdy Foundations[/b] skill (The Hoard) makes stuns and silence shorter and rubble cheaper to clear." % [roundi(Defs.STUN_TIME), Defs.RUBBLE_CLEAR]))
 	t.append(_t("The Siegeworks", "Signal Fires and Workshops",
 		"A [b]Signal Fire[/b] calls the heroes on: while it burns, every wave comes %d seconds sooner and barracks muster faster. Raze it (%d mana) for %d gold.
 \nA [b]Siege Workshop[/b] builds Trebuchets and rolls them onto its road while waves are coming. Raze it (%d mana) to stop it, for %d gold." % [roundi(Defs.SITES["beacon"]["sooner"]), Defs.SITES["beacon"]["cut"], Defs.SITES["beacon"]["bounty"], Defs.SITES["workshop"]["cut"], Defs.SITES["workshop"]["bounty"]]))
