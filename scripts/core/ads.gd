@@ -9,7 +9,7 @@ extends Node
 ##   races), shown when the player leaves the win card; the count is kept in Prefs (ad_wins);
 ## - a rewarded ad on the win card buys REWARD_WINS wins without interstitials (Prefs ad_free_wins);
 ## - nothing waits for an ad: no network or no ad loaded means the game just carries on;
-## - Prefs no_ads (set by the Remove ads purchase, scripts/core/shop.gd) turns everything off (enabled()).
+## - Prefs no_ads turns everything off (enabled()); the Remove ads purchase that set it was dropped on 2026-11-23.
 ## Before any ad is requested Google's UMP asks for consent where the law needs it (EEA, UK,
 ## Switzerland, US states); Settings can open the choices again (show_privacy_options).
 

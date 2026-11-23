@@ -54,7 +54,6 @@ jobs:
           ./godot --headless --script res://tests/siege_test.gd
           ./godot --headless --script res://tests/radiant_test.gd
           ./godot --headless --script res://tests/ads_test.gd
-          ./godot --headless --script res://tests/shop_test.gd
 
       - name: Export Windows, Linux and macOS
         run: |

@@ -12,10 +12,10 @@ Dropped: an App Store (iOS) release (owner, 2026-11-21).
 - [ ] Upload the 0.9.8 bundle (`build/gemhold-0.9.8.aab`, version code 31) to the Play **Alpha** track (published everywhere else 2026-11-23: Resolve visible and capped, fixed race curve, Ossuary burst).
 - [ ] Apply for Google Play **production** once the 14-day closed test is over (from about 2026-12-02).
 - [ ] Try the **ads** on a real phone (built in `scripts/core/ads.gd`, "Android Play" preset only).
-- [x] **Google Play: one purchase only, Remove ads** (owner, 2026-11-21): one-time, €3.99 (owner, 2026-11-21); no chapter purchases, no subscription. Needs the Google Play Billing plugin, a payments profile and a Restore purchases button; the full game stays free with ads.
+- [x] **Google Play: one purchase only, Remove ads** (owner, 2026-11-21): one-time, €3.99 (owner, 2026-11-21); no chapter purchases, no subscription. Needs the Google Play Billing plugin, a payments profile and a Restore purchases button; the full game stays free with ads. **Dropped 2026-11-23** (owner): a trader account shows the home address publicly in the EU; the purchase, its Settings buttons and the billing plugin are gone. Deactivate `remove_ads` in Play Console.
 - [ ] **Steam: chapters as DLC** (owner, 2026-11-21): the base game is free with lairs 1–5 (the demo), every chapter is DLC at €1.99, and a bundle of all chapters at −25%. Needs: gating by chapter instead of demo/full (`Edition`), GodotSteam + the Steam app (Steam Direct fee), DLC ownership checks; full-game codes unlock every chapter; races offer only owned lairs.
 - [ ] **Steam**: make the store page, then fill in the store URLs in `scripts/core/edition.gd` (empty URLs show "coming soon").
-- [ ] Switch the store accounts to **trader** status before selling anything paid.
+- [ ] **Trader status** (EU): needed before selling anything paid; it shows a verified address publicly, so only with a business address. Declared then dropped 2026-11-23: the account stays non-trader while nothing is sold.
 
 ## Game
 
