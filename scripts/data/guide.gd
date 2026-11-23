@@ -170,7 +170,7 @@ Where she falls, Fenwalkers and Divers rise. While a boss is on the map, her nam
 	t.append(_t("Heroes", "Heroes get stronger",
 		"Each wave's heroes are tougher than the last. The game also watches how you play: when you crush a wave far from the cave, the next heroes come back much tougher; when a wave gets close, only a little. Heroes falling quickly toughen the rest of their own wave too.\n\n"
 		+ "[b]Riches draw heroes too.[/b] Gold you leave unspent above %d makes every following wave stronger. Spend it on towers and upgrades instead of saving it.\n\n" % roundi(Defs.THREAT["rich"])
-		+ "You see it in battle as [b]Resolve[/b] (×1.00 at the start). It never gets easier during a battle and never passes [b]×%.1f[/b], so a clean game always stays within reach. Your score for a win is multiplied by the Resolve the heroes reached: the tougher you made them, the more it is worth. Races and challenges don't use it: there both players meet the same heroes." % Defs.THREAT["max"]))
+		+ "You see it in battle as [b]Resolve[/b] (×1.00 at the start). It never gets easier during a battle, and good defending alone never takes it past [b]×%.1f[/b], so a clean game always stays within reach. Only hoarded gold can push it further, up to [b]×%.1f[/b]. Your score for a win is multiplied by the Resolve the heroes reached: the tougher you made them, the more it is worth. Races and challenges don't use it: there both players meet the same heroes." % [Defs.THREAT["max"], Defs.THREAT["max_rich"]]))
 
 	# ------------------------------------------------------------ water
 	t.append(_t("The Marches", "Fords and bridges",

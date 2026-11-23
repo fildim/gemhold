@@ -1248,17 +1248,20 @@ func _cover_share(i: int, d: float) -> float:
 func _judge_wave(w: int) -> void:
 	var t: Dictionary = Defs.THREAT
 	var reach: float = wave_peak.get(w, 0.0)
+	var up: float
 	if reach < t["easy"]:
-		threat += t["up_easy"] + (t["up_max"] - t["up_easy"]) * (t["easy"] - reach) / t["easy"]
+		up = t["up_easy"] + (t["up_max"] - t["up_easy"]) * (t["easy"] - reach) / t["easy"]
 	elif reach < t["hard"]:
-		threat += t["up_mid"]
+		up = t["up_mid"]
 	elif reach < 1.0:
-		threat += t["up_close"]
+		up = t["up_close"]
 	else:
-		threat += t["up_touched"]
-	# Riches draw heroes: unspent gold over the line adds threat too.
-	threat += minf(t["rich_max"], maxf(0.0, gold - t["rich"]) * t["per_gold"])
-	threat = minf(threat, t["max"])
+		up = t["up_touched"]
+	# A good defence is capped at max; never lowers a threat that riches already pushed past it.
+	threat = maxf(threat, minf(threat + up, t["max"]))
+	# Riches draw heroes: unspent gold over the line adds threat too, up to max_rich.
+	var rich := minf(t["rich_max"], maxf(0.0, gold - t["rich"]) * t["per_gold"])
+	threat = maxf(threat, minf(threat + rich, t["max_rich"]))
 	wave_left.erase(w)
 	wave_peak.erase(w)
 	wave_live.erase(w)
@@ -1274,7 +1277,7 @@ func _judge_kill(w: int) -> void:
 		return
 	var step := minf(t["up_kill"], t["kill_max"] - live)
 	wave_live[w] = live + step
-	threat = minf(threat + step, t["max"])
+	threat = maxf(threat, minf(threat + step, t["max"]))
 
 
 func _update_drops(dt: float) -> void:

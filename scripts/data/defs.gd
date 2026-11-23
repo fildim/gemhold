@@ -135,11 +135,13 @@ const COIN_WAVE_SCALE := 0.13  # coins grow by this per wave (apart from hero he
 ## Within a wave too: while none of its heroes has got past `easy`, each one slain adds up_kill
 ## at once (up to kill_max a wave), so the rest of that wave and the next already come tougher.
 ## It never passes `max` (×2.5, lowered from ×4 on 2026-11-23 so a clean, Brilliant game stays within
-## reach), and the player sees it as "Resolve" in battle; a won battle's score is multiplied by it.
+## reach) through defending well; unspent gold alone can push it on up to `max_rich` (2026-11-23:
+## Beacon Hill was easy at the ×2.5 cap with 4,000+ gold banked). The player sees it as "Resolve"
+## in battle; a won battle's score is multiplied by it.
 ## Campaign only: races and challenges use the lair's fixed curve (Level.curve) instead.
 const THREAT := {"easy": 0.45, "hard": 0.7, "up_max": 0.4, "up_easy": 0.1, "up_mid": 0.06,
 	"up_kill": 0.006, "kill_max": 0.1,
-	"up_close": 0.03, "up_touched": 0.01, "max": 2.5,
+	"up_close": 0.03, "up_touched": 0.01, "max": 2.5, "max_rich": 4.0,
 	"rich": 250, "per_gold": 0.0005, "rich_max": 0.25}
 const DROP_SPEED := 0.7      # dropped gems roll home along the road at this many tiles/s
 const DROP_FALL := 0.7       # seconds a gem dropped by a flying carrier takes to fall to the road below
