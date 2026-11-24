@@ -267,7 +267,7 @@ const LAIRS_PER_CHAPTER := 10
 ## Each rank is weaker than any other skill's, so they are what is left once the rest is learned.
 const DRILL_MAX := 45
 const DRILL_DMG := 0.01
-const TITHE_MAX := 32
+const TITHE_MAX := 28
 const TITHE_GOLD := 3
 const STARS_MAX := 300
 ## Tree ids in the order the Dark Arts tabs show them.

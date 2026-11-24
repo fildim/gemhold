@@ -392,3 +392,4 @@ The **Ossuary** (2026-11-22, owner's call after tester feedback) no longer sprea
 - **Race invite popup**: when the game finds a challenge waiting for this player's answer, or a booked race due now, the map shows it once per game session (`Hall.invites`, `main._on_invites`, `LevelSelect.show_invite`) with Open the Race page / Later.
 - hp_mul was **not** retuned for these changes.
 - Bot after these changes (`sim_test.gd`, by chapter): by day only The Hoard Throne lost (before: Lanternfall Vale, The Last Bridge and The Hoard Throne); at night Redwater Crossing (with 1740 gold unspent: a bot oddity), The Last Bridge, The Flooded Abbey, Hallowed Fields and The Seraph's Descent lost.
+- Merging added 4 ranks (137 outside the deep skills), so Tithe went from 32 to 28 ranks to keep exactly 300 (`level_v2_test`); saved Tithe ranks above 28 are refunded on load.

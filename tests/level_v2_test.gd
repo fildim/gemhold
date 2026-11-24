@@ -189,7 +189,7 @@ func _old_levels() -> void:
 
 
 func _skills() -> void:
-	_check(Defs.skill_points_all() - 3 * Defs.DRILL_MAX - Defs.TITHE_MAX == 133, "tiers I, II and III and The Land hold 133 points besides the deep skills: %d" % Defs.skill_points_all())
+	_check(Defs.skill_points_all() - 3 * Defs.DRILL_MAX - Defs.TITHE_MAX == 137, "tiers I, II and III and The Land hold 137 points besides the deep skills: %d" % Defs.skill_points_all())
 	_check(Achievements.goal_of(Achievements.find("arts59")) == Defs.skill_points_all(), "Omniscient counts the real total")
 	_check(Defs.skill_gate("moss_dmg") == 0, "tier I is open from the start")
 	_check(Defs.skill_points_all() == Defs.STARS_MAX, "every star can be spent: %d ranks for %d stars" % [Defs.skill_points_all(), Defs.STARS_MAX])
