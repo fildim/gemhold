@@ -181,7 +181,7 @@ func _init() -> void:
 
 	# The Hoard skills: starting gold and maximum mana.
 	var hd := GameSim.new(lv, {"hoard_gold": 2, "hoard_mana": 3})
-	_check(hd.gold == lv.start_gold + 2 * Defs.HOARD_GOLD and hd.mana_max == 145.0, "Hoard skills add gold and max mana")
+	_check(hd.gold == lv.start_gold + 120 and hd.mana_max == 145.0, "Hoard skills add gold and max mana")
 
 	# Every wave start, called early or not, gathers every coin and potion on the map.
 	var ga := GameSim.new(lv)

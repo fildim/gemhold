@@ -328,7 +328,7 @@ var engines_built := 0    # Trebuchets that rolled out of Siege Workshops
 func _init(lv: Level, skill_ranks := {}) -> void:
 	level = lv
 	skills = skill_ranks
-	gold = lv.start_gold + Defs.HOARD_GOLD * skill("hoard_gold") + Defs.TITHE_GOLD * skill("hoard_tithe")
+	gold = lv.start_gold + int(Defs.stepped(Defs.HOARD_GOLD, skill("hoard_gold"))) + Defs.TITHE_GOLD * skill("hoard_tithe")
 	mana_max = Defs.MANA_MAX + Defs.HOARD_MANA * skill("hoard_mana")
 	mana = lv.start_mana + Defs.PATIENCE_MANA * skill("dragon_patience")
 	home = lv.gems
@@ -425,7 +425,7 @@ func _no_troops_waiting() -> bool:
 
 
 func mana_regen() -> float:
-	var r := Defs.MANA_REGEN + Defs.HOARD_REGEN * skill("hoard_regen")
+	var r := Defs.MANA_REGEN + Defs.stepped(Defs.HOARD_REGEN, skill("hoard_regen"))
 	for s: Site in sites.values():
 		if s.kind == "well" and s.owned:
 			r += well_regen()
@@ -2161,11 +2161,11 @@ func site_bounty(kind: String) -> int:
 
 
 func mine_gold() -> int:
-	return int(Defs.SITES["mine"]["gold"]) + Defs.VEINS_GOLD * skill("hoard_gold")
+	return int(Defs.SITES["mine"]["gold"]) + int(Defs.stepped(Defs.VEINS_GOLD, skill("hoard_gold")))
 
 
 func well_regen() -> float:
-	return float(Defs.SITES["well"]["regen"]) + Defs.SPRINGS_REGEN * skill("hoard_regen")
+	return float(Defs.SITES["well"]["regen"]) + Defs.stepped(Defs.SPRINGS_REGEN, skill("hoard_regen"))
 
 
 func altar_boost() -> float:

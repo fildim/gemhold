@@ -162,14 +162,16 @@ const SOAK_HEAT := 0.6
 ## The den (your lair) strikes heroes near it. It holds charges: each is one bolt, and spent
 ## charges refill one at a time. Every point in the Den skill adds one more charge.
 ## The Hoard skills: each point adds this much starting gold or maximum mana (Starfall: see METEOR).
-const HOARD_GOLD := 40   # Buried Gold: +40 starting gold per point, and +1 gold on every Gold Mine payout (VEINS_GOLD)
+## Buried Gold and Mana Spring open 3 ranks per chapter, and each chapter's ranks give less than the
+## last (owner, 2026-11-24): entry k of these lists is what one rank of chapter batch k adds.
+## Buried Gold: starting gold, and gold on every Gold Mine payout. Mana Spring: mana per second, and
+## the same again for every owned Mana Well. (Rich Veins and Deep Springs were merged into them.)
+const HOARD_GOLD := [60, 50, 40]
+const VEINS_GOLD := [2, 1, 1]
 const HOARD_MANA := 15
-const HOARD_REGEN := 0.1   # Mana Spring: +0.1 mana per second per point, and owned Mana Wells +0.1 more (SPRINGS_REGEN)
-## Per point of Buried Gold, every mine payout grows by VEINS_GOLD; per point of Mana Spring, every owned
-## well gives SPRINGS_REGEN more mana a second (Rich Veins and Deep Springs were merged into them, 2026-11-24).
+const HOARD_REGEN := [0.2, 0.15, 0.1]
+const SPRINGS_REGEN := [0.2, 0.15, 0.1]
 ## Commanding Heights (The Land): range and damage for towers on raised tiles.
-const VEINS_GOLD := 1
-const SPRINGS_REGEN := 0.1
 const HEIGHTS_RANGE := 0.2
 const HEIGHTS_DMG := 0.05
 
@@ -314,9 +316,9 @@ const SKILLS := {
 	],
 	"den": [
 		{"id": "den_charge", "name": "Hoard's Wrath", "text": "+1 den charge", "max": 5},
-		{"id": "hoard_gold", "name": "Buried Gold", "text": "+40 starting gold, Gold Mines +1 gold", "max": 9, "per_chapter": 3},
+		{"id": "hoard_gold", "name": "Buried Gold", "text": "+60 / 50 / 40 starting gold, mines +2 / 1 / 1 gold (Ch I / II / III ranks)", "max": 9, "per_chapter": 3},
 		{"id": "hoard_mana", "name": "Deep Well", "text": "+15 max mana", "max": 4},
-		{"id": "hoard_regen", "name": "Mana Spring", "text": "+0.1 mana per second, Mana Wells +0.1 more", "max": 9, "per_chapter": 3},
+		{"id": "hoard_regen", "name": "Mana Spring", "text": "+0.2 / 0.15 / 0.1 mana per second, and per Mana Well (Ch I / II / III ranks)", "max": 9, "per_chapter": 3},
 		{"id": "meteor_dmg", "name": "Starfall", "text": "+25% meteor damage", "max": 3},
 		{"id": "gem_magnet", "name": "Gem Magnet", "text": "Loose gems roll home 20% faster", "max": 3, "tier": 2},
 		{"id": "sturdy", "name": "Sturdy Foundations", "text": "Stun and Silence weigh 15% less, Rubble costs 15% less to clear", "max": 3, "tier": 2, "beaten": 30},
@@ -483,3 +485,12 @@ static func skill_cap(id: String, beaten: int) -> int:
 	if not sk.has("per_chapter"):
 		return int(sk["max"])
 	return mini(int(sk["max"]), int(sk["per_chapter"]) * gate_chapter(beaten))
+
+
+## What `rank` ranks of a stepped skill add in all (HOARD_GOLD and the like): ranks 1-3 take the
+## first step, 4-6 the second, 7-9 the third.
+static func stepped(steps: Array, rank: int) -> float:
+	var total := 0.0
+	for r in rank:
+		total += float(steps[mini(r / 3, steps.size() - 1)])
+	return total
