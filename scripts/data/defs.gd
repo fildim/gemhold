@@ -162,13 +162,14 @@ const SOAK_HEAT := 0.6
 ## The den (your lair) strikes heroes near it. It holds charges: each is one bolt, and spent
 ## charges refill one at a time. Every point in the Den skill adds one more charge.
 ## The Hoard skills: each point adds this much starting gold or maximum mana (Starfall: see METEOR).
-const HOARD_GOLD := 50
+const HOARD_GOLD := 40   # Buried Gold: +40 starting gold per point, and +1 gold on every Gold Mine payout (VEINS_GOLD)
 const HOARD_MANA := 15
-const HOARD_REGEN := 0.15   # Mana Spring: +0.15 mana per second per point
-## The Land skills, per point: Rich Veins (gold per mine payout), Deep Springs (mana per second per
-## well), Commanding Heights (range and damage for towers on raised tiles).
-const VEINS_GOLD := 2
-const SPRINGS_REGEN := 0.2
+const HOARD_REGEN := 0.1   # Mana Spring: +0.1 mana per second per point, and owned Mana Wells +0.1 more (SPRINGS_REGEN)
+## Per point of Buried Gold, every mine payout grows by VEINS_GOLD; per point of Mana Spring, every owned
+## well gives SPRINGS_REGEN more mana a second (Rich Veins and Deep Springs were merged into them, 2026-11-24).
+## Commanding Heights (The Land): range and damage for towers on raised tiles.
+const VEINS_GOLD := 1
+const SPRINGS_REGEN := 0.1
 const HEIGHTS_RANGE := 0.2
 const HEIGHTS_DMG := 0.05
 
@@ -191,12 +192,12 @@ const ABILITIES := {
 
 ## Map buildings. Cutting (a mana action) frees mines and wells for you, or razes a hero barracks.
 const SITES := {
-	"mine": {"name": "Gold Mine", "cut": 30, "gold": 5, "every": 6.0, "light": 1.6,
-		"text": "Overgrown. Cut it free to earn %d gold every %d s."},
-	"well": {"name": "Mana Well", "cut": 25, "regen": 0.6, "light": 1.6,
-		"text": "Choked with roots. Cut it free for +%.1f mana per second."},
-	"camp": {"name": "Hero Barracks", "cut": 50, "bounty": 40,
-		"text": "Sends extra heroes onto the road while waves are coming. Raze it for %d gold."},
+	"mine": {"name": "Gold Mine", "cut": 40, "gold": 6, "every": 6.0, "light": 1.6, "lode": 50,
+		"text": "Overgrown. Cut it free: %d gold at once, then %d gold every %d s."},
+	"well": {"name": "Mana Well", "cut": 35, "regen": 0.9, "light": 1.6, "burst": 40, "max": 25,
+		"text": "Choked with roots. Cut it free: +%d mana at once, +%d maximum mana and +%.1f mana per second."},
+	"camp": {"name": "Hero Barracks", "cut": 70, "bounty": 70, "grow": 4, "grow_max": 3, "break": 0.35,
+		"text": "Sends extra heroes onto the road while waves are coming, more as the waves go on. Raze it for %d gold: its troops on the road lose heart (a third of their health)."},
 	"altar": {"name": "Dark Altar", "cut": 30, "range": 2.2, "dmg": 0.1, "xp": 0.2, "light": 1.6,
 		"text": "Overgrown. Cut it free: towers within %.1f tiles deal %d%% more damage and rank up faster."},
 	"sluice": {"name": "Sluice Gate", "cut": 0, "mana": 35, "recharge": 45.0, "push": 2.0, "dmg": 120, "boat_share": 0.3334, "light": 1.6,
@@ -212,6 +213,8 @@ const SITES := {
 const HERO_SITES := ["camp", "workshop", "beacon", "chapel"]
 ## Buildings that send troops onto a road (a "path", "spawn" and "every" in the level file).
 const MUSTER_SITES := ["camp", "workshop"]
+## Troops leave a barracks or workshop one at a time, this many seconds apart (like a Longboat crew).
+const MUSTER_GAP := 1.0
 
 ## Loot dropped by slain heroes. It stays where it fell until you tap it.
 const LOOT_COIN_CHANCE := 0.32
@@ -234,7 +237,7 @@ const RACE_TIME_BONUS := 20
 ## `extra_every` waves past the end, and hero health grows by `grow` per wave past the end,
 ## compounded, on top of the lair's fixed curve (Level.curve, no Resolve), so everyone meets the
 ## same waves and the night always wins in the end. Unspent gold draws nothing.
-const LONG := {"cycle": 5, "extra_every": 2, "grow": 0.08}   # grow 0.06 -> 0.08 (2026-11-23): Lair 1 ran too long (42 waves held)
+const LONG := {"cycle": 5, "extra_every": 1, "grow": 0.11, "hp": 1.15}   # 2026-11-24 harder (owner): one more hero every wave past the end, +11%/wave, ×1.15 from the start (was every 2, +8%, ×1)
 const RACE := {"first": 10.0, "gap": 12.0, "gap_min": 6.0, "hp": 0.55}
 const LOOT_COIN_MUL := 1.4    # a coin is worth this times the hero's bounty, grown by wave (not threat),
 const LOOT_COIN_BONUS := 4    # plus this flat amount, so even small heroes drop a worthwhile coin
@@ -311,9 +314,9 @@ const SKILLS := {
 	],
 	"den": [
 		{"id": "den_charge", "name": "Hoard's Wrath", "text": "+1 den charge", "max": 5},
-		{"id": "hoard_gold", "name": "Buried Gold", "text": "+50 starting gold", "max": 5},
+		{"id": "hoard_gold", "name": "Buried Gold", "text": "+40 starting gold, Gold Mines +1 gold", "max": 9, "per_chapter": 3},
 		{"id": "hoard_mana", "name": "Deep Well", "text": "+15 max mana", "max": 4},
-		{"id": "hoard_regen", "name": "Mana Spring", "text": "+0.15 mana per second", "max": 3},
+		{"id": "hoard_regen", "name": "Mana Spring", "text": "+0.1 mana per second, Mana Wells +0.1 more", "max": 9, "per_chapter": 3},
 		{"id": "meteor_dmg", "name": "Starfall", "text": "+25% meteor damage", "max": 3},
 		{"id": "gem_magnet", "name": "Gem Magnet", "text": "Loose gems roll home 20% faster", "max": 3, "tier": 2},
 		{"id": "sturdy", "name": "Sturdy Foundations", "text": "Stun and Silence weigh 15% less, Rubble costs 15% less to clear", "max": 3, "tier": 2, "beaten": 30},
@@ -322,8 +325,6 @@ const SKILLS := {
 		{"id": "hoard_tithe", "name": "Tithe", "text": "+3 starting gold", "max": TITHE_MAX},
 	],
 	"land": [
-		{"id": "land_veins", "name": "Rich Veins", "text": "Gold mines pay +2 gold", "max": 3},
-		{"id": "land_springs", "name": "Deep Springs", "text": "Mana wells give +0.2 mana per second", "max": 3},
 		{"id": "land_axes", "name": "Sharp Axes", "text": "Cutting woods and buildings costs 10% less mana", "max": 3},
 		{"id": "land_heights", "name": "Commanding Heights", "text": "Towers on raised tiles: +0.2 range, +5% damage", "max": 2},
 		{"id": "land_spoils", "name": "Spoils of War", "text": "Razing a hero building pays +15 gold", "max": 2},
@@ -471,3 +472,14 @@ const HALLOW_RANGE := 0.8
 const LEGEND_DMG := 0.05
 const FURY_DMG := 0.2
 const PATIENCE_MANA := 10
+
+
+## Ranks of a skill open with `beaten` campaign lairs behind the player: a skill with "per_chapter"
+## opens that many more ranks with each chapter reached (Buried Gold, Mana Spring), up to its max.
+static func skill_cap(id: String, beaten: int) -> int:
+	var sk := skill_def(id)
+	if sk.is_empty():
+		return 0
+	if not sk.has("per_chapter"):
+		return int(sk["max"])
+	return mini(int(sk["max"]), int(sk["per_chapter"]) * gate_chapter(beaten))

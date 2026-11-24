@@ -40,6 +40,7 @@ var online: Online   # set by main: sends the Info page's feedback
 const CONTACT := "contactgemhold@gmail.com"
 var _guide: Button
 var _hall: Button
+var _invite: Control   # the race invite popup (show_invite), or null
 var _race: Button   # online races, in ember so it stands out
 var _race_texts := ["Race a friend", "Race"]   # its label, and a short one for narrow screens
 var _compact := false   # the bottom-left buttons were made smaller to fit (narrow screens)
@@ -344,6 +345,58 @@ Achievements and best scores are kept."
 	cancel.pressed.connect(func() -> void: _confirm.visible = false)
 	row.add_child(cancel)
 	_confirm.visible = false
+
+
+## A race invite on the map (main._on_invites): Open the Race page, or Later.
+func show_invite(title: String, text: String) -> void:
+	if _invite != null:
+		_invite.queue_free()
+	_invite = Control.new()
+	_invite.mouse_filter = Control.MOUSE_FILTER_STOP
+	_invite.size = size
+	add_child(_invite)
+	var dim := ColorRect.new()
+	dim.color = Color(0.05, 0.04, 0.03, 0.85)
+	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_invite.add_child(dim)
+	var center := CenterContainer.new()
+	center.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_invite.add_child(center)
+	var card := PanelContainer.new()
+	card.add_theme_stylebox_override("panel", _hud._box(Hud.PANEL, Hud.GOLD, 2, 12, 24))
+	center.add_child(card)
+	var box := VBoxContainer.new()
+	box.add_theme_constant_override("separation", 16)
+	card.add_child(box)
+	var h := Label.new()
+	h.text = title
+	h.add_theme_font_override("font", _hud.display_font)
+	h.add_theme_font_size_override("font_size", 44)
+	h.add_theme_color_override("font_color", Hud.GOLD)
+	box.add_child(h)
+	var t := Label.new()
+	t.text = text
+	t.add_theme_font_size_override("font_size", 28)
+	box.add_child(t)
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 14)
+	box.add_child(row)
+	var go := Button.new()
+	go.text = "Open the Race page"
+	go.focus_mode = Control.FOCUS_NONE
+	go.custom_minimum_size = Vector2(0, 64)
+	go.add_theme_font_size_override("font_size", 28)
+	go.pressed.connect(func() -> void:
+		_invite.visible = false
+		race_pressed.emit())
+	row.add_child(go)
+	var later := Button.new()
+	later.text = "Later"
+	later.focus_mode = Control.FOCUS_NONE
+	later.custom_minimum_size = Vector2(160, 64)
+	later.add_theme_font_size_override("font_size", 28)
+	later.pressed.connect(func() -> void: _invite.visible = false)
+	row.add_child(later)
 
 
 ## Demo builds: shown on a locked lair and after the last free one.

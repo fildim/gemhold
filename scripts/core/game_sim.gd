@@ -34,6 +34,7 @@ class Enemy:
 	var bob := 0.0
 	var gone := false
 	var wave := 0         # which wave it marched with, 0 for barracks troops
+	var camp = null       # the Site (barracks or workshop) that mustered it, or null
 	var soak := 0.0       # seconds of Soaked left (in a ford or swimming, and SOAK_TIME after)
 	var swim := false     # swimming a flooded ford or a collapsed bridge: slow, and no Herald haste
 	var wade := 0.0       # seconds it wades freely, like a Fenwalker (the Tidecaller's surge)
@@ -186,6 +187,8 @@ class Site:
 	var spawn: Array[String] = []
 	var every := 25.0
 	var dist := 0.0       # where camp troops join their road
+	var out: Array[String] = []   # troops mustered and waiting to march out, one every Defs.MUSTER_GAP
+	var out_t := 0.0      # seconds until the next of them marches out
 
 
 class Fx:
@@ -405,7 +408,7 @@ func update(dt: float) -> void:
 	_update_fx(dt)
 	if lost >= level.gems:
 		_end(false)
-	elif wave >= level.waves.size() and queue.is_empty() and _rally.is_empty() and enemies.all(func(e: Enemy) -> bool: return e.retreat or e.beached):
+	elif wave >= level.waves.size() and queue.is_empty() and _rally.is_empty() and _no_troops_waiting() and enemies.all(func(e: Enemy) -> bool: return e.retreat or e.beached):
 		# No hero is left to take them (an engine rolling away never comes back, so the battle does
 		# not wait for it), so gems still rolling home count as home now.
 		for g: Drop in drops:
@@ -414,11 +417,18 @@ func update(dt: float) -> void:
 		_end(true)
 
 
+func _no_troops_waiting() -> bool:
+	for s: Site in sites.values():
+		if not s.owned and not s.out.is_empty():
+			return false
+	return true
+
+
 func mana_regen() -> float:
 	var r := Defs.MANA_REGEN + Defs.HOARD_REGEN * skill("hoard_regen")
 	for s: Site in sites.values():
 		if s.kind == "well" and s.owned:
-			r += Defs.SITES["well"]["regen"] + Defs.SPRINGS_REGEN * skill("land_springs")
+			r += well_regen()
 	return r
 
 
@@ -506,6 +516,7 @@ func call_early() -> int:
 			dug += int((s.t + timer) / every) * mine_gold()
 			s.t = fmod(s.t + timer, every)
 	gold += dug
+	_skip_buildings(timer)
 	if dug > 0:
 		_text(level.lair_center + Vector2(0, 0.2), "+%d mines" % dug, Color("e8b84a"))
 	if bonus > 0:
@@ -525,7 +536,8 @@ func _spawn(code: String, path := -1, dist := 0.0, w := 0) -> void:
 	# The campaign adapts to the player (threat, shown as Resolve); a race uses the lair's fixed
 	# per-wave curve instead, so both racers meet the same heroes (Level.curve).
 	var mul := level.hp_mul * (1.0 + level.wave_hp * maxi(0, wave - 1)) * (level.wave_curve(wave) if race_on or long_on else threat)
-	if long_on:   # past the lair's own waves, health compounds (Defs.LONG)
+	if long_on:   # tougher from the start, and past the lair's own waves health compounds (Defs.LONG)
+		mul *= float(Defs.LONG["hp"])
 		mul *= pow(1.0 + float(Defs.LONG["grow"]), maxi(0, wave - long_base))
 	if level.night:
 		mul *= level.night_hp
@@ -584,20 +596,60 @@ func _update_sites(dt: float) -> void:
 				s.t -= dt * muster
 				if s.t <= 0.0:
 					s.t = s.every
-					for code in s.spawn:
-						_spawn(code, s.path, s.dist)
-					if s.kind == "workshop":
-						engines_built += s.spawn.size()
-					_text(s.pos + Vector2(0, -0.6), "A siege engine!" if s.kind == "workshop" else "Reinforcements!", Color("ff9a7a"))
+					_muster(s)
+		if not s.owned and not s.out.is_empty():   # mustered troops march out one at a time
+			s.out_t -= dt
+			if s.out_t <= 0.0:
+				s.out_t = Defs.MUSTER_GAP
+				_spawn(s.out.pop_front(), s.path, s.dist)
+				enemies[-1].camp = s
+				if s.kind == "workshop":
+					engines_built += 1
 		elif s.kind == "sluice" and s.t > 0.0:
 			s.t = maxf(0.0, s.t - dt)
 		elif s.owned and s.kind == "mine":
 			s.t += dt
 			if s.t >= Defs.SITES["mine"]["every"]:
 				s.t = 0.0
-				var g: int = Defs.SITES["mine"]["gold"] + Defs.VEINS_GOLD * skill("land_veins")
+				var g := mine_gold()
 				gold += g
 				_text(s.pos + Vector2(0, -0.5), "+%d" % g, Color("e8b84a"))
+
+
+## A barracks or workshop musters a squad: it lines up and marches out one at a time (_update_sites).
+## A barracks squad grows by one hero every Defs.SITES.camp.grow waves, up to grow_max more.
+func _muster(s: Site) -> void:
+	var squad: Array[String] = s.spawn.duplicate()
+	if s.kind == "camp" and not s.spawn.is_empty():
+		var d: Dictionary = Defs.SITES["camp"]
+		for k in mini(int(d["grow_max"]), (wave - 1) / int(d["grow"])):
+			squad.append(s.spawn[k % s.spawn.size()])
+	if s.out.is_empty():
+		s.out_t = 0.0
+	s.out.append_array(squad)
+	_text(s.pos + Vector2(0, -0.6), "A siege engine!" if s.kind == "workshop" else "Reinforcements!", Color("ff9a7a"))
+
+
+## Time skipped by calling a wave early passes for the buildings too: barracks and workshops muster
+## what they would have, sluices refill and the den gains its charges.
+func _skip_buildings(secs: float) -> void:
+	var muster := float(Defs.SITES["beacon"]["muster"]) if beacon_lit() else 1.0
+	for s: Site in sites.values():
+		if not s.owned and Defs.MUSTER_SITES.has(s.kind) and wave >= 1 and wave < level.waves.size():
+			var left := secs * muster
+			while left >= s.t and s.every > 0.0:
+				left -= s.t
+				s.t = s.every
+				_muster(s)
+			s.t -= left
+		elif s.kind == "sluice" and s.t > 0.0:
+			s.t = maxf(0.0, s.t - secs)
+	den_refill += secs
+	while den_refill >= Defs.DEN["refill"] and den_charges < den_max:
+		den_refill -= Defs.DEN["refill"]
+		den_charges += 1
+	if den_charges >= den_max:
+		den_refill = 0.0
 
 
 ## The den refills one charge at a time and spends one per bolt at the nearest threat:
@@ -2109,11 +2161,11 @@ func site_bounty(kind: String) -> int:
 
 
 func mine_gold() -> int:
-	return int(Defs.SITES["mine"]["gold"]) + Defs.VEINS_GOLD * skill("land_veins")
+	return int(Defs.SITES["mine"]["gold"]) + Defs.VEINS_GOLD * skill("hoard_gold")
 
 
 func well_regen() -> float:
-	return float(Defs.SITES["well"]["regen"]) + Defs.SPRINGS_REGEN * skill("land_springs")
+	return float(Defs.SITES["well"]["regen"]) + Defs.SPRINGS_REGEN * skill("hoard_regen")
 
 
 func altar_boost() -> float:
@@ -2165,14 +2217,14 @@ No boat on its river yet.", "actions": [{"id": "flood", "label": "No boat on the
 	match s.kind:
 		"mine":
 			if s.owned:
-				return {"title": d["name"], "text": "Yours. Earns %d gold every %d s." % [d["gold"] + Defs.VEINS_GOLD * skill("land_veins"), int(d["every"])], "actions": []}
+				return {"title": d["name"], "text": "Yours. Earns %d gold every %d s." % [mine_gold(), int(d["every"])], "actions": []}
 			cut["label"] = "Cut free"
-			return {"title": d["name"], "text": d["text"] % [d["gold"] + Defs.VEINS_GOLD * skill("land_veins"), int(d["every"])] + more, "actions": [cut]}
+			return {"title": d["name"], "text": d["text"] % [int(d["lode"]), mine_gold(), int(d["every"])] + more, "actions": [cut]}
 		"well":
 			if s.owned:
-				return {"title": d["name"], "text": "Yours. +%.1f mana per second." % (d["regen"] + Defs.SPRINGS_REGEN * skill("land_springs")), "actions": []}
+				return {"title": d["name"], "text": "Yours. +%.1f mana per second." % well_regen(), "actions": []}
 			cut["label"] = "Cut free"
-			return {"title": d["name"], "text": d["text"] % (d["regen"] + Defs.SPRINGS_REGEN * skill("land_springs")) + more, "actions": [cut]}
+			return {"title": d["name"], "text": d["text"] % [int(d["burst"]), int(d["max"]), well_regen()] + more, "actions": [cut]}
 	if s.owned:
 		var ruin: String = {"camp": "Ruined barracks", "workshop": "Ruined workshop", "beacon": "Cold ashes"}.get(s.kind, "Ruins")
 		return {"title": ruin, "text": "Nothing left but ash.", "actions": []}
@@ -2319,9 +2371,28 @@ func do_action(id: String, c: Vector2i) -> String:
 				if s.kind == "chapel" and not hallow_on() and not level.hallowed.is_empty():
 					chapels_razed_wave = wave
 					toast.emit("The ground is no longer holy")
+				if s.kind == "camp":   # the squad still lined up scatters; its troops on the road lose heart
+					s.out.clear()
+					var broken := 0
+					for e: Enemy in enemies.duplicate():
+						if e.camp == s and e.hp > 0.0:
+							broken += 1
+							hurt(e, e.max_hp * float(d["break"]), true)
+					_fx("shock", s.pos, 2.2, 0.8)
+					if broken > 0:
+						toast.emit("Barracks razed: its troops lose heart")
 				_cover.clear()
 			else:
 				toast.emit("%s is yours" % d["name"])
+				if s.kind == "well":   # a rush of mana, and room for more
+					mana_max += float(d["max"])
+					mana = minf(mana_max, mana + float(d["burst"]))
+					_text(s.pos + Vector2(0, -0.4), "+%d mana" % int(d["burst"]), Color("c9c0ff"))
+					_fx("shock", s.pos, 1.6, 0.7)
+				elif s.kind == "mine":   # the first lode
+					gold += int(d["lode"])
+					_text(s.pos + Vector2(0, -0.4), "+%d" % int(d["lode"]), Color("e8b84a"))
+					_fx("shock", s.pos, 1.6, 0.7)
 				_relight()
 		"collapse":
 			var i: int = level.crossings.get(c, -1)

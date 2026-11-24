@@ -19,7 +19,7 @@ static func topics() -> Array:
 		+ "Stop them with towers along the roads, your den's bolts and your Meteor."))
 	t.append(_t("The basics", "Waves",
 		"Heroes come in waves. The button at the top of the panel counts down to the next one.\n\n"
-		+ "[b]Call a wave early[/b] to earn the seconds left as gold, plus the mana you would have regenerated and the gold your mines would have dug in that time. Early calls are how good players get rich, but only call when your towers can take it.\n\n"
+		+ "[b]Call a wave early[/b] to earn the seconds left as gold, plus the mana you would have regenerated and the gold your mines would have dug in that time. Time passes for every building: barracks muster what they would have in those seconds, Sluices refill and your den gains its charges. Early calls are how good players get rich, but only call when your towers can take it.\n\n"
 		+ "After the last wave the lair is won the moment its last hero falls or flees."))
 	t.append(_t("The basics", "Ratings and stars",
 		"Each win is rated:\n\n"
@@ -228,20 +228,21 @@ A [b]Dark Altar[/b] is overgrown. Cut it free (%d mana) and towers within %.1f t
 		+ "The [b]Cut woods[/b] button in the panel clears a random patch without searching the map. Woods next to the road are worth more: tap those yourself."))
 	t.append(_t("Your powers", "Mines and wells",
 		"On later lairs the woods hide buildings. Cut them free with mana and they work for you:\n\n"
-		+ "[b]Gold Mine[/b] (%d mana): %d gold every %d seconds.\n" % [Defs.SITES["mine"]["cut"], Defs.SITES["mine"]["gold"], roundi(Defs.SITES["mine"]["every"])]
-		+ "[b]Mana Well[/b] (%d mana): +%.1f mana a second.\n\n" % [Defs.SITES["well"]["cut"], Defs.SITES["well"]["regen"]]
+		+ "[b]Gold Mine[/b] (%d mana): %d gold the moment it is freed, then %d gold every %d seconds.\n" % [Defs.SITES["mine"]["cut"], Defs.SITES["mine"]["lode"], Defs.SITES["mine"]["gold"], roundi(Defs.SITES["mine"]["every"])]
+		+ "[b]Mana Well[/b] (%d mana): a rush of +%d mana and +%d maximum mana, then +%.1f mana a second.\n\n" % [Defs.SITES["well"]["cut"], Defs.SITES["well"]["burst"], Defs.SITES["well"]["max"], Defs.SITES["well"]["regen"]]
+		+ "The [b]Buried Gold[/b] and [b]Mana Spring[/b] skills make every mine and well pay more.\n\n"
 		+ "Free them early: they pay back over the whole battle."))
 	t.append(_t("Your powers", "Hero barracks",
-		"A barracks keeps sending extra heroes onto its road while the waves are still coming.\n\n[b]Raze it[/b] (%d mana) to stop it for good, and take %d gold from the ruins.\n\nFrom lair 5 on, buildings are sturdier: mines, wells and barracks take [b]2 cuts[/b], and [b]3[/b] from lair 7 (tap one to see how many are left). Each cut costs less, but the whole job costs more. Every cut on a barracks also slows its musters." % [Defs.SITES["camp"]["cut"], Defs.SITES["camp"]["bounty"]]))
+		"A barracks keeps sending extra heroes onto its road, one after another, while the waves are still coming, and its squads grow as the waves go on.\n\n[b]Raze it[/b] (%d mana) to stop it for good and take %d gold from the ruins: the squad still lined up scatters, and its troops already on the road lose heart (a third of their health).\n\nFrom lair 5 on, buildings are sturdier: mines, wells and barracks take [b]2 cuts[/b], and [b]3[/b] from lair 7 (tap one to see how many are left). Each cut costs less, but the whole job costs more. Every cut on a barracks also slows its musters." % [Defs.SITES["camp"]["cut"], Defs.SITES["camp"]["bounty"]]))
 	t.append(_t("Your powers", "Loot",
 		"Slain heroes sometimes drop a [b]coin[/b] (gold, more from tougher kinds of hero) or a [b]mana potion[/b] (+%d mana).\n\nTap loot to take it at once. Anything still lying around is gathered by itself when the next wave starts, and in the last wave every drop is taken at once." % Defs.LOOT_POTION_MANA))
 
 	# ------------------------------------------------------------ progress
 	t.append(_t("Progress", "Dark Arts",
 		"Your skills, opened from the map. [b]Every star is a skill point.[/b]\n\n"
-		+ "Each tower kind has its own tab: damage, attack speed, range, faster ranks and a stronger ability. [b]The Hoard[/b] tab gives your den more charges, every battle more starting gold, more mana or faster mana (Mana Spring), and the Meteor more damage.\n\n"
+		+ "Each tower kind has its own tab: damage, attack speed, range, faster ranks and a stronger ability. [b]The Hoard[/b] tab gives your den more charges, more starting gold and richer mines (Buried Gold), more mana, faster mana and stronger wells (Mana Spring), and the Meteor more damage. Buried Gold and Mana Spring open 3 more ranks with every chapter.\n\n"
 		+ "Every star can always be spent: each tower tab ends with a [b]deep skill[/b] of %d small ranks (+%d%% damage each) and The Hoard with [b]Tithe[/b] (%d ranks of +%d starting gold), for the stars left once the rest is learned.\n\n" % [Defs.DRILL_MAX, roundi(Defs.DRILL_DMG * 100), Defs.TITHE_MAX, Defs.TITHE_GOLD]
-		+ "More skills open as the campaign goes on: [b]The Land[/b] (mines, wells, cutting, raised tiles, Sluices and Altars) with Chapter II, and [b]tier II[/b] of every tree and the masteries with Chapter III (Floodmaster and Black Rites in The Land), Sturdy Foundations against siege heroes with Chapter IV, and [b]tier III[/b] with Chapter V: a Legend skill for each tower, Hoard's Fury for the den and Dragon's Patience for starting mana. A tier that is still shut shows which chapter opens it.
+		+ "More skills open as the campaign goes on: [b]The Land[/b] (cutting, raised tiles, Sluices and Altars) with Chapter II, and [b]tier II[/b] of every tree and the masteries with Chapter III (Floodmaster and Black Rites in The Land), Sturdy Foundations against siege heroes with Chapter IV, and [b]tier III[/b] with Chapter V: a Legend skill for each tower, Hoard's Fury for the den and Dragon's Patience for starting mana. A tier that is still shut shows which chapter opens it.
 
 "
 		+ "Tower skills apply to towers you build after buying them. [b]Refund all points[/b] any time to try a different plan."))
@@ -257,7 +258,7 @@ A [b]Dark Altar[/b] is overgrown. Cut it free (%d mana) and towers within %.1f t
 		+ "Each lair further along the campaign is worth [b]10%% more[/b], night missions [b]half as much again[/b], and the whole is multiplied by the heroes' [b]Resolve[/b] at the end (up to ×%.1f). Your best score on each mission adds up to your total.\n\n" % Defs.THREAT["max"]
 		+ "The [b]Hall of Fame[/b] on the map has the online leaderboard (the total and every lair, day, night and Long Night: tap the board's name to pick one, tap a player to challenge them to a race), your [b]achievements[/b], and an optional account. Sign in to put your name on the board and to keep your scores and achievements on any device. Resetting progress keeps achievements and best scores."))
 	t.append(_t("Progress", "The Long Night",
-		"Once you have won a lair by day, its start card offers the [b]Long Night[/b]: the same lair, played by day with [b]your own Dark Arts[/b], but the waves never end. After the lair's own waves, its last %d come round again and again, each time with more heroes, and every wave past the end is [b]%d%% tougher[/b] than the one before. Sooner or later the hoard falls; the question is when.\n\n" % [Defs.LONG["cycle"], roundi(Defs.LONG["grow"] * 100)]
+		"Once you have won a lair by day, its start card offers the [b]Long Night[/b]: the same lair, played by day with [b]your own Dark Arts[/b], but the waves never end. After the lair's own waves, its last %d come round again and again, each time with one more hero, and every wave past the end is [b]%d%% tougher[/b] than the one before. Its heroes are tougher than by day from the very first wave. Sooner or later the hoard falls; the question is when.\n\n" % [Defs.LONG["cycle"], roundi(Defs.LONG["grow"] * 100)]
 		+ "Resolve plays no part (everyone meets the same waves) and hoarded gold draws nothing. You earn no stars: what counts is how many [b]waves you held[/b] (every hero of the wave slain or gone), shown in battle under the wave counter. Heroes slain break ties.\n\n"
 		+ "Each lair's Long Night has [b]its own leaderboard[/b] in the Hall of Fame. It doesn't count toward your total score."))
 	t.append(_t("Progress", "Online races",

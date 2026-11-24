@@ -16,11 +16,11 @@ const SKILL_ORDER := ["moss_dmg", "ash_dmg", "ash_dmg", "moss_dmg", "ash_ability
 	# Chapter III onward (tier II opens with Chapter III, The Land with Chapter II):
 	"mastery_longhouse", "mastery_ossuary", "mastery_twin", "land_axes", "moss_bodkin",
 	"frost_freeze", "ash_memory", "mastery_lodge", "mastery_mausoleum", "mastery_sunlance",
-	"land_veins", "ash_core", "frost_cold", "moss_keen", "land_springs", "land_flood", "land_rites", "gem_magnet",
+	"hoard_gold", "ash_core", "frost_cold", "moss_keen", "hoard_regen", "land_flood", "land_rites", "gem_magnet",
 	"land_axes", "moss_bodkin", "frost_freeze", "ash_memory", "land_heights", "land_spoils",
-	"ash_core", "frost_cold", "moss_keen", "land_veins", "land_springs", "frost_dread", "ash_cooling", "land_lantern",
+	"ash_core", "frost_cold", "moss_keen", "hoard_gold", "hoard_regen", "frost_dread", "ash_cooling", "land_lantern",
 	# Chapter IV onward:
-	"sturdy", "sturdy", "land_heights", "sturdy", "moss_keen", "ash_memory", "frost_freeze", "land_veins", "land_springs",
+	"sturdy", "sturdy", "land_heights", "sturdy", "moss_keen", "ash_memory", "frost_freeze", "hoard_gold", "hoard_regen",
 	"land_axes", "gem_magnet", "land_spoils", "land_lantern", "land_flood", "land_rites", "frost_dread", "ash_cooling", "gem_magnet", "land_lantern",
 	# Chapter V onward (tier III):
 	"moss_legend", "ash_legend", "den_fury", "frost_legend", "dragon_patience", "moss_legend", "ash_legend", "den_fury", "frost_legend",
@@ -42,7 +42,7 @@ static func skills(points: int, beaten := 1000) -> Dictionary:
 	for id: String in SKILL_ORDER:
 		if spent >= points:
 			break
-		if Defs.skill_gate(id) > beaten:
+		if Defs.skill_gate(id) > beaten or int(s.get(id, 0)) >= Defs.skill_cap(id, beaten):
 			continue
 		s[id] = int(s.get(id, 0)) + 1
 		spent += 1

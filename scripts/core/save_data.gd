@@ -189,7 +189,7 @@ func skill_rank(id: String) -> int:
 
 
 func can_buy(id: String) -> bool:
-	return points_free() > 0 and skill_rank(id) < _skill_max(id) and lairs_beaten() >= Defs.skill_gate(id)
+	return points_free() > 0 and skill_rank(id) < Defs.skill_cap(id, lairs_beaten()) and lairs_beaten() >= Defs.skill_gate(id)
 
 
 ## Campaign lairs beaten so far: each win opens the next lair, so every lair before the last one

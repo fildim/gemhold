@@ -5,6 +5,7 @@ extends Control
 signal closed
 signal race_ready(race: Dictionary, side: String)   # a race has begun: play it (side "h" host, "g" guest)
 signal challenges_changed(attention: int, live: bool)   # challenges wanting an answer or Ready; live: a race is now
+signal invites(list: Array)   # [{key, title, text}]: challenges to tell the player about (main shows each once)
 
 const Hud := preload("res://scripts/ui/hud.gd")
 
@@ -542,6 +543,9 @@ func _refresh_race() -> void:
 		_label(_race, "Races are played online, so both of you need an account. Sign in or create one on the Account page.", 24, Hud.DIM)
 		_action(_race, "Go to Account", _show_tab.bind(2))
 		return
+	if _watch_code != "":
+		_build_watching()
+		return
 	if not _chal_target.is_empty():
 		_build_challenge_form()
 		return
@@ -621,6 +625,7 @@ func _refresh_race() -> void:
 	_race_entry.max_length = Online.RACE_CODE_LEN
 	_action(join, "Join", _join_race)
 	_race_status = _label(_race, "", 24, Hud.DIM)
+	_build_watch_section()
 
 
 func _race_say(msg: String, bad := false) -> void:
@@ -682,6 +687,7 @@ func _cancel_race() -> void:
 
 ## While hosting, looks every couple of seconds whether a rival has joined.
 func _process(delta: float) -> void:
+	_watch_tick(delta)
 	if _chal_wait != "":
 		_wait_challenge(delta)
 	if _race_code == "" or _race_asking:
@@ -728,13 +734,20 @@ func load_challenges() -> void:
 	var now := int(Time.get_unix_time_from_system())
 	var attention := 0
 	var live := false
+	var news := []
 	for c: Dictionary in _challenges:
+		var rival: String = c["to_name"] if c["mine"] else c["from_name"]
 		if c["state"] == "sent" and c["by"] != _online.uid:
 			attention += 1
+			news.append({"key": "%s@%d" % [c["id"], int(c["at"])], "title": "A race invite!",
+				"text": "%s %s you to a race\n%s, %s." % [rival, "challenges" if not c["mine"] else "asks for another time for your race", _lair_text(c), when_text(int(c["at"]))]})
 		elif c["state"] == "accepted" and Online.challenge_when(c, now) == "now":
 			attention += 1
 			live = true
+			news.append({"key": "%s@now" % c["id"], "title": "Your race is now!",
+				"text": "Your race with %s is due:\n%s. Press Ready on the Race page." % [rival, _lair_text(c)]})
 	challenges_changed.emit(attention, live)
+	invites.emit(news)
 	_fill_challenges()
 
 
@@ -1086,3 +1099,122 @@ func race_page_open() -> bool:
 func race_rect(row: String) -> Rect2:
 	var c: Control = _race_rows.get(row)
 	return c.get_global_rect() if c and is_instance_valid(c) and c.is_visible_in_tree() else Rect2()
+
+
+# ---------------------------------------------------------------- spectators
+# Anyone signed in may watch a race: the Race page lists the races being played now (Online.races_live)
+# or takes a code, then shows both racers' progress, read every couple of seconds (race_get).
+
+var _watch_code := ""            # the race being watched, or ""
+var _watch_poll := 0.0
+var _watch_asking := false
+var _watch_box: VBoxContainer     # the two racers' cards while watching
+var _live_box: VBoxContainer      # the list of races to watch
+
+
+func _build_watch_section() -> void:
+	_label(_race, "Watch a race", 30, Hud.GOLD, _hud.display_font)
+	_live_box = VBoxContainer.new()
+	_live_box.add_theme_constant_override("separation", 8)
+	_race.add_child(_live_box)
+	_label(_live_box, "Looking for races…", 24, Hud.DIM)
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 10)
+	_race.add_child(row)
+	var entry := _field(row, "watch_code", "Race code to watch", false)
+	entry.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	entry.max_length = Online.RACE_CODE_LEN
+	_action(row, "Watch", func() -> void: _watch(entry.text.strip_edges().to_upper()))
+	_load_live()
+
+
+func _load_live() -> void:
+	var box := _live_box
+	var res: Variant = await _online.races_live()
+	if box == null or not is_instance_valid(box) or not is_inside_tree():
+		return
+	_clear(box)
+	if typeof(res) != TYPE_ARRAY:
+		_label(box, "Could not look for races: %s" % str(res.get("error", "")), 24, Hud.POOR)
+		return
+	if res.is_empty():
+		_label(box, "No race is being played right now.", 24, Hud.DIM)
+	for r: Dictionary in res:
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 10)
+		box.add_child(row)
+		var t := _label(row, "%s vs %s\n%s · wave %d" % [r["host_name"], r["guest_name"], _lair_text(r),
+			maxi(int(r["h"].get("wave", 0)), int(r["g"].get("wave", 0)))], 24, Hud.BONE)
+		t.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		_action(row, "Watch", _watch.bind(str(r["code"])))
+	_action(box, "Look again", func() -> void:
+		_clear(box)
+		_label(box, "Looking for races…", 24, Hud.DIM)
+		_load_live())
+
+
+func _watch(code: String) -> void:
+	if code.length() != Online.RACE_CODE_LEN:
+		_race_say("A race code has %d letters" % Online.RACE_CODE_LEN, true)
+		return
+	_watch_code = code
+	_watch_poll = 0.0
+	_refresh_race()
+
+
+func _build_watching() -> void:
+	_label(_race, "Watching race %s" % _watch_code, 36, Hud.GOLD, _hud.display_font)
+	_watch_box = VBoxContainer.new()
+	_watch_box.add_theme_constant_override("separation", 12)
+	_race.add_child(_watch_box)
+	_label(_watch_box, "Finding the race…", 26, Hud.DIM)
+	_action(_race, "Stop watching", func() -> void:
+		_watch_code = ""
+		_refresh_race())
+
+
+func _watch_tick(delta: float) -> void:
+	if _watch_code == "" or _watch_asking:
+		return
+	_watch_poll -= delta
+	if _watch_poll > 0.0:
+		return
+	_watch_poll = 2.5
+	_watch_asking = true
+	var code := _watch_code
+	var r: Dictionary = await _online.race_get(code)
+	_watch_asking = false
+	if code != _watch_code or _watch_box == null or not is_instance_valid(_watch_box):
+		return
+	_clear(_watch_box)
+	if r.has("error"):
+		_label(_watch_box, r["error"], 26, Hud.POOR)
+		return
+	_label(_watch_box, _lair_text(r), 28, Hud.BONE, _hud.bold_font)
+	if r.get("state", "") == "open":
+		_label(_watch_box, "%s is waiting for a rival to join…" % r["host_name"], 26, Hud.DIM)
+		return
+	var h: Dictionary = r["h"]
+	var g: Dictionary = r["g"]
+	var cols := HBoxContainer.new()
+	cols.add_theme_constant_override("separation", 16)
+	_watch_box.add_child(cols)
+	for side in [[r["host_name"], h, g], [r["guest_name"], g, h]]:
+		var card := PanelContainer.new()
+		card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		card.add_theme_stylebox_override("panel", _hud._box(Color(0, 0, 0, 0.4), Hud.EDGE, 2, 10, 16))
+		cols.add_child(card)
+		var v := VBoxContainer.new()
+		card.add_child(v)
+		var p: Dictionary = side[1]
+		_label(v, str(side[0]), 30, Hud.GOLD, _hud.bold_font)
+		var state := "Racing"
+		if p.get("done", false):
+			state = "Survived!" if p.get("won", false) else ("Stopped" if p.get("stopped", false) else "Fell")
+		_label(v, state, 26, Hud.GOLD if state == "Survived!" else (Hud.POOR if state == "Fell" else Hud.BONE))
+		_label(v, "Wave %d\nGems %d\nHeroes slain %d\nHeroes sent %d" % [int(p.get("wave", 0)), int(p.get("gems", 0)),
+			int(p.get("kills", 0)), str(p.get("out", "")).length()], 26, Hud.BONE)
+	if h.get("done", false) and g.get("done", false):
+		var c := Online.race_compare(h, g)
+		_label(_watch_box, "A draw!" if c == 0 else "%s wins the race!" % (r["host_name"] if c > 0 else r["guest_name"]), 32, Hud.GOLD, _hud.display_font)
+		_watch_poll = INF   # settled: nothing more to read

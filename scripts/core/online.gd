@@ -455,6 +455,45 @@ func race_get(code: String) -> Dictionary:
 	return out
 
 
+const WATCH_AGE := 20 * 60   # races begun longer ago than this are not offered to watch
+
+## Races being played right now, newest first, for spectators: [race as race_get returns it, plus
+## "age" in seconds], or {"error"}. Only races both racers are still in.
+func races_live() -> Variant:
+	var q := {"structuredQuery": {
+		"from": [{"collectionId": "races"}],
+		"where": {"fieldFilter": {"field": {"fieldPath": "state"}, "op": "EQUAL", "value": {"stringValue": "on"}}},
+		"limit": 100,
+	}}
+	var r := await _call("POST", _docs + ":runQuery", q, true, RACE_TIMEOUT)
+	if not r["ok"]:
+		return {"error": r["error"]}
+	var now := int(Time.get_unix_time_from_system())
+	var out := []
+	for item in r["data"]:
+		if typeof(item) != TYPE_DICTIONARY or not item.has("document"):
+			continue
+		var f: Dictionary = item["document"].get("fields", {})
+		var made: String = f.get("created", {}).get("timestampValue", "")
+		if made == "":
+			continue
+		var age := now - int(Time.get_unix_time_from_datetime_string(made.get_slice(".", 0).trim_suffix("Z")))
+		if age < 0 or age > WATCH_AGE:
+			continue
+		var race := {"code": str(item["document"]["name"]).get_file(), "guest_name": "", "g": race_progress(), "age": age}
+		for k: String in f:
+			if k != "created":
+				race[k] = _value(f[k])
+		if race["h"].get("done", false) or race["g"].get("done", false):
+			continue
+		var lv := race_level(str(race.get("level", "")))
+		race["level"] = lv[0]
+		race["version"] = lv[1]
+		out.append(race)
+	out.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return a["age"] < b["age"])
+	return out
+
+
 ## Reports this racer's progress: side is "h" (host) or "g" (guest).
 func race_report(code: String, side: String, progress: Dictionary) -> String:
 	var doc := {

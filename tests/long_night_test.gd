@@ -50,13 +50,13 @@ func _unit_checks() -> void:
 	for arr: Array in [lv.wave_roads, lv.wave_cargo, lv.wave_walk, lv.wave_deal, lv.wave_rivers, lv.wave_air]:
 		_check(arr.is_empty() or arr.size() == lv.waves.size(), "every per-wave list grows with the waves")
 	var cycle := mini(int(Defs.LONG["cycle"]), own)
-	_check(lv.waves[own].size() == lv.waves[own - cycle].size(), "the first long wave copies the lair's wave `cycle` from the end")
+	_check(lv.waves[own].size() == lv.waves[own - cycle].size() + 1 / int(Defs.LONG["extra_every"]), "the first long wave copies the lair's wave `cycle` from the end (plus its extra hero)")
 	_check(lv.waves[own + 3].size() > lv.waves[own - cycle + 3].size(), "later long waves bring more heroes")
 	# Health: the lair's last curve value, then compounding growth past the end.
 	sim.wave = own + 10
 	sim._spawn("p", -1, 0.0, own + 10)
 	var e: GameSim.Enemy = sim.enemies.back()
-	var want: float = Defs.ENEMIES["p"]["hp"] * lv.hp_mul * (1.0 + lv.wave_hp * (own + 9)) * lv.wave_curve(own + 10) * pow(1.0 + Defs.LONG["grow"], 10)
+	var want: float = Defs.ENEMIES["p"]["hp"] * lv.hp_mul * (1.0 + lv.wave_hp * (own + 9)) * lv.wave_curve(own + 10) * pow(1.0 + Defs.LONG["grow"], 10) * float(Defs.LONG["hp"])
 	_check(absf(e.max_hp - want) < 0.01, "health past the end compounds (%.1f, want %.1f)" % [e.max_hp, want])
 	# Restarting reuses the extended level: the Long Night still starts from the lair's own end.
 	var again := GameSim.new(lv, {})

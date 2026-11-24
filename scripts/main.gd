@@ -115,6 +115,7 @@ func _ready() -> void:
 	select.hall_pressed.connect(hall.open)
 	select.race_pressed.connect(hall.open_race)
 	hall.challenges_changed.connect(select.set_race_badge)
+	hall.invites.connect(_on_invites)
 	select.full_unlocked.connect(func() -> void: online.sync(save))   # remember it on the account
 	hall.closed.connect(func() -> void: hall.visible = false)
 	hall.race_ready.connect(_start_race)
@@ -1025,7 +1026,21 @@ func _on_send(code: String) -> void:
 ## how to join and how a race goes. Each OK moves on (Prefs "race_tip"); "No more tips" ends it.
 const RACE_TROUBLE := 3   # race polls failed in a row before the player is told
 const RACE_WAIT_MS := 10000   # after finishing, how long to wait for the rival's answer before settling the race
-const CHALLENGE_LOOK := 60.0       # seconds between looks for challenges while the map is up
+var _invites_seen := {}   # invite keys (Hall.invites) already shown as a popup since the game opened
+
+
+## A race invite (or a booked race that is due now) pops up on the map once per game session.
+func _on_invites(list: Array) -> void:
+	if not on_map or hall.visible:
+		return
+	for n: Dictionary in list:
+		if not _invites_seen.has(n["key"]):
+			_invites_seen[n["key"]] = true
+			select.show_invite(n["title"], n["text"])
+			return
+
+
+const CHALLENGE_LOOK := 60.0      # seconds between looks for challenges while the map is up
 const CHALLENGE_LOOK_FAST := 15.0  # while the Race page shows them
 var _chal_t := 2.0
 
