@@ -1040,7 +1040,7 @@ func _on_invites(list: Array) -> void:
 			return
 
 
-const CHALLENGE_LOOK := 60.0      # seconds between looks for challenges while the map is up
+const CHALLENGE_LOOK := 30.0      # seconds between looks for challenges while the map is up
 const CHALLENGE_LOOK_FAST := 15.0  # while the Race page shows them
 var _chal_t := 2.0
 

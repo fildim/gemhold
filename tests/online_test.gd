@@ -73,6 +73,9 @@ func _run() -> void:
 	_check(await a.race_report(str(hosted["code"]), "h", mine) == "", "the host reports theirs")
 	var both := await a.race_get(str(hosted["code"]))
 	_check(int(both["g"]["wave"]) == 3 and int(both["h"]["wave"]) == 3, "both progresses are there: %s" % [both])
+	var live: Variant = await b.races_live()
+	_check(typeof(live) == TYPE_ARRAY and live.any(func(r: Dictionary) -> bool: return r["code"] == str(hosted["code"]) and int(r["h"]["wave"]) == 3),
+		"spectators find the race being played: %s" % [live])
 
 	# Challenges: a race booked for a time between two players.
 	var at := int(Time.get_unix_time_from_system()) + 3600
@@ -101,6 +104,15 @@ func _run() -> void:
 	await b.challenge_delete(cid)
 	var left: Variant = await a.challenges()
 	_check(typeof(left) == TYPE_ARRAY and left.is_empty(), "either player can remove it")
+	# Race now: a challenge for this moment, its code on before the rival accepts; settled, it goes.
+	var now_c := await a.challenge_create(b.uid, b.player_name, "level_03", false, int(Time.get_unix_time_from_system()))
+	_check(now_c.has("id"), "a challenges b to race now: %s" % [now_c])
+	_check(await a.challenge_update(str(now_c.get("id", "")), {"code": "FGHJK"}) == "", "the race code goes on before b accepts")
+	_check(await b.challenge_update(str(now_c.get("id", "")), {"state": "accepted"}) == "", "b accepts and races")
+	var b_now: Dictionary = await b.challenge_get(str(now_c.get("id", "")))
+	_check(b_now.get("code") == "FGHJK" and Online.challenge_when(b_now, int(Time.get_unix_time_from_system())) == "now", "b finds the code at once: %s" % [b_now])
+	await b.challenge_delete(str(now_c.get("id", "")))
+	_check((await a.challenges()).is_empty(), "the raced challenge is gone for both")
 	# Feedback from the Info page: signed in (with name and uid) or not, never read back.
 	_check(await a.send_feedback("Signed-in feedback") == "", "a signed-in player sends feedback")
 	_check(await a.send_feedback("   ") != "", "empty feedback is refused")

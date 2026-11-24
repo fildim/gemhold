@@ -524,10 +524,16 @@ const CHALLENGE_KEEP := 24 * 3600   # a challenge whose time passed this long ag
 
 ## Sends a challenge to player `to` for a race on `level_id` at unix time `at`. "" when sent.
 func challenge_send(to: String, to_name: String, level_id: String, night: bool, at: int) -> String:
+	var r := await challenge_create(to, to_name, level_id, night, at)
+	return str(r.get("error", ""))
+
+
+## As challenge_send, but returns {"id"} of the new challenge, or {"error"}.
+func challenge_create(to: String, to_name: String, level_id: String, night: bool, at: int) -> Dictionary:
 	if not signed_in():
-		return "Sign in first"
+		return {"error": "Sign in first"}
 	if to == uid:
-		return "You can't challenge yourself"
+		return {"error": "You can't challenge yourself"}
 	var id := ""
 	for i in 20:
 		id += "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"[randi() % 62]
@@ -537,7 +543,7 @@ func challenge_send(to: String, to_name: String, level_id: String, night: bool, 
 	var body := {"writes": [{"update": doc, "currentDocument": {"exists": false},
 		"updateTransforms": [{"fieldPath": "created", "setToServerValue": "REQUEST_TIME"}]}]}
 	var r := await _call("POST", _docs + ":commit", body, true)
-	return "" if r["ok"] else str(r["error"])
+	return {"id": id} if r["ok"] else {"error": str(r["error"])}
 
 
 ## This player's challenges, sent and received, soonest first: [{id, from, from_name, to, to_name,

@@ -49,6 +49,7 @@ var _chal_wait := ""             # the challenge this player is Ready for, waiti
 var _chal_poll := 0.0
 var _chal_busy := false
 var _chal_loading := false
+var _race_chal := ""            # the challenge whose race this player hosts and waits on, or ""
 
 
 func setup(hud: Control, save: SaveData, online: Online, levels: Array) -> void:
@@ -683,6 +684,7 @@ func _cancel_race() -> void:
 	_online.race_cancel(_race_code)
 	_race_code = ""
 	_race_for = ""
+	_race_chal = ""
 
 
 ## While hosting, looks every couple of seconds whether a rival has joined.
@@ -708,6 +710,8 @@ func _process(delta: float) -> void:
 	if r["state"] == "on":
 		_race_code = ""   # it is no longer waiting, so closing the hall must not call it off
 		_race_for = ""
+		_chal_done(_race_chal)
+		_race_chal = ""
 		_refresh_race()
 		race_ready.emit(r, "h")
 
@@ -741,6 +745,8 @@ func load_challenges() -> void:
 			attention += 1
 			news.append({"key": "%s@%d" % [c["id"], int(c["at"])], "title": "A race invite!",
 				"text": "%s %s you to a race\n%s, %s." % [rival, "challenges" if not c["mine"] else "asks for another time for your race", _lair_text(c), when_text(int(c["at"]))]})
+			if not c["mine"] and Online.challenge_when(c, now) == "now":
+				news[-1]["text"] = "%s wants to race you right now!\n%s." % [rival, _lair_text(c)]
 		elif c["state"] == "accepted" and Online.challenge_when(c, now) == "now":
 			attention += 1
 			live = true
@@ -907,6 +913,20 @@ func _build_challenge_form() -> void:
 		_refresh_race()
 		_race_say("Challenge sent to %s for %s." % [who, when_text(at)])
 		load_challenges())
+	_action(row, "Race now", func() -> void:
+		var lair := _picked_lair(pick)
+		var level_id: String = _levels[lair / 2]["id"]
+		_race_say("Please wait…")
+		_race_lock(true)
+		var res: Dictionary = await _online.challenge_create(_chal_target["uid"], who, level_id, lair % 2 == 1, int(Time.get_unix_time_from_system()))
+		if not is_inside_tree():
+			return
+		_race_lock(false)
+		if res.has("error"):
+			_race_say(res["error"], true)
+			return
+		_chal_target = {}
+		_chal_ready({"id": res["id"], "level": level_id, "night": lair % 2 == 1, "mine": true, "to_name": who}))
 	_action(row, "Back", func() -> void:
 		_chal_target = {}
 		_refresh_race())
@@ -957,6 +977,9 @@ func _challenge_row(c: Dictionary) -> void:
 					text = "%s challenges you: %s, %s." % [other, lair, when]
 				tint = Hud.GOLD
 				buttons = [["Accept", _chal_set.bind(id, {"state": "accepted"})], retime, ["Decline", _chal_set.bind(id, {"state": "declined"})]]
+				if Online.challenge_when(c, now) == "now":   # due now (a "Race now" challenge): accept and be Ready in one tap
+					text = "%s wants to race you now: %s." % [other, lair]
+					buttons = [["Accept and race", _accept_race.bind(c)], ["Decline", _chal_set.bind(id, {"state": "declined"})]]
 		"accepted":
 			match Online.challenge_when(c, now):
 				"soon":
@@ -1014,6 +1037,30 @@ func _chal_set(id: String, fields: Dictionary) -> void:
 	load_challenges()
 
 
+## A challenge's race has begun: it is settled, so it leaves both players' lists.
+func _chal_done(id: String) -> void:
+	if id == "":
+		return
+	_challenges = _challenges.filter(func(c: Dictionary) -> bool: return c["id"] != id)
+	_online.challenge_delete(id)
+
+
+## Accepts a challenge that is due now and goes straight to Ready.
+func _accept_race(c: Dictionary) -> void:
+	_race_say("Please wait…")
+	_race_lock(true)
+	var err: String = await _online.challenge_update(c["id"], {"state": "accepted"})
+	if not is_inside_tree():
+		return
+	_race_lock(false)
+	if err != "":
+		_race_say(err, true)
+		return
+	var ready := c.duplicate()
+	ready["state"] = "accepted"
+	_chal_ready(ready)
+
+
 func _chal_remove(id: String) -> void:
 	await _online.challenge_delete(id)
 	load_challenges()
@@ -1039,6 +1086,7 @@ func _chal_ready(c: Dictionary) -> void:
 			return
 		_race_code = r["code"]
 		_race_for = c["to_name"]
+		_race_chal = c["id"]
 		_race_poll = 2.0
 		_refresh_race()
 	else:
@@ -1075,6 +1123,7 @@ func _wait_challenge(delta: float) -> void:
 		_chal_busy = false
 		if id == _chal_wait and not r.has("error"):
 			_chal_wait = ""
+			_chal_done(id)
 			race_ready.emit(r, "g")
 		return   # an old code (they left and came back): wait for the new one
 	_chal_busy = false
