@@ -216,7 +216,6 @@ var timer := 0.0
 var queue: Array[String] = []
 var queue_wave: Array[int] = []   # the wave each queued hero belongs to
 var threat := 1.0         # dynamic difficulty: multiplies hero health, see _judge_wave
-var threat_max: float = Defs.THREAT["max"]   # where good defending stops raising it (Defs.resolve_cap: lower on older chapters)
 var wave_left := {}       # wave -> its heroes still queued or on the map
 var wave_peak := {}       # wave -> most of the defended road any of its heroes got through
 var wave_live := {}       # wave -> threat already added by its heroes falling early (_judge_kill)
@@ -1363,7 +1362,7 @@ func _judge_wave(w: int) -> void:
 	else:
 		up = t["up_touched"]
 	# A good defence is capped at max; never lowers a threat that riches already pushed past it.
-	threat = maxf(threat, minf(threat + up, threat_max))
+	threat = maxf(threat, minf(threat + up, t["max"]))
 	# Riches draw heroes: unspent gold over the line adds threat too, up to max_rich.
 	var rich := minf(t["rich_max"], maxf(0.0, gold - t["rich"]) * t["per_gold"])
 	threat = maxf(threat, minf(threat + rich, t["max_rich"]))
@@ -1382,7 +1381,7 @@ func _judge_kill(w: int) -> void:
 		return
 	var step := minf(t["up_kill"], t["kill_max"] - live)
 	wave_live[w] = live + step
-	threat = maxf(threat, minf(threat + step, threat_max))
+	threat = maxf(threat, minf(threat + step, t["max"]))
 
 
 func _update_drops(dt: float) -> void:

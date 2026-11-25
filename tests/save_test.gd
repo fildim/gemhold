@@ -304,7 +304,6 @@ func _init() -> void:
 	_check(tt.den_max == int(Defs.DEN["charges"]) + 8, "Hoard's Wrath I, II and III add den charges")
 	var rh := GameSim.new(lv, {"den_haste": 3, "den_haste2": 1})
 	_check(is_equal_approx(rh.den_refill_time, float(Defs.DEN["refill"]) / 1.48), "Restless Hoard I and II shorten the den refill: %.2f" % rh.den_refill_time)
-	_check(is_equal_approx(Defs.resolve_cap(0, 5), 2.8) and is_equal_approx(Defs.resolve_cap(0, 10), 2.4) and is_equal_approx(Defs.resolve_cap(3, 36), 1.6) and is_equal_approx(Defs.resolve_cap(35, 36), 2.8) and is_equal_approx(Defs.resolve_cap(25, 36), 2.4), "Resolve stops lower on chapters the player has moved past")
 	_check(is_equal_approx(tt.meteor_damage(), Defs.METEOR["dmg"] * 1.25), "Starfall II alone")
 	_check(Defs.skill_gate("hoard_gold2") == 20 and Defs.skill_gate("hoard_gold3") == 40 and Defs.skill_gate("land_timber2") == 20, "tier II opens in Chapter III, tier III in Chapter V")
 	var split := Defs.split_ranks({"hoard_gold": 8, "hoard_regen": 5, "moss_dmg": 2}, 45)

@@ -143,19 +143,6 @@ const THREAT := {"easy": 0.45, "hard": 0.7, "up_max": 0.4, "up_easy": 0.1, "up_m
 	"up_kill": 0.006, "kill_max": 0.1,
 	"up_close": 0.03, "up_touched": 0.01, "max": 2.8, "max_rich": 4.0,
 	"rich": 250, "per_gold": 0.0005, "rich_max": 0.25}
-## Replaying an older lair (owner, 2026-11-25: Chapter I must stay Brilliant-able as Dark Arts grow):
-## good defending tops out RESOLVE_OLD lower for every chapter the player has moved past that lair's
-## chapter, never below RESOLVE_FLOOR. A player at lair 37 (Chapter IV) meets Chapter I at ×1.6.
-const RESOLVE_OLD := 0.4
-const RESOLVE_FLOOR := 1.6
-
-
-## Resolve cap from good defending on campaign lair `index` (0-based) for a player with `beaten` lairs beaten.
-static func resolve_cap(index: int, beaten: int) -> float:
-	var behind := maxi(0, gate_chapter(beaten) - (index / LAIRS_PER_CHAPTER + 1))
-	return maxf(RESOLVE_FLOOR, float(THREAT["max"]) - RESOLVE_OLD * behind)
-
-
 const DROP_SPEED := 0.7      # dropped gems roll home along the road at this many tiles/s
 const DROP_FALL := 0.7       # seconds a gem dropped by a flying carrier takes to fall to the road below
 ## A hero carrying gems walks CARRY_SLOW slower for each gem, never more than CARRY_SLOW_MAX slower

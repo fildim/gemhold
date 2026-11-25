@@ -76,10 +76,8 @@ static func _spend(order: Array, points: int, beaten: int) -> Dictionary:
 ## "near" closest to the lair, "far" earliest along a land road, "mid" halfway along one.
 ## race: plays it as an online race (GameSim.set_race) against an equal rival: every hero its kills
 ## send (sim.race_sends) comes straight back onto its own roads. It never buys heroes to send.
-static func play(lv: Level, skill_ranks: Dictionary, seed := 0, style := "near", race := false, long := false, cap := 0.0) -> GameSim:
+static func play(lv: Level, skill_ranks: Dictionary, seed := 0, style := "near", race := false, long := false) -> GameSim:
 	var sim := GameSim.new(lv, skill_ranks)
-	if cap > 0.0:   # a replay of an older lair (Defs.resolve_cap)
-		sim.threat_max = cap
 	if race:
 		sim.set_race()
 	if long:
@@ -238,8 +236,3 @@ static func _collapse(sim: GameSim) -> void:
 		if sim.level.crossing_kind[i] == "bridge" and not sim.collapsed.has(c) and sim.mana >= sim.collapse_cost(i) and _near_bridge(sim, c):
 			sim.do_action("collapse", c)
 
-
-
-## Bot.play on an older lair, with Resolve capped as the game caps it there (Defs.resolve_cap).
-static func play_capped(lv: Level, skill_ranks: Dictionary, seed: int, cap: float) -> GameSim:
-	return play(lv, skill_ranks, seed, "near", false, false, cap)
