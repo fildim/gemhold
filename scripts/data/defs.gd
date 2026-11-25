@@ -163,30 +163,30 @@ const SOAK_HEAT := 0.6
 ## charges refill one at a time. Every point in the Den skill adds one more charge.
 ## The Hoard skills: each point adds this much starting gold or maximum mana (Starfall: see METEOR).
 ## Tiered skills (owner, 2026-11-25): one skill per Dark Arts tier (I, II in Chapter III, III in
-## Chapter V), each a skill of its own ("next" links them), each tier's ranks worth less than the
-## last: entry k of these lists is what one rank of tier k+1 adds (GameSim.tiered).
+## Chapter V), each a skill of its own ("next" links them). Since 2026-11-25 (owner: buff them) every
+## tier gives the same per rank: entry k of these lists is what one rank of tier k+1 adds (GameSim.tiered).
 ## Buried Gold: starting gold, and gold on every Gold Mine payout. Mana Spring: mana per second, and
 ## the same again for every owned Mana Well. (Rich Veins and Deep Springs were merged into them.)
-const HOARD_GOLD := [60, 55, 50]
-const VEINS_GOLD := [2, 2, 1]
+const HOARD_GOLD := [60, 60, 60]
+const VEINS_GOLD := [2, 2, 2]
 const HOARD_MANA := 15
-const HOARD_REGEN := [0.2, 0.18, 0.15]
-const SPRINGS_REGEN := [0.2, 0.18, 0.15]
+const HOARD_REGEN := [0.2, 0.2, 0.2]
+const SPRINGS_REGEN := [0.2, 0.2, 0.2]
 ## Commanding Heights (The Land): range and damage for towers on raised tiles.
-const HEIGHTS_RANGE := [0.2, 0.18, 0.15]
-const HEIGHTS_DMG := [0.05, 0.05, 0.04]
+const HEIGHTS_RANGE := [0.2, 0.2, 0.2]
+const HEIGHTS_DMG := [0.05, 0.05, 0.05]
 ## Spoils of War: gold for razing a hero building. Timber Trade: gold for each patch of woods cut.
-const SPOILS_GOLD := [15, 14, 12]
-const TIMBER_GOLD := [5, 5, 4]
+const SPOILS_GOLD := [15, 15, 15]
+const TIMBER_GOLD := [6, 6, 6]
 ## Dragonfire: den bolt damage. Hoard's Wrath (+1 den charge a rank) has a tier II and III too.
-const DEN_DMG := [0.1, 0.09, 0.08]
+const DEN_DMG := [0.12, 0.12, 0.12]
 ## Restless Hoard: den charges refill this much faster per rank (refill time / (1 + total)).
-const DEN_HASTE := [0.1, 0.09, 0.08]
+const DEN_HASTE := [0.12, 0.12, 0.12]
 
 const DEN := {"charges": 1, "range": 2.6, "dmg": 70, "refill": 8.0, "rate": 0.5}
 
 const METEOR := {"cost": 50, "radius": 1.3, "dmg": 650, "delay": 0.55}   # dmg: half of lair 3's last-wave Knight
-const HOARD_METEOR := [0.25, 0.22, 0.2]   # Starfall I / II / III (The Hoard): meteor damage per point
+const HOARD_METEOR := [0.25, 0.25, 0.25]   # Starfall I / II / III (The Hoard): meteor damage per point
 
 ## Tower veterancy: towers earn 1 XP per point of damage dealt and rank up at these totals.
 ## Each rank adds damage. A tower at rank ABILITY_RANK and upgrade level ABILITY_LEVEL unlocks its ability.
@@ -324,44 +324,44 @@ const SKILLS := {
 	],
 	"den": [
 		{"id": "den_charge", "name": "Hoard's Wrath", "text": "+1 den charge", "max": 5, "next": "den_charge2"},
-		{"id": "den_dmg", "name": "Dragonfire", "text": "Den bolts +10% damage", "max": 3, "next": "den_dmg2"},
-		{"id": "den_haste", "name": "Restless Hoard", "text": "Den charges refill 10% faster", "max": 3, "next": "den_haste2"},
+		{"id": "den_dmg", "name": "Dragonfire", "text": "Den bolts +12% damage", "max": 3, "next": "den_dmg2"},
+		{"id": "den_haste", "name": "Restless Hoard", "text": "Den charges refill 12% faster", "max": 3, "next": "den_haste2"},
 		{"id": "hoard_gold", "name": "Buried Gold", "text": "+60 starting gold, mines +2 gold", "max": 3, "next": "hoard_gold2"},
 		{"id": "hoard_mana", "name": "Deep Well", "text": "+15 max mana", "max": 4},
 		{"id": "hoard_regen", "name": "Mana Spring", "text": "+0.2 mana per second, and per Mana Well", "max": 3, "next": "hoard_regen2"},
 		{"id": "meteor_dmg", "name": "Starfall", "text": "+25% meteor damage", "max": 3, "next": "meteor_dmg2"},
 		{"id": "den_charge2", "name": "Hoard's Wrath II", "text": "+1 den charge", "max": 2, "tier": 2, "next": "den_charge3"},
-		{"id": "den_dmg2", "name": "Dragonfire II", "text": "Den bolts +9% damage", "max": 3, "tier": 2, "next": "den_dmg3"},
-		{"id": "den_haste2", "name": "Restless Hoard II", "text": "Den charges refill 9% faster", "max": 3, "tier": 2, "next": "den_haste3"},
-		{"id": "hoard_gold2", "name": "Buried Gold II", "text": "+55 starting gold, mines +2 gold", "max": 3, "tier": 2, "next": "hoard_gold3"},
-		{"id": "hoard_regen2", "name": "Mana Spring II", "text": "+0.18 mana per second, and per Mana Well", "max": 3, "tier": 2, "next": "hoard_regen3"},
-		{"id": "meteor_dmg2", "name": "Starfall II", "text": "+22% meteor damage", "max": 3, "tier": 2, "next": "meteor_dmg3"},
+		{"id": "den_dmg2", "name": "Dragonfire II", "text": "Den bolts +12% damage", "max": 3, "tier": 2, "next": "den_dmg3"},
+		{"id": "den_haste2", "name": "Restless Hoard II", "text": "Den charges refill 12% faster", "max": 3, "tier": 2, "next": "den_haste3"},
+		{"id": "hoard_gold2", "name": "Buried Gold II", "text": "+60 starting gold, mines +2 gold", "max": 3, "tier": 2, "next": "hoard_gold3"},
+		{"id": "hoard_regen2", "name": "Mana Spring II", "text": "+0.2 mana per second, and per Mana Well", "max": 3, "tier": 2, "next": "hoard_regen3"},
+		{"id": "meteor_dmg2", "name": "Starfall II", "text": "+25% meteor damage", "max": 3, "tier": 2, "next": "meteor_dmg3"},
 		{"id": "gem_magnet", "name": "Gem Magnet", "text": "Loose gems roll home 20% faster", "max": 3, "tier": 2},
 		{"id": "sturdy", "name": "Sturdy Foundations", "text": "Stun and Silence weigh 15% less, Rubble costs 15% less to clear", "max": 3, "tier": 2, "beaten": 30},
 		{"id": "den_charge3", "name": "Hoard's Wrath III", "text": "+1 den charge", "max": 2, "tier": 3},
-		{"id": "den_dmg3", "name": "Dragonfire III", "text": "Den bolts +8% damage", "max": 3, "tier": 3},
-		{"id": "den_haste3", "name": "Restless Hoard III", "text": "Den charges refill 8% faster", "max": 3, "tier": 3},
-		{"id": "hoard_gold3", "name": "Buried Gold III", "text": "+50 starting gold, mines +1 gold", "max": 3, "tier": 3},
-		{"id": "hoard_regen3", "name": "Mana Spring III", "text": "+0.15 mana per second, and per Mana Well", "max": 3, "tier": 3},
-		{"id": "meteor_dmg3", "name": "Starfall III", "text": "+20% meteor damage", "max": 3, "tier": 3},
+		{"id": "den_dmg3", "name": "Dragonfire III", "text": "Den bolts +12% damage", "max": 3, "tier": 3},
+		{"id": "den_haste3", "name": "Restless Hoard III", "text": "Den charges refill 12% faster", "max": 3, "tier": 3},
+		{"id": "hoard_gold3", "name": "Buried Gold III", "text": "+60 starting gold, mines +2 gold", "max": 3, "tier": 3},
+		{"id": "hoard_regen3", "name": "Mana Spring III", "text": "+0.2 mana per second, and per Mana Well", "max": 3, "tier": 3},
+		{"id": "meteor_dmg3", "name": "Starfall III", "text": "+25% meteor damage", "max": 3, "tier": 3},
 		{"id": "den_fury", "name": "Hoard's Fury", "text": "Den bolts +20% damage", "max": 5, "tier": 3},
 		{"id": "dragon_patience", "name": "Dragon's Patience", "text": "+10 starting mana", "max": 3, "tier": 3},
 		{"id": "hoard_tithe", "name": "Tithe", "text": "+3 starting gold", "max": TITHE_MAX},
 	],
 	"land": [
 		{"id": "land_axes", "name": "Sharp Axes", "text": "Cutting woods and buildings costs 10% less mana", "max": 3},
-		{"id": "land_timber", "name": "Timber Trade", "text": "Cutting woods pays +5 gold", "max": 3, "next": "land_timber2"},
+		{"id": "land_timber", "name": "Timber Trade", "text": "Cutting woods pays +6 gold", "max": 3, "next": "land_timber2"},
 		{"id": "land_heights", "name": "Commanding Heights", "text": "Towers on raised tiles: +0.2 range, +5% damage", "max": 2, "next": "land_heights2"},
 		{"id": "land_spoils", "name": "Spoils of War", "text": "Razing a hero building pays +15 gold", "max": 2, "next": "land_spoils2"},
 		{"id": "land_lantern", "name": "Lantern Oil", "text": "Lights reach 0.3 tiles further at night", "max": 3},
-		{"id": "land_timber2", "name": "Timber Trade II", "text": "Cutting woods pays +5 gold", "max": 3, "tier": 2, "next": "land_timber3"},
-		{"id": "land_heights2", "name": "Commanding Heights II", "text": "Towers on raised tiles: +0.18 range, +5% damage", "max": 2, "tier": 2, "next": "land_heights3"},
-		{"id": "land_spoils2", "name": "Spoils of War II", "text": "Razing a hero building pays +14 gold", "max": 2, "tier": 2, "next": "land_spoils3"},
+		{"id": "land_timber2", "name": "Timber Trade II", "text": "Cutting woods pays +6 gold", "max": 3, "tier": 2, "next": "land_timber3"},
+		{"id": "land_heights2", "name": "Commanding Heights II", "text": "Towers on raised tiles: +0.2 range, +5% damage", "max": 2, "tier": 2, "next": "land_heights3"},
+		{"id": "land_spoils2", "name": "Spoils of War II", "text": "Razing a hero building pays +15 gold", "max": 2, "tier": 2, "next": "land_spoils3"},
 		{"id": "land_flood", "name": "Floodmaster", "text": "Sluices recharge 20% faster; collapsing a bridge costs 5 mana less", "max": 2, "tier": 2},
 		{"id": "land_rites", "name": "Black Rites", "text": "Dark Altars give +5% more damage", "max": 2, "tier": 2},
-		{"id": "land_timber3", "name": "Timber Trade III", "text": "Cutting woods pays +4 gold", "max": 3, "tier": 3},
-		{"id": "land_heights3", "name": "Commanding Heights III", "text": "Towers on raised tiles: +0.15 range, +4% damage", "max": 2, "tier": 3},
-		{"id": "land_spoils3", "name": "Spoils of War III", "text": "Razing a hero building pays +12 gold", "max": 2, "tier": 3},
+		{"id": "land_timber3", "name": "Timber Trade III", "text": "Cutting woods pays +6 gold", "max": 3, "tier": 3},
+		{"id": "land_heights3", "name": "Commanding Heights III", "text": "Towers on raised tiles: +0.2 range, +5% damage", "max": 2, "tier": 3},
+		{"id": "land_spoils3", "name": "Spoils of War III", "text": "Razing a hero building pays +15 gold", "max": 2, "tier": 3},
 	],
 }
 
