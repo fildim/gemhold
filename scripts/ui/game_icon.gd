@@ -50,7 +50,7 @@ const SKILL_BADGE := {"dmg": "blade", "drill": "blade", "rate": "rate", "range":
 const ABILITY_BADGE := {"moss": "volley", "frost": "dread", "ash": "flame"}
 const HOARD := {"den_charge": "orb", "hoard_gold": "coins", "hoard_mana": "potion", "hoard_regen": "spring", "meteor_dmg": "meteor",
 	"gem_magnet": "gem", "sturdy": "hill",
-	"land_veins": "site:mine", "land_springs": "site:well", "land_axes": "tree", "land_heights": "hill", "land_spoils": "site:camp", "land_timber": "tree", "den_dmg": "orb",
+	"land_veins": "site:mine", "land_springs": "site:well", "land_axes": "tree", "land_heights": "hill", "land_spoils": "site:camp", "land_timber": "tree", "den_dmg": "orb", "den_haste": "orb",
 	"land_lantern": "spark", "land_flood": "site:sluice", "land_rites": "site:altar",
 	"den_fury": "orb", "dragon_patience": "potion", "hoard_tithe": "coins"}
 

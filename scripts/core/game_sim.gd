@@ -239,6 +239,7 @@ var lights: Array = []    # [Vector2 centre, radius] of every light while it is 
 var den_max := 0          # den charges when full: base plus one per Den skill point
 var den_charges := 0
 var den_refill := 0.0     # seconds toward the next charge
+var den_refill_time := 8.0   # seconds a charge takes to refill (Defs.DEN refill, shortened by Restless Hoard)
 var den_cd := 0.0         # seconds until the den may fire again
 var time := 0.0
 var race_on := false       # an online race (set_race): kills send heroes to the rival, the race clock runs
@@ -364,6 +365,7 @@ func _init(lv: Level, skill_ranks := {}) -> void:
 		if rule.get("kind", "") == "eclipse" and not lv.night:
 			eclipse = Vector2(float(rule.get("period", 70)), float(rule.get("dark", 25)))
 	den_max = int(Defs.DEN["charges"]) + int(tiered([1, 1, 1], "den_charge"))
+	den_refill_time = float(Defs.DEN["refill"]) / (1.0 + tiered(Defs.DEN_HASTE, "den_haste"))
 	den_charges = den_max
 	_relight()
 
@@ -656,8 +658,8 @@ func _skip_buildings(secs: float) -> void:
 		elif s.kind == "sluice" and s.t > 0.0:
 			s.t = maxf(0.0, s.t - secs)
 	den_refill += secs
-	while den_refill >= Defs.DEN["refill"] and den_charges < den_max:
-		den_refill -= Defs.DEN["refill"]
+	while den_refill >= den_refill_time and den_charges < den_max:
+		den_refill -= den_refill_time
 		den_charges += 1
 	if den_charges >= den_max:
 		den_refill = 0.0
@@ -668,7 +670,7 @@ func _skip_buildings(secs: float) -> void:
 func _update_den(dt: float) -> void:
 	if den_charges < den_max:
 		den_refill += dt
-		if den_refill >= Defs.DEN["refill"]:
+		if den_refill >= den_refill_time:
 			den_refill = 0.0
 			den_charges += 1
 	den_cd -= dt
@@ -2067,8 +2069,8 @@ func cell_info(c: Vector2i) -> Dictionary:
 		return {"title": "Hero road", "text": "Nothing can be built on the road.", "actions": []}
 	if level.is_lair(c):
 		var txt := "%d gems inside. Heroes grab them and run for the edge of the map.\n" % home
-		txt += "The den strikes heroes within %.1f tiles: %d of %d charges ready, one refills every %d s. Add charges in Dark Arts." % [
-			Defs.DEN["range"], den_charges, den_max, int(Defs.DEN["refill"])]
+		txt += "The den strikes heroes within %.1f tiles: %d of %d charges ready, one refills every %.1f s. Add charges in Dark Arts." % [
+			Defs.DEN["range"], den_charges, den_max, den_refill_time]
 		return {"title": "Your den", "text": txt, "actions": []}
 	if trees.has(c):
 		return {"title": "Woods", "text": "Cut the trees to free this %s tile for building. You sell the timber for gold." % _ground_name(t),

@@ -221,7 +221,7 @@ A [b]Dark Altar[/b] is overgrown. Cut it free (%d mana) and towers within %.1f t
 	t.append(_t("Your powers", "Your den",
 		"The cave fights back. It holds charges (the sparks above it) and fires a bolt at heroes within %.1f tiles, gem carriers first, for %d damage through armour. A spent charge comes back every %d seconds.\n\n"
 		% [Defs.DEN["range"], Defs.DEN["dmg"], roundi(Defs.DEN["refill"])]
-		+ "It starts with %d charge; the Hoard's Wrath skill adds more. It is your last line, not your first. Tap the cave to see how far its bolts reach." % Defs.DEN["charges"]))
+		+ "It starts with %d charge; Hoard's Wrath adds more, Restless Hoard refills them faster and Dragonfire hits harder. It is your last line, not your first. Tap the cave to see how far its bolts reach." % Defs.DEN["charges"]))
 	t.append(_t("Your powers", "Woods",
 		"Woods block good building spots. Tap a patch and choose [b]Cut woods[/b] (%d mana): you get %d gold for the timber and the ground is free to build on.\n\n"
 		% [Defs.CLEAR_MANA, Defs.CLEAR_GOLD]
@@ -240,7 +240,7 @@ A [b]Dark Altar[/b] is overgrown. Cut it free (%d mana) and towers within %.1f t
 	# ------------------------------------------------------------ progress
 	t.append(_t("Progress", "Dark Arts",
 		"Your skills, opened from the map. [b]Every star is a skill point.[/b]\n\n"
-		+ "Each tower kind has its own tab: damage, attack speed, range, faster ranks and a stronger ability. [b]The Hoard[/b] tab gives your den more charges (Hoard's Wrath) and harder bolts (Dragonfire), more starting gold and richer mines (Buried Gold), more mana, faster mana and stronger wells (Mana Spring), and the Meteor more damage (Starfall).\n\nMany skills come back in the next tiers as [b]II[/b] and [b]III[/b] (Buried Gold II, Starfall III and so on): separate skills with their own ranks, each tier's ranks worth a little less than the last.\n\n"
+		+ "Each tower kind has its own tab: damage, attack speed, range, faster ranks and a stronger ability. [b]The Hoard[/b] tab gives your den more charges (Hoard's Wrath), faster refills (Restless Hoard) and harder bolts (Dragonfire), more starting gold and richer mines (Buried Gold), more mana, faster mana and stronger wells (Mana Spring), and the Meteor more damage (Starfall).\n\nMany skills come back in the next tiers as [b]II[/b] and [b]III[/b] (Buried Gold II, Starfall III and so on): separate skills with their own ranks, each tier's ranks worth a little less than the last.\n\n"
 		+ "Every star can always be spent: each tower tab ends with a [b]deep skill[/b] of %d small ranks (+%d%% damage each) and The Hoard with [b]Tithe[/b] (%d ranks of +%d starting gold), for the stars left once the rest is learned.\n\n" % [Defs.DRILL_MAX, roundi(Defs.DRILL_DMG * 100), Defs.TITHE_MAX, Defs.TITHE_GOLD]
 		+ "More skills open as the campaign goes on: [b]The Land[/b] (cheaper cutting, gold from woods with Timber Trade, raised tiles, razing pays more) with Chapter II, and [b]tier II[/b] of every tree and the masteries with Chapter III (Floodmaster and Black Rites in The Land), Sturdy Foundations against siege heroes with Chapter IV, and [b]tier III[/b] with Chapter V: a Legend skill for each tower, Hoard's Fury for the den and Dragon's Patience for starting mana. A tier that is still shut shows which chapter opens it.
 

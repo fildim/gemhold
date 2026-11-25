@@ -180,6 +180,8 @@ const SPOILS_GOLD := [15, 12, 10]
 const TIMBER_GOLD := [5, 4, 3]
 ## Dragonfire: den bolt damage. Hoard's Wrath (+1 den charge a rank) has a tier II and III too.
 const DEN_DMG := [0.1, 0.08, 0.06]
+## Restless Hoard: den charges refill this much faster per rank (refill time / (1 + total)).
+const DEN_HASTE := [0.1, 0.08, 0.06]
 
 const DEN := {"charges": 1, "range": 2.6, "dmg": 70, "refill": 8.0, "rate": 0.5}
 
@@ -271,7 +273,7 @@ const LAIRS_PER_CHAPTER := 10
 ## Tithe: +TITHE_GOLD starting gold each), open from the start, so every star always has somewhere
 ## to go: with them the trees hold exactly STARS_MAX ranks (50 lairs, 3 stars by day and 3 by night).
 ## Each rank is weaker than any other skill's, so they are what is left once the rest is learned.
-const DRILL_MAX := 34   # 45 before the tiered skills of 2026-11-25 took 36 ranks
+const DRILL_MAX := 31   # 45 before the tiered skills of 2026-11-25 took 45 ranks
 const DRILL_DMG := 0.01
 const TITHE_MAX := 25
 const TITHE_GOLD := 3
@@ -323,12 +325,14 @@ const SKILLS := {
 	"den": [
 		{"id": "den_charge", "name": "Hoard's Wrath", "text": "+1 den charge", "max": 5, "next": "den_charge2"},
 		{"id": "den_dmg", "name": "Dragonfire", "text": "Den bolts +10% damage", "max": 3, "next": "den_dmg2"},
+		{"id": "den_haste", "name": "Restless Hoard", "text": "Den charges refill 10% faster", "max": 3, "next": "den_haste2"},
 		{"id": "hoard_gold", "name": "Buried Gold", "text": "+60 starting gold, mines +2 gold", "max": 3, "next": "hoard_gold2"},
 		{"id": "hoard_mana", "name": "Deep Well", "text": "+15 max mana", "max": 4},
 		{"id": "hoard_regen", "name": "Mana Spring", "text": "+0.2 mana per second, and per Mana Well", "max": 3, "next": "hoard_regen2"},
 		{"id": "meteor_dmg", "name": "Starfall", "text": "+25% meteor damage", "max": 3, "next": "meteor_dmg2"},
 		{"id": "den_charge2", "name": "Hoard's Wrath II", "text": "+1 den charge", "max": 2, "tier": 2, "next": "den_charge3"},
 		{"id": "den_dmg2", "name": "Dragonfire II", "text": "Den bolts +8% damage", "max": 3, "tier": 2, "next": "den_dmg3"},
+		{"id": "den_haste2", "name": "Restless Hoard II", "text": "Den charges refill 8% faster", "max": 3, "tier": 2, "next": "den_haste3"},
 		{"id": "hoard_gold2", "name": "Buried Gold II", "text": "+50 starting gold, mines +1 gold", "max": 3, "tier": 2, "next": "hoard_gold3"},
 		{"id": "hoard_regen2", "name": "Mana Spring II", "text": "+0.15 mana per second, and per Mana Well", "max": 3, "tier": 2, "next": "hoard_regen3"},
 		{"id": "meteor_dmg2", "name": "Starfall II", "text": "+20% meteor damage", "max": 3, "tier": 2, "next": "meteor_dmg3"},
@@ -336,6 +340,7 @@ const SKILLS := {
 		{"id": "sturdy", "name": "Sturdy Foundations", "text": "Stun and Silence weigh 15% less, Rubble costs 15% less to clear", "max": 3, "tier": 2, "beaten": 30},
 		{"id": "den_charge3", "name": "Hoard's Wrath III", "text": "+1 den charge", "max": 2, "tier": 3},
 		{"id": "den_dmg3", "name": "Dragonfire III", "text": "Den bolts +6% damage", "max": 3, "tier": 3},
+		{"id": "den_haste3", "name": "Restless Hoard III", "text": "Den charges refill 6% faster", "max": 3, "tier": 3},
 		{"id": "hoard_gold3", "name": "Buried Gold III", "text": "+40 starting gold, mines +1 gold", "max": 3, "tier": 3},
 		{"id": "hoard_regen3", "name": "Mana Spring III", "text": "+0.1 mana per second, and per Mana Well", "max": 3, "tier": 3},
 		{"id": "meteor_dmg3", "name": "Starfall III", "text": "+15% meteor damage", "max": 3, "tier": 3},

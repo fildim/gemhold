@@ -1186,7 +1186,7 @@ func _draw_den_charges(tm: float) -> void:
 		else:
 			_circle(self, p, T * 0.05 * depth, Color(0, 0, 0, 0.55))
 			if i == sim.den_charges:
-				var k: float = sim.den_refill / Defs.DEN["refill"]
+				var k: float = sim.den_refill / sim.den_refill_time
 				draw_arc(p, T * 0.075 * depth, -PI / 2, -PI / 2 + TAU * k, 16, Color("a0b4ff"), 2.0, true)
 
 
