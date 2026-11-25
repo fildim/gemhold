@@ -162,8 +162,9 @@ const SOAK_HEAT := 0.6
 ## The den (your lair) strikes heroes near it. It holds charges: each is one bolt, and spent
 ## charges refill one at a time. Every point in the Den skill adds one more charge.
 ## The Hoard skills: each point adds this much starting gold or maximum mana (Starfall: see METEOR).
-## Buried Gold and Mana Spring open 3 ranks per chapter, and each chapter's ranks give less than the
-## last (owner, 2026-11-24): entry k of these lists is what one rank of chapter batch k adds.
+## Tiered skills (owner, 2026-11-25): one skill per Dark Arts tier (I, II in Chapter III, III in
+## Chapter V), each a skill of its own ("next" links them), each tier's ranks worth less than the
+## last: entry k of these lists is what one rank of tier k+1 adds (GameSim.tiered).
 ## Buried Gold: starting gold, and gold on every Gold Mine payout. Mana Spring: mana per second, and
 ## the same again for every owned Mana Well. (Rich Veins and Deep Springs were merged into them.)
 const HOARD_GOLD := [60, 50, 40]
@@ -172,13 +173,18 @@ const HOARD_MANA := 15
 const HOARD_REGEN := [0.2, 0.15, 0.1]
 const SPRINGS_REGEN := [0.2, 0.15, 0.1]
 ## Commanding Heights (The Land): range and damage for towers on raised tiles.
-const HEIGHTS_RANGE := 0.2
-const HEIGHTS_DMG := 0.05
+const HEIGHTS_RANGE := [0.2, 0.15, 0.1]
+const HEIGHTS_DMG := [0.05, 0.04, 0.03]
+## Spoils of War: gold for razing a hero building. Timber Trade: gold for each patch of woods cut.
+const SPOILS_GOLD := [15, 12, 10]
+const TIMBER_GOLD := [5, 4, 3]
+## Dragonfire: den bolt damage. Hoard's Wrath (+1 den charge a rank) has a tier II and III too.
+const DEN_DMG := [0.1, 0.08, 0.06]
 
 const DEN := {"charges": 1, "range": 2.6, "dmg": 70, "refill": 8.0, "rate": 0.5}
 
 const METEOR := {"cost": 50, "radius": 1.3, "dmg": 650, "delay": 0.55}   # dmg: half of lair 3's last-wave Knight
-const HOARD_METEOR := 0.25   # Starfall (The Hoard): +25% meteor damage per point
+const HOARD_METEOR := [0.25, 0.2, 0.15]   # Starfall I / II / III (The Hoard): meteor damage per point
 
 ## Tower veterancy: towers earn 1 XP per point of damage dealt and rank up at these totals.
 ## Each rank adds damage. A tower at rank ABILITY_RANK and upgrade level ABILITY_LEVEL unlocks its ability.
@@ -265,9 +271,9 @@ const LAIRS_PER_CHAPTER := 10
 ## Tithe: +TITHE_GOLD starting gold each), open from the start, so every star always has somewhere
 ## to go: with them the trees hold exactly STARS_MAX ranks (50 lairs, 3 stars by day and 3 by night).
 ## Each rank is weaker than any other skill's, so they are what is left once the rest is learned.
-const DRILL_MAX := 45
+const DRILL_MAX := 34   # 45 before the tiered skills of 2026-11-25 took 36 ranks
 const DRILL_DMG := 0.01
-const TITHE_MAX := 28
+const TITHE_MAX := 25
 const TITHE_GOLD := 3
 const STARS_MAX := 300
 ## Tree ids in the order the Dark Arts tabs show them.
@@ -315,24 +321,42 @@ const SKILLS := {
 		{"id": "ash_drill", "name": "Eternal Flame", "text": "+1% damage", "max": DRILL_MAX},
 	],
 	"den": [
-		{"id": "den_charge", "name": "Hoard's Wrath", "text": "+1 den charge", "max": 5},
-		{"id": "hoard_gold", "name": "Buried Gold", "text": "+60 / 50 / 40 starting gold, mines +2 / 1 / 1 gold (Ch I / II / III ranks)", "max": 9, "per_chapter": 3},
+		{"id": "den_charge", "name": "Hoard's Wrath", "text": "+1 den charge", "max": 5, "next": "den_charge2"},
+		{"id": "den_dmg", "name": "Dragonfire", "text": "Den bolts +10% damage", "max": 3, "next": "den_dmg2"},
+		{"id": "hoard_gold", "name": "Buried Gold", "text": "+60 starting gold, mines +2 gold", "max": 3, "next": "hoard_gold2"},
 		{"id": "hoard_mana", "name": "Deep Well", "text": "+15 max mana", "max": 4},
-		{"id": "hoard_regen", "name": "Mana Spring", "text": "+0.2 / 0.15 / 0.1 mana per second, and per Mana Well (Ch I / II / III ranks)", "max": 9, "per_chapter": 3},
-		{"id": "meteor_dmg", "name": "Starfall", "text": "+25% meteor damage", "max": 3},
+		{"id": "hoard_regen", "name": "Mana Spring", "text": "+0.2 mana per second, and per Mana Well", "max": 3, "next": "hoard_regen2"},
+		{"id": "meteor_dmg", "name": "Starfall", "text": "+25% meteor damage", "max": 3, "next": "meteor_dmg2"},
+		{"id": "den_charge2", "name": "Hoard's Wrath II", "text": "+1 den charge", "max": 2, "tier": 2, "next": "den_charge3"},
+		{"id": "den_dmg2", "name": "Dragonfire II", "text": "Den bolts +8% damage", "max": 3, "tier": 2, "next": "den_dmg3"},
+		{"id": "hoard_gold2", "name": "Buried Gold II", "text": "+50 starting gold, mines +1 gold", "max": 3, "tier": 2, "next": "hoard_gold3"},
+		{"id": "hoard_regen2", "name": "Mana Spring II", "text": "+0.15 mana per second, and per Mana Well", "max": 3, "tier": 2, "next": "hoard_regen3"},
+		{"id": "meteor_dmg2", "name": "Starfall II", "text": "+20% meteor damage", "max": 3, "tier": 2, "next": "meteor_dmg3"},
 		{"id": "gem_magnet", "name": "Gem Magnet", "text": "Loose gems roll home 20% faster", "max": 3, "tier": 2},
 		{"id": "sturdy", "name": "Sturdy Foundations", "text": "Stun and Silence weigh 15% less, Rubble costs 15% less to clear", "max": 3, "tier": 2, "beaten": 30},
+		{"id": "den_charge3", "name": "Hoard's Wrath III", "text": "+1 den charge", "max": 2, "tier": 3},
+		{"id": "den_dmg3", "name": "Dragonfire III", "text": "Den bolts +6% damage", "max": 3, "tier": 3},
+		{"id": "hoard_gold3", "name": "Buried Gold III", "text": "+40 starting gold, mines +1 gold", "max": 3, "tier": 3},
+		{"id": "hoard_regen3", "name": "Mana Spring III", "text": "+0.1 mana per second, and per Mana Well", "max": 3, "tier": 3},
+		{"id": "meteor_dmg3", "name": "Starfall III", "text": "+15% meteor damage", "max": 3, "tier": 3},
 		{"id": "den_fury", "name": "Hoard's Fury", "text": "Den bolts +20% damage", "max": 5, "tier": 3},
 		{"id": "dragon_patience", "name": "Dragon's Patience", "text": "+10 starting mana", "max": 3, "tier": 3},
 		{"id": "hoard_tithe", "name": "Tithe", "text": "+3 starting gold", "max": TITHE_MAX},
 	],
 	"land": [
 		{"id": "land_axes", "name": "Sharp Axes", "text": "Cutting woods and buildings costs 10% less mana", "max": 3},
-		{"id": "land_heights", "name": "Commanding Heights", "text": "Towers on raised tiles: +0.2 range, +5% damage", "max": 2},
-		{"id": "land_spoils", "name": "Spoils of War", "text": "Razing a hero building pays +15 gold", "max": 2},
+		{"id": "land_timber", "name": "Timber Trade", "text": "Cutting woods pays +5 gold", "max": 3, "next": "land_timber2"},
+		{"id": "land_heights", "name": "Commanding Heights", "text": "Towers on raised tiles: +0.2 range, +5% damage", "max": 2, "next": "land_heights2"},
+		{"id": "land_spoils", "name": "Spoils of War", "text": "Razing a hero building pays +15 gold", "max": 2, "next": "land_spoils2"},
 		{"id": "land_lantern", "name": "Lantern Oil", "text": "Lights reach 0.3 tiles further at night", "max": 3},
-		{"id": "land_flood", "name": "Floodmaster", "text": "Sluices recharge 20% faster; collapsing a bridge costs 5 mana less", "max": 2, "beaten": 20},
-		{"id": "land_rites", "name": "Black Rites", "text": "Dark Altars give +5% more damage", "max": 2, "beaten": 20},
+		{"id": "land_timber2", "name": "Timber Trade II", "text": "Cutting woods pays +4 gold", "max": 3, "tier": 2, "next": "land_timber3"},
+		{"id": "land_heights2", "name": "Commanding Heights II", "text": "Towers on raised tiles: +0.15 range, +4% damage", "max": 2, "tier": 2, "next": "land_heights3"},
+		{"id": "land_spoils2", "name": "Spoils of War II", "text": "Razing a hero building pays +12 gold", "max": 2, "tier": 2, "next": "land_spoils3"},
+		{"id": "land_flood", "name": "Floodmaster", "text": "Sluices recharge 20% faster; collapsing a bridge costs 5 mana less", "max": 2, "tier": 2},
+		{"id": "land_rites", "name": "Black Rites", "text": "Dark Altars give +5% more damage", "max": 2, "tier": 2},
+		{"id": "land_timber3", "name": "Timber Trade III", "text": "Cutting woods pays +3 gold", "max": 3, "tier": 3},
+		{"id": "land_heights3", "name": "Commanding Heights III", "text": "Towers on raised tiles: +0.1 range, +3% damage", "max": 2, "tier": 3},
+		{"id": "land_spoils3", "name": "Spoils of War III", "text": "Razing a hero building pays +10 gold", "max": 2, "tier": 3},
 	],
 }
 
@@ -476,21 +500,40 @@ const FURY_DMG := 0.2
 const PATIENCE_MANA := 10
 
 
-## Ranks of a skill open with `beaten` campaign lairs behind the player: a skill with "per_chapter"
-## opens that many more ranks with each chapter reached (Buried Gold, Mana Spring), up to its max.
-static func skill_cap(id: String, beaten: int) -> int:
+## Ranks of a skill a player may hold (every rank opens with the skill's tier; `beaten` is kept for callers).
+static func skill_cap(id: String, _beaten: int) -> int:
 	var sk := skill_def(id)
-	if sk.is_empty():
-		return 0
-	if not sk.has("per_chapter"):
-		return int(sk["max"])
-	return mini(int(sk["max"]), int(sk["per_chapter"]) * gate_chapter(beaten))
+	return 0 if sk.is_empty() else int(sk["max"])
 
 
-## What `rank` ranks of a stepped skill add in all (HOARD_GOLD and the like): ranks 1-3 take the
-## first step, 4-6 the second, 7-9 the third.
-static func stepped(steps: Array, rank: int) -> float:
-	var total := 0.0
-	for r in rank:
-		total += float(steps[mini(r / 3, steps.size() - 1)])
-	return total
+## A tiered skill's ids, tier I first: "hoard_gold" -> ["hoard_gold", "hoard_gold2", "hoard_gold3"].
+static func tier_ids(id: String) -> Array:
+	var out := []
+	while id != "":
+		out.append(id)
+		id = str(skill_def(id).get("next", ""))
+	return out
+
+
+## Ranks moved from older saves into the tiered skills: until 2026-11-25 Buried Gold and Mana Spring
+## held 9 ranks (3 per chapter). Ranks past a skill's max spill into its next tier if the player has
+## opened it (`beaten` lairs); what still does not fit is dropped (the player gets those stars back).
+static func split_ranks(skills: Dictionary, beaten: int) -> Dictionary:
+	var out := {}
+	for id in skills:
+		out[str(id)] = int(skills[id])
+	for id: String in out.keys():
+		var sk := skill_def(id)
+		if sk.is_empty():
+			continue
+		var extra := int(out[id]) - int(sk["max"])
+		var nxt := str(sk.get("next", ""))
+		while extra > 0 and nxt != "" and skill_gate(nxt) <= beaten:
+			out[id] = int(out[id]) - extra
+			out[nxt] = int(out.get(nxt, 0)) + extra
+			id = nxt
+			extra = int(out[id]) - int(skill_def(id)["max"])
+			nxt = str(skill_def(id).get("next", ""))
+		if extra > 0:
+			out[id] = int(skill_def(id)["max"])
+	return out

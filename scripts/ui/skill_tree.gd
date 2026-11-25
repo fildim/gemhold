@@ -216,10 +216,6 @@ func _skill_button(sk: Dictionary) -> Button:
 	if own > Defs.group_gate(Defs.skill_def(id)) and _save.lairs_beaten() < own:
 		b.text += "\nOpens in Chapter %s" % ROMAN[Defs.gate_chapter(own)]
 		b.modulate = Color(1, 1, 1, 0.45)
-	# Ranks that open chapter by chapter (Buried Gold, Mana Spring): when the next ones come.
-	var cap := Defs.skill_cap(id, _save.lairs_beaten())
-	if cap < top and r >= cap:
-		b.text += "\n%d more open in Chapter %s" % [mini(int(sk["per_chapter"]), top - cap), ROMAN[Defs.gate_chapter(_save.lairs_beaten()) + 1]]
 	b.add_theme_font_size_override("font_size", 34)
 	b.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	b.size_flags_horizontal = Control.SIZE_EXPAND_FILL

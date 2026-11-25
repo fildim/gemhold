@@ -43,6 +43,7 @@ static func load_from(file_path := PATH) -> SaveData:
 				s.best[str(id)] = {"rank": str(r["rank"]), "kept": int(r.get("kept", 0))}
 	var sk = d.get("skills", {})
 	if typeof(sk) == TYPE_DICTIONARY:
+		sk = Defs.split_ranks(sk, s.lairs_beaten())   # older saves: 9-rank skills into their tiers
 		for id in sk:
 			var m := s._skill_max(str(id))
 			if m > 0:
@@ -309,6 +310,7 @@ func _merge_campaign(p: Dictionary) -> void:
 ## player's stars and bring refunded ranks back. A whole set always fits, because stars only rise
 ## in a merge; only a damaged account could break that, and then it is ignored.
 func _merge_skills(theirs: Dictionary, t: int) -> void:
+	theirs = Defs.split_ranks(theirs, lairs_beaten())   # a build saved by an older version
 	var clean := {}
 	var spent := 0
 	for id in theirs:

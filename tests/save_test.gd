@@ -281,7 +281,7 @@ func _init() -> void:
 
 	# Starfall adds meteor damage; Cut woods clears a random patch for mana.
 	var sf := GameSim.new(lv, {"meteor_dmg": 2})
-	_check(is_equal_approx(sf.meteor_damage(), Defs.METEOR["dmg"] * (1.0 + 2.0 * Defs.HOARD_METEOR)), "Starfall raises meteor damage")
+	_check(is_equal_approx(sf.meteor_damage(), Defs.METEOR["dmg"] * (1.0 + 2.0 * Defs.HOARD_METEOR[0])), "Starfall raises meteor damage")
 	var woods := sf.trees.size()
 	sf.mana = 100.0
 	_check(sf.cut_random_woods() == "" and sf.trees.size() == woods - 1 and sf.mana == 100.0 - Defs.CLEAR_MANA, "Cut woods clears one patch for its mana")
@@ -292,6 +292,24 @@ func _init() -> void:
 	ax.mana = 100.0
 	_check(ax.woods_cost() < Defs.CLEAR_MANA and ax.cut_random_woods() == "" and ax.trees.size() == ax_woods - 1
 		and ax.mana == 100.0 - ax.woods_cost(), "Sharp Axes makes cutting woods cheaper")
+
+	# Tiered skills (2026-11-25): each tier is its own skill, worth less than the last.
+	var tt := GameSim.new(lv, {"land_timber": 3, "land_timber2": 1, "hoard_gold": 3, "hoard_gold2": 2, "den_charge": 5, "den_charge2": 2, "den_charge3": 1,
+		"meteor_dmg2": 1, "den_dmg": 2})
+	_check(tt.woods_gold() == Defs.CLEAR_GOLD + 19, "Timber Trade I and II add to woods gold: %d" % tt.woods_gold())
+	var tt_gold := tt.gold
+	tt.mana = 100.0
+	_check(tt.cut_random_woods() == "" and tt.gold == tt_gold + Defs.CLEAR_GOLD + 19, "cutting woods pays the Timber Trade gold")
+	_check(tt.gold - Defs.CLEAR_GOLD - 19 == lv.start_gold + 280 and tt.mine_gold() == int(Defs.SITES["mine"]["gold"]) + 8, "Buried Gold I and II: starting gold and mines")
+	_check(tt.den_max == int(Defs.DEN["charges"]) + 8, "Hoard's Wrath I, II and III add den charges")
+	_check(is_equal_approx(tt.meteor_damage(), Defs.METEOR["dmg"] * 1.2), "Starfall II alone")
+	_check(Defs.skill_gate("hoard_gold2") == 20 and Defs.skill_gate("hoard_gold3") == 40 and Defs.skill_gate("land_timber2") == 20, "tier II opens in Chapter III, tier III in Chapter V")
+	var split := Defs.split_ranks({"hoard_gold": 8, "hoard_regen": 5, "moss_dmg": 2}, 45)
+	_check(split["hoard_gold"] == 3 and split["hoard_gold2"] == 3 and split["hoard_gold3"] == 2 and split["hoard_regen2"] == 2 and split["moss_dmg"] == 2, "old 9-rank builds spill into tiers II and III: %s" % [split])
+	var early := Defs.split_ranks({"hoard_gold": 6}, 15)
+	_check(early["hoard_gold"] == 3 and not early.has("hoard_gold2"), "ranks of a tier not open yet are given back: %s" % [early])
+	var lo := Loadout.skills(500, 1000)
+	_check(lo.get("hoard_gold", 0) == 3 and lo.get("hoard_gold2", 0) == 3 and lo.get("hoard_gold3", 0) == 2, "the race loadout fills Buried Gold tier by tier: %s" % [lo])
 
 	# After the last wave, the battle ends as soon as the last hero is gone, even with a gem still
 	# rolling home: no one is left to take it.

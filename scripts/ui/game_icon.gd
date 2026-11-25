@@ -50,7 +50,7 @@ const SKILL_BADGE := {"dmg": "blade", "drill": "blade", "rate": "rate", "range":
 const ABILITY_BADGE := {"moss": "volley", "frost": "dread", "ash": "flame"}
 const HOARD := {"den_charge": "orb", "hoard_gold": "coins", "hoard_mana": "potion", "hoard_regen": "spring", "meteor_dmg": "meteor",
 	"gem_magnet": "gem", "sturdy": "hill",
-	"land_veins": "site:mine", "land_springs": "site:well", "land_axes": "tree", "land_heights": "hill", "land_spoils": "site:camp",
+	"land_veins": "site:mine", "land_springs": "site:well", "land_axes": "tree", "land_heights": "hill", "land_spoils": "site:camp", "land_timber": "tree", "den_dmg": "orb",
 	"land_lantern": "spark", "land_flood": "site:sluice", "land_rites": "site:altar",
 	"den_fury": "orb", "dragon_patience": "potion", "hoard_tithe": "coins"}
 
@@ -147,8 +147,9 @@ static func _tower(ci: CanvasItem, type: String, at: Vector2, sc: float) -> void
 
 ## A skill: its tower (or a Hoard picture) with a badge saying what the skill improves.
 static func _skill(ci: CanvasItem, id: String, xf: Transform2D) -> void:
-	if HOARD.has(id):
-		paint(ci, HOARD[id], xf)
+	var line := id.trim_suffix("2").trim_suffix("3")   # tier II and III skills share their line's picture
+	if HOARD.has(line):
+		paint(ci, HOARD[line], xf)
 		return
 	var type := id.get_slice("_", 0)
 	var what := id.get_slice("_", 1)

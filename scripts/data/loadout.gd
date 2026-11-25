@@ -39,10 +39,15 @@ static func points_before(index: int) -> int:
 static func skills(points: int, beaten := 1000) -> Dictionary:
 	var s := {}
 	var spent := 0
-	for id: String in SKILL_ORDER:
+	for want: String in SKILL_ORDER:
 		if spent >= points:
 			break
-		if Defs.skill_gate(id) > beaten or int(s.get(id, 0)) >= Defs.skill_cap(id, beaten):
+		# A tiered skill that is full goes on to its next tier (Buried Gold -> Buried Gold II), as the
+		# 9-rank skills did before they were split by tier.
+		var id := want
+		while id != "" and int(s.get(id, 0)) >= Defs.skill_cap(id, beaten):
+			id = str(Defs.skill_def(id).get("next", ""))
+		if id == "" or Defs.skill_gate(id) > beaten:
 			continue
 		s[id] = int(s.get(id, 0)) + 1
 		spent += 1

@@ -328,7 +328,7 @@ var engines_built := 0    # Trebuchets that rolled out of Siege Workshops
 func _init(lv: Level, skill_ranks := {}) -> void:
 	level = lv
 	skills = skill_ranks
-	gold = lv.start_gold + int(Defs.stepped(Defs.HOARD_GOLD, skill("hoard_gold"))) + Defs.TITHE_GOLD * skill("hoard_tithe")
+	gold = lv.start_gold + int(tiered(Defs.HOARD_GOLD, "hoard_gold")) + Defs.TITHE_GOLD * skill("hoard_tithe")
 	mana_max = Defs.MANA_MAX + Defs.HOARD_MANA * skill("hoard_mana")
 	mana = lv.start_mana + Defs.PATIENCE_MANA * skill("dragon_patience")
 	home = lv.gems
@@ -363,13 +363,24 @@ func _init(lv: Level, skill_ranks := {}) -> void:
 			dusk_wave = int(rule.get("wave", 1))
 		if rule.get("kind", "") == "eclipse" and not lv.night:
 			eclipse = Vector2(float(rule.get("period", 70)), float(rule.get("dark", 25)))
-	den_max = int(Defs.DEN["charges"]) + skill("den_charge")
+	den_max = int(Defs.DEN["charges"]) + int(tiered([1, 1, 1], "den_charge"))
 	den_charges = den_max
 	_relight()
 
 
 func skill(id: String) -> int:
 	return int(skills.get(id, 0))
+
+
+## What a tiered skill line adds in all (Defs.HOARD_GOLD and the like): steps[k] for every rank of
+## its tier k+1 skill, whose ids are id, id + "2" and id + "3" (Defs "next").
+func tiered(steps: Array, id: String) -> float:
+	return float(steps[0]) * skill(id) + float(steps[1]) * skill(id + "2") + float(steps[2]) * skill(id + "3")
+
+
+## Gold for one patch of woods cut (Timber Trade adds to it).
+func woods_gold() -> int:
+	return Defs.CLEAR_GOLD + int(tiered(Defs.TIMBER_GOLD, "land_timber"))
 
 
 # ---------------------------------------------------------------- loop
@@ -425,7 +436,7 @@ func _no_troops_waiting() -> bool:
 
 
 func mana_regen() -> float:
-	var r := Defs.MANA_REGEN + Defs.stepped(Defs.HOARD_REGEN, skill("hoard_regen"))
+	var r := Defs.MANA_REGEN + tiered(Defs.HOARD_REGEN, "hoard_regen")
 	for s: Site in sites.values():
 		if s.kind == "well" and s.owned:
 			r += well_regen()
@@ -684,7 +695,7 @@ func _update_den(dt: float) -> void:
 	s.pos = level.lair_center + Vector2(0, -0.5)
 	s.target = best
 	s.tpos = best.pos
-	s.dmg = Defs.DEN["dmg"] * (1.0 + Defs.FURY_DMG * skill("den_fury"))
+	s.dmg = Defs.DEN["dmg"] * (1.0 + tiered(Defs.DEN_DMG, "den_dmg") + Defs.FURY_DMG * skill("den_fury"))
 	s.pierce = true
 	s.spd = 9.0
 	shots.append(s)
@@ -1959,7 +1970,7 @@ func _boom(pos: Vector2, r: float, dur: float) -> void:
 
 ## Meteor damage, with the Starfall skill.
 func meteor_damage() -> float:
-	return Defs.METEOR["dmg"] * (1.0 + Defs.HOARD_METEOR * skill("meteor_dmg"))
+	return Defs.METEOR["dmg"] * (1.0 + tiered(Defs.HOARD_METEOR, "meteor_dmg"))
 
 
 ## Cuts a random patch of woods (the HUD's Cut woods button). Returns "" or why it could not.
@@ -2061,7 +2072,7 @@ func cell_info(c: Vector2i) -> Dictionary:
 		return {"title": "Your den", "text": txt, "actions": []}
 	if trees.has(c):
 		return {"title": "Woods", "text": "Cut the trees to free this %s tile for building. You sell the timber for gold." % _ground_name(t),
-			"actions": [{"id": "clear", "label": "Cut woods", "price": "%d mana  +%dg" % [woods_cost(), Defs.CLEAR_GOLD], "mana": woods_cost()}]}
+			"actions": [{"id": "clear", "label": "Cut woods", "price": "%d mana  +%dg" % [woods_cost(), woods_gold()], "mana": woods_cost()}]}
 	if towers.has(c):
 		var tw: Tower = towers[c]
 		var d: Dictionary = Defs.TOWERS[tw.type]
@@ -2117,9 +2128,9 @@ Plunder: +%d gold on its next kill (up to +%d)" % [mini(Defs.PLUNDER_START + tw.
 		var bonus := []
 		for type: String in Defs.TOWERS:
 			acts.append(_build_action(type, Defs.TOWERS[type]["name"]))
-			bonus.append("%s +%.1f" % [Defs.TOWERS[type]["name"], float(Defs.TOWERS[type]["high_range"]) + Defs.HEIGHTS_RANGE * skill("land_heights")])
+			bonus.append("%s +%.1f" % [Defs.TOWERS[type]["name"], float(Defs.TOWERS[type]["high_range"]) + tiered(Defs.HEIGHTS_RANGE, "land_heights")])
 		var hl := " Hallowed: towers here have less range and no ability while a Chapel stands." if hallow_on() and level.hallowed.has(c) else ""
-		var hd := " Commanding Heights: +%d%% damage." % roundi(100.0 * Defs.HEIGHTS_DMG * skill("land_heights")) if skill("land_heights") > 0 else ""
+		var hd := " Commanding Heights: +%d%% damage." % roundi(100.0 * tiered(Defs.HEIGHTS_DMG, "land_heights")) if tiered([1, 1, 1], "land_heights") > 0 else ""
 		return {"title": "Raised ground", "text": "Any tower can be built up here, and it reaches further: %s.%s" % [", ".join(bonus), hd] + hl,
 			"actions": acts}
 	var holy_note := " Hallowed: towers here have less range and no ability while a Chapel stands." if hallow_on() and level.hallowed.has(c) else ""
@@ -2157,15 +2168,15 @@ Rebuilt bridges cost more to bring down again."),
 
 ## What a building pays or gives with this battle's skills (Spoils of War, Rich Veins, Deep Springs, Black Rites).
 func site_bounty(kind: String) -> int:
-	return int(Defs.SITES[kind]["bounty"]) + 15 * skill("land_spoils")
+	return int(Defs.SITES[kind]["bounty"]) + int(tiered(Defs.SPOILS_GOLD, "land_spoils"))
 
 
 func mine_gold() -> int:
-	return int(Defs.SITES["mine"]["gold"]) + int(Defs.stepped(Defs.VEINS_GOLD, skill("hoard_gold")))
+	return int(Defs.SITES["mine"]["gold"]) + int(tiered(Defs.VEINS_GOLD, "hoard_gold"))
 
 
 func well_regen() -> float:
-	return float(Defs.SITES["well"]["regen"]) + Defs.stepped(Defs.SPRINGS_REGEN, skill("hoard_regen"))
+	return float(Defs.SITES["well"]["regen"]) + tiered(Defs.SPRINGS_REGEN, "hoard_regen")
 
 
 func altar_boost() -> float:
@@ -2229,7 +2240,7 @@ No boat on its river yet.", "actions": [{"id": "flood", "label": "No boat on the
 		var ruin: String = {"camp": "Ruined barracks", "workshop": "Ruined workshop", "beacon": "Cold ashes"}.get(s.kind, "Ruins")
 		return {"title": ruin, "text": "Nothing left but ash.", "actions": []}
 	cut["label"] = "Raze"
-	var bounty: int = d["bounty"] + 15 * skill("land_spoils")
+	var bounty: int = d["bounty"] + int(tiered(Defs.SPOILS_GOLD, "land_spoils"))
 	cut["price"] = "%d mana  +%dg" % [cut_cost(s), bounty]
 	var txt: String = d["text"] % ([int(d["sooner"]), bounty] if s.kind == "beacon" else [float(d["r"]), bounty] if s.kind == "chapel" else bounty)
 	return {"title": d["name"], "text": txt + more, "actions": [cut]}
@@ -2269,7 +2280,7 @@ func preview_center(c: Vector2i) -> Vector2:
 func _range_bonus(type: String, c: Vector2i) -> float:
 	var r := 0.2 * skill(type + "_range")
 	if level.high.has(c):
-		r += float(Defs.TOWERS[type]["high_range"]) + Defs.HEIGHTS_RANGE * skill("land_heights")
+		r += float(Defs.TOWERS[type]["high_range"]) + tiered(Defs.HEIGHTS_RANGE, "land_heights")
 	return r
 
 
@@ -2310,7 +2321,7 @@ func do_action(id: String, c: Vector2i) -> String:
 		tw.spent = cost
 		tw.dmg_mul = 1.0 + 0.1 * skill(type + "_dmg") + Defs.LEGEND_DMG * skill(type + "_legend") + Defs.DRILL_DMG * skill(type + "_drill")
 		if level.high.has(c):   # Commanding Heights
-			tw.dmg_mul += Defs.HEIGHTS_DMG * skill("land_heights")
+			tw.dmg_mul += tiered(Defs.HEIGHTS_DMG, "land_heights")
 		tw.rate_mul = 1.0 + 0.08 * skill(type + "_rate")
 		tw.range_add = _range_bonus(type, c)
 		tw.xp_mul = 1.0 + 0.25 * skill(type + "_vet")
@@ -2338,9 +2349,9 @@ func do_action(id: String, c: Vector2i) -> String:
 				return "Not enough mana"
 			mana -= woods_cost()
 			woods_cut += 1
-			gold += Defs.CLEAR_GOLD
+			gold += woods_gold()
 			trees.erase(c)
-			_text(Vector2(c) + Vector2(0.5, 0.3), "+%d" % Defs.CLEAR_GOLD, Color("e8b84a"))
+			_text(Vector2(c) + Vector2(0.5, 0.3), "+%d" % woods_gold(), Color("e8b84a"))
 			trees_changed.emit()
 			sound.emit("chop")
 		"cut":
@@ -2363,7 +2374,7 @@ func do_action(id: String, c: Vector2i) -> String:
 			s.t = 0.0
 			sound.emit("raze")
 			if Defs.HERO_SITES.has(s.kind):
-				var bounty: int = d["bounty"] + 15 * skill("land_spoils")
+				var bounty: int = d["bounty"] + int(tiered(Defs.SPOILS_GOLD, "land_spoils"))
 				gold += bounty
 				_boom(s.pos, 0.9, 0.5)
 				_text(s.pos + Vector2(0, -0.4), "+%d" % bounty, Color("e8b84a"))
