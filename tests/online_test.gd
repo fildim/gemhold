@@ -113,6 +113,19 @@ func _run() -> void:
 	_check(b_now.get("code") == "FGHJK" and Online.challenge_when(b_now, int(Time.get_unix_time_from_system())) == "now", "b finds the code at once: %s" % [b_now])
 	await b.challenge_delete(str(now_c.get("id", "")))
 	_check((await a.challenges()).is_empty(), "the raced challenge is gone for both")
+	# Online now: each player writes only their own presence; the others see it, not themselves.
+	_check(await a.presence_beat("map") == "", "a says they are on the map")
+	_check(await b.presence_beat("battle") == "", "b says they are in a battle")
+	_check(await a.presence_beat("lobby") != "", "only map, battle or race")
+	var raw_p := await a._call("POST", a._docs + ":commit", {"writes": [{"update": {"name": "projects/%s/databases/(default)/documents/presence/%s" % [Online.PROJECT, b.uid],
+		"fields": Online._typed_fields({"name": "Fake", "where": "map"})}, "updateTransforms": [{"fieldPath": "seen", "setToServerValue": "REQUEST_TIME"}]}]}, true)
+	_check(not raw_p["ok"], "nobody writes another player's presence")
+	var on_a: Variant = await a.online_now()
+	_check(typeof(on_a) == TYPE_ARRAY and on_a.size() == 1 and on_a[0]["uid"] == b.uid and on_a[0]["where"] == "battle" and on_a[0]["age"] < 30, "a sees b online, not themself: %s" % [on_a])
+	await b.presence_leave()
+	var on_a2: Variant = await a.online_now()
+	_check(typeof(on_a2) == TYPE_ARRAY and on_a2.is_empty(), "b left: %s" % [on_a2])
+	await a.presence_leave()
 	# Feedback from the Info page: signed in (with name and uid) or not, never read back.
 	_check(await a.send_feedback("Signed-in feedback") == "", "a signed-in player sends feedback")
 	_check(await a.send_feedback("   ") != "", "empty feedback is refused")

@@ -96,6 +96,7 @@ func _ready() -> void:
 	online = Online.new()
 	add_child(online)
 	online.merged.connect(_on_account_merged)
+	online.changed.connect(func() -> void: _pres_t = 0.0)   # signed in: show up as online at once
 	select.online = online
 	var infos := []
 	for p in LEVELS:
@@ -295,6 +296,13 @@ func _process(delta: float) -> void:
 		_race_t -= delta
 		if _race_t <= 0.0 and not _race_busy:
 			_race_tick()
+	if online.signed_in():   # "online now" on the Race page: say where this player is now and then
+		var where := "race" if not race.is_empty() else ("map" if on_map else "battle")
+		_pres_t -= delta
+		if (_pres_t <= 0.0 or where != _pres_where) and not _pres_busy:
+			_pres_t = Online.PRESENCE_BEAT
+			_pres_where = where
+			_presence_beat(where)   # not awaited: the frame goes on
 	if on_map and online.signed_in():   # challenges (Hall of Fame, Race page): look now and then
 		_chal_t -= delta
 		if _chal_t <= 0.0:
@@ -1040,7 +1048,18 @@ func _on_invites(list: Array) -> void:
 			return
 
 
-const CHALLENGE_LOOK := 30.0      # seconds between looks for challenges while the map is up
+var _pres_t := 0.0          # seconds to the next "online now" beat (Online.presence_beat)
+var _pres_where := ""       # where the last beat said this player was
+var _pres_busy := false
+
+
+func _presence_beat(where: String) -> void:
+	_pres_busy = true
+	await online.presence_beat(where)
+	_pres_busy = false
+
+
+const CHALLENGE_LOOK := 30.0     # seconds between looks for challenges while the map is up
 const CHALLENGE_LOOK_FAST := 15.0  # while the Race page shows them
 var _chal_t := 2.0
 

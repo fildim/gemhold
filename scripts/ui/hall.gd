@@ -411,6 +411,7 @@ func _refresh_account() -> void:
 		row2.add_theme_constant_override("separation", 10)
 		_account.add_child(row2)
 		_action(row2, "Sign out", func() -> void:
+			_online.presence_leave()   # off the "online now" list (its token is read before signing out)
 			_online.sign_out())
 		_del_button = _action(row2, "Delete account", _delete)
 		_del_button.add_theme_color_override("font_color", Hud.POOR)
@@ -584,6 +585,7 @@ func _refresh_race() -> void:
 	_chal_box.add_theme_constant_override("separation", 10)
 	_race.add_child(_chal_box)
 	_fill_challenges()
+	_build_online_section()
 	_label(_race, "Race now", 30, Hud.GOLD, _hud.display_font)
 	_label(_race, "A race takes about 3 to 6 minutes. You both play the same lair at the same time, with the same heroes and the same standard Dark Arts for that lair (nothing to choose). Host one on any lair you have cleared (by day, or at night once you have opened it); to join, you only need the code. Slaying heroes and spending gold sends heroes onto your rival's road. The race ends for both the moment one of you clears the last wave or falls: clear it first to win. Every race counts on the Races leaderboard.", 24, Hud.DIM)
 	var host := HBoxContainer.new()
@@ -1153,6 +1155,50 @@ func race_rect(row: String) -> Rect2:
 # ---------------------------------------------------------------- spectators
 # Anyone signed in may watch a race: the Race page lists the races being played now (Online.races_live)
 # or takes a code, then shows both racers' progress, read every couple of seconds (race_get).
+
+# ---------------------------------------------------------------- online now
+# Signed-in players whose game said where they are in the last few minutes (Online.online_now),
+# each with a Challenge button: the challenge form has Race now.
+
+const WHERE_TEXT := {"map": "on the map", "battle": "in a battle: sees invites back on the map", "race": "racing"}
+var _online_box: VBoxContainer
+
+
+func _build_online_section() -> void:
+	_label(_race, "Online now", 30, Hud.GOLD, _hud.display_font)
+	_online_box = VBoxContainer.new()
+	_online_box.add_theme_constant_override("separation", 8)
+	_race.add_child(_online_box)
+	_label(_online_box, "Looking for players…", 24, Hud.DIM)
+	_load_online()
+
+
+func _load_online() -> void:
+	var box := _online_box
+	var res: Variant = await _online.online_now()
+	if box == null or not is_instance_valid(box) or not is_inside_tree():
+		return
+	_clear(box)
+	if typeof(res) != TYPE_ARRAY:
+		_label(box, "Could not look for players: %s" % str(res.get("error", "")), 24, Hud.POOR)
+	elif res.is_empty():
+		_label(box, "Nobody else is playing right now.", 24, Hud.DIM)
+	else:
+		for p: Dictionary in res:
+			var row := HBoxContainer.new()
+			row.add_theme_constant_override("separation", 10)
+			box.add_child(row)
+			var t := _label(row, "%s\n%s" % [p["name"], WHERE_TEXT.get(p["where"], "online")], 24, Hud.BONE)
+			t.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			var b := _action(row, "Challenge", func() -> void:
+				_chal_target = {"uid": p["uid"], "name": p["name"]}
+				_refresh_race())
+			b.disabled = p["where"] == "race"
+	_action(box, "Look again", func() -> void:
+		_clear(box)
+		_label(box, "Looking for players…", 24, Hud.DIM)
+		_load_online())
+
 
 var _watch_code := ""            # the race being watched, or ""
 var _watch_poll := 0.0

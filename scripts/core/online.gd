@@ -156,6 +156,7 @@ func delete_account() -> String:
 	var r := await _call("DELETE", _docs + "/players/" + uid, null, true)
 	if not r["ok"]:
 		return r["error"]
+	await presence_leave()
 	r = await _call("POST", _auth + "delete?key=" + API_KEY, {"idToken": _token})
 	if not r["ok"]:
 		return r["error"]
@@ -621,6 +622,59 @@ static func challenge_when(c: Dictionary, now: int) -> String:
 	if now <= at + CHALLENGE_LATE:
 		return "now"
 	return "missed"
+
+
+# ---------------------------------------------------------------- who is online
+# presence/<uid> {name, where ("map", "battle" or "race"), seen (server time)}: each signed-in game
+# rewrites its own every PRESENCE_BEAT seconds (and when `where` changes). Nothing removes it when a
+# game closes: a player last seen more than ONLINE_WINDOW seconds ago simply no longer counts.
+
+const PRESENCE_BEAT := 60.0
+const ONLINE_WINDOW := 150
+
+## Tells others this player is online and where: "map", "battle" or "race". "" when done.
+func presence_beat(where: String) -> String:
+	if not signed_in():
+		return "Sign in first"
+	var doc := {"name": "projects/%s/databases/(default)/documents/presence/%s" % [PROJECT, uid],
+		"fields": _typed_fields({"name": player_name, "where": where})}
+	var body := {"writes": [{"update": doc, "updateTransforms": [{"fieldPath": "seen", "setToServerValue": "REQUEST_TIME"}]}]}
+	var r := await _call("POST", _docs + ":commit", body, true, RACE_TIMEOUT)
+	return "" if r["ok"] else str(r["error"])
+
+
+func presence_leave() -> void:
+	if signed_in():
+		await _call("DELETE", _docs + "/presence/" + uid, null, true, RACE_TIMEOUT)
+
+
+## Other players online right now, most recently seen first: [{uid, name, where, age}], or {"error"}.
+func online_now() -> Variant:
+	if not signed_in():
+		return []
+	var now := int(Time.get_unix_time_from_system())
+	var since := Time.get_datetime_string_from_unix_time(now - ONLINE_WINDOW) + "Z"
+	var q := {"structuredQuery": {
+		"from": [{"collectionId": "presence"}],
+		"where": {"fieldFilter": {"field": {"fieldPath": "seen"}, "op": "GREATER_THAN", "value": {"timestampValue": since}}},
+		"orderBy": [{"field": {"fieldPath": "seen"}, "direction": "DESCENDING"}],
+		"limit": 50,
+	}}
+	var r := await _call("POST", _docs + ":runQuery", q, true, RACE_TIMEOUT)
+	if not r["ok"]:
+		return {"error": r["error"]}
+	var out := []
+	for item in r["data"]:
+		if typeof(item) != TYPE_DICTIONARY or not item.has("document"):
+			continue
+		var id := str(item["document"]["name"]).get_file()
+		if id == uid:
+			continue
+		var f: Dictionary = item["document"].get("fields", {})
+		var seen: String = f.get("seen", {}).get("timestampValue", "")
+		var age := now - int(Time.get_unix_time_from_datetime_string(seen.get_slice(".", 0).trim_suffix("Z"))) if seen != "" else 0
+		out.append({"uid": id, "name": str(_value(f.get("name", {}))), "where": str(_value(f.get("where", {}))), "age": maxi(0, age)})
+	return out
 
 
 ## A racer's progress record; with no sim, the one for a battle not begun. secs: seconds since the
