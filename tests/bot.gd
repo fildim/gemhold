@@ -15,8 +15,60 @@ static func points_before(index: int) -> int:
 	return Loadout.points_before(index)
 
 
+## GEMHOLD_BUILD in the environment picks another build for balance checks (the standard one otherwise):
+## "new": the standard order with the tiered skills of 2026-11-25 (Dragonfire, Restless Hoard,
+## Timber Trade, the II and III skills) bought as soon as they open, pushing later standard picks out;
+## "full": every rank of every skill (all 300 stars spent).
 static func skills(points: int, beaten := 1000) -> Dictionary:
+	match OS.get_environment("GEMHOLD_BUILD"):
+		"full":
+			var all := {}
+			for tree: String in Defs.SKILLS:
+				for sk: Dictionary in Defs.SKILLS[tree]:
+					all[sk["id"]] = int(sk["max"])
+			return all
+		"new":
+			return _spend(_new_order(), points, beaten)
 	return Loadout.skills(points, beaten)
+
+
+## After the first time the standard order buys a key, the new skills it buys straight after.
+const NEW_AFTER := {
+	"den_charge": ["den_dmg", "den_haste"],
+	"meteor_dmg": ["den_dmg", "den_haste", "den_dmg", "den_haste"],
+	"land_axes": ["land_timber", "land_timber", "land_timber"],
+	"mastery_longhouse": ["meteor_dmg2", "den_dmg2", "den_haste2", "land_timber2", "den_charge2"],
+	"land_heights": ["land_heights2", "land_spoils2", "meteor_dmg2", "den_dmg2", "land_timber2", "den_haste2"],
+	"moss_legend": ["meteor_dmg3", "den_dmg3", "den_haste3", "land_timber3", "den_charge3", "land_heights3", "land_spoils3"],
+}
+
+
+static func _new_order() -> Array:
+	var out := []
+	var seen := {}
+	for id: String in Loadout.SKILL_ORDER:
+		out.append(id)
+		if NEW_AFTER.has(id) and not seen.has(id):
+			seen[id] = true
+			out.append_array(NEW_AFTER[id])
+	return out
+
+
+## Loadout.skills with another order (no spilling into the next tier: the order names each tier).
+static func _spend(order: Array, points: int, beaten: int) -> Dictionary:
+	var s := {}
+	var spent := 0
+	for want: String in order:
+		if spent >= points:
+			break
+		var id := want
+		while id != "" and int(s.get(id, 0)) >= Defs.skill_cap(id, beaten):
+			id = str(Defs.skill_def(id).get("next", ""))
+		if id == "" or Defs.skill_gate(id) > beaten:
+			continue
+		s[id] = int(s.get(id, 0)) + 1
+		spent += 1
+	return s
 
 
 ## Plays the battle to the end (or 1200 s) and returns the finished sim. A non-zero seed changes
