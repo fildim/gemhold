@@ -296,14 +296,15 @@ func _init() -> void:
 	# Tiered skills (2026-11-25): each tier is its own skill, worth less than the last.
 	var tt := GameSim.new(lv, {"land_timber": 3, "land_timber2": 1, "hoard_gold": 3, "hoard_gold2": 2, "den_charge": 5, "den_charge2": 2, "den_charge3": 1,
 		"meteor_dmg2": 1, "den_dmg": 2})
-	_check(tt.woods_gold() == Defs.CLEAR_GOLD + 24, "Timber Trade I and II add to woods gold: %d" % tt.woods_gold())
+	_check(tt.woods_gold() == Defs.CLEAR_GOLD + 40, "Timber Trade I and II add to woods gold: %d" % tt.woods_gold())
 	var tt_gold := tt.gold
 	tt.mana = 100.0
-	_check(tt.cut_random_woods() == "" and tt.gold == tt_gold + Defs.CLEAR_GOLD + 24, "cutting woods pays the Timber Trade gold")
-	_check(tt.gold - Defs.CLEAR_GOLD - 24 == lv.start_gold + 300 and tt.mine_gold() == int(Defs.SITES["mine"]["gold"]) + 10, "Buried Gold I and II: starting gold and mines")
+	_check(tt.cut_random_woods() == "" and tt.gold == tt_gold + Defs.CLEAR_GOLD + 40, "cutting woods pays the Timber Trade gold")
+	_check(tt.gold - Defs.CLEAR_GOLD - 40 == lv.start_gold + 300 and tt.mine_gold() == int(Defs.SITES["mine"]["gold"]) + 10, "Buried Gold I and II: starting gold and mines")
 	_check(tt.den_max == int(Defs.DEN["charges"]) + 8, "Hoard's Wrath I, II and III add den charges")
 	var rh := GameSim.new(lv, {"den_haste": 3, "den_haste2": 1})
 	_check(is_equal_approx(rh.den_refill_time, float(Defs.DEN["refill"]) / 1.48), "Restless Hoard I and II shorten the den refill: %.2f" % rh.den_refill_time)
+	_check(is_equal_approx(Defs.resolve_cap(0, 5), 2.8) and is_equal_approx(Defs.resolve_cap(0, 10), 2.4) and is_equal_approx(Defs.resolve_cap(3, 36), 1.6) and is_equal_approx(Defs.resolve_cap(35, 36), 2.8) and is_equal_approx(Defs.resolve_cap(25, 36), 2.4), "Resolve stops lower on chapters the player has moved past")
 	_check(is_equal_approx(tt.meteor_damage(), Defs.METEOR["dmg"] * 1.25), "Starfall II alone")
 	_check(Defs.skill_gate("hoard_gold2") == 20 and Defs.skill_gate("hoard_gold3") == 40 and Defs.skill_gate("land_timber2") == 20, "tier II opens in Chapter III, tier III in Chapter V")
 	var split := Defs.split_ranks({"hoard_gold": 8, "hoard_regen": 5, "moss_dmg": 2}, 45)

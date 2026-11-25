@@ -235,6 +235,7 @@ func _load_level(i: int) -> void:
 
 func _new_battle() -> void:
 	sim = GameSim.new(level, save.skills if race.is_empty() else Loadout.for_lair(level_index))   # races are fair: both get the lair's standard skills
+	sim.threat_max = Defs.resolve_cap(level_index, save.lairs_beaten())   # older chapters: lower Resolve, so they stay Brilliant-able
 	sim.toast.connect(hud.toast)
 	if long_night:
 		sim.set_long()

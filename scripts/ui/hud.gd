@@ -217,7 +217,7 @@ func _build_bars() -> void:
 	_resolve.add_theme_font_override("font", bold_font)
 	_resolve.add_theme_color_override("font_color", Color("e2683a"))
 	_resolve.mouse_filter = Control.MOUSE_FILTER_PASS
-	_resolve.tooltip_text = "Heroes' resolve: their health grows when you defend well (up to ×%.1f) and when you hoard gold (up to ×%.1f). Your score is multiplied by it." % [Defs.THREAT["max"], Defs.THREAT["max_rich"]]
+	_resolve.tooltip_text = "Heroes' resolve: their health grows when you defend well (up to ×%.1f, less on chapters you have moved past) and when you hoard gold (up to ×%.1f). Your score is multiplied by it." % [Defs.THREAT["max"], Defs.THREAT["max_rich"]]
 	row.add_child(_resolve)
 	_tide = TideClock.new()
 	_tide.custom_minimum_size = Vector2(34, 34)
