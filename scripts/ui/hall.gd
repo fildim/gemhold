@@ -41,6 +41,7 @@ var _race_code := ""             # the race this player hosts and waits on, or "
 var _race_poll := 0.0
 var _race_asking := false
 var _race_for := ""              # the rival a booked race (challenge) is for, while hosting or waiting
+var _race_quick := false         # the race hosted is a Quick race (open to anyone who taps Quick race)
 var _challenges: Array = []      # this player's challenges (Online.challenges), soonest first
 var _chal_box: VBoxContainer     # the challenge list on the Race page
 var _chal_target := {}           # {uid, name}: the player being challenged (the form is up), or {}
@@ -576,7 +577,7 @@ func _refresh_race() -> void:
 		var code := _label(plate, _race_code, 88, Hud.GOLD, spaced)
 		code.autowrap_mode = TextServer.AUTOWRAP_OFF
 		code.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		_race_status = _label(_race, "Waiting for a rival…", 26, Hud.DIM)
+		_race_status = _label(_race, "Quick race: waiting for a rival… Anyone who taps Quick race now joins you, or give a friend the code." if _race_quick else "Waiting for a rival…", 26, Hud.DIM)
 		_action(_race, "Call off the race", func() -> void:
 			_cancel_race()
 			_refresh_race())
@@ -585,6 +586,7 @@ func _refresh_race() -> void:
 	_chal_box.add_theme_constant_override("separation", 10)
 	_race.add_child(_chal_box)
 	_fill_challenges()
+	_build_quick_section()
 	_build_online_section()
 	_label(_race, "Race now", 30, Hud.GOLD, _hud.display_font)
 	_label(_race, "A race takes about 3 to 6 minutes. You both play the same lair at the same time, with the same heroes and the same standard Dark Arts for that lair (nothing to choose). Host one on any lair you have cleared (by day, or at night once you have opened it); to join, you only need the code. Slaying heroes and spending gold sends heroes onto your rival's road. The race ends for both the moment one of you clears the last wave or falls: clear it first to win. Every race counts on the Races leaderboard.", 24, Hud.DIM)
@@ -683,6 +685,7 @@ func _join_race() -> void:
 func _cancel_race() -> void:
 	if _race_code == "":
 		return
+	_race_quick = false
 	_online.race_cancel(_race_code)
 	_race_code = ""
 	_race_for = ""
@@ -710,6 +713,7 @@ func _process(delta: float) -> void:
 		_race_say(r["error"], true)
 		return
 	if r["state"] == "on":
+		_race_quick = false
 		_race_code = ""   # it is no longer waiting, so closing the hall must not call it off
 		_race_for = ""
 		_chal_done(_race_chal)
@@ -1313,3 +1317,47 @@ func _watch_tick(delta: float) -> void:
 		var c := Online.race_compare(h, g)
 		_label(_watch_box, "A draw!" if c == 0 else "%s wins the race!" % (r["host_name"] if c > 0 else r["guest_name"]), 32, Hud.GOLD, _hud.display_font)
 		_watch_poll = INF   # settled: nothing more to read
+
+
+# ---------------------------------------------------------------- quick race
+# Quick race: join the oldest Quick race someone is waiting in (Online.races_quick); with none,
+# host one on a random lair this player has cleared (lair 1 if none yet) and wait for a rival.
+
+func _build_quick_section() -> void:
+	_label(_race, "Quick race", 30, Hud.GOLD, _hud.display_font)
+	_label(_race, "Race whoever is looking for a race right now: you join a waiting player, or wait for one on a random lair.", 24, Hud.DIM)
+	_action(_race, "Quick race", _quick_race)
+
+
+func _quick_race() -> void:
+	_race_say("Looking for a rival…")
+	_race_lock(true)
+	var res: Variant = await _online.races_quick()
+	if not is_inside_tree():
+		return
+	if typeof(res) == TYPE_ARRAY:
+		for race: Dictionary in res:
+			var r: Dictionary = await _online.race_join(str(race["code"]))
+			if not is_inside_tree():
+				return
+			if not r.has("error"):
+				_race_lock(false)
+				race_ready.emit(r, "g")
+				return
+	# Nobody waiting (or every one was taken first): host one.
+	var days: Array[int] = []
+	for i in _levels.size():
+		if _save.stars(_levels[i]["id"]) > 0 and not Edition.locked(i):
+			days.append(i)
+	var pick: int = days.pick_random() if not days.is_empty() else 0
+	var h: Dictionary = await _online.race_host(_levels[pick]["id"], false, true)
+	if not is_inside_tree():
+		return
+	_race_lock(false)
+	if h.has("error"):
+		_race_say(h["error"], true)
+		return
+	_race_code = h["code"]
+	_race_quick = true
+	_race_poll = 2.0
+	_refresh_race()

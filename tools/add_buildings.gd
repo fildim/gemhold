@@ -1,6 +1,7 @@
 extends SceneTree
-## One-off (owner, 2026-11-27): every lair that has buildings gets at least MIN_KINDS different
-## kinds of them (nothing existing is removed), and Dark Altars go where they matter most: the free
+## One-off (owner, 2026-11-27): from Chapter II on, every lair gets at least MIN_KINDS different kinds
+## of buildings, using only kinds its chapter (or an earlier one) already has; where those run out,
+## more of them (extra barracks, mines, wells) until it has MIN_KINDS buildings (nothing is removed), and Dark Altars go where they matter most: the free
 ## tile whose neighbours (the tower spots within the altar's reach) cover the most road, weighted
 ## towards the lair. Edits the level files as text (sites and woods only) and prints what it did.
 ##   godot --headless --path . -s res://tools/add_buildings.gd            (write)
@@ -10,10 +11,11 @@ extends SceneTree
 const MIN_KINDS := 5
 ## The kinds added, in order, until a lair has MIN_KINDS (after a mine and a well), by chapter.
 const ADD := {
-	1: ["altar", "camp", "beacon", "chapel"], 2: ["altar", "camp", "beacon", "chapel"],
-	3: ["altar", "camp", "beacon", "chapel"], 4: ["altar", "camp", "beacon", "workshop"],
+	1: [], 2: ["camp"], 3: ["altar", "camp"], 4: ["altar", "camp", "beacon", "workshop"],
 	5: ["altar", "chapel", "camp", "beacon"],
 }
+## Extra copies, in turn, once no new kind is left.
+const MORE := ["camp", "mine", "well"]
 const TOWER_REACH := 2.5   # a typical tower's range, for scoring a tower spot
 ## Heroes a new barracks may muster (walkers only: no bosses, boats, flyers or engines).
 const NOT_MUSTER := ["boss", "boat", "fly", "siege", "belfry", "no_send", "sapper"]
@@ -43,8 +45,8 @@ func _campaign_order() -> Array:
 
 func _one(path: String, chapter: int, dry: bool) -> void:
 	var lv := Level.load_from(path)
-	if lv.sites.is_empty():
-		return   # a lair without buildings (the first) stays so
+	if lv.sites.is_empty() or chapter < 2:
+		return   # Chapter I stays as it was
 	var d: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(path))
 	var taken := {}
 	var kinds := {}
@@ -74,6 +76,17 @@ func _one(path: String, chapter: int, dry: bool) -> void:
 		taken[Vector2i(site["cell"][0], site["cell"][1])] = true
 		kinds[k] = true
 		adds.append(site)
+	var n := lv.sites.size() + adds.size()
+	var turn := 0
+	while kinds.size() < MIN_KINDS and n < MIN_KINDS and turn < 12:
+		var k: String = MORE[turn % MORE.size()]
+		turn += 1
+		var site := _place(lv, d, k, taken, chapter)
+		if site.is_empty():
+			continue
+		taken[Vector2i(site["cell"][0], site["cell"][1])] = true
+		adds.append(site)
+		n += 1
 	if adds.is_empty() and moves.is_empty():
 		print("%s (ch %d): ok, %d kinds" % [lv.id, chapter, kinds.size()])
 		return

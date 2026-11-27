@@ -368,17 +368,21 @@ const RACE_OLDER := "Your friend's game is an older version: ask them to update.
 const RACE_NEWER := "That lair is not in this version of the game: update it"
 
 
-## Opens a race on level_id (its night mission if night). Returns {"code": String}, or {"error": String}.
-func race_host(level_id: String, night := false) -> Dictionary:
+## Opens a race on level_id (its night mission if night). quick: a Quick race, open to anyone who taps
+## Quick race (races_quick). Returns {"code": String}, or {"error": String}.
+func race_host(level_id: String, night := false, quick := false) -> Dictionary:
 	if not signed_in():
 		return {"error": "Sign in first"}
+	var fields := {"host": uid, "host_name": player_name, "level": race_level_field(level_id), "night": night, "state": "open", "h": race_progress()}
+	if quick:
+		fields["quick"] = true
 	for attempt in 4:   # a code already taken: try another
 		var code := ""
 		for i in RACE_CODE_LEN:
 			code += RACE_LETTERS[randi() % RACE_LETTERS.length()]
 		var doc := {
 			"name": "projects/%s/databases/(default)/documents/races/%s" % [PROJECT, code],
-			"fields": _typed_fields({"host": uid, "host_name": player_name, "level": race_level_field(level_id), "night": night, "state": "open", "h": race_progress()}),
+			"fields": _typed_fields(fields),
 		}
 		var body := {"writes": [{"update": doc, "currentDocument": {"exists": false},
 			"updateTransforms": [{"fieldPath": "created", "setToServerValue": "REQUEST_TIME"}]}]}
@@ -453,6 +457,47 @@ func race_get(code: String) -> Dictionary:
 	var lv := race_level(str(out.get("level", "")))
 	out["level"] = lv[0]
 	out["version"] = lv[1]
+	return out
+
+
+const QUICK_AGE := 600   # a Quick race waiting longer than this is taken for abandoned
+
+## Quick races waiting for a rival: open, this version, hosted by someone else in the last
+## QUICK_AGE seconds, oldest first (it has waited longest). [race as race_get returns it], or {"error"}.
+func races_quick() -> Variant:
+	var q := {"structuredQuery": {
+		"from": [{"collectionId": "races"}],
+		"where": {"compositeFilter": {"op": "AND", "filters": [
+			{"fieldFilter": {"field": {"fieldPath": "state"}, "op": "EQUAL", "value": {"stringValue": "open"}}},
+			{"fieldFilter": {"field": {"fieldPath": "quick"}, "op": "EQUAL", "value": {"booleanValue": true}}},
+		]}},
+		"limit": 50,
+	}}
+	var r := await _call("POST", _docs + ":runQuery", q, true, RACE_TIMEOUT)
+	if not r["ok"]:
+		return {"error": r["error"]}
+	var now := int(Time.get_unix_time_from_system())
+	var out := []
+	for item in r["data"]:
+		if typeof(item) != TYPE_DICTIONARY or not item.has("document"):
+			continue
+		var f: Dictionary = item["document"].get("fields", {})
+		var made: String = f.get("created", {}).get("timestampValue", "")
+		if made == "":
+			continue
+		var age := now - int(Time.get_unix_time_from_datetime_string(made.get_slice(".", 0).trim_suffix("Z")))
+		if age < -30 or age > QUICK_AGE:
+			continue
+		var race := {"code": str(item["document"]["name"]).get_file(), "age": age}
+		for k: String in f:
+			if k != "created":
+				race[k] = _value(f[k])
+		var lv := race_level(str(race.get("level", "")))
+		race["level"] = lv[0]
+		race["version"] = lv[1]
+		if race_refusal(race, uid) == "":
+			out.append(race)
+	out.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return a["age"] > b["age"])
 	return out
 
 

@@ -77,6 +77,21 @@ func _run() -> void:
 	_check(typeof(live) == TYPE_ARRAY and live.any(func(r: Dictionary) -> bool: return r["code"] == str(hosted["code"]) and int(r["h"]["wave"]) == 3),
 		"spectators find the race being played: %s" % [live])
 
+	# Quick race: a quick host is found by others (not by itself), a plain race is not, and joining works.
+	var qh := await a.race_host("level_02", false, true)
+	_check(qh.has("code"), "host a quick race: %s" % [qh])
+	var plain := await a.race_host("level_02")
+	var qa: Variant = await a.races_quick()
+	_check(typeof(qa) == TYPE_ARRAY and not qa.any(func(r: Dictionary) -> bool: return r["code"] == str(qh.get("code", ""))), "a host doesn't find their own quick race: %s" % [qa])
+	var qb: Variant = await b.races_quick()
+	_check(typeof(qb) == TYPE_ARRAY and qb.any(func(r: Dictionary) -> bool: return r["code"] == str(qh.get("code", "")))
+		and not qb.any(func(r: Dictionary) -> bool: return r["code"] == str(plain.get("code", ""))), "others find the quick race, not a plain one: %s" % [qb])
+	var qj := await b.race_join(str(qh.get("code", "")))
+	_check(qj.get("state") == "on", "and join it: %s" % [qj])
+	var qb2: Variant = await b.races_quick()
+	_check(typeof(qb2) == TYPE_ARRAY and not qb2.any(func(r: Dictionary) -> bool: return r["code"] == str(qh.get("code", ""))), "a joined quick race is no longer offered")
+	await a.race_cancel(str(plain.get("code", "")))
+
 	# Challenges: a race booked for a time between two players.
 	var at := int(Time.get_unix_time_from_system()) + 3600
 	_check(await a.challenge_send(b.uid, b.player_name, "level_03", false, at) == "", "a challenges b")

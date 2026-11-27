@@ -25,7 +25,7 @@
   "TTT....T...T....",
   "................",
   ".T....T.T.......",
-  "T...T.T.TT..T...",
+  "T...T.T.TT.TT...",
   ".T..T......TT...",
   "........TT.T..T.",
   "......TT........",
@@ -41,8 +41,7 @@
   {"kind": "camp", "cell": [2, 6], "path": 1, "spawn": "2p,1r", "every": 34},
   {"kind": "mine", "cell": [15, 9]},
   {"kind": "well", "cell": [15, 0]},
-  {"kind":"altar","cell":[11,5]},
-  {"kind":"beacon","cell":[0,3]}
+  {"kind":"camp","cell":[0,0],"path":0,"spawn":"2p,1f","every":32}
  ],
  "start": {"gold": 230, "mana": 50, "gems": 5},
  "first_wave_delay": 25,

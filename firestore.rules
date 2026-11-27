@@ -95,7 +95,8 @@ service cloud.firestore {
       allow read: if request.auth != null;
       allow delete: if request.auth != null && request.auth.uid == resource.data.host;
       allow create: if request.auth != null && code.size() == 5
-        && request.resource.data.keys().hasOnly(['host', 'host_name', 'level', 'night', 'state', 'created', 'h'])
+        && request.resource.data.keys().hasOnly(['host', 'host_name', 'level', 'night', 'state', 'created', 'h', 'quick'])
+        && (!('quick' in request.resource.data) || request.resource.data.quick == true)
         && request.resource.data.host == request.auth.uid
         && request.resource.data.host_name is string && request.resource.data.host_name.size() <= 16
         && request.resource.data.level is string && request.resource.data.level.size() <= 32
