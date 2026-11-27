@@ -187,6 +187,10 @@ const DEN := {"charges": 1, "range": 2.6, "dmg": 70, "refill": 8.0, "rate": 0.5}
 
 const METEOR := {"cost": 50, "radius": 1.3, "dmg": 650, "delay": 0.55}   # dmg: half of lair 3's last-wave Knight
 const HOARD_METEOR := [0.25, 0.25, 0.25]   # Starfall I / II / III (The Hoard): meteor damage per point
+## Burning Crater (The Hoard, tier I): a meteor leaves a circle of burning ground (like Lava, but
+## hurts every hero in it, Trebuchets too; rain puts it out). Hellfire (tier II) adds dps_up damage
+## and dur_up seconds per rank.
+const METEOR_FIRE := {"r": 1.0, "dps": 50.0, "dur": 4.0, "dps_up": 0.25, "dur_up": 1.0}
 
 ## Tower veterancy: towers earn 1 XP per point of damage dealt and rank up at these totals.
 ## Each rank adds damage. A tower at rank ABILITY_RANK and upgrade level ABILITY_LEVEL unlocks its ability.
@@ -274,17 +278,22 @@ const LAIRS_PER_CHAPTER := 10
 ## to go: with them the trees hold exactly STARS_MAX ranks (50 lairs, 3 stars by day and 3 by night).
 ## Each rank is weaker than any other skill's, so they are what is left once the rest is learned.
 const DRILL_MAX := 31   # 45 before the tiered skills of 2026-11-25 took 45 ranks
-const DRILL_DMG := 0.01
-const TITHE_MAX := 25
-const TITHE_GOLD := 3
+const DRILL_DMG := 0.03   # owner 2026-11-27: +3% a rank (was +1%)
+const TITHE_MAX := 21   # 25 before Burning Crater (1) and Hellfire (3) took 4 ranks
+const TITHE_GOLD := 50   # owner 2026-11-27 (was 3)
 const STARS_MAX := 300
+## Per-rank values set by the owner (2026-11-27): Molten Core top heat, Lantern Oil reach, and the
+## tower range skills (Lookout Posts, Long Shadows, High Flames).
+const CORE_HEAT := 0.5
+const LANTERN_REACH := 1.0
+const RANGE_SKILL := 0.5
 ## Tree ids in the order the Dark Arts tabs show them.
 const SKILL_TREES := ["moss", "frost", "ash", "den", "land"]
 const SKILLS := {
 	"moss": [
 		{"id": "moss_dmg", "name": "Barbed Arrows", "text": "+10% damage", "max": 3},
 		{"id": "moss_rate", "name": "Quick Draw", "text": "+8% attack speed", "max": 3},
-		{"id": "moss_range", "name": "Lookout Posts", "text": "+0.2 range", "max": 2},
+		{"id": "moss_range", "name": "Lookout Posts", "text": "+0.5 range", "max": 2},
 		{"id": "moss_vet", "name": "Blooded", "text": "Towers rank up 25% faster", "max": 2},
 		{"id": "moss_ability", "name": "Volley", "text": "Second arrow +20% damage", "max": 3},
 		{"id": "moss_bodkin", "name": "Bodkin Points", "text": "Arrows ignore 1 armour", "max": 2, "tier": 2},
@@ -292,12 +301,12 @@ const SKILLS := {
 		{"id": "mastery_longhouse", "name": "Mastery: Longhouse", "text": "Huts can become Longhouses (level IV)", "max": 1, "tier": 2},
 		{"id": "mastery_lodge", "name": "Mastery: Hunter's Lodge", "text": "Huts can become Hunter's Lodges (level IV)", "max": 1, "tier": 2},
 		{"id": "moss_legend", "name": "Legend of the Warband", "text": "+5% damage", "max": 5, "tier": 3},
-		{"id": "moss_drill", "name": "War Drums", "text": "+1% damage", "max": DRILL_MAX},
+		{"id": "moss_drill", "name": "War Drums", "text": "+3% damage", "max": DRILL_MAX},
 	],
 	"frost": [
 		{"id": "frost_dmg", "name": "Grave Chill", "text": "+10% damage", "max": 3},
 		{"id": "frost_rate", "name": "Restless Dead", "text": "+8% attack speed", "max": 3},
-		{"id": "frost_range", "name": "Long Shadows", "text": "+0.2 range", "max": 2},
+		{"id": "frost_range", "name": "Long Shadows", "text": "+0.5 range", "max": 2},
 		{"id": "frost_vet", "name": "Old Bones", "text": "Towers rank up 25% faster", "max": 2},
 		{"id": "frost_ability", "name": "Dread", "text": "+6% chance to terrify", "max": 3},
 		{"id": "frost_freeze", "name": "Deep Freeze", "text": "Chill lasts 0.4 s longer", "max": 3, "tier": 2},
@@ -306,21 +315,21 @@ const SKILLS := {
 		{"id": "mastery_ossuary", "name": "Mastery: Ossuary", "text": "Crypts can become Ossuaries (level IV)", "max": 1, "tier": 2},
 		{"id": "mastery_mausoleum", "name": "Mastery: Mausoleum", "text": "Crypts can become Mausoleums (level IV)", "max": 1, "tier": 2},
 		{"id": "frost_legend", "name": "Legend of the Crypt", "text": "+5% damage", "max": 5, "tier": 3},
-		{"id": "frost_drill", "name": "Deathless Watch", "text": "+1% damage", "max": DRILL_MAX},
+		{"id": "frost_drill", "name": "Deathless Watch", "text": "+3% damage", "max": DRILL_MAX},
 	],
 	"ash": [
 		{"id": "ash_dmg", "name": "Hotter Coals", "text": "+10% damage", "max": 3},
 		{"id": "ash_rate", "name": "Bellows", "text": "Beam heats 8% faster", "max": 3},
-		{"id": "ash_range", "name": "High Flames", "text": "+0.2 range", "max": 2},
+		{"id": "ash_range", "name": "High Flames", "text": "+0.5 range", "max": 2},
 		{"id": "ash_vet", "name": "Tempered", "text": "Towers rank up 25% faster", "max": 2},
 		{"id": "ash_ability", "name": "Lava", "text": "Burning ground +15% damage", "max": 3},
 		{"id": "ash_memory", "name": "Ember Memory", "text": "Keep 10% heat when changing hero", "max": 3, "tier": 2},
-		{"id": "ash_core", "name": "Molten Core", "text": "Top heat +0.4x", "max": 2, "tier": 2},
+		{"id": "ash_core", "name": "Molten Core", "text": "Top heat +0.5x", "max": 2, "tier": 2},
 		{"id": "ash_cooling", "name": "Slow Cooling", "text": "Lava lasts 0.5 s longer", "max": 2, "tier": 2},
 		{"id": "mastery_twin", "name": "Mastery: Twin Flame", "text": "Shrines can become Twin Flames (level IV)", "max": 1, "tier": 2},
 		{"id": "mastery_sunlance", "name": "Mastery: Sunlance", "text": "Shrines can become Sunlances (level IV)", "max": 1, "tier": 2},
 		{"id": "ash_legend", "name": "Legend of the Flame", "text": "+5% damage", "max": 5, "tier": 3},
-		{"id": "ash_drill", "name": "Eternal Flame", "text": "+1% damage", "max": DRILL_MAX},
+		{"id": "ash_drill", "name": "Eternal Flame", "text": "+3% damage", "max": DRILL_MAX},
 	],
 	"den": [
 		{"id": "den_charge", "name": "Hoard's Wrath", "text": "+1 den charge", "max": 5, "next": "den_charge2"},
@@ -330,12 +339,14 @@ const SKILLS := {
 		{"id": "hoard_mana", "name": "Deep Well", "text": "+15 max mana", "max": 4},
 		{"id": "hoard_regen", "name": "Mana Spring", "text": "+0.2 mana per second, and per Mana Well", "max": 3, "next": "hoard_regen2"},
 		{"id": "meteor_dmg", "name": "Starfall", "text": "+25% meteor damage", "max": 3, "next": "meteor_dmg2"},
+		{"id": "meteor_fire", "name": "Burning Crater", "text": "Meteors leave a circle of burning ground for 4 s", "max": 1},
 		{"id": "den_charge2", "name": "Hoard's Wrath II", "text": "+1 den charge", "max": 2, "tier": 2, "next": "den_charge3"},
 		{"id": "den_dmg2", "name": "Dragonfire II", "text": "Den bolts +12% damage", "max": 3, "tier": 2, "next": "den_dmg3"},
 		{"id": "den_haste2", "name": "Restless Hoard II", "text": "Den charges refill 12% faster", "max": 3, "tier": 2, "next": "den_haste3"},
 		{"id": "hoard_gold2", "name": "Buried Gold II", "text": "+60 starting gold, mines +2 gold", "max": 3, "tier": 2, "next": "hoard_gold3"},
 		{"id": "hoard_regen2", "name": "Mana Spring II", "text": "+0.2 mana per second, and per Mana Well", "max": 3, "tier": 2, "next": "hoard_regen3"},
 		{"id": "meteor_dmg2", "name": "Starfall II", "text": "+25% meteor damage", "max": 3, "tier": 2, "next": "meteor_dmg3"},
+		{"id": "meteor_hellfire", "name": "Hellfire", "text": "Burning Crater: +25% damage and burns 1 s longer", "max": 3, "tier": 2},
 		{"id": "gem_magnet", "name": "Gem Magnet", "text": "Loose gems roll home 20% faster", "max": 3, "tier": 2},
 		{"id": "sturdy", "name": "Sturdy Foundations", "text": "Stun and Silence weigh 15% less, Rubble costs 15% less to clear", "max": 3, "tier": 2, "beaten": 30},
 		{"id": "den_charge3", "name": "Hoard's Wrath III", "text": "+1 den charge", "max": 2, "tier": 3},
@@ -346,14 +357,14 @@ const SKILLS := {
 		{"id": "meteor_dmg3", "name": "Starfall III", "text": "+25% meteor damage", "max": 3, "tier": 3},
 		{"id": "den_fury", "name": "Hoard's Fury", "text": "Den bolts +20% damage", "max": 5, "tier": 3},
 		{"id": "dragon_patience", "name": "Dragon's Patience", "text": "+10 starting mana", "max": 3, "tier": 3},
-		{"id": "hoard_tithe", "name": "Tithe", "text": "+3 starting gold", "max": TITHE_MAX},
+		{"id": "hoard_tithe", "name": "Tithe", "text": "+50 starting gold", "max": TITHE_MAX},
 	],
 	"land": [
 		{"id": "land_axes", "name": "Sharp Axes", "text": "Cutting woods and buildings costs 10% less mana", "max": 3},
 		{"id": "land_timber", "name": "Timber Trade", "text": "Cutting woods pays +10 gold", "max": 3, "next": "land_timber2"},
 		{"id": "land_heights", "name": "Commanding Heights", "text": "Towers on raised tiles: +0.2 range, +5% damage", "max": 2, "next": "land_heights2"},
 		{"id": "land_spoils", "name": "Spoils of War", "text": "Razing a hero building pays +15 gold", "max": 2, "next": "land_spoils2"},
-		{"id": "land_lantern", "name": "Lantern Oil", "text": "Lights reach 0.3 tiles further at night", "max": 3},
+		{"id": "land_lantern", "name": "Lantern Oil", "text": "Lights reach 1 tile further at night", "max": 3},
 		{"id": "land_timber2", "name": "Timber Trade II", "text": "Cutting woods pays +10 gold", "max": 3, "tier": 2, "next": "land_timber3"},
 		{"id": "land_heights2", "name": "Commanding Heights II", "text": "Towers on raised tiles: +0.2 range, +5% damage", "max": 2, "tier": 2, "next": "land_heights3"},
 		{"id": "land_spoils2", "name": "Spoils of War II", "text": "Razing a hero building pays +15 gold", "max": 2, "tier": 2, "next": "land_spoils3"},

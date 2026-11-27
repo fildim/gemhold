@@ -48,7 +48,7 @@ const ACH_PREFIX := [
 ## Skill id suffix -> the badge on its tower.
 const SKILL_BADGE := {"dmg": "blade", "drill": "blade", "rate": "rate", "range": "range", "vet": "vet", "legend": "crown"}
 const ABILITY_BADGE := {"moss": "volley", "frost": "dread", "ash": "flame"}
-const HOARD := {"den_charge": "orb", "hoard_gold": "coins", "hoard_mana": "potion", "hoard_regen": "spring", "meteor_dmg": "meteor",
+const HOARD := {"den_charge": "orb", "hoard_gold": "coins", "hoard_mana": "potion", "hoard_regen": "spring", "meteor_dmg": "meteor", "meteor_fire": "flame", "meteor_hellfire": "flame",
 	"gem_magnet": "gem", "sturdy": "hill",
 	"land_veins": "site:mine", "land_springs": "site:well", "land_axes": "tree", "land_heights": "hill", "land_spoils": "site:camp", "land_timber": "tree", "den_dmg": "orb", "den_haste": "orb",
 	"land_lantern": "spark", "land_flood": "site:sluice", "land_rites": "site:altar",

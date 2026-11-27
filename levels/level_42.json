@@ -38,7 +38,9 @@
  "sites": [
   {"cell":[0,4],"every":36,"kind":"camp","path":0,"spawn":"1j,2f"},
   {"cell":[15,0],"kind":"mine"},
-  {"cell":[6,4],"kind":"well"}
+  {"cell":[6,4],"kind":"well"},
+  {"kind":"altar","cell":[10,5]},
+  {"kind":"chapel","cell":[12,7]}
  ],
  "start": {"gems":5,"gold":230,"mana":60},
  "first_wave_delay": 30,

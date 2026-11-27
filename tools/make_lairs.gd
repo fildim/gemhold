@@ -22,6 +22,11 @@ func _init() -> void:
 		if not only.is_empty() and not only.has(str(spec["n"])):
 			continue
 		var path := "res://levels/level_%02d.json" % spec["n"]
+		if FileAccess.file_exists(path):   # buildings live in the file since tools/add_buildings.gd (2026-11-27)
+			var was = JSON.parse_string(FileAccess.get_file_as_string(path))
+			if was is Dictionary and was.has("sites"):
+				spec = spec.duplicate()
+				spec["sites"] = _whole(was["sites"])
 		var d := _build(spec)
 		if FileAccess.file_exists(path):   # keep a tuned hero health
 			var old = JSON.parse_string(FileAccess.get_file_as_string(path))
@@ -168,3 +173,17 @@ func _pretty(d: Dictionary) -> String:
 			lines.append(' "%s": %s%s' % [k, JSON.stringify(v), tail])
 	lines.append("}")
 	return "\n".join(lines) + "\n"
+
+
+## JSON numbers come back as floats: whole ones back to ints, so a kept value writes as it was.
+func _whole(v: Variant) -> Variant:
+	if v is float and v == floorf(v):
+		return int(v)
+	if v is Array:
+		return v.map(func(x: Variant) -> Variant: return _whole(x))
+	if v is Dictionary:
+		var out := {}
+		for k in v:
+			out[k] = _whole(v[k])
+		return out
+	return v

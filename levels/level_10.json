@@ -40,7 +40,9 @@
  "sites": [
   {"kind": "camp", "cell": [1, 8], "path": 1, "spawn": "1f,1b", "every": 32},
   {"kind": "mine", "cell": [15, 9]},
-  {"kind": "well", "cell": [0, 0], "cuts": 1}
+  {"kind": "well", "cell": [0, 0], "cuts": 1},
+  {"kind":"altar","cell":[7,5]},
+  {"kind":"beacon","cell":[0,9]}
  ],
  "start": {"gold": 230, "mana": 40, "gems": 5},
  "first_wave_delay": 25,

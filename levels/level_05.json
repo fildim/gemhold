@@ -21,12 +21,12 @@
   "aaaaaaaffffmmmmm"
  ],
  "trees": [
-  "TT.TT.TT.T.T.TT.",
+  ".T.TT.TT.T.T.TT.",
   "T.T.T.T.T.......",
   "....T.T.T...T.T.",
   "T.T.T.......T.T.",
   "T.T.T.TT..TTT.T.",
-  "TT.......TT.T.TT",
+  "TT.......T..T.TT",
   "TT..T..........T",
   "TT..T.......T.TT",
   "T.T.........T.TT",
@@ -42,7 +42,9 @@
   {"kind": "camp", "cell": [1, 4], "path": 0, "spawn": "2t,1r", "every": 30},
   {"kind": "camp", "cell": [15, 3], "path": 2, "spawn": "1w,1h,1f", "every": 30},
   {"kind": "mine", "cell": [9, 1], "cuts": 3},
-  {"kind": "well", "cell": [1, 8], "cuts": 3}
+  {"kind": "well", "cell": [1, 8], "cuts": 3},
+  {"kind":"altar","cell":[10,5]},
+  {"kind":"beacon","cell":[0,0]}
  ],
  "start": {"gold": 230, "mana": 60, "gems": 5},
  "first_wave_delay": 30,

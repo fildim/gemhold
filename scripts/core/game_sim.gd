@@ -173,6 +173,7 @@ class Pool:
 	var t := 0.0
 	var dur := 3.0
 	var src: Tower
+	var meteor := false   # a Burning Crater (hurts Trebuchets too)
 
 
 class Site:
@@ -1558,7 +1559,7 @@ func _beam(tw: Tower, dt: float, slot: int, share: float) -> void:
 		if not rains.is_empty() and in_rain(b.pos):
 			heat = minf(heat, Defs.RAIN_HEAT)   # under a Rainbringer's cloud the beam stays cool
 		tw.flash = 0.15
-		var dps := tw.stat("dmg") * (1.0 + (Defs.HEAT_MAX + 0.4 * skill("ash_core") - 1.0) * heat) * share
+		var dps := tw.stat("dmg") * (1.0 + (Defs.HEAT_MAX + Defs.CORE_HEAT * skill("ash_core") - 1.0) * heat) * share
 		hurt(b, dps * dt, true, tw)
 		if tw.mastery == "sunlance":
 			_lance(tw, b, dps * dt * Defs.SUNLANCE["share"])
@@ -1662,7 +1663,7 @@ func _update_pools(dt: float) -> void:
 			continue
 		for e: Enemy in enemies:
 			if e.pos.distance_to(pl.pos) <= pl.r and not flying(e):   # flyers pass over Lava
-				hurt(e, pl.dps * dt, true, pl.src)
+				hurt(e, pl.dps * dt, true, pl.src, 0, pl.meteor)
 	pools = pools.filter(func(pl: Pool) -> bool: return pl.t < pl.dur)
 
 
@@ -1698,6 +1699,8 @@ func _update_fx(dt: float) -> void:
 					hurt(e, e.hp + 1.0 if e.d.has("fire_only") else meteor_damage(), true, null, 0, true)
 					if under and e.hp <= 0.0:
 						diver_meteor += 1
+			if skill("meteor_fire") > 0:
+				_crater(f.pos)
 			best_meteor = maxi(best_meteor, kills - before)
 			meteor_kills += kills - before
 	fx = fx.filter(func(f: Fx) -> bool: return f.t < f.dur)
@@ -2011,12 +2014,12 @@ func _relight() -> void:
 	lights = []
 	if not can_dark():
 		return
-	lights = [[level.lair_center, Defs.LIGHT["lair"] + 0.3 * skill("land_lantern")]]
+	lights = [[level.lair_center, Defs.LIGHT["lair"] + Defs.LANTERN_REACH * skill("land_lantern")]]
 	for tw: Tower in towers.values():
-		lights.append([tw.pos, Defs.LIGHT["tower"] + 0.3 * skill("land_lantern")])
+		lights.append([tw.pos, Defs.LIGHT["tower"] + Defs.LANTERN_REACH * skill("land_lantern")])
 	for s: Site in sites.values():
 		if s.owned and not Defs.HERO_SITES.has(s.kind):
-			lights.append([s.pos, float(Defs.SITES[s.kind]["light"]) + 0.3 * skill("land_lantern")])
+			lights.append([s.pos, float(Defs.SITES[s.kind]["light"]) + Defs.LANTERN_REACH * skill("land_lantern")])
 	for c in level.cols:
 		for r in level.rows:
 			var center := Vector2(c, r) + Vector2(0.5, 0.5)
@@ -2091,7 +2094,7 @@ func cell_info(c: Vector2i) -> Dictionary:
 		var ab: Dictionary = Defs.ABILITIES[tw.type]
 		var txt := "Damage %d, range %.1f\n" % [int(tw.stat("dmg")), tw.stat("range")]
 		if d["kind"] == "beam":
-			txt = "Burns %d to %d per second as it heats, range %.1f\n" % [int(tw.stat("dmg")), int(tw.stat("dmg") * (Defs.HEAT_MAX + 0.4 * skill("ash_core"))), tw.stat("range")]
+			txt = "Burns %d to %d per second as it heats, range %.1f\n" % [int(tw.stat("dmg")), int(tw.stat("dmg") * (Defs.HEAT_MAX + Defs.CORE_HEAT * skill("ash_core"))), tw.stat("range")]
 		# Battle-hardened ranks: what the tower's experience has given it so far.
 		var ranks: int = Defs.TOWER_XP_RANKS.size()
 		var prev_xp: float = Defs.TOWER_XP_RANKS[tw.rank - 1] if tw.rank > 0 else 0.0
@@ -2280,7 +2283,7 @@ func preview_center(c: Vector2i) -> Vector2:
 
 ## Extra range from the skill tree and, on a raised tile, from the height.
 func _range_bonus(type: String, c: Vector2i) -> float:
-	var r := 0.2 * skill(type + "_range")
+	var r := Defs.RANGE_SKILL * skill(type + "_range")
 	if level.high.has(c):
 		r += float(Defs.TOWERS[type]["high_range"]) + tiered(Defs.HEIGHTS_RANGE, "land_heights")
 	return r
@@ -2695,3 +2698,17 @@ func _covered_by_towers(pos: Vector2) -> bool:
 		if tw.pos.distance_to(pos) <= tw.stat("range"):
 			return true
 	return false
+
+
+## Burning Crater: the ground a meteor struck burns on (Hellfire: hotter and longer).
+func _crater(at: Vector2) -> void:
+	if level.is_water(Vector2i(floori(at.x), floori(at.y))):
+		return   # nothing burns on water
+	var cf: Dictionary = Defs.METEOR_FIRE
+	var pl := Pool.new()
+	pl.pos = at
+	pl.r = cf["r"]
+	pl.dur = float(cf["dur"]) + float(cf["dur_up"]) * skill("meteor_hellfire")
+	pl.dps = float(cf["dps"]) * (1.0 + float(cf["dps_up"]) * skill("meteor_hellfire"))
+	pl.meteor = true
+	pools.append(pl)

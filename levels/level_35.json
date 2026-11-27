@@ -24,7 +24,7 @@
   "...TT.T...T..T..",
   "...........TTTT.",
   "....T......T.T.T",
-  ".T.TTT.T........",
+  ".T.TTT..........",
   ".T.T....T.......",
   ".TT.............",
   ".T.T......T.....",
@@ -39,7 +39,10 @@
  "lair": {"cell":[13,4],"center":[14,5],"size":[2,2]},
  "sites": [
   {"cell":[15,9],"kind":"mine"},
-  {"cell":[0,4],"kind":"well"}
+  {"cell":[0,4],"kind":"well"},
+  {"kind":"altar","cell":[7,3]},
+  {"kind":"camp","cell":[0,0],"path":0,"spawn":"2p,1f","every":32},
+  {"kind":"beacon","cell":[0,3]}
  ],
  "start": {"gems":5,"gold":230,"mana":60},
  "first_wave_delay": 30,

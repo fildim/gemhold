@@ -24,7 +24,7 @@
   "..........TTTT..",
   ".TTT..T.T.HT...T",
   "TTT..T.TH.HH....",
-  "...T.T.TH.......",
+  "...T.T..H.......",
   "T..TT..T........",
   ".T...TT.H.HH....",
   "..T.......H.TT..",
@@ -40,7 +40,9 @@
   {"cell":[4,3],"kind":"chapel"},
   {"cell":[4,6],"kind":"chapel"},
   {"cell":[15,9],"kind":"mine"},
-  {"cell":[15,0],"kind":"well"}
+  {"cell":[15,0],"kind":"well"},
+  {"kind":"altar","cell":[7,4]},
+  {"kind":"camp","cell":[0,0],"path":0,"spawn":"2p,1f","every":32}
  ],
  "start": {"gems":5,"gold":230,"mana":60},
  "first_wave_delay": 30,

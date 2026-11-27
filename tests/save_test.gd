@@ -287,6 +287,22 @@ func _init() -> void:
 	_check(sf.cut_random_woods() == "" and sf.trees.size() == woods - 1 and sf.mana == 100.0 - Defs.CLEAR_MANA, "Cut woods clears one patch for its mana")
 	sf.mana = 0.0
 	_check(sf.cut_random_woods() != "", "Cut woods needs mana")
+	# Burning Crater: a meteor leaves burning ground; Hellfire makes it hotter and longer.
+	var bc := GameSim.new(lv, {"meteor_fire": 1, "meteor_hellfire": 2})
+	bc.mana = 100.0
+	var land := Vector2(lv.lair_center.x, lv.lair_center.y)
+	bc.cast_meteor(land)
+	for i in 10:
+		bc.update(0.1)
+	var crater: Array = bc.pools.filter(func(p: GameSim.Pool) -> bool: return p.meteor)
+	_check(crater.size() == 1 and is_equal_approx(crater[0].dur, Defs.METEOR_FIRE["dur"] + 2.0 * Defs.METEOR_FIRE["dur_up"])
+		and is_equal_approx(crater[0].dps, Defs.METEOR_FIRE["dps"] * (1.0 + 2.0 * Defs.METEOR_FIRE["dps_up"])), "Burning Crater leaves a Hellfire-boosted pool")
+	var nc := GameSim.new(lv)
+	nc.mana = 100.0
+	nc.cast_meteor(land)
+	for i in 10:
+		nc.update(0.1)
+	_check(nc.pools.is_empty(), "no crater without Burning Crater")
 	var ax := GameSim.new(lv, {"land_axes": 3})
 	var ax_woods := ax.trees.size()
 	ax.mana = 100.0
