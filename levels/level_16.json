@@ -46,6 +46,7 @@
  "first_wave_delay": 25,
  "wave_gap": 24,
  "site_cuts": 3,
+ "site_mana": 1.38,
  "waves": [
   "8p",
   "8f",

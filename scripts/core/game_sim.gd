@@ -2194,10 +2194,12 @@ func woods_cost() -> int:
 
 
 ## Mana for one cut. Buildings that take several cuts cost more in all, but less per cut:
-## the whole job costs 1.5x the base for 2 cuts, 2x for 3, 2.5x for 4.
+## the whole job costs 1.5x the base for 2 cuts, 2x for 3, 2.5x for 4. The lair's site_mana raises it through the
+## campaign (Defs.SITE_MANA), but one cut never costs more than Defs.SITE_CUT_MAX before Sharp Axes.
 func cut_cost(s: Site) -> int:
 	var n := s.cuts
-	return ceili(float(Defs.SITES[s.kind]["cut"]) * (1.0 + 0.5 * (n - 1)) / n * (1.0 - 0.1 * skill("land_axes")))
+	var base := float(Defs.SITES[s.kind]["cut"]) * (1.0 + 0.5 * (n - 1)) / n * level.site_mana
+	return ceili(minf(base, Defs.SITE_CUT_MAX) * (1.0 - 0.1 * skill("land_axes")))
 
 
 ## A building's tile panel. One that takes several cuts also gets "cuts": [cuts left, cuts in all],

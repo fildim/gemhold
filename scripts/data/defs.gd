@@ -223,6 +223,10 @@ const SITES := {
 	"chapel": {"name": "Chapel", "cut": 60, "bounty": 30, "heal": 10.0, "r": 2.0,
 		"text": "Heals heroes within %.1f tiles and keeps hallowed ground holy. Raze it for %d gold."},
 }
+## Building cuts cost more mana further into the campaign: each lair's "site_mana" factor is
+## base + chapter * (chapter - 1) + lair * (place in its chapter, 0..9), written by tools/set_site_mana.gd.
+const SITE_MANA := {"base": 1.1, "chapter": 0.2, "lair": 0.02}
+const SITE_CUT_MAX := 90.0   # one cut never costs more (base mana is 100, so it stays affordable)
 ## Map buildings that belong to the heroes: razed (not freed) by cutting, and pay a bounty.
 const HERO_SITES := ["camp", "workshop", "beacon", "chapel"]
 ## Buildings that send troops onto a road (a "path", "spawn" and "every" in the level file).

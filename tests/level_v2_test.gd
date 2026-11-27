@@ -17,6 +17,7 @@ func _init() -> void:
 	_zones()
 	_carry()
 	_old_levels()
+	_site_mana()
 	_skills()
 	_picker()
 	_race()
@@ -266,3 +267,20 @@ func _check(cond: bool, what: String) -> void:
 	if not cond:
 		fails += 1
 		printerr("FAIL: " + what)
+
+
+## Building cuts cost more mana further into the campaign: every lair carries a site_mana that never falls
+## from one lair to the next, and one cut stays under Defs.SITE_CUT_MAX.
+func _site_mana() -> void:
+	var last := 0.0
+	for path: String in MAIN.LEVELS:
+		var lv := Level.load_from(path)
+		_check(lv.site_mana >= 1.1 and lv.site_mana >= last, "%s: site_mana %.2f rises (last %.2f)" % [lv.id, lv.site_mana, last])
+		last = lv.site_mana
+		var sim := GameSim.new(lv)
+		for s in sim.sites.values():
+			if Defs.SITES[s.kind]["cut"] > 0:
+				_check(sim.cut_cost(s) <= Defs.SITE_CUT_MAX, "%s: a %s cut costs %d" % [lv.id, s.kind, sim.cut_cost(s)])
+	var s1 := GameSim.new(Level.load_from(MAIN.LEVELS[10]))
+	var s2 := GameSim.new(Level.load_from(MAIN.LEVELS[49]))
+	_check(s2.level.site_mana > s1.level.site_mana + 0.4, "Chapter V cuts cost much more than Chapter II")

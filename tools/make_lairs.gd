@@ -27,6 +27,9 @@ func _init() -> void:
 			if was is Dictionary and was.has("sites"):
 				spec = spec.duplicate()
 				spec["sites"] = _whole(was["sites"])
+			if was is Dictionary and was.has("site_mana"):
+				spec = spec.duplicate()
+				spec["site_mana"] = was["site_mana"]
 		var d := _build(spec)
 		if FileAccess.file_exists(path):   # keep a tuned hero health
 			var old = JSON.parse_string(FileAccess.get_file_as_string(path))
@@ -151,6 +154,8 @@ func _build(s: Dictionary) -> Dictionary:
 	}
 	if s.has("path_info"):
 		out["path_info"] = s["path_info"]
+	if s.has("site_mana"):
+		out["site_mana"] = s["site_mana"]
 	if s.has("rules"):
 		out["rules"] = s["rules"]
 	return out

@@ -40,6 +40,7 @@ var curve: PackedFloat32Array = []
 var wave_hp: float = Defs.WAVE_HP_SCALE
 var sites: Array = []    # [{"kind", "cell": Vector2i, "path", "spawn": Array[String], "every"}]
 var site_cuts := 1       # cuts (each paid in mana) to free a mine or well or raze a barracks; grows on later lairs
+var site_mana := 1.0     # multiplies the mana of every building cut; rises through the campaign (tools/set_site_mana.gd)
 var path_kind: Array[String] = []   # parallel to paths: "land" | "river" | "air"
 var land_roads: Array[int] = []     # indexes of the land roads, where heroes are dealt by default
 var zones: Array = []    # parallel to paths: Array of {"from", "to", "kind": "ford" | "bridge"} along the road
@@ -122,6 +123,7 @@ func _parse(d: Dictionary) -> void:
 	for v in d.get("curve", []):
 		curve.append(float(v))
 	site_cuts = maxi(1, int(d.get("site_cuts", 1)))
+	site_mana = float(d.get("site_mana", 1.0))
 	for s in d.get("sites", []):
 		var site := {"kind": String(s["kind"]), "cell": Vector2i(int(s["cell"][0]), int(s["cell"][1]))}
 		if s.has("cuts"):
