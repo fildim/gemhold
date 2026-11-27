@@ -1890,8 +1890,8 @@ func _roll_loot(e: Enemy) -> void:
 	else:
 		l.kind = "potion"
 		l.amount = Defs.LOOT_POTION_MANA
-	if wave >= level.waves.size():
-		_take_loot(l)   # no wave comes after the last to gather it, so it is taken at once
+	if wave >= level.waves.size() and not (l.kind == "potion" and mana >= mana_max):
+		_take_loot(l)   # no wave comes after the last to gather it, so it is taken at once (a potion waits while mana is full)
 	else:
 		loot.append(l)
 
@@ -1912,12 +1912,17 @@ func collect_loot(pos: Vector2, reach := 0.5) -> bool:
 	return true
 
 
-## Picks up every coin and potion on the map at once. Returns how many were taken.
+## Picks up every coin on the map at once, and potions while mana is not full: the rest stay for
+## later (tap them, or the next wave gathers them). Returns how many were taken.
 func gather_loot() -> int:
-	var n := loot.size()
+	var left: Array[Loot] = []
 	for l: Loot in loot:
-		_take_loot(l)
-	loot.clear()
+		if l.kind == "potion" and mana >= mana_max:
+			left.append(l)
+		else:
+			_take_loot(l)
+	var n := loot.size() - left.size()
+	loot = left
 	return n
 
 

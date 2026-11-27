@@ -30,6 +30,15 @@ const SITE_LOOP := {
 	"workshop": [[], [PI / 4.0 / 0.8, 8]], "chapel": [[], [PI, 8]],
 }
 const R := 32.0           # radius the round pictures (glow, disc, rings) are baked at
+## The ability halo's colour, one per tower so a learned ability is easy to spot: Hut green, Crypt ice blue,
+## Shrine orange (violet for any other).
+const HALO := {"moss": Color(0.45, 1.0, 0.4), "frost": Color(0.45, 0.85, 1.0), "ash": Color(1.0, 0.55, 0.2)}
+
+
+static func halo_color(type: String, a: float) -> Color:
+	var c: Color = HALO.get(type, Color(0.79, 0.75, 1))
+	c.a = a
+	return c
 const RING_MIN := 0.02    # width / radius of the thinnest baked ring; each next one is RING_STEP wider
 const RING_STEP := 1.25
 const RINGS := 14
@@ -679,9 +688,9 @@ func _draw_tower(tw: GameSim.Tower, tm: float) -> void:
 		var c := foot + (Vector2(x, y - s * (0.95 + 0.03 * sin(tm * 3.0))) - foot) * sq
 		_glow(self, c, s * 0.2, Color(1, 0.9, 0.5, 0.7))
 		_circle(self, c, s * 0.08, Color("fff2c0"))
-	if tw.has_ability():   # the violet halo once the ability is learned
+	if tw.has_ability():   # the halo once the ability is learned, in the tower's own colour
 		var h := SpriteCache.find("halo")
-		var col := Color(0.79, 0.75, 1, 0.5 + 0.3 * sin(tm * 3.0))
+		var col := halo_color(tw.type, 0.6 + 0.3 * sin(tm * 3.0))
 		if h.is_empty():
 			Paint.ellipse_outline(self, foot, s * 0.46 * sq.x, s * 0.17 * sq.y, col, 2.0)
 		else:
@@ -701,9 +710,9 @@ func _draw_tower_shapes(tw: GameSim.Tower, x: float, y: float, s: float, tm: flo
 		var c := Vector2(x, y - s * (0.95 + 0.03 * sin(tm * 3.0)))
 		Paint.glow(self, c, s * 0.2, Color(1, 0.9, 0.5, 0.7))
 		draw_circle(c, s * 0.08, Color("fff2c0"))
-	# a violet halo once the ability is learned; the pips below show only the upgrade level
+	# the halo once the ability is learned, in the tower's own colour; the pips below show only the upgrade level
 	if tw.has_ability():
-		Paint.ellipse_outline(self, Vector2(x, y + s * 0.3), s * 0.46, s * 0.17, Color(0.79, 0.75, 1, 0.5 + 0.3 * sin(tm * 3.0)), 2.0)
+		Paint.ellipse_outline(self, Vector2(x, y + s * 0.3), s * 0.46, s * 0.17, halo_color(tw.type, 0.6 + 0.3 * sin(tm * 3.0)), 2.0)
 	if sq != Vector2.ONE:
 		draw_set_transform_matrix(Transform2D.IDENTITY)
 	_draw_level_badge(Vector2(x + s * 0.3, y + s * 0.3), tw.lvl)

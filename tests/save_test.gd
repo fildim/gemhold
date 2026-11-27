@@ -195,6 +195,18 @@ func _init() -> void:
 	ga.call_early()
 	_check(ga.loot.is_empty(), "early call gathers all loot")
 	_check(ga.gold >= gold0 + 10 and ga.mana >= 5.0, "gathered coins and potions pay out")
+	# With mana full, a wave start takes the coins but leaves the potions on the ground.
+	var gf := GameSim.new(lv)
+	for k in ["coin", "potion", "potion"]:
+		var it := GameSim.Loot.new()
+		it.kind = k
+		it.amount = 5
+		gf.loot.append(it)
+	gf.mana = gf.mana_max
+	_check(gf.gather_loot() == 1, "full mana: only the coin is gathered")
+	_check(gf.loot.size() == 2 and gf.loot.all(func(l: GameSim.Loot) -> bool: return l.kind == "potion"), "full mana: potions stay on the ground")
+	gf.mana = 0.0
+	_check(gf.gather_loot() == 2 and gf.loot.is_empty(), "once mana is spent, the potions are gathered")
 
 	# Dropped gems roll home along the road, never cutting across the map.
 	var rd := GameSim.new(lv)
