@@ -285,7 +285,13 @@ var log_waves: Array = []  # {w, t, res, gold, mana, early} as each wave marches
 var log_gems: Array = []   # {ev: "grab"|"pick"|"escape", w, t, hero, road, of, n}: of = the hero's own wave (0 = barracks)
 var log_sites: Array = []  # {kind, w, t} when a building is freed or razed
 var _early_now := false
-var auto_loot := true      # wave starts gather the loot left lying around (the player's "Gather loot by itself" setting)
+## When dropped loot is picked up without a tap (the player's Loot setting, Prefs "loot_mode"): [button, explanation].
+const LOOT_MODES := {
+	"tap": ["Tap only", "Only what you tap is picked up."],
+	"wave": ["Next wave", "What is still lying around is picked up when the next wave starts."],
+	"instant": ["At once", "Everything is picked up the moment it drops (a potion waits while your mana is full)."],
+}
+var loot_mode := "wave"
 # Road zones (Level.zones): what has changed on them during the battle.
 var collapsed := {}       # Vector2i -> true for water tiles whose bridge has been collapsed
 var collapses := {}       # crossing index -> times that bridge has been collapsed (stats; the cost is flat)
@@ -408,6 +414,8 @@ func update(dt: float) -> void:
 			_relight()
 			toast.emit("The sun goes dark" if dark else "The light returns")
 	mana = minf(mana_max, mana + dt * mana_regen())
+	if loot_mode == "instant" and not loot.is_empty():
+		gather_loot()   # potions that waited for room in the mana bar, the moment there is some
 	if wave < level.waves.size():
 		timer -= dt
 		if timer <= 0.0:
@@ -458,7 +466,7 @@ func start_wave() -> void:
 			level.extend_long(long_base)
 	if wave >= level.waves.size():
 		return
-	if auto_loot:
+	if loot_mode != "tap":
 		gather_loot()   # whatever the last wave dropped is picked up as the next one marches in
 	log_waves.append({"w": wave + 1, "t": roundi(time), "res": snappedf(threat, 0.01), "gold": gold, "mana": roundi(mana), "early": _early_now})
 	_early_now = false
@@ -793,7 +801,11 @@ func _update_enemies(dt: float) -> void:
 			# Terrified: back away from the lair, or freeze if already running with gems.
 			e.fear -= dt
 			if e.dir == 1:
-				e.dist = maxf(0.0, e.dist - sp * 0.6 * dt)
+				# A boat crew backs away only as far as the shore it landed on, never into the river.
+				var back := 0.0
+				if level.path_kind[e.path] == "river" and not e.d.has("boat") and float(level.landings[e.path]) >= 0.0:
+					back = minf(float(level.landings[e.path]), e.dist)
+				e.dist = maxf(back, e.dist - sp * 0.6 * dt)
 		else:
 			if e.dir == -1 and e.carry == 0 and home > 0 and int(e.d["cap"]) > 0 and not e.retreat and not e.d.has("belfry"):
 				# Turned back empty-handed, but a dropped gem has since rolled home: back to the lair.
@@ -1903,8 +1915,8 @@ func _roll_loot(e: Enemy) -> void:
 	else:
 		l.kind = "potion"
 		l.amount = Defs.LOOT_POTION_MANA
-	if auto_loot and wave >= level.waves.size() and not (l.kind == "potion" and mana >= mana_max):
-		_take_loot(l)   # no wave comes after the last to gather it, so it is taken at once (a potion waits while mana is full)
+	if loot_mode != "tap" and (loot_mode == "instant" or wave >= level.waves.size()) and not (l.kind == "potion" and mana >= mana_max):
+		_take_loot(l)   # at once by the setting, or in the last wave (no wave comes after it to gather it); a potion waits while mana is full
 	else:
 		loot.append(l)
 
@@ -2738,3 +2750,11 @@ func _crater(at: Vector2) -> void:
 func _log_gem(ev: String, e: Enemy, n: int) -> void:
 	if log_gems.size() < 60:   # a report stays small even in a lost battle
 		log_gems.append({"ev": ev, "w": wave, "t": roundi(time), "hero": e.code, "road": e.path, "of": e.wave, "n": n})
+
+
+## The player's Loot setting ("tap", "wave" or "instant"); the old on/off switch counts as "wave"/"tap".
+static func loot_pref() -> String:
+	var m := str(Prefs.get_value("loot_mode", ""))
+	if LOOT_MODES.has(m):
+		return m
+	return "wave" if bool(Prefs.get_value("auto_loot", true)) else "tap"

@@ -239,7 +239,7 @@ func _load_level(i: int) -> void:
 func _new_battle() -> void:
 	sim = GameSim.new(level, save.skills if race.is_empty() else Loadout.for_lair(level_index))   # races are fair: both get the lair's standard skills
 	sim.toast.connect(hud.toast)
-	sim.auto_loot = bool(Prefs.get_value("auto_loot", true))
+	sim.loot_mode = GameSim.loot_pref()
 	if long_night:
 		sim.set_long()
 	sim.ended.connect(_on_ended)
@@ -295,7 +295,7 @@ func _cap_fps() -> void:
 func _process(delta: float) -> void:
 	_cap_fps()
 	if sim != null:
-		sim.auto_loot = bool(Prefs.get_value("auto_loot", true))   # the setting may change mid-battle
+		sim.loot_mode = GameSim.loot_pref()   # the setting may change mid-battle
 	if not race.is_empty():
 		if sim.race_sends.length() != _race_sends:   # a hero sent by the kills rule: tell the rival now
 			_race_sends = sim.race_sends.length()

@@ -209,7 +209,7 @@ func _init() -> void:
 	_check(gf.gather_loot() == 2 and gf.loot.is_empty(), "once mana is spent, the potions are gathered")
 	# Gather loot by itself turned off: a wave start leaves the loot for the player to tap.
 	var go := GameSim.new(lv)
-	go.auto_loot = false
+	go.loot_mode = "tap"
 	var coin2 := GameSim.Loot.new()
 	coin2.kind = "coin"
 	coin2.amount = 5
@@ -217,6 +217,19 @@ func _init() -> void:
 	go.call_early()
 	_check(go.loot.has(coin2), "auto-gather off: the wave start leaves the coin")
 	_check(go.collect_loot(coin2.pos) and go.loot.is_empty(), "auto-gather off: tapping still takes it")
+	# Loot "At once": a waiting potion is taken the moment the mana bar has room.
+	var gi := GameSim.new(lv)
+	gi.loot_mode = "instant"
+	var pot := GameSim.Loot.new()
+	pot.kind = "potion"
+	pot.amount = 5
+	gi.loot.append(pot)
+	gi.mana = gi.mana_max
+	gi.update(0.05)
+	_check(gi.loot.has(pot), "at once: a potion waits while mana is full")
+	gi.mana = 0.0
+	gi.update(0.05)
+	_check(gi.loot.is_empty() and gi.mana >= 5.0, "at once: taken as soon as there is room")
 
 	# Dropped gems roll home along the road, never cutting across the map.
 	var rd := GameSim.new(lv)
@@ -438,6 +451,17 @@ func _init() -> void:
 		if hero.carry > 0:
 			break
 	_check(hero.carry == 1 and loose.n == 1, "he picks it up (a peasant carries one of the two)")
+	# Dread on a boat crew: it backs away only to the shore it landed on, never into the river.
+	var rl := Level.load_from("res://levels/level_25.json")
+	var river := rl.path_kind.find("river")
+	var rs := GameSim.new(rl)
+	var shore: float = float(rl.landings[river])
+	rs._spawn("p", river, shore + 0.3, 0)
+	var crew: GameSim.Enemy = rs.enemies[rs.enemies.size() - 1]
+	crew.fear = 30.0
+	for i in 100:
+		rs.update(0.05)
+	_check(crew.dist >= shore - 0.001 and not crew.swim, "a terrified crew stops at the shore: %.2f / landing %.2f" % [crew.dist, shore])
 	DirAccess.remove_absolute(FILE)
 	print("save_test: %s" % ("all passed" if fails == 0 else "%d failed" % fails))
 	quit(0 if fails == 0 else 1)

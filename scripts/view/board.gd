@@ -30,9 +30,14 @@ const SITE_LOOP := {
 	"workshop": [[], [PI / 4.0 / 0.8, 8]], "chapel": [[], [PI, 8]],
 }
 const R := 32.0           # radius the round pictures (glow, disc, rings) are baked at
-## The ability halo's colour, one per tower so a learned ability is easy to spot: Hut green, Crypt magenta (against its white and blue),
-## Shrine orange (violet for any other).
-const HALO := {"moss": Color(0.45, 1.0, 0.4), "frost": Color(1.0, 0.3, 0.75), "ash": Color(1.0, 0.55, 0.2)}
+## The ability halo's colour, one per tower and opposite its own colours so it stands out: Hut (green moss) magenta,
+## Crypt (white and blue frost) amber, Shrine (orange fire on grey ash) cyan; violet for any other.
+const HALO := {"moss": Color(1.0, 0.3, 0.75), "frost": Color(1.0, 0.7, 0.1), "ash": Color(0.2, 0.9, 1.0)}
+
+
+## The halo marks a level III tower whose ability is learned; at level IV (mastery) it is gone.
+static func _halo(tw: GameSim.Tower) -> bool:
+	return tw.has_ability() and tw.lvl == Defs.ABILITY_LEVEL
 
 
 static func halo_color(type: String, a: float) -> Color:
@@ -688,7 +693,7 @@ func _draw_tower(tw: GameSim.Tower, tm: float) -> void:
 		var c := foot + (Vector2(x, y - s * (0.95 + 0.03 * sin(tm * 3.0))) - foot) * sq
 		_glow(self, c, s * 0.2, Color(1, 0.9, 0.5, 0.7))
 		_circle(self, c, s * 0.08, Color("fff2c0"))
-	if tw.has_ability():   # the halo once the ability is learned, in the tower's own colour
+	if _halo(tw):   # the halo once the ability is learned, in the tower's own colour, until it goes to level IV
 		var h := SpriteCache.find("halo")
 		var col := halo_color(tw.type, 0.6 + 0.3 * sin(tm * 3.0))
 		if h.is_empty():
@@ -711,7 +716,7 @@ func _draw_tower_shapes(tw: GameSim.Tower, x: float, y: float, s: float, tm: flo
 		Paint.glow(self, c, s * 0.2, Color(1, 0.9, 0.5, 0.7))
 		draw_circle(c, s * 0.08, Color("fff2c0"))
 	# the halo once the ability is learned, in the tower's own colour; the pips below show only the upgrade level
-	if tw.has_ability():
+	if _halo(tw):
 		Paint.ellipse_outline(self, Vector2(x, y + s * 0.3), s * 0.46, s * 0.17, halo_color(tw.type, 0.6 + 0.3 * sin(tm * 3.0)), 2.0)
 	if sq != Vector2.ONE:
 		draw_set_transform_matrix(Transform2D.IDENTITY)

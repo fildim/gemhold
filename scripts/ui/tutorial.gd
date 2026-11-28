@@ -12,7 +12,7 @@ const TIPS := [
 	["build", "Heroes walk the road to steal your gems. Stop them with towers.\n[b]Tap the lit moss tile[/b], then build a [b]Warband Hut[/b] there. Each tower needs its own ground: moss for Huts, frost for Crypts, ash for Shrines.", false],
 	["wave", "Heroes march when the timer runs out. [b]Tap First wave[/b] to call them now and earn the seconds left as gold.", false],
 	["carrier", "[b]This hero has your gem![/b] Kill him before he gets off the map and the gem floats back home. Other heroes will go for it on the way, so keep killing.", true],
-	["loot", "A slain hero dropped something. [b]Tap it[/b] to pick it up now; anything left lying around is gathered when the next wave starts. Rather pick it all up yourself? Turn off [b]Gather loot by itself[/b] in Settings.", true],
+	["loot", "A slain hero dropped something. [b]Tap it[/b] to pick it up now; anything left lying around is gathered when the next wave starts. The [b]Loot[/b] setting changes this: [b]At once[/b] picks everything up the moment it drops, [b]Tap only[/b] leaves it all to you.", true],
 	["woods", "[b]Tap the woods[/b], then [b]Cut woods[/b]. Woods block good spots along the road. Cutting costs mana, pays gold for the timber and opens the ground for a tower. On later lairs the woods also hide [b]Gold Mines[/b] and [b]Mana Wells[/b] you can cut free the same way.", false],
 	["more", "Kills pay gold. Build more towers along the road. A [b]Bone Crypt[/b] on frost slows heroes down; a [b]Cinder Shrine[/b] on ash burns through armour.", true],
 	["upgrade", "You can afford an upgrade. [b]Tap your tower[/b], then [b]Upgrade[/b] for more damage and range.", false],

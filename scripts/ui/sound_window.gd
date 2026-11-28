@@ -63,21 +63,7 @@ func _build(hud: Control) -> void:
 	fps.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	fps.toggled.connect(func(on: bool) -> void: Prefs.set_value("show_fps", on))
 	toggles.add_child(fps)
-	var loot := CheckButton.new()   # GameSim.auto_loot: wave starts gather the coins and potions left lying around
-	loot.text = "Gather loot by itself"
-	loot.button_pressed = bool(Prefs.get_value("auto_loot", true))
-	loot.focus_mode = Control.FOCUS_NONE
-	loot.add_theme_font_override("font", hud.bold_font)
-	loot.add_theme_font_size_override("font_size", 30)
-	loot.custom_minimum_size = Vector2(0, 60)
-	loot.toggled.connect(func(on: bool) -> void: Prefs.set_value("auto_loot", on))
-	box.add_child(loot)
-	var loot_note := Label.new()
-	loot_note.text = "On: coins and potions still lying around are picked up when the next wave starts. Off: only what you tap is picked up."
-	loot_note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	loot_note.add_theme_font_size_override("font_size", 20)
-	loot_note.add_theme_color_override("font_color", Hud.DIM)
-	box.add_child(loot_note)
+	_build_loot(hud, box)
 	var rep := CheckButton.new()   # battle reports for balance (BattleReport): on unless turned off
 	rep.text = "Share battle reports"
 	rep.button_pressed = BattleReport.enabled()
@@ -138,6 +124,49 @@ func _build_graphics(hud: Control, box: VBoxContainer) -> void:
 		row.add_child(b)
 		buttons[c] = b
 	_show_graphics(buttons)
+
+
+## Loot: when dropped coins and potions are picked up without a tap (GameSim.loot_mode, Prefs "loot_mode").
+func _build_loot(hud: Control, box: VBoxContainer) -> void:
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 12)
+	box.add_child(row)
+	var name_l := Label.new()
+	name_l.text = "Loot"
+	name_l.custom_minimum_size = Vector2(130, 0)
+	name_l.add_theme_font_override("font", hud.bold_font)
+	name_l.add_theme_font_size_override("font_size", 30)
+	row.add_child(name_l)
+	var note := Label.new()
+	var group := ButtonGroup.new()
+	var buttons := {}
+	for m: String in GameSim.LOOT_MODES:
+		var b := Button.new()
+		b.text = GameSim.LOOT_MODES[m][0]
+		b.toggle_mode = true
+		b.button_group = group
+		b.button_pressed = GameSim.loot_pref() == m
+		b.focus_mode = Control.FOCUS_NONE
+		b.custom_minimum_size = Vector2(150, 52)
+		b.add_theme_font_size_override("font_size", 26)
+		b.pressed.connect(func() -> void:
+			Prefs.set_value("loot_mode", m)
+			_show_loot(buttons, note))
+		row.add_child(b)
+		buttons[m] = b
+	note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	note.add_theme_font_size_override("font_size", 20)
+	note.add_theme_color_override("font_color", Hud.DIM)
+	box.add_child(note)
+	_show_loot(buttons, note)
+
+
+func _show_loot(buttons: Dictionary, note: Label) -> void:
+	var on := GameSim.loot_pref()
+	for m: String in buttons:
+		for k in ["font_color", "font_hover_color", "font_pressed_color"]:
+			(buttons[m] as Button).add_theme_color_override(k, Hud.GOLD if m == on else Hud.BONE)
+	note.text = GameSim.LOOT_MODES[on][1]
 
 
 ## The chosen setting in gold; Auto also says what it picked.
