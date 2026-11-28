@@ -124,7 +124,7 @@ func _release(args: PackedStringArray) -> bool:
 		printerr("Upload failed: %s" % up["text"])
 		await _call(HTTPClient.METHOD_DELETE, API + "/edits/" + id)
 		return false
-	var code := str(up["data"]["versionCode"])
+	var code := str(int(up["data"]["versionCode"]))
 	print("Uploaded version code %s" % code)
 	var rel := {"versionCodes": [code], "status": "draft" if draft else "completed",
 		"releaseNotes": [{"language": "en-US", "text": notes.left(500)}]}
@@ -133,7 +133,7 @@ func _release(args: PackedStringArray) -> bool:
 		printerr("Setting the %s release failed: %s" % [track, tr["text"]])
 		await _call(HTTPClient.METHOD_DELETE, API + "/edits/" + id)
 		return false
-	var done := await _call(HTTPClient.METHOD_POST, API + "/edits/%s:commit" % id, "")
+	var done := await _call(HTTPClient.METHOD_POST, API + "/edits/%s:commit" % id, "{}")
 	if not done["ok"]:
 		printerr("Commit failed: %s" % done["text"])
 		return false
