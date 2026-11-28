@@ -19,17 +19,21 @@ Tracks are from Wikimedia Commons and OpenGameArt.org (licences checked 2026-10-
 
 | File | Piece | Performer | Source |
 |---|---|---|---|
-| mountain.ogg | Grieg, *In the Hall of the Mountain King* | Musopen Symphony Orchestra | https://commons.wikimedia.org/wiki/File:Musopen_-_In_the_Hall_Of_The_Mountain_King.ogg |
 | valkyries.ogg | Wagner, *Ride of the Valkyries* | — | https://commons.wikimedia.org/wiki/File:Richard_Wagner_-_Ride_of_the_Valkyries.ogg |
 | fate.ogg | Beethoven, Symphony No. 5, I. Allegro con brio | Musopen | https://commons.wikimedia.org/wiki/File:Ludwig_van_Beethoven_-_symphony_no._5_in_c_minor,_op._67_-_i._allegro_con_brio.ogg |
 
 ## Matthew Pablo — CC BY 3.0
 
-"Dark Descent - Extended Cut" by Matthew Pablo (matthewpablo.com), licensed under Creative Commons: By Attribution 3.0, http://creativecommons.org/licenses/by/3.0/
+"Dark Descent - Extended Cut", "Heroic Demise", "The Fall of Arcana", "Tropic Strike", "Wasteland Showdown" and "Woodland Fantasy" by Matthew Pablo (matthewpablo.com), licensed under Creative Commons: By Attribution 3.0, http://creativecommons.org/licenses/by/3.0/
 
 | File | Source |
 |---|---|
 | map.ogg | https://opengameart.org/content/dark-descent-extended-cut (whole track, 1:51) |
+| heroicdemise.ogg | https://opengameart.org/content/heroic-demise-updated-version (2:09–4:39) |
+| fallofarcana.ogg | https://opengameart.org/content/the-fall-of-arcana-epic-game-theme-music (whole track) |
+| tropicstrike.ogg | https://opengameart.org/content/tropic-strike-live-orchestra (whole track) |
+| wasteland.ogg | https://opengameart.org/content/wasteland-showdown-battle-music (0:40–3:10) |
+| woodland.ogg | https://opengameart.org/content/woodland-fantasy (whole track) |
 
 ## OpenGameArt.org — CC0 (public domain)
 
@@ -47,5 +51,10 @@ Tracks are from Wikimedia Commons and OpenGameArt.org (licences checked 2026-10-
 | wraithsofwinter.ogg | Fantasy Music - The Wraiths of Winter (0:28–2:58) | HitCtrl | CC BY 3.0 | https://opengameart.org/content/fantasy-music-the-wraiths-of-winter |
 | egipet.ogg | Egipet Battle Music ("music by Alex_089") | Alex_089 | CC BY 4.0 | https://opengameart.org/content/egipet-battle-music |
 | epicfantasy.ogg | Epic Orchestral Fantasy Theme | Markus Lindner (linxiaoma) | CC BY 4.0 | https://opengameart.org/content/epic-orchestral-fantasy-theme |
+| fortheking.ogg | For the King (1:38–4:08) | Alexandr Zhelanov (soundcloud.com/alexandr-zhelanov) | CC BY 4.0 | https://opengameart.org/content/for-the-king |
+| gambit.ogg | Gambit + Boss Battle (Alexandr Zhelanov Vs nene), mix by glitchart | Tracks by Alexandr Zhelanov (https://www.youtube.com/c/AlexandrZhelanovsMusic) & nene (https://opengameart.org/users/nene) | CC BY 4.0 | https://opengameart.org/content/gambit-boss-battle-alexandr-zhelanov-vs-nene |
+| blacklord.ogg | For the Black Lord | Ronhul Maggot | CC BY 4.0 | https://opengameart.org/content/for-the-black-lord |
+| finalconfrontation.ogg | Final Confrontation | tcarisland | CC BY 4.0 | https://opengameart.org/content/final-confrontation |
+| solemnmarch.ogg | Solemn March (2:02–4:32), by Yubatake, OpenGameArt.org | Yubatake | CC BY 4.0 | https://opengameart.org/content/solemn-march |
 
 Tracks still waiting for a lair are in `Desktop\Gemhold music to try` (not in this repository); once a track is cut and given to a lair, its source file is deleted there, so that folder only holds what is still pending.

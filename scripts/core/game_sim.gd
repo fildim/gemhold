@@ -285,6 +285,7 @@ var log_waves: Array = []  # {w, t, res, gold, mana, early} as each wave marches
 var log_gems: Array = []   # {ev: "grab"|"pick"|"escape", w, t, hero, road, of, n}: of = the hero's own wave (0 = barracks)
 var log_sites: Array = []  # {kind, w, t} when a building is freed or razed
 var _early_now := false
+var auto_loot := true      # wave starts gather the loot left lying around (the player's "Gather loot by itself" setting)
 # Road zones (Level.zones): what has changed on them during the battle.
 var collapsed := {}       # Vector2i -> true for water tiles whose bridge has been collapsed
 var collapses := {}       # crossing index -> times that bridge has been collapsed (stats; the cost is flat)
@@ -457,7 +458,8 @@ func start_wave() -> void:
 			level.extend_long(long_base)
 	if wave >= level.waves.size():
 		return
-	gather_loot()   # whatever the last wave dropped is picked up as the next one marches in
+	if auto_loot:
+		gather_loot()   # whatever the last wave dropped is picked up as the next one marches in
 	log_waves.append({"w": wave + 1, "t": roundi(time), "res": snappedf(threat, 0.01), "gold": gold, "mana": roundi(mana), "early": _early_now})
 	_early_now = false
 	var list: Array[String] = level.waves[wave].duplicate()
@@ -1901,7 +1903,7 @@ func _roll_loot(e: Enemy) -> void:
 	else:
 		l.kind = "potion"
 		l.amount = Defs.LOOT_POTION_MANA
-	if wave >= level.waves.size() and not (l.kind == "potion" and mana >= mana_max):
+	if auto_loot and wave >= level.waves.size() and not (l.kind == "potion" and mana >= mana_max):
 		_take_loot(l)   # no wave comes after the last to gather it, so it is taken at once (a potion waits while mana is full)
 	else:
 		loot.append(l)

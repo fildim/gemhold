@@ -207,6 +207,16 @@ func _init() -> void:
 	_check(gf.loot.size() == 2 and gf.loot.all(func(l: GameSim.Loot) -> bool: return l.kind == "potion"), "full mana: potions stay on the ground")
 	gf.mana = 0.0
 	_check(gf.gather_loot() == 2 and gf.loot.is_empty(), "once mana is spent, the potions are gathered")
+	# Gather loot by itself turned off: a wave start leaves the loot for the player to tap.
+	var go := GameSim.new(lv)
+	go.auto_loot = false
+	var coin2 := GameSim.Loot.new()
+	coin2.kind = "coin"
+	coin2.amount = 5
+	go.loot.append(coin2)
+	go.call_early()
+	_check(go.loot.has(coin2), "auto-gather off: the wave start leaves the coin")
+	_check(go.collect_loot(coin2.pos) and go.loot.is_empty(), "auto-gather off: tapping still takes it")
 
 	# Dropped gems roll home along the road, never cutting across the map.
 	var rd := GameSim.new(lv)

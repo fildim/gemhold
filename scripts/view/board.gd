@@ -30,9 +30,9 @@ const SITE_LOOP := {
 	"workshop": [[], [PI / 4.0 / 0.8, 8]], "chapel": [[], [PI, 8]],
 }
 const R := 32.0           # radius the round pictures (glow, disc, rings) are baked at
-## The ability halo's colour, one per tower so a learned ability is easy to spot: Hut green, Crypt ice blue,
+## The ability halo's colour, one per tower so a learned ability is easy to spot: Hut green, Crypt magenta (against its white and blue),
 ## Shrine orange (violet for any other).
-const HALO := {"moss": Color(0.45, 1.0, 0.4), "frost": Color(0.45, 0.85, 1.0), "ash": Color(1.0, 0.55, 0.2)}
+const HALO := {"moss": Color(0.45, 1.0, 0.4), "frost": Color(1.0, 0.3, 0.75), "ash": Color(1.0, 0.55, 0.2)}
 
 
 static func halo_color(type: String, a: float) -> Color:

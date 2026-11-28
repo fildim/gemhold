@@ -14,12 +14,14 @@ const LEVELS: Array[String] = ["res://levels/level_01.json", "res://levels/level
 	"res://levels/level_41.json", "res://levels/level_42.json", "res://levels/level_43.json", "res://levels/level_44.json", "res://levels/level_45.json",
 	"res://levels/level_46.json", "res://levels/level_47.json", "res://levels/level_48.json", "res://levels/level_49.json", "res://levels/level_50.json"]
 ## Each lair's battle music, by level id (tracks in assets/music, credits in CREDITS.md there).
-const MUSIC := {"level_01": "mountain", "level_02": "heroicage", "level_03": "curseofthescarab", "level_09": "preludeandaction",
+const MUSIC := {"level_01": "fortheking", "level_02": "heroicage", "level_03": "curseofthescarab", "level_09": "preludeandaction",
 	"level_04": "volatilereaction", "level_06": "crusade", "level_10": "firebrand", "level_07": "fate", "level_11": "killers",
 	"level_08": "fivearmies", "level_12": "rynostheme", "level_13": "darkling", "level_14": "malicious", "level_15": "ossuary2_turn",
 	"level_16": "unholyknight", "level_17": "blackvortex", "level_18": "orchestralbattle", "level_19": "finalbattleofthedarkwizards",
 	"level_20": "finalbattle", "level_05": "valkyries",
-	"level_21": "epicfantasy", "level_22": "battlesite", "level_23": "egipet", "level_24": "wraithsofwinter", "level_25": "deathpath"}
+	"level_21": "epicfantasy", "level_22": "battlesite", "level_23": "egipet", "level_24": "wraithsofwinter", "level_25": "deathpath",
+	"level_26": "solemnmarch", "level_27": "tropicstrike", "level_28": "heroicdemise", "level_29": "fallofarcana", "level_30": "finalconfrontation",
+	"level_31": "blacklord", "level_32": "wasteland", "level_33": "woodland", "level_34": "gambit"}
 
 var level_index := 0
 var night := false            # playing the level's night mission
@@ -237,6 +239,7 @@ func _load_level(i: int) -> void:
 func _new_battle() -> void:
 	sim = GameSim.new(level, save.skills if race.is_empty() else Loadout.for_lair(level_index))   # races are fair: both get the lair's standard skills
 	sim.toast.connect(hud.toast)
+	sim.auto_loot = bool(Prefs.get_value("auto_loot", true))
 	if long_night:
 		sim.set_long()
 	sim.ended.connect(_on_ended)
@@ -291,6 +294,8 @@ func _cap_fps() -> void:
 
 func _process(delta: float) -> void:
 	_cap_fps()
+	if sim != null:
+		sim.auto_loot = bool(Prefs.get_value("auto_loot", true))   # the setting may change mid-battle
 	if not race.is_empty():
 		if sim.race_sends.length() != _race_sends:   # a hero sent by the kills rule: tell the rival now
 			_race_sends = sim.race_sends.length()

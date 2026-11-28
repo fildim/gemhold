@@ -63,6 +63,21 @@ func _build(hud: Control) -> void:
 	fps.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	fps.toggled.connect(func(on: bool) -> void: Prefs.set_value("show_fps", on))
 	toggles.add_child(fps)
+	var loot := CheckButton.new()   # GameSim.auto_loot: wave starts gather the coins and potions left lying around
+	loot.text = "Gather loot by itself"
+	loot.button_pressed = bool(Prefs.get_value("auto_loot", true))
+	loot.focus_mode = Control.FOCUS_NONE
+	loot.add_theme_font_override("font", hud.bold_font)
+	loot.add_theme_font_size_override("font_size", 30)
+	loot.custom_minimum_size = Vector2(0, 60)
+	loot.toggled.connect(func(on: bool) -> void: Prefs.set_value("auto_loot", on))
+	box.add_child(loot)
+	var loot_note := Label.new()
+	loot_note.text = "On: coins and potions still lying around are picked up when the next wave starts. Off: only what you tap is picked up."
+	loot_note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	loot_note.add_theme_font_size_override("font_size", 20)
+	loot_note.add_theme_color_override("font_color", Hud.DIM)
+	box.add_child(loot_note)
 	var rep := CheckButton.new()   # battle reports for balance (BattleReport): on unless turned off
 	rep.text = "Share battle reports"
 	rep.button_pressed = BattleReport.enabled()
