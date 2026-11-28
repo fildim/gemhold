@@ -54,9 +54,21 @@ static func load_from(file_path := PATH) -> SaveData:
 			var into: Dictionary = s.get(key)
 			for id in m:
 				into[str(id)] = maxi(0, int(m[id]))
+	if int(d.get("score_v", 1)) < Defs.SCORE_V:
+		s.scores = scaled_scores(s.scores)   # a save from before the score change of 2026-11-28
 	if s.points_free() < 0:
 		s.skills.clear()   # damaged or edited file: refund everything
 	return s
+
+
+## Scores from before 2026-11-28 on the new scale: divided by Defs.SCORE_SCALE (a won battle keeps at least 1).
+## Long Night values are a count of waves and kills, not points, and stay as they are.
+static func scaled_scores(old: Dictionary) -> Dictionary:
+	var out := {}
+	for id: String in old:
+		var v := int(old[id])
+		out[id] = v if id.ends_with(LONG) or v <= 0 else maxi(1, roundi(float(v) / Defs.SCORE_SCALE))
+	return out
 
 
 ## Writes to a temporary file first, so a crash mid-write never leaves a broken save.
@@ -67,7 +79,7 @@ func save() -> bool:
 		push_warning("Could not write save: %s" % error_string(FileAccess.get_open_error()))
 		return false
 	f.store_string(JSON.stringify({"version": VERSION, "unlocked": unlocked, "best": best, "skills": skills,
-		"skills_t": skills_t, "reset_t": reset_t, "scores": scores, "stats": stats, "achievements": achievements}, "\t"))
+		"skills_t": skills_t, "reset_t": reset_t, "score_v": Defs.SCORE_V, "scores": scores, "stats": stats, "achievements": achievements}, "\t"))
 	f.close()
 	var err := DirAccess.rename_absolute(tmp, path)
 	if err != OK:

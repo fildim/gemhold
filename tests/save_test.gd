@@ -420,8 +420,22 @@ func _init() -> void:
 	won.over = true
 	won.gold = 1200
 	won.skipped = 10
-	_check(won.score(1) == 1000 + 1000 + 50 + 1200, "score: gems + Brilliant + early seconds + gold")
-	_check(won.score(3) == roundi(3250 * 1.2), "later lairs score more")
+	_check(won.score(1) == roundi(10 + 10 + 10.0 / 30 + 5), "score: gems + Brilliant + early seconds + gold (at most 5): %d" % won.score(1))
+	_check(won.score(3) == roundi((10 + 10 + 10.0 / 30 + 5) * 1.1), "later lairs score more")
+	won.threat = 4.0
+	_check(won.score(1) == roundi((10 + 10 + 10.0 / 30 + 5) * 2.5), "Resolve counts only up to x2.5")
+	won.threat = 1.0
+	# Scores from before 2026-11-28 are divided by 1000 once; Long Night values (waves and kills) are not.
+	var olds := SaveData.scaled_scores({"level_01": 384798, "level_02": 400, "level_03": 0, "level_01:long": 390861})
+	_check(olds["level_01"] == 385 and olds["level_02"] == 1 and olds["level_03"] == 0 and olds["level_01:long"] == 390861, "old scores scaled: %s" % [olds])
+	var oldf := FileAccess.open(FILE + ".old", FileAccess.WRITE)
+	oldf.store_string(JSON.stringify({"version": 4, "unlocked": 3, "scores": {"level_01": 22939, "level_01:long": 390861}}))
+	oldf.close()
+	var conv := SaveData.load_from(FILE + ".old")
+	_check(int(conv.scores["level_01"]) == 23 and int(conv.scores["level_01:long"]) == 390861, "an old save is converted on load")
+	conv.save()
+	_check(int(SaveData.load_from(FILE + ".old").scores["level_01"]) == 23, "and only once")
+	DirAccess.remove_absolute(FILE + ".old")
 	var fresh := SaveData.load_from(FILE + ".none")
 	var got := Achievements.check_battle(fresh, won, 1)
 	_check(got.has("first_win") and got.has("brilliant") and got.has("rich") and not got.has("last_gem"), "battle achievements")
@@ -650,6 +664,8 @@ func _check_every_achievement_can_be_earned() -> void:
 	# Chapter V: the finale Brilliant and by night, Hallowed Fields untouched.
 	var fin := _ending("level_50", false)
 	fin.gold = 7000
+	fin.threat = 2.5    # full Resolve and many waves called early: the top score achievement (400)
+	fin.skipped = 700
 	fin.kills_by = {"y": 10}
 	fin.shield_waste = 1
 	fin.chants_broken = 5

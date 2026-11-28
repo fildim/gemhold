@@ -225,6 +225,12 @@ const SITES := {
 }
 ## Building cuts cost more mana further into the campaign: each lair's "site_mana" factor is
 ## base + chapter * (chapter - 1) + lair * (place in its chapter, 0..9), written by tools/set_site_mana.gd.
+## Leaderboard score per won battle (GameSim.score). SCALE: what scores before 2026-11-28 were divided by
+## (SaveData and Online convert old ones once, marked by score_v).
+const SCORE := {"gems": 10.0, "wicked": 5.0, "brilliant": 10.0, "early_secs": 30.0, "gold_per": 100.0, "gold_max": 5.0,
+	"lair": 0.05, "night": 1.5, "resolve_max": 2.5}
+const SCORE_SCALE := 1000
+const SCORE_V := 2
 const SITE_MANA := {"base": 1.1, "chapter": 0.2, "lair": 0.02}
 const SITE_CUT_MAX := 90.0   # one cut never costs more (base mana is 100, so it stays affordable)
 ## Map buildings that belong to the heroes: razed (not freed) by cutting, and pay a bounty.

@@ -198,6 +198,8 @@ func pull(save: SaveData, take_name := true) -> String:
 	var scores := {}
 	for k: String in sc:
 		scores[mission_of_key(k)] = sc[k]
+	if int(_value(f.get("score_v", {"integerValue": "1"}))) < Defs.SCORE_V:
+		scores = SaveData.scaled_scores(scores)   # an account not yet on the score scale of 2026-11-28
 	var stats := _map(f.get("stats", {}))
 	for pair in [["race_wins", "rw"], ["race_losses", "rl"]]:
 		stats[pair[0]] = maxi(int(stats.get(pair[0], 0)), int(_value(f.get(pair[1], {}))))
@@ -252,6 +254,7 @@ func upload(save: SaveData, new_name := "") -> String:
 	var fields := {
 		"name": {"stringValue": new_name if new_name != "" else player_name},
 		"total": {"integerValue": str(save.total_score())},
+		"score_v": {"integerValue": str(Defs.SCORE_V)},
 		"stars": {"integerValue": str(save.points_total())},
 		"rw": {"integerValue": str(save.stats.get("race_wins", 0))},
 		"rl": {"integerValue": str(save.stats.get("race_losses", 0))},
@@ -756,7 +759,7 @@ func online_now() -> Variant:
 static func race_progress(sim: GameSim = null, done := false, secs := 0) -> Dictionary:
 	if sim == null:
 		return {"wave": 0, "gems": 0, "kills": 0, "score": 0, "done": false, "won": false, "stopped": false, "time": 0, "out": ""}
-	return {"wave": sim.wave, "gems": sim.gems_left(), "kills": sim.kills, "score": sim.score(1) if sim.won else 0,
+	return {"wave": sim.wave, "gems": sim.gems_left(), "kills": sim.kills, "score": sim.race_score(),
 		"done": done or sim.over, "won": sim.won, "stopped": sim.stopped, "time": secs, "out": sim.race_sends}
 
 

@@ -70,19 +70,19 @@ const LIST: Array[Dictionary] = [
 	{"id": "stars200", "name": "Star Chart", "text": "Earn 200 stars.", "stat": "stars", "goal": 200},
 	{"id": "stars250", "name": "Firmament", "text": "Earn 250 stars.", "stat": "stars", "goal": 250},
 	{"id": "stars300", "name": "Every Star There Is", "text": "Earn all 300 stars.", "stat": "stars", "goal": 300},
-	{"id": "score3000", "name": "Worth Counting", "text": "Score 3,000 points in one battle."},
-	{"id": "score", "name": "High Roller", "text": "Score 6,000 points in one battle."},
-	{"id": "score10000", "name": "Treasure Keeper", "text": "Score 10,000 points in one battle."},
-	{"id": "score15000", "name": "Golden Tally", "text": "Score 15,000 points in one battle."},
-	{"id": "score20000", "name": "Beyond Counting", "text": "Score 20,000 points in one battle."},
-	{"id": "score30000", "name": "Flood of Gold", "text": "Score 30,000 points in one battle."},
-	{"id": "score40000", "name": "Dragon's Ransom", "text": "Score 40,000 points in one battle."},
-	{"id": "total10000", "name": "On the Board", "text": "Reach a total score of 10,000.", "stat": "total", "goal": 10000},
-	{"id": "total50000", "name": "Climbing the Ranks", "text": "Reach a total score of 50,000.", "stat": "total", "goal": 50000},
-	{"id": "total100000", "name": "Six Figures", "text": "Reach a total score of 100,000.", "stat": "total", "goal": 100000},
-	{"id": "total200000", "name": "Hall of Legends", "text": "Reach a total score of 200,000.", "stat": "total", "goal": 200000},
-	{"id": "total500000", "name": "Half a Million", "text": "Reach a total score of 500,000.", "stat": "total", "goal": 500000},
-	{"id": "total1000000", "name": "The Million", "text": "Reach a total score of 1,000,000.", "stat": "total", "goal": 1000000},
+	{"id": "score3000", "name": "Worth Counting", "text": "Score 30 points in one battle."},
+	{"id": "score", "name": "High Roller", "text": "Score 60 points in one battle."},
+	{"id": "score10000", "name": "Treasure Keeper", "text": "Score 100 points in one battle."},
+	{"id": "score15000", "name": "Golden Tally", "text": "Score 150 points in one battle."},
+	{"id": "score20000", "name": "Beyond Counting", "text": "Score 200 points in one battle."},
+	{"id": "score30000", "name": "Flood of Gold", "text": "Score 300 points in one battle."},
+	{"id": "score40000", "name": "Dragon's Ransom", "text": "Score 400 points in one battle."},
+	{"id": "total10000", "name": "On the Board", "text": "Reach a total score of 100.", "stat": "total", "goal": 100},
+	{"id": "total50000", "name": "Climbing the Ranks", "text": "Reach a total score of 500.", "stat": "total", "goal": 500},
+	{"id": "total100000", "name": "A Thousand Strong", "text": "Reach a total score of 1,000.", "stat": "total", "goal": 1000},
+	{"id": "total200000", "name": "Hall of Legends", "text": "Reach a total score of 2,000.", "stat": "total", "goal": 2000},
+	{"id": "total500000", "name": "Five Thousand", "text": "Reach a total score of 5,000.", "stat": "total", "goal": 5000},
+	{"id": "total1000000", "name": "Ten Thousand", "text": "Reach a total score of 10,000.", "stat": "total", "goal": 10000},
 
 	# Dark Arts
 	{"id": "arts1", "name": "First Lesson", "text": "Spend a skill point in Dark Arts.", "stat": "spent", "goal": 1},
@@ -363,7 +363,7 @@ const LIST: Array[Dictionary] = [
 	{"id": "mastery_one_each", "name": "Six Paths", "text": "Raise each of the six masteries at least once."},
 ]
 
-const SCORE_GOAL := 6000
+const SCORE_GOAL := 60   # points in one battle (scores are on the 2026-11-28 scale)
 ## The Hoard Throne, the finale of Chapter II (lair 20): "Flawless Finale" and "Dawn Never Comes" are earned there.
 const THRONE := "level_05"
 ## The Seraph's Descent, the finale of the campaign (lair 50).
@@ -543,8 +543,8 @@ static func check_battle(save: SaveData, sim: GameSim, number: int) -> Array[Str
 		_try(save, got, "hallowed_none", sim.level.id == "level_44" and sim.built_hallowed == 0)
 		var score := sim.score(number)
 		_try(save, got, "score", score >= SCORE_GOAL)
-		for n in [3000, 10000, 15000, 20000, 30000, 40000]:
-			_try(save, got, "score%d" % n, score >= n)
+		for n in [3000, 10000, 15000, 20000, 30000, 40000]:   # ids from the old scale; goals are a hundredth of them
+			_try(save, got, "score%d" % n, score >= n / 100)
 		if number >= 3:
 			_try(save, got, "no_upgrades", sim.upgrades == 0)
 			_try(save, got, "no_meteor", sim.meteors == 0)

@@ -251,11 +251,11 @@ A [b]Dark Altar[/b] is overgrown. Cut it free (%d mana) and towers within %.1f t
 		+ "Same lair, in darkness: you can only build where you can see. Your cave, towers, mines and wells light the ground around them, so each tower you build opens room for the next.\n\nNight missions earn their own stars."))
 	t.append(_t("Progress", "Score and Hall of Fame",
 		"Every won battle scores points:\n\n"
-		+ "• up to [b]1000[/b] for the gems you kept\n"
-		+ "• [b]+500[/b] for Wicked, [b]+1000[/b] for Brilliant\n"
-		+ "• [b]5[/b] for every second you skip by calling waves early\n"
-		+ "• [b]1[/b] for every gold coin left at the end (but hoarding gold makes heroes stronger)\n\n"
-		+ "Each lair further along the campaign is worth [b]10%% more[/b], night missions [b]half as much again[/b], and the whole is multiplied by the heroes' [b]Resolve[/b] at the end (up to ×%.1f). Your best score on each mission adds up to your total.\n\n" % Defs.THREAT["max"]
+		+ "• up to [b]10[/b] for the gems you kept\n"
+		+ "• [b]+5[/b] for Wicked, [b]+10[/b] for Brilliant\n"
+		+ "• [b]1[/b] for every 30 seconds you skip by calling waves early\n"
+		+ "• [b]1[/b] for every 100 gold left at the end, at most [b]5[/b] (and hoarding gold makes heroes stronger)\n\n"
+		+ "Each lair further along the campaign is worth [b]5%% more[/b], night missions [b]half as much again[/b], and the whole is multiplied by the heroes' [b]Resolve[/b] at the end, counted up to ×%.1f. Your best score on each mission adds up to your total. Scores from before this way of counting were divided by 1000, so they still compare.\n\n" % Defs.SCORE["resolve_max"]
 		+ "The [b]Hall of Fame[/b] on the map has the online leaderboard (the total and every lair, day, night and Long Night: tap the board's name to pick one, tap a player to challenge them to a race), your [b]achievements[/b], and an optional account. Sign in to put your name on the board and to keep your scores and achievements on any device. Resetting progress keeps achievements and best scores."))
 	t.append(_t("Progress", "The Long Night",
 		"Once you have won a lair by day, its start card offers the [b]Long Night[/b]: the same lair, played by day with [b]your own Dark Arts[/b], but the waves never end. After the lair's own waves, its last %d come round again and again, each time with one more hero, and every wave past the end is [b]%d%% tougher[/b] than the one before. Its heroes are tougher than by day from the very first wave. Sooner or later the hoard falls; the question is when.\n\n" % [Defs.LONG["cycle"], roundi(Defs.LONG["grow"] * 100)]

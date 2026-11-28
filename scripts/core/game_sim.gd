@@ -2602,21 +2602,35 @@ func rank() -> String:
 	return "Brilliant"
 
 
-## Leaderboard points for a won battle (0 for a loss): up to 1000 for gems kept, 500 for Wicked or
-## 1000 for Brilliant, 5 per second of countdown skipped by calling waves early and 1 per gold
-## left; then +10% for each lair further along the campaign (number counts from 1) ×1.5 at night, and
-## (not in races) × the Resolve the heroes reached (threat).
+## Leaderboard points for a won battle (0 for a loss), Defs.SCORE (since 2026-11-28; old scores were divided by
+## 1000): up to 10 for gems kept, 5 for Wicked or 10 for Brilliant, 1 per 30 s skipped by calling waves early, 1 per
+## 100 gold left (at most 5); then +5% for each lair further along the campaign (number counts from 1), ×1.5 at
+## night, and (not in races) × the Resolve the heroes reached, counted up to ×2.5.
 func score(number: int) -> int:
+	if not won:
+		return 0
+	var s: Dictionary = Defs.SCORE
+	var pts := float(s["gems"]) * (level.gems - lost) / level.gems
+	pts += [0.0, 0.0, float(s["wicked"]), float(s["brilliant"])][SaveData.RANKS.find(rank())]
+	pts += skipped / float(s["early_secs"]) + minf(gold / float(s["gold_per"]), float(s["gold_max"]))
+	pts *= 1.0 + float(s["lair"]) * (number - 1)
+	if level.night:
+		pts *= float(s["night"])
+	if not race_on:   # the tougher the heroes became (Resolve), the more the win is worth, up to a cap
+		pts *= minf(threat, float(s["resolve_max"]))
+	return roundi(pts)
+
+
+## A race's points (Online.race_points): the score on the old, larger scale (races are not kept on the
+## leaderboard), so the time bonus per second keeps its weight: gems, rating, early seconds and gold left.
+func race_score() -> int:
 	if not won:
 		return 0
 	var pts := 1000.0 * (level.gems - lost) / level.gems
 	pts += [0, 0, 500, 1000][SaveData.RANKS.find(rank())]
 	pts += 5.0 * skipped + gold
-	pts *= 1.0 + 0.1 * (number - 1)
 	if level.night:
 		pts *= 1.5
-	if not race_on:   # the tougher the heroes became (Resolve), the more the win is worth
-		pts *= threat
 	return roundi(pts)
 
 
