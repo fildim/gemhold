@@ -145,6 +145,17 @@ func _run() -> void:
 	_check(await a.send_feedback("Signed-in feedback") == "", "a signed-in player sends feedback")
 	_check(await a.send_feedback("   ") != "", "empty feedback is refused")
 	_check(not (await a._call("GET", a._docs + "/feedback", null, true))["ok"], "nobody can read feedback back")
+	# Battle reports: a played battle is sent (no account needed), never read back; bad ones are refused.
+	var rsim := GameSim.new(Level.load_from("res://levels/level_01.json"))
+	rsim.start_wave()
+	for i in 600:
+		rsim.update(0.05)
+	var rep := BattleReport.build(rsim, 1, "quit")
+	_check(await a.send_report(rep) == "", "a battle report is sent")
+	_check(not (await a._call("GET", a._docs + "/reports", null, true))["ok"], "nobody can read reports back")
+	var bad := rep.duplicate()
+	bad["end"] = "cheated"
+	_check(await a.send_report(bad) != "", "a report with an unknown end is refused")
 	# Signing in elsewhere brings scores and achievements back.
 	a.sign_out()
 	_check(not a.signed_in(), "signed out")

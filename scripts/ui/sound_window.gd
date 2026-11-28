@@ -63,6 +63,21 @@ func _build(hud: Control) -> void:
 	fps.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	fps.toggled.connect(func(on: bool) -> void: Prefs.set_value("show_fps", on))
 	toggles.add_child(fps)
+	var rep := CheckButton.new()   # battle reports for balance (BattleReport): on unless turned off
+	rep.text = "Share battle reports"
+	rep.button_pressed = BattleReport.enabled()
+	rep.focus_mode = Control.FOCUS_NONE
+	rep.add_theme_font_override("font", hud.bold_font)
+	rep.add_theme_font_size_override("font_size", 30)
+	rep.custom_minimum_size = Vector2(0, 60)
+	rep.toggled.connect(func(on: bool) -> void: Prefs.set_value(BattleReport.PREF, on))
+	box.add_child(rep)
+	var rep_note := Label.new()
+	rep_note.text = "After each battle the game sends how it went (waves, gems lost, towers, skills) to help balance the lairs. No name, account or personal data."
+	rep_note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	rep_note.add_theme_font_size_override("font_size", 20)
+	rep_note.add_theme_color_override("font_color", Hud.DIM)
+	box.add_child(rep_note)
 	_build_graphics(hud, box)
 	if Keys.available():
 		_build_keys(hud, box)

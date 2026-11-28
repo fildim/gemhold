@@ -352,6 +352,35 @@ func send_feedback(text: String) -> String:
 	return "" if r["ok"] else str(r["error"])
 
 
+# ---------------------------------------------------------------- battle reports
+# One per campaign battle, for balance work (BattleReport): reports/<random id> {data, version, platform,
+# lair, night, end, player, created}. data is the report as JSON text. Anyone may write one, nobody can read
+# them back from the game; the owner downloads them with tools/reports.gd. No account id is attached.
+
+const REPORT_MAX := 20000   # characters of JSON in one report
+
+## Sends a battle report. Returns "" when it arrived, else the error. Never blocks the game for long.
+func send_report(report: Dictionary) -> String:
+	var data := JSON.stringify(report)
+	if data.length() > REPORT_MAX:   # trim the longest lists rather than lose the report
+		report = report.duplicate()
+		report["per_wave"] = []
+		report["gem_events"] = (report["gem_events"] as Array).slice(0, 20)
+		data = JSON.stringify(report).left(REPORT_MAX)
+	var id := ""
+	for i in 20:
+		id += "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"[randi() % 62]
+	var f := {"data": data, "version": str(ProjectSettings.get_setting("application/config/version", "")).left(20),
+		"platform": OS.get_name().left(20), "lair": str(report.get("lair", "")).left(32),
+		"night": bool(report.get("night", false)), "end": str(report.get("end", "")).left(10),
+		"player": BattleReport.player_id()}
+	var doc := {"name": "projects/%s/databases/(default)/documents/reports/%s" % [PROJECT, id], "fields": _typed_fields(f)}
+	var body := {"writes": [{"update": doc, "currentDocument": {"exists": false},
+		"updateTransforms": [{"fieldPath": "created", "setToServerValue": "REQUEST_TIME"}]}]}
+	var r := await _call("POST", _docs + ":commit", body, false, 8.0)
+	return "" if r["ok"] else str(r["error"])
+
+
 # ---------------------------------------------------------------- races
 # A race is one document, races/<code>: {host, host_name, level, state, created, h} from the host,
 # then {guest, guest_name, g} when a rival joins and state turns "on". h and g are each racer's

@@ -151,6 +151,7 @@ func _on_account_merged() -> void:
 
 
 func _show_map() -> void:
+	_send_report("quit")   # left a battle still going (no-op after the end, which sent its own)
 	if not on_map:
 		select.focus_lair = level_index   # back from a battle: the map stays on that lair's chapter
 	_leave_race()
@@ -258,6 +259,7 @@ func _new_battle() -> void:
 
 
 func _restart() -> void:
+	_send_report("restart")
 	_new_battle()
 	started = true
 
@@ -766,6 +768,7 @@ func _on_ended(won: bool) -> void:
 		online.sync(save)
 		hud.show_long_end(sim, long_before, earned)
 		return
+	_send_report("won" if won else "lost")
 	var had_night := save.night_unlocked(level.id)
 	var mission := SaveData.mission_id(level.id, night)
 	var stars_before := save.stars(mission)
@@ -782,6 +785,17 @@ func _on_ended(won: bool) -> void:
 	var night_opened := not had_night and save.night_unlocked(level.id)
 	hud.show_end(sim, level_index + 1 < LEVELS.size(), new_best, save.stars(mission) - stars_before, save.points_free(), night_opened,
 		score, old_score, got, won and level_index + 1 == LEVELS.size())
+
+
+## Sends this battle's report (BattleReport) once, unless the player turned reports off. Campaign battles
+## only (no races, no Long Night) that reached wave 1. Fire and forget: the game never waits on it.
+func _send_report(end: String) -> void:
+	if sim == null or not race.is_empty() or not BattleReport.enabled() or not BattleReport.worth(sim):
+		return
+	if sim.get_meta("reported", false) or (end in ["quit", "restart"] and sim.over):
+		return
+	sim.set_meta("reported", true)
+	online.send_report(BattleReport.build(sim, level_index + 1, end))
 
 
 ## Leaving the win card (Next lair, Play again, Map): the interstitial first if one is due, then

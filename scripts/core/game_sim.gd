@@ -280,6 +280,11 @@ var potions := 0          # potions picked up
 var gems_saved := 0       # gems knocked out of the hands of heroes that were slain carrying them
 var dreads := 0           # heroes terrified by Dread
 var lavas := 0            # pools of Lava left behind
+# The battle report (BattleReport, sent online for balance): one entry per wave start, gem event and building taken.
+var log_waves: Array = []  # {w, t, res, gold, mana, early} as each wave marches in
+var log_gems: Array = []   # {ev: "grab"|"pick"|"escape", w, t, hero, road, of, n}: of = the hero's own wave (0 = barracks)
+var log_sites: Array = []  # {kind, w, t} when a building is freed or razed
+var _early_now := false
 # Road zones (Level.zones): what has changed on them during the battle.
 var collapsed := {}       # Vector2i -> true for water tiles whose bridge has been collapsed
 var collapses := {}       # crossing index -> times that bridge has been collapsed (stats; the cost is flat)
@@ -453,6 +458,8 @@ func start_wave() -> void:
 	if wave >= level.waves.size():
 		return
 	gather_loot()   # whatever the last wave dropped is picked up as the next one marches in
+	log_waves.append({"w": wave + 1, "t": roundi(time), "res": snappedf(threat, 0.01), "gold": gold, "mana": roundi(mana), "early": _early_now})
+	_early_now = false
 	var list: Array[String] = level.waves[wave].duplicate()
 	var wrng := RandomNumberGenerator.new()
 	wrng.seed = wave * 7919 + 13
@@ -537,6 +544,7 @@ func call_early() -> int:
 		_text(level.lair_center + Vector2(0, -1), "+%d early" % bonus, Color("e8b84a"))
 	if gain >= 1.0:
 		_text(level.lair_center + Vector2(0, -0.4), "+%d mana" % int(gain), Color("c9c0ff"))
+	_early_now = true
 	start_wave()
 	return bonus
 
@@ -820,6 +828,7 @@ func _update_enemies(dt: float) -> void:
 			e.dir = -1
 			if take > 0:
 				touched = true
+				_log_gem("grab", e, take)
 				_text(level.lair_center + Vector2(0, -0.6), "-%d gem" % take, Color("ff7a90"))
 				sound.emit("grab")
 				if e.d.has("chant"):   # a Spiriter chants at the cave mouth instead of running
@@ -829,6 +838,7 @@ func _update_enemies(dt: float) -> void:
 			e.gone = true
 			if e.carry > 0:
 				lost += e.carry
+				_log_gem("escape", e, e.carry)
 				toast.emit("%s escaped with %s" % [e.d["name"], "a gem" if e.carry == 1 else "%d gems" % e.carry])
 				sound.emit("lost")
 		if not e.pave.is_empty():
@@ -861,6 +871,7 @@ func _update_enemies(dt: float) -> void:
 				if g.n > 0 and g.fall <= 0.0 and g.pos.distance_to(e.pos) < 0.4:
 					var take := mini(int(e.d["cap"]) - e.carry, g.n)
 					touched = true
+					_log_gem("pick", e, take)
 					g.n -= take
 					e.carry += take
 					e.dir = -1
@@ -2385,6 +2396,7 @@ func do_action(id: String, c: Vector2i) -> String:
 			s.owned = true
 			s.t = 0.0
 			sound.emit("raze")
+			log_sites.append({"kind": s.kind, "w": wave, "t": roundi(time)})
 			if Defs.HERO_SITES.has(s.kind):
 				var bounty: int = d["bounty"] + int(tiered(Defs.SPOILS_GOLD, "land_spoils"))
 				gold += bounty
@@ -2719,3 +2731,8 @@ func _crater(at: Vector2) -> void:
 	pl.dps = float(cf["dps"]) * (1.0 + float(cf["dps_up"]) * skill("meteor_hellfire"))
 	pl.meteor = true
 	pools.append(pl)
+
+
+func _log_gem(ev: String, e: Enemy, n: int) -> void:
+	if log_gems.size() < 60:   # a report stays small even in a lost battle
+		log_gems.append({"ev": ev, "w": wave, "t": roundi(time), "hero": e.code, "road": e.path, "of": e.wave, "n": n})
